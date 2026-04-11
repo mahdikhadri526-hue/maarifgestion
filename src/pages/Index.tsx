@@ -5,13 +5,41 @@ import { MovementForm } from "@/components/MovementForm";
 import { MovementHistory } from "@/components/MovementHistory";
 import { InitialStockForm } from "@/components/InitialStockForm";
 import { ProductHistory } from "@/components/ProductHistory";
-import { Package, LayoutDashboard, History, PlusCircle, Database, FileText } from "lucide-react";
+import { Package, LayoutDashboard, History, PlusCircle, Database, FileText, Info } from "lucide-react";
 
 type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit";
+
+const GuideCard = () => (
+  <div className="bg-card rounded-lg border p-5 space-y-4 animate-fade-in">
+    <h2 className="text-lg font-semibold flex items-center gap-2">
+      <Info className="h-5 w-5 text-primary" />
+      Comment utiliser l'application
+    </h2>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {[
+        { step: "1", title: "Stock Initial", desc: "Définissez la quantité de départ de chaque produit dans l'onglet Stock Initial." },
+        { step: "2", title: "Ajouter un mouvement", desc: "Dans l'onglet Mouvements, sélectionnez un produit, choisissez Entrée ou Sortie, et entrez la quantité." },
+        { step: "3", title: "Consulter le stock", desc: "Le stock restant se calcule automatiquement : Stock Initial + Entrées − Sorties." },
+        { step: "4", title: "Historique", desc: "Consultez et supprimez les mouvements dans Historique, ou suivez un produit jour par jour dans Par Produit." },
+      ].map((item) => (
+        <div key={item.step} className="flex gap-3 items-start">
+          <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+            {item.step}
+          </span>
+          <div>
+            <p className="text-sm font-semibold">{item.title}</p>
+            <p className="text-xs text-muted-foreground">{item.desc}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [refreshKey, setRefreshKey] = useState(0);
+  const [showStock, setShowStock] = useState(false);
 
   const refresh = () => setRefreshKey((k) => k + 1);
 
@@ -60,7 +88,20 @@ const Index = () => {
         {tab === "dashboard" && (
           <>
             <StockDashboard />
-            <StockTable />
+            <GuideCard />
+            <div className="bg-card rounded-lg border p-4">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold">Stock Restant</h2>
+                <button
+                  onClick={() => setShowStock(!showStock)}
+                  className="text-sm font-medium text-primary hover:underline flex items-center gap-1"
+                >
+                  {showStock ? "Masquer" : "Consulter le stock"}
+                  <Package className="h-4 w-4" />
+                </button>
+              </div>
+              {showStock && <StockTable />}
+            </div>
           </>
         )}
 
