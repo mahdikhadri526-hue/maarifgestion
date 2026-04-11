@@ -77,7 +77,7 @@ const Index = () => {
           </div>
         )}
 
-        {tab === "historique" && <MovementHistory />}
+        {tab === "historique" && <MovementHistory onMovementDeleted={refresh} />}
 
         {tab === "produit" && <ProductHistory />}
       </main>

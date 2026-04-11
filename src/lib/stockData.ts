@@ -136,6 +136,11 @@ export function saveMovement(movement: Omit<StockMovement, "id">): StockMovement
   return newMovement;
 }
 
+export function deleteMovement(id: string) {
+  const movements = getMovements().filter((m) => m.id !== id);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(movements));
+}
+
 export function getInitialStocks(): Record<string, number> {
   const raw = localStorage.getItem(INITIAL_STOCK_KEY);
   return raw ? JSON.parse(raw) : {};
