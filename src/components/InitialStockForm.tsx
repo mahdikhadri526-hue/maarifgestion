@@ -3,6 +3,7 @@ import { Category, getProducts, getInitialStocks, setInitialStock } from "@/lib/
 import { Input } from "@/components/ui/input";
 import { Search, Save } from "lucide-react";
 import { toast } from "sonner";
+import logo from "@/assets/logo.jpeg";
 
 interface Props {
   onUpdated: () => void;
@@ -38,9 +39,14 @@ export function InitialStockForm({ onUpdated }: Props) {
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Stock Initial</h2>
-            <p className="text-xs text-muted-foreground mt-1">Définir le stock de départ pour chaque produit</p>
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+              <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">Stock Initial</h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Définir le stock de départ pour chaque produit</p>
+            </div>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
             <div className="relative">

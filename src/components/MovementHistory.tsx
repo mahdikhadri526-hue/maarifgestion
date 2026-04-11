@@ -2,6 +2,7 @@ import { useState } from "react";
 import { getMovements, deleteMovement } from "@/lib/stockData";
 import { ArrowDownCircle, ArrowUpCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import logo from "@/assets/logo.jpeg";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,7 +40,12 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   return (
     <div className="bg-card rounded-lg border animate-fade-in" key={refreshKey}>
       <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold">Historique des Mouvements</h2>
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+          </div>
+          Historique des Mouvements
+        </h2>
         <p className="text-xs text-muted-foreground mt-1">{movements.length} mouvements enregistrés</p>
       </div>
       <div className="overflow-x-auto max-h-[500px] overflow-y-auto">

@@ -2,20 +2,41 @@ import { useState } from "react";
 import { Category, getProducts, getProductDailyHistory } from "@/lib/stockData";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText } from "lucide-react";
+import logo from "@/assets/logo.jpeg";
 
 export function ProductHistory() {
   const [category, setCategory] = useState<Category>("alimentaire");
   const [productId, setProductId] = useState("");
 
   const products = getProducts(category);
-  const history = productId ? getProductDailyHistory(productId) : [];
+  const history = productId === "all"
+    ? []
+    : productId
+    ? getProductDailyHistory(productId)
+    : [];
   const product = products.find((p) => p.id === productId);
+
+  // For "all" mode, show a summary table of all products
+  const allProductsData = productId === "all"
+    ? products.map((p) => {
+        const h = getProductDailyHistory(p.id);
+        const lastRow = h.length > 0 ? h[h.length - 1] : null;
+        return {
+          ...p,
+          stockRestant: lastRow ? lastRow.stockRestant : 0,
+          totalEntrees: h.reduce((s, r) => s + r.entrees, 0),
+          totalSorties: h.reduce((s, r) => s + r.sorties, 0),
+        };
+      })
+    : [];
 
   return (
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-          <FileText className="h-5 w-5 text-primary" />
+          <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
+            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+          </div>
           Historique par Produit
         </h2>
         <div className="flex flex-col sm:flex-row gap-3">
@@ -33,6 +54,7 @@ export function ProductHistory() {
               <SelectValue placeholder="Sélectionner un produit" />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="all">📋 Tous les produits</SelectItem>
               {products.map((p) => (
                 <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
               ))}
@@ -41,7 +63,34 @@ export function ProductHistory() {
         </div>
       </div>
 
-      {productId && (
+      {productId === "all" && (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Restant</th>
+              </tr>
+            </thead>
+            <tbody>
+              {allProductsData.map((p) => (
+                <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                  <td className="p-3 text-sm font-medium">{p.name}</td>
+                  <td className="p-3 text-right font-mono text-sm text-success">{p.totalEntrees || "-"}</td>
+                  <td className="p-3 text-right font-mono text-sm text-destructive">{p.totalSorties || "-"}</td>
+                  <td className={`p-3 text-right font-mono text-sm font-semibold ${p.stockRestant < 0 ? "text-destructive" : ""}`}>
+                    {p.stockRestant}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {productId && productId !== "all" && (
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -60,9 +109,7 @@ export function ProductHistory() {
                   <td className="p-3 text-right font-mono text-sm">{row.stockInitial}</td>
                   <td className="p-3 text-right font-mono text-sm text-success">{row.entrees || "-"}</td>
                   <td className="p-3 text-right font-mono text-sm text-destructive">{row.sorties || "-"}</td>
-                  <td className={`p-3 text-right font-mono text-sm font-semibold ${
-                    row.stockRestant < 0 ? "text-destructive" : ""
-                  }`}>
+                  <td className={`p-3 text-right font-mono text-sm font-semibold ${row.stockRestant < 0 ? "text-destructive" : ""}`}>
                     {row.stockRestant}
                   </td>
                 </tr>
