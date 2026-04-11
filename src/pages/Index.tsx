@@ -5,7 +5,8 @@ import { MovementForm } from "@/components/MovementForm";
 import { MovementHistory } from "@/components/MovementHistory";
 import { InitialStockForm } from "@/components/InitialStockForm";
 import { ProductHistory } from "@/components/ProductHistory";
-import { Package, LayoutDashboard, History, PlusCircle, Database, FileText, Info } from "lucide-react";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, Info } from "lucide-react";
+import logo from "@/assets/logo.jpeg";
 
 type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit";
 
