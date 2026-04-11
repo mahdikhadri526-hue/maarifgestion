@@ -118,6 +118,7 @@ export function getProducts(category?: Category): Product[] {
 }
 
 const STORAGE_KEY = "mahdi_stock_movements";
+const INITIAL_STOCK_KEY = "mahdi_initial_stocks";
 
 export function getMovements(): StockMovement[] {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -135,11 +136,24 @@ export function saveMovement(movement: Omit<StockMovement, "id">): StockMovement
   return newMovement;
 }
 
+export function getInitialStocks(): Record<string, number> {
+  const raw = localStorage.getItem(INITIAL_STOCK_KEY);
+  return raw ? JSON.parse(raw) : {};
+}
+
+export function setInitialStock(productId: string, quantity: number) {
+  const stocks = getInitialStocks();
+  stocks[productId] = quantity;
+  localStorage.setItem(INITIAL_STOCK_KEY, JSON.stringify(stocks));
+}
+
 export function getStockLevels(category?: Category): StockLevel[] {
   const products = getProducts(category);
   const movements = getMovements();
+  const initialStocks = getInitialStocks();
 
   return products.map((product) => {
+    const initial = initialStocks[product.id] || 0;
     const productMovements = movements.filter((m) => m.productId === product.id);
     const totalEntrees = productMovements
       .filter((m) => m.type === "entree")
@@ -152,9 +166,40 @@ export function getStockLevels(category?: Category): StockLevel[] {
       productId: product.id,
       productName: product.name,
       category: product.category,
-      totalEntrees: product.initialStock + totalEntrees,
+      totalEntrees: initial + totalEntrees,
       totalSorties,
-      stockRestant: product.initialStock + totalEntrees - totalSorties,
+      stockRestant: initial + totalEntrees - totalSorties,
     };
+  });
+}
+
+export interface DailyStockRecord {
+  date: string;
+  stockInitial: number;
+  entrees: number;
+  sorties: number;
+  stockRestant: number;
+}
+
+export function getProductDailyHistory(productId: string): DailyStockRecord[] {
+  const movements = getMovements().filter((m) => m.productId === productId);
+  const initialStocks = getInitialStocks();
+  const initial = initialStocks[productId] || 0;
+
+  const byDate: Record<string, { entrees: number; sorties: number }> = {};
+  movements.forEach((m) => {
+    const d = m.date.split("T")[0];
+    if (!byDate[d]) byDate[d] = { entrees: 0, sorties: 0 };
+    if (m.type === "entree") byDate[d].entrees += m.quantity;
+    else byDate[d].sorties += m.quantity;
+  });
+
+  const dates = Object.keys(byDate).sort();
+  let cumul = initial;
+  return dates.map((date) => {
+    const stockInitial = cumul;
+    const { entrees, sorties } = byDate[date];
+    cumul = stockInitial + entrees - sorties;
+    return { date, stockInitial, entrees, sorties, stockRestant: cumul };
   });
 }

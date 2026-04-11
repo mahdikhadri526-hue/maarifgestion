@@ -3,9 +3,11 @@ import { StockDashboard } from "@/components/StockDashboard";
 import { StockTable } from "@/components/StockTable";
 import { MovementForm } from "@/components/MovementForm";
 import { MovementHistory } from "@/components/MovementHistory";
-import { Package, LayoutDashboard, History, PlusCircle } from "lucide-react";
+import { InitialStockForm } from "@/components/InitialStockForm";
+import { ProductHistory } from "@/components/ProductHistory";
+import { Package, LayoutDashboard, History, PlusCircle, Database, FileText } from "lucide-react";
 
-type Tab = "dashboard" | "mouvements" | "historique";
+type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -15,13 +17,14 @@ const Index = () => {
 
   const tabs = [
     { id: "dashboard" as Tab, label: "Tableau de bord", icon: LayoutDashboard },
+    { id: "stock-initial" as Tab, label: "Stock Initial", icon: Database },
     { id: "mouvements" as Tab, label: "Mouvements", icon: PlusCircle },
     { id: "historique" as Tab, label: "Historique", icon: History },
+    { id: "produit" as Tab, label: "Par Produit", icon: FileText },
   ];
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="bg-sidebar text-sidebar-foreground border-b border-sidebar-border">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-3">
           <div className="bg-sidebar-primary p-2 rounded-lg">
@@ -34,14 +37,13 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Nav */}
       <nav className="bg-card border-b sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 flex gap-1">
+        <div className="max-w-7xl mx-auto px-4 flex gap-1 overflow-x-auto">
           {tabs.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
+              className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 tab === t.id
                   ? "border-primary text-primary"
                   : "border-transparent text-muted-foreground hover:text-foreground"
@@ -54,7 +56,6 @@ const Index = () => {
         </div>
       </nav>
 
-      {/* Content */}
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6" key={refreshKey}>
         {tab === "dashboard" && (
           <>
@@ -62,6 +63,8 @@ const Index = () => {
             <StockTable />
           </>
         )}
+
+        {tab === "stock-initial" && <InitialStockForm onUpdated={refresh} />}
 
         {tab === "mouvements" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -75,6 +78,8 @@ const Index = () => {
         )}
 
         {tab === "historique" && <MovementHistory />}
+
+        {tab === "produit" && <ProductHistory />}
       </main>
     </div>
   );
