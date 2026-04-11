@@ -5,37 +5,10 @@ import { MovementForm } from "@/components/MovementForm";
 import { MovementHistory } from "@/components/MovementHistory";
 import { InitialStockForm } from "@/components/InitialStockForm";
 import { ProductHistory } from "@/components/ProductHistory";
-import { LayoutDashboard, History, PlusCircle, Database, FileText, Info } from "lucide-react";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
 type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit";
-
-const GuideCard = () => (
-  <div className="bg-card rounded-lg border p-5 space-y-4 animate-fade-in">
-    <h2 className="text-lg font-semibold flex items-center gap-2">
-      <Info className="h-5 w-5 text-primary" />
-      Comment utiliser l'application
-    </h2>
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      {[
-        { step: "1", title: "Stock Initial", desc: "Définissez la quantité de départ de chaque produit dans l'onglet Stock Initial." },
-        { step: "2", title: "Ajouter un mouvement", desc: "Dans l'onglet Mouvements, sélectionnez un produit, choisissez Entrée ou Sortie, et entrez la quantité." },
-        { step: "3", title: "Consulter le stock", desc: "Le stock restant se calcule automatiquement : Stock Initial + Entrées − Sorties." },
-        { step: "4", title: "Historique", desc: "Consultez et supprimez les mouvements dans Historique, ou suivez un produit jour par jour dans Par Produit." },
-      ].map((item) => (
-        <div key={item.step} className="flex gap-3 items-start">
-          <span className="flex-shrink-0 w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
-            {item.step}
-          </span>
-          <div>
-            <p className="text-sm font-semibold">{item.title}</p>
-            <p className="text-xs text-muted-foreground">{item.desc}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-);
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -88,11 +61,54 @@ const Index = () => {
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6" key={refreshKey}>
         {tab === "dashboard" && (
           <>
+            {/* Hero Section */}
+            <div className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl border p-6 sm:p-8 overflow-hidden">
+              <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full -translate-y-1/2 translate-x-1/2" />
+              <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full translate-y-1/2 -translate-x-1/2" />
+              <div className="relative flex items-center gap-5">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden shadow-lg border-2 border-primary/20 flex-shrink-0">
+                  <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
+                    Bienvenue sur votre espace de gestion
+                  </h2>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Gérez vos stocks alimentaires et emballages en toute simplicité
+                  </p>
+                </div>
+              </div>
+            </div>
+
             <StockDashboard />
-            <GuideCard />
+
+            {/* Quick Actions */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: "Nouvelle entrée", icon: TrendingUp, color: "text-success", action: () => setTab("mouvements") },
+                { label: "Nouvelle sortie", icon: TrendingDown, color: "text-destructive", action: () => setTab("mouvements") },
+                { label: "Stock initial", icon: Package, color: "text-primary", action: () => setTab("stock-initial") },
+                { label: "Historique", icon: BarChart3, color: "text-accent-foreground", action: () => setTab("historique") },
+              ].map((item) => (
+                <button
+                  key={item.label}
+                  onClick={item.action}
+                  className="bg-card rounded-xl border p-4 flex flex-col items-center gap-2 hover:bg-muted/50 hover:shadow-md transition-all group"
+                >
+                  <item.icon className={`h-6 w-6 ${item.color} group-hover:scale-110 transition-transform`} />
+                  <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
+                </button>
+              ))}
+            </div>
+
             <div className="bg-card rounded-lg border p-4">
               <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold">Stock Restant</h2>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
+                    <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+                  </div>
+                  Stock Restant
+                </h2>
                 <button
                   onClick={() => setShowStock(!showStock)}
                   className="text-sm font-medium text-primary hover:underline flex items-center gap-1"
