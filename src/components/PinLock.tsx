@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
-import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
 
 const PIN_CODE = "1975";
 
@@ -30,8 +28,8 @@ export function PinLock({ onUnlock }: PinLockProps) {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-2">
-          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
-            <Package className="h-8 w-8 text-primary" />
+          <div className="mx-auto w-20 h-20 rounded-full overflow-hidden shadow-lg">
+            <img src={logo} alt="Oliveri Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-xl font-bold tracking-tight">K.MAHDI — Gestion de Stock</h1>
           <p className="text-sm text-muted-foreground">Entrez le code PIN pour accéder à l'application</p>

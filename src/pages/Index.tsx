@@ -56,8 +56,8 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <header className="bg-sidebar text-sidebar-foreground border-b border-sidebar-border">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="bg-sidebar-primary p-2 rounded-lg">
-            <Package className="h-5 w-5 text-sidebar-primary-foreground" />
+          <div className="w-10 h-10 rounded-full overflow-hidden">
+            <img src={logo} alt="Oliveri Logo" className="w-full h-full object-cover" />
           </div>
           <div>
             <h1 className="text-lg font-bold tracking-tight">K.MAHDI — Gestion de Stock</h1>
@@ -98,7 +98,6 @@ const Index = () => {
                   className="text-sm font-medium text-primary hover:underline flex items-center gap-1"
                 >
                   {showStock ? "Masquer" : "Consulter le stock"}
-                  <Package className="h-4 w-4" />
                 </button>
               </div>
               {showStock && <StockTable />}
