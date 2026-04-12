@@ -40,10 +40,13 @@ export function saveRequisition(entry: Omit<RequisitionEntry, "id">): Requisitio
   requisitions.push(newEntry);
   localStorage.setItem(REQUISITION_KEY, JSON.stringify(requisitions));
 
-  // Auto-create a "sortie" movement
+  // Auto-create a "sortie" movement for the next day
   const category = entry.type === "salle" ? "alimentaire" as const : "emballage" as const;
+  const nextDay = new Date(entry.date + "T00:00:00");
+  nextDay.setDate(nextDay.getDate() + 1);
+  const nextDayStr = nextDay.toISOString().split("T")[0];
   saveMovement({
-    date: entry.date,
+    date: nextDayStr,
     productId: entry.productId,
     productName: entry.productName,
     category,
