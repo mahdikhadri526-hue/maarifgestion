@@ -120,7 +120,7 @@ export function RequisitionForm({ onUpdated }: Props) {
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-24">Déjà saisi</th>
-              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-32">Qté demandée</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-36">Qté / Enregistrer</th>
             </tr>
           </thead>
           <tbody>
@@ -131,14 +131,38 @@ export function RequisitionForm({ onUpdated }: Props) {
                   {existingMap[p.id] || 0}
                 </td>
                 <td className="p-3">
-                  <Input
-                    type="number"
-                    min="0"
-                    value={quantities[p.id] || ""}
-                    onChange={(e) => setQuantities((q) => ({ ...q, [p.id]: e.target.value }))}
-                    className="font-mono text-right w-28 ml-auto"
-                    placeholder="0"
-                  />
+                  <div className="flex items-center gap-1 justify-end">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={quantities[p.id] || ""}
+                      onChange={(e) => setQuantities((q) => ({ ...q, [p.id]: e.target.value }))}
+                      className="font-mono text-right w-20"
+                      placeholder="0"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-9 px-2 text-xs"
+                      disabled={!quantities[p.id] || Number(quantities[p.id]) <= 0}
+                      onClick={() => {
+                        const product = allProducts.find((pr) => pr.id === p.id);
+                        if (!product) return;
+                        saveRequisition({
+                          date,
+                          type: reqType,
+                          productId: p.id,
+                          productName: product.name,
+                          quantity: Number(quantities[p.id]),
+                        });
+                        toast.success(`${product.name} enregistré`);
+                        setQuantities((q) => ({ ...q, [p.id]: "" }));
+                        onUpdated();
+                      }}
+                    >
+                      ✓
+                    </Button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -148,7 +172,7 @@ export function RequisitionForm({ onUpdated }: Props) {
 
       <div className="p-4 border-t">
         <Button onClick={handleSubmitAll} className="w-full">
-          Enregistrer la réquisition
+          Enregistrer tout
         </Button>
       </div>
     </div>
