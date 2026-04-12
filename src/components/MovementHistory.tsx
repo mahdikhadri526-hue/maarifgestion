@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getMovements, deleteMovement } from "@/lib/stockData";
+import { isRequisitionProduct } from "@/lib/requisitionData";
 import { ArrowDownCircle, ArrowUpCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
@@ -62,7 +63,9 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
           </thead>
           <tbody>
             {movements.map((m) => (
-              <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+              <tr key={m.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
+                isRequisitionProduct(m.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
+              }`}>
                 <td className="p-3 text-sm font-mono">{new Date(m.date).toLocaleDateString("fr-FR")}</td>
                 <td className="p-3">
                   <span className={`inline-flex items-center gap-1 text-xs font-medium ${

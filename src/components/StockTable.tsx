@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Category, getStockLevels } from "@/lib/stockData";
+import { isRequisitionProduct } from "@/lib/requisitionData";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
@@ -64,8 +65,13 @@ export function StockTable() {
           </thead>
           <tbody>
             {filtered.map((level) => (
-              <tr key={level.productId} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                <td className="p-3 text-sm font-medium">{level.productName}</td>
+              <tr key={level.productId} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
+                isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
+              }`}>
+                <td className="p-3 text-sm font-medium flex items-center gap-1.5">
+                  {isRequisitionProduct(level.productId) && <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />}
+                  {level.productName}
+                </td>
                 <td className="p-3">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     level.category === "alimentaire"

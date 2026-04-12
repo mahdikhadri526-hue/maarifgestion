@@ -5,10 +5,11 @@ import { MovementForm } from "@/components/MovementForm";
 import { MovementHistory } from "@/components/MovementHistory";
 import { InitialStockForm } from "@/components/InitialStockForm";
 import { ProductHistory } from "@/components/ProductHistory";
-import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3 } from "lucide-react";
+import { RequisitionForm } from "@/components/RequisitionForm";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
-type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit";
+type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -23,6 +24,7 @@ const Index = () => {
     { id: "mouvements" as Tab, label: "Mouvements", icon: PlusCircle },
     { id: "historique" as Tab, label: "Historique", icon: History },
     { id: "produit" as Tab, label: "Par Produit", icon: FileText },
+    { id: "requisition" as Tab, label: "Réquisition", icon: ClipboardList },
   ];
 
   return (
@@ -137,6 +139,8 @@ const Index = () => {
         {tab === "historique" && <MovementHistory onMovementDeleted={refresh} />}
 
         {tab === "produit" && <ProductHistory />}
+
+        {tab === "requisition" && <RequisitionForm onUpdated={refresh} />}
       </main>
     </div>
   );
