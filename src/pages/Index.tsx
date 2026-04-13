@@ -6,10 +6,11 @@ import { MovementHistory } from "@/components/MovementHistory";
 import { InitialStockForm } from "@/components/InitialStockForm";
 import { ProductHistory } from "@/components/ProductHistory";
 import { RequisitionForm } from "@/components/RequisitionForm";
-import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList } from "lucide-react";
+import { ExpiryAlerts, LotManager } from "@/components/LotManagement";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
-type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition";
+type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -25,6 +26,7 @@ const Index = () => {
     { id: "historique" as Tab, label: "Historique", icon: History },
     { id: "produit" as Tab, label: "Par Produit", icon: FileText },
     { id: "requisition" as Tab, label: "Réquisition", icon: ClipboardList },
+    { id: "lots" as Tab, label: "Lots / DLC", icon: Boxes },
   ];
 
   return (
@@ -82,6 +84,9 @@ const Index = () => {
               </div>
             </div>
 
+            {/* Expiry Alerts */}
+            <ExpiryAlerts />
+
             <StockDashboard />
 
             {/* Quick Actions */}
@@ -90,7 +95,7 @@ const Index = () => {
                 { label: "Nouvelle entrée", icon: TrendingUp, color: "text-success", action: () => setTab("mouvements") },
                 { label: "Nouvelle sortie", icon: TrendingDown, color: "text-destructive", action: () => setTab("mouvements") },
                 { label: "Stock initial", icon: Package, color: "text-primary", action: () => setTab("stock-initial") },
-                { label: "Historique", icon: BarChart3, color: "text-accent-foreground", action: () => setTab("historique") },
+                { label: "Lots / DLC", icon: Boxes, color: "text-accent-foreground", action: () => setTab("lots") },
               ].map((item) => (
                 <button
                   key={item.label}
@@ -141,6 +146,8 @@ const Index = () => {
         {tab === "produit" && <ProductHistory />}
 
         {tab === "requisition" && <RequisitionForm onUpdated={refresh} />}
+
+        {tab === "lots" && <LotManager />}
       </main>
     </div>
   );
