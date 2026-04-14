@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { getExpiringLots, getProductLots, updateLotEntry, LotEntry } from "@/lib/lotData";
+import { updateLotEntry, LotEntry } from "@/lib/lotData";
 import { getProducts } from "@/lib/stockData";
+import { useExpiringLots, useProductLots } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, Edit2, Check, X, Package } from "lucide-react";
@@ -8,9 +9,9 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 
 export function ExpiryAlerts() {
-  const expiringLots = getExpiringLots(15);
+  const { data: expiringLots, loading } = useExpiringLots(15);
 
-  if (expiringLots.length === 0) return null;
+  if (loading || !expiringLots || expiringLots.length === 0) return null;
 
   return (
     <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4 animate-fade-in">
@@ -63,7 +64,7 @@ export function LotManager() {
   const [editExpiryDate, setEditExpiryDate] = useState("");
 
   const products = getProducts("alimentaire");
-  const lots = selectedProductId ? getProductLots(selectedProductId) : [];
+  const { data: lots, loading } = useProductLots(selectedProductId);
 
   const startEdit = (lot: LotEntry) => {
     setEditingLot(lot.id);
@@ -71,9 +72,9 @@ export function LotManager() {
     setEditExpiryDate(lot.expiryDate);
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (editingLot) {
-      updateLotEntry(editingLot, { lotNumber: editLotNumber, expiryDate: editExpiryDate });
+      await updateLotEntry(editingLot, { lotNumber: editLotNumber, expiryDate: editExpiryDate });
       toast.success("Lot mis à jour");
       setEditingLot(null);
     }
@@ -118,87 +119,82 @@ export function LotManager() {
 
       {selectedProductId && (
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">N° Lot</th>
-                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">DLC</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase">Qté Init.</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase">Restant</th>
-                <th className="text-center p-3 text-xs font-semibold text-muted-foreground uppercase">Statut</th>
-                <th className="text-center p-3 text-xs font-semibold text-muted-foreground uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {lots.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="text-center text-muted-foreground py-8 text-sm">
-                    Aucun lot pour ce produit
-                  </td>
+          {loading ? (
+            <p className="text-center text-muted-foreground py-8">Chargement...</p>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">N° Lot</th>
+                  <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">DLC</th>
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase">Qté Init.</th>
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase">Restant</th>
+                  <th className="text-center p-3 text-xs font-semibold text-muted-foreground uppercase">Statut</th>
+                  <th className="text-center p-3 text-xs font-semibold text-muted-foreground uppercase">Actions</th>
                 </tr>
-              ) : (
-                lots.map((lot) => {
-                  const days = getDaysUntilExpiry(lot.expiryDate);
-                  const isEditing = editingLot === lot.id;
-                  return (
-                    <tr key={lot.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
-                      days <= 0 ? "bg-destructive/5" : days <= 5 ? "bg-amber-50 dark:bg-amber-950/20" : days <= 15 ? "bg-primary/5" : ""
-                    }`}>
-                      <td className="p-3 text-sm font-mono">
-                        {isEditing ? (
-                          <Input value={editLotNumber} onChange={(e) => setEditLotNumber(e.target.value)} className="h-8 text-xs" />
-                        ) : (
-                          lot.lotNumber
-                        )}
-                      </td>
-                      <td className="p-3 text-sm">
-                        {isEditing ? (
-                          <Input type="date" value={editExpiryDate} onChange={(e) => setEditExpiryDate(e.target.value)} className="h-8 text-xs" />
-                        ) : (
-                          lot.expiryDate
-                        )}
-                      </td>
-                      <td className="p-3 text-right font-mono text-sm">{lot.quantity}</td>
-                      <td className={`p-3 text-right font-mono text-sm font-semibold ${
-                        lot.remainingQuantity === 0 ? "text-muted-foreground" : ""
+              </thead>
+              <tbody>
+                {(!lots || lots.length === 0) ? (
+                  <tr>
+                    <td colSpan={6} className="text-center text-muted-foreground py-8 text-sm">
+                      Aucun lot pour ce produit
+                    </td>
+                  </tr>
+                ) : (
+                  lots.map((lot) => {
+                    const days = getDaysUntilExpiry(lot.expiryDate);
+                    const isEditing = editingLot === lot.id;
+                    return (
+                      <tr key={lot.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
+                        days <= 0 ? "bg-destructive/5" : days <= 5 ? "bg-amber-50 dark:bg-amber-950/20" : days <= 15 ? "bg-primary/5" : ""
                       }`}>
-                        {lot.remainingQuantity}
-                      </td>
-                      <td className="p-3 text-center">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                          days <= 0
-                            ? "bg-destructive text-destructive-foreground"
-                            : days <= 5
-                            ? "bg-amber-500 text-white"
-                            : days <= 15
-                            ? "bg-primary/10 text-primary"
+                        <td className="p-3 text-sm font-mono">
+                          {isEditing ? (
+                            <Input value={editLotNumber} onChange={(e) => setEditLotNumber(e.target.value)} className="h-8 text-xs" />
+                          ) : lot.lotNumber}
+                        </td>
+                        <td className="p-3 text-sm">
+                          {isEditing ? (
+                            <Input type="date" value={editExpiryDate} onChange={(e) => setEditExpiryDate(e.target.value)} className="h-8 text-xs" />
+                          ) : lot.expiryDate}
+                        </td>
+                        <td className="p-3 text-right font-mono text-sm">{lot.quantity}</td>
+                        <td className={`p-3 text-right font-mono text-sm font-semibold ${lot.remainingQuantity === 0 ? "text-muted-foreground" : ""}`}>
+                          {lot.remainingQuantity}
+                        </td>
+                        <td className="p-3 text-center">
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                            days <= 0 ? "bg-destructive text-destructive-foreground"
+                            : days <= 5 ? "bg-amber-500 text-white"
+                            : days <= 15 ? "bg-primary/10 text-primary"
                             : "bg-success/10 text-success"
-                        }`}>
-                          {days <= 0 ? "Expiré" : `${days}j`}
-                        </span>
-                      </td>
-                      <td className="p-3 text-center">
-                        {isEditing ? (
-                          <div className="flex gap-1 justify-center">
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={saveEdit}>
-                              <Check className="h-3.5 w-3.5 text-success" />
+                          }`}>
+                            {days <= 0 ? "Expiré" : `${days}j`}
+                          </span>
+                        </td>
+                        <td className="p-3 text-center">
+                          {isEditing ? (
+                            <div className="flex gap-1 justify-center">
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={saveEdit}>
+                                <Check className="h-3.5 w-3.5 text-success" />
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingLot(null)}>
+                                <X className="h-3.5 w-3.5 text-destructive" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEdit(lot)}>
+                              <Edit2 className="h-3.5 w-3.5" />
                             </Button>
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditingLot(null)}>
-                              <X className="h-3.5 w-3.5 text-destructive" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEdit(lot)}>
-                            <Edit2 className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       )}
     </div>

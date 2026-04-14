@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getProducts } from "@/lib/stockData";
-import { saveRequisition, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS, getRequisitionsByDate } from "@/lib/requisitionData";
+import { saveRequisition, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
+import { useRequisitionsByDate } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -16,6 +17,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const allProducts = getProducts();
   const productIds = reqType === "salle" ? REQUISITION_SALLE_IDS : REQUISITION_EMPORTER_IDS;
@@ -27,32 +29,59 @@ export function RequisitionForm({ onUpdated }: Props) {
     p.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const existing = getRequisitionsByDate(date, reqType);
+  const { data: existing } = useRequisitionsByDate(date, reqType);
   const existingMap: Record<string, number> = {};
-  existing.forEach((r) => { existingMap[r.productId] = (existingMap[r.productId] || 0) + r.quantity; });
+  (existing || []).forEach((r) => { existingMap[r.productId] = (existingMap[r.productId] || 0) + r.quantity; });
 
-  const handleSubmitAll = () => {
+  const handleSubmitAll = async () => {
     const entries = Object.entries(quantities).filter(([, v]) => Number(v) > 0);
     if (entries.length === 0) {
       toast.error("Aucune quantité saisie");
       return;
     }
 
-    entries.forEach(([productId, qty]) => {
-      const product = allProducts.find((p) => p.id === productId);
-      if (!product) return;
-      saveRequisition({
+    setSubmitting(true);
+    try {
+      for (const [productId, qty] of entries) {
+        const product = allProducts.find((p) => p.id === productId);
+        if (!product) continue;
+        await saveRequisition({
+          date,
+          type: reqType,
+          productId,
+          productName: product.name,
+          quantity: Number(qty),
+        });
+      }
+      toast.success(`${entries.length} réquisition(s) enregistrée(s) — sorties créées automatiquement`);
+      setQuantities({});
+      onUpdated();
+    } catch (err) {
+      toast.error("Erreur lors de l'enregistrement");
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleSingleSave = async (productId: string) => {
+    const product = allProducts.find((pr) => pr.id === productId);
+    if (!product) return;
+    try {
+      await saveRequisition({
         date,
         type: reqType,
         productId,
         productName: product.name,
-        quantity: Number(qty),
+        quantity: Number(quantities[productId]),
       });
-    });
-
-    toast.success(`${entries.length} réquisition(s) enregistrée(s) — sorties créées automatiquement`);
-    setQuantities({});
-    onUpdated();
+      toast.success(`${product.name} enregistré`);
+      setQuantities((q) => ({ ...q, [productId]: "" }));
+      onUpdated();
+    } catch (err) {
+      toast.error("Erreur");
+      console.error(err);
+    }
   };
 
   return (
@@ -76,9 +105,7 @@ export function RequisitionForm({ onUpdated }: Props) {
             <button
               onClick={() => { setReqType("salle"); setQuantities({}); }}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
-                reqType === "salle"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card text-muted-foreground hover:bg-muted"
+                reqType === "salle" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"
               }`}
             >
               🏪 Salle
@@ -86,30 +113,16 @@ export function RequisitionForm({ onUpdated }: Props) {
             <button
               onClick={() => { setReqType("emporter"); setQuantities({}); }}
               className={`px-4 py-2 text-sm font-medium transition-colors ${
-                reqType === "emporter"
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-card text-muted-foreground hover:bg-muted"
+                reqType === "emporter" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"
               }`}
             >
               🛍️ Emporter
             </button>
           </div>
-
-          <Input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="w-auto"
-          />
-
+          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-auto" />
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher un produit..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
+            <Input placeholder="Rechercher un produit..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
         </div>
       </div>
@@ -133,8 +146,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                 <td className="p-3">
                   <div className="flex items-center gap-1 justify-end">
                     <Input
-                      type="number"
-                      min="0"
+                      type="number" min="0"
                       value={quantities[p.id] || ""}
                       onChange={(e) => setQuantities((q) => ({ ...q, [p.id]: e.target.value }))}
                       className="font-mono text-right w-20"
@@ -145,20 +157,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                       variant="outline"
                       className="h-9 px-2 text-xs"
                       disabled={!quantities[p.id] || Number(quantities[p.id]) <= 0}
-                      onClick={() => {
-                        const product = allProducts.find((pr) => pr.id === p.id);
-                        if (!product) return;
-                        saveRequisition({
-                          date,
-                          type: reqType,
-                          productId: p.id,
-                          productName: product.name,
-                          quantity: Number(quantities[p.id]),
-                        });
-                        toast.success(`${product.name} enregistré`);
-                        setQuantities((q) => ({ ...q, [p.id]: "" }));
-                        onUpdated();
-                      }}
+                      onClick={() => handleSingleSave(p.id)}
                     >
                       ✓
                     </Button>
@@ -171,8 +170,8 @@ export function RequisitionForm({ onUpdated }: Props) {
       </div>
 
       <div className="p-4 border-t">
-        <Button onClick={handleSubmitAll} className="w-full">
-          Enregistrer tout
+        <Button onClick={handleSubmitAll} className="w-full" disabled={submitting}>
+          {submitting ? "Enregistrement..." : "Enregistrer tout"}
         </Button>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { getMovements, deleteMovement } from "@/lib/stockData";
+import { useMovements } from "@/hooks/useStockData";
+import { deleteMovement } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { ArrowDownCircle, ArrowUpCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -20,26 +21,27 @@ interface MovementHistoryProps {
 }
 
 export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
-  const [refreshKey, setRefreshKey] = useState(0);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { data: movements, loading } = useMovements();
 
-  const movements = getMovements().sort(
+  const sorted = [...(movements || [])].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  const movementToDelete = movements.find((m) => m.id === deleteId);
+  const movementToDelete = sorted.find((m) => m.id === deleteId);
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deleteId) return;
-    deleteMovement(deleteId);
+    await deleteMovement(deleteId);
     toast.success("Mouvement supprimé");
     setDeleteId(null);
-    setRefreshKey((k) => k + 1);
     onMovementDeleted?.();
   };
 
+  if (loading) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
+
   return (
-    <div className="bg-card rounded-lg border animate-fade-in" key={refreshKey}>
+    <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
@@ -47,7 +49,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
           </div>
           Historique des Mouvements
         </h2>
-        <p className="text-xs text-muted-foreground mt-1">{movements.length} mouvements enregistrés</p>
+        <p className="text-xs text-muted-foreground mt-1">{sorted.length} mouvements enregistrés</p>
       </div>
       <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
         <table className="w-full">
@@ -62,7 +64,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
             </tr>
           </thead>
           <tbody>
-            {movements.map((m) => (
+            {sorted.map((m) => (
               <tr key={m.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                 isRequisitionProduct(m.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
               }`}>
@@ -71,20 +73,14 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   <span className={`inline-flex items-center gap-1 text-xs font-medium ${
                     m.type === "entree" ? "text-success" : "text-destructive"
                   }`}>
-                    {m.type === "entree" ? (
-                      <ArrowDownCircle className="h-3.5 w-3.5" />
-                    ) : (
-                      <ArrowUpCircle className="h-3.5 w-3.5" />
-                    )}
+                    {m.type === "entree" ? <ArrowDownCircle className="h-3.5 w-3.5" /> : <ArrowUpCircle className="h-3.5 w-3.5" />}
                     {m.type === "entree" ? "Entrée" : "Sortie"}
                   </span>
                 </td>
                 <td className="p-3 text-sm">{m.productName}</td>
                 <td className="p-3 hidden sm:table-cell">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    m.category === "alimentaire"
-                      ? "bg-primary/10 text-primary"
-                      : "bg-accent/10 text-accent-foreground"
+                    m.category === "alimentaire" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent-foreground"
                   }`}>
                     {m.category === "alimentaire" ? "Alim." : "Emb."}
                   </span>
@@ -103,7 +99,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
             ))}
           </tbody>
         </table>
-        {movements.length === 0 && (
+        {sorted.length === 0 && (
           <p className="text-center text-muted-foreground py-8">Aucun mouvement enregistré</p>
         )}
       </div>

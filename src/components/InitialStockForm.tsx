@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Category, getProducts, getInitialStocks, setInitialStock } from "@/lib/stockData";
+import { useInitialStocks } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Search, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -12,28 +13,34 @@ interface Props {
 export function InitialStockForm({ onUpdated }: Props) {
   const [category, setCategory] = useState<Category | "all">("all");
   const [search, setSearch] = useState("");
-  const [stocks, setStocks] = useState<Record<string, string>>(() => {
-    const saved = getInitialStocks();
-    const result: Record<string, string> = {};
-    Object.entries(saved).forEach(([k, v]) => { result[k] = String(v); });
-    return result;
-  });
+  const [stocks, setStocks] = useState<Record<string, string>>({});
+  const { data: savedStocks, loading } = useInitialStocks();
+
+  useEffect(() => {
+    if (savedStocks) {
+      const result: Record<string, string> = {};
+      Object.entries(savedStocks).forEach(([k, v]) => { result[k] = String(v); });
+      setStocks(result);
+    }
+  }, [savedStocks]);
 
   const products = getProducts(category === "all" ? undefined : category);
   const filtered = products.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleSave = (productId: string) => {
+  const handleSave = async (productId: string) => {
     const val = Number(stocks[productId] || 0);
     if (isNaN(val) || val < 0) {
       toast.error("Quantité invalide");
       return;
     }
-    setInitialStock(productId, val);
+    await setInitialStock(productId, val);
     toast.success("Stock initial mis à jour");
     onUpdated();
   };
+
+  if (loading) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
 
   return (
     <div className="bg-card rounded-lg border animate-fade-in">
@@ -51,12 +58,7 @@ export function InitialStockForm({ onUpdated }: Props) {
           <div className="flex gap-2 items-center flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 w-48"
-              />
+              <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-48" />
             </div>
             <div className="flex rounded-md border overflow-hidden">
               {(["all", "alimentaire", "emballage"] as const).map((cat) => (
@@ -64,9 +66,7 @@ export function InitialStockForm({ onUpdated }: Props) {
                   key={cat}
                   onClick={() => setCategory(cat)}
                   className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                    category === cat
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-card text-muted-foreground hover:bg-muted"
+                    category === cat ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"
                   }`}
                 >
                   {cat === "all" ? "Tout" : cat === "alimentaire" ? "Alim." : "Emb."}
@@ -92,17 +92,14 @@ export function InitialStockForm({ onUpdated }: Props) {
                 <td className="p-3 text-sm font-medium">{p.name}</td>
                 <td className="p-3">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                    p.category === "alimentaire"
-                      ? "bg-primary/10 text-primary"
-                      : "bg-accent/10 text-accent-foreground"
+                    p.category === "alimentaire" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent-foreground"
                   }`}>
                     {p.category === "alimentaire" ? "Alim." : "Emb."}
                   </span>
                 </td>
                 <td className="p-3">
                   <Input
-                    type="number"
-                    min="0"
+                    type="number" min="0"
                     value={stocks[p.id] || ""}
                     onChange={(e) => setStocks((s) => ({ ...s, [p.id]: e.target.value }))}
                     className="font-mono text-right w-28 ml-auto"
