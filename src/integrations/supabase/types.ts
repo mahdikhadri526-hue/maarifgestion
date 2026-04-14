@@ -14,7 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      initial_stocks: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          quantity: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          quantity?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lot_entries: {
+        Row: {
+          created_at: string
+          entry_date: string
+          expiry_date: string
+          id: string
+          lot_number: string
+          product_id: string
+          quantity: number
+          remaining_quantity: number
+        }
+        Insert: {
+          created_at?: string
+          entry_date: string
+          expiry_date: string
+          id?: string
+          lot_number: string
+          product_id: string
+          quantity: number
+          remaining_quantity?: number
+        }
+        Update: {
+          created_at?: string
+          entry_date?: string
+          expiry_date?: string
+          id?: string
+          lot_number?: string
+          product_id?: string
+          quantity?: number
+          remaining_quantity?: number
+        }
+        Relationships: []
+      }
+      requisitions: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          product_id: string
+          product_name: string
+          quantity: number
+          type: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          type?: string
+        }
+        Relationships: []
+      }
+      stock_movements: {
+        Row: {
+          category: string
+          created_at: string
+          date: string
+          id: string
+          product_id: string
+          product_name: string
+          quantity: number
+          type: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          date: string
+          id?: string
+          product_id: string
+          product_name: string
+          quantity: number
+          type: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          date?: string
+          id?: string
+          product_id?: string
+          product_name?: string
+          quantity?: number
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
