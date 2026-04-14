@@ -1,10 +1,12 @@
-import { getStockLevels, getMovements } from "@/lib/stockData";
+import { useStockDashboard } from "@/hooks/useStockData";
 import logo from "@/assets/logo.jpeg";
 
 export function StockDashboard() {
-  const levels = getStockLevels();
-  const movements = getMovements();
-  
+  const { data, loading } = useStockDashboard();
+
+  if (loading || !data) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
+
+  const { levels, movements } = data;
   const totalProducts = levels.length;
   const totalEntrees = movements.filter(m => m.type === "entree").reduce((s, m) => s + m.quantity, 0);
   const totalSorties = movements.filter(m => m.type === "sortie").reduce((s, m) => s + m.quantity, 0);
