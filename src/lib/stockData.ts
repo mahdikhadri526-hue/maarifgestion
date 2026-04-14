@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export type Category = "alimentaire" | "emballage";
 
 export interface Product {
@@ -134,45 +136,75 @@ export function getProducts(category?: Category): Product[] {
   return [...ali, ...emb];
 }
 
-const STORAGE_KEY = "mahdi_stock_movements";
-const INITIAL_STOCK_KEY = "mahdi_initial_stocks";
+// ===== Async Supabase functions =====
 
-export function getMovements(): StockMovement[] {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  return raw ? JSON.parse(raw) : [];
+export async function getMovements(): Promise<StockMovement[]> {
+  const { data, error } = await supabase
+    .from("stock_movements")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data || []).map((row) => ({
+    id: row.id,
+    date: row.date,
+    productId: row.product_id,
+    productName: row.product_name,
+    category: row.category as Category,
+    type: row.type as "entree" | "sortie",
+    quantity: row.quantity,
+  }));
 }
 
-export function saveMovement(movement: Omit<StockMovement, "id">): StockMovement {
-  const movements = getMovements();
-  const newMovement: StockMovement = {
-    ...movement,
-    id: crypto.randomUUID(),
+export async function saveMovement(movement: Omit<StockMovement, "id">): Promise<StockMovement> {
+  const { data, error } = await supabase
+    .from("stock_movements")
+    .insert({
+      date: movement.date,
+      product_id: movement.productId,
+      product_name: movement.productName,
+      category: movement.category,
+      type: movement.type,
+      quantity: movement.quantity,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return {
+    id: data.id,
+    date: data.date,
+    productId: data.product_id,
+    productName: data.product_name,
+    category: data.category as Category,
+    type: data.type as "entree" | "sortie",
+    quantity: data.quantity,
   };
-  movements.push(newMovement);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(movements));
-  return newMovement;
 }
 
-export function deleteMovement(id: string) {
-  const movements = getMovements().filter((m) => m.id !== id);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(movements));
+export async function deleteMovement(id: string) {
+  const { error } = await supabase.from("stock_movements").delete().eq("id", id);
+  if (error) throw error;
 }
 
-export function getInitialStocks(): Record<string, number> {
-  const raw = localStorage.getItem(INITIAL_STOCK_KEY);
-  return raw ? JSON.parse(raw) : {};
+export async function getInitialStocks(): Promise<Record<string, number>> {
+  const { data, error } = await supabase.from("initial_stocks").select("*");
+  if (error) throw error;
+  const result: Record<string, number> = {};
+  (data || []).forEach((row) => {
+    result[row.product_id] = row.quantity;
+  });
+  return result;
 }
 
-export function setInitialStock(productId: string, quantity: number) {
-  const stocks = getInitialStocks();
-  stocks[productId] = quantity;
-  localStorage.setItem(INITIAL_STOCK_KEY, JSON.stringify(stocks));
+export async function setInitialStock(productId: string, quantity: number) {
+  const { error } = await supabase
+    .from("initial_stocks")
+    .upsert({ product_id: productId, quantity }, { onConflict: "product_id" });
+  if (error) throw error;
 }
 
-export function getStockLevels(category?: Category): StockLevel[] {
+export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
   const products = getProducts(category);
-  const movements = getMovements();
-  const initialStocks = getInitialStocks();
+  const [movements, initialStocks] = await Promise.all([getMovements(), getInitialStocks()]);
 
   return products.map((product) => {
     const initial = initialStocks[product.id] || 0;
@@ -203,9 +235,9 @@ export interface DailyStockRecord {
   stockRestant: number;
 }
 
-export function getProductDailyHistory(productId: string): DailyStockRecord[] {
-  const movements = getMovements().filter((m) => m.productId === productId);
-  const initialStocks = getInitialStocks();
+export async function getProductDailyHistory(productId: string): Promise<DailyStockRecord[]> {
+  const [allMovements, initialStocks] = await Promise.all([getMovements(), getInitialStocks()]);
+  const movements = allMovements.filter((m) => m.productId === productId);
   const initial = initialStocks[productId] || 0;
 
   const byDate: Record<string, { entrees: number; sorties: number }> = {};

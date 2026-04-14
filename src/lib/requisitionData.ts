@@ -1,4 +1,5 @@
-import { saveMovement, getMovements } from "./stockData";
+import { supabase } from "@/integrations/supabase/client";
+import { saveMovement } from "./stockData";
 
 export interface RequisitionEntry {
   id: string;
@@ -9,9 +10,7 @@ export interface RequisitionEntry {
   quantity: number;
 }
 
-const REQUISITION_KEY = "mahdi_requisitions";
-
-// Products in "Réquisition Salle" (emballage)
+// Products in "Réquisition Salle" (alimentaire)
 export const REQUISITION_SALLE_IDS = [
   "ali-0","ali-1","ali-2","ali-3","ali-4","ali-5","ali-6","ali-7","ali-8",
   "ali-9","ali-10","ali-11","ali-12","ali-13","ali-14","ali-15","ali-16",
@@ -29,23 +28,39 @@ export const REQUISITION_EMPORTER_IDS = [
 
 export const ALL_REQUISITION_IDS = new Set([...REQUISITION_SALLE_IDS, ...REQUISITION_EMPORTER_IDS]);
 
-export function getRequisitions(): RequisitionEntry[] {
-  const raw = localStorage.getItem(REQUISITION_KEY);
-  return raw ? JSON.parse(raw) : [];
+export async function getRequisitions(): Promise<RequisitionEntry[]> {
+  const { data, error } = await supabase.from("requisitions").select("*");
+  if (error) throw error;
+  return (data || []).map((row) => ({
+    id: row.id,
+    date: row.date,
+    type: row.type as "salle" | "emporter",
+    productId: row.product_id,
+    productName: row.product_name,
+    quantity: row.quantity,
+  }));
 }
 
-export function saveRequisition(entry: Omit<RequisitionEntry, "id">): RequisitionEntry {
-  const requisitions = getRequisitions();
-  const newEntry: RequisitionEntry = { ...entry, id: crypto.randomUUID() };
-  requisitions.push(newEntry);
-  localStorage.setItem(REQUISITION_KEY, JSON.stringify(requisitions));
+export async function saveRequisition(entry: Omit<RequisitionEntry, "id">): Promise<RequisitionEntry> {
+  const { data, error } = await supabase
+    .from("requisitions")
+    .insert({
+      date: entry.date,
+      type: entry.type,
+      product_id: entry.productId,
+      product_name: entry.productName,
+      quantity: entry.quantity,
+    })
+    .select()
+    .single();
+  if (error) throw error;
 
   // Auto-create a "sortie" movement for the next day
   const category = entry.type === "salle" ? "alimentaire" as const : "emballage" as const;
   const nextDay = new Date(entry.date + "T00:00:00");
   nextDay.setDate(nextDay.getDate() + 1);
   const nextDayStr = nextDay.toISOString().split("T")[0];
-  saveMovement({
+  await saveMovement({
     date: nextDayStr,
     productId: entry.productId,
     productName: entry.productName,
@@ -54,11 +69,31 @@ export function saveRequisition(entry: Omit<RequisitionEntry, "id">): Requisitio
     quantity: entry.quantity,
   });
 
-  return newEntry;
+  return {
+    id: data.id,
+    date: data.date,
+    type: data.type as "salle" | "emporter",
+    productId: data.product_id,
+    productName: data.product_name,
+    quantity: data.quantity,
+  };
 }
 
-export function getRequisitionsByDate(date: string, type: "salle" | "emporter"): RequisitionEntry[] {
-  return getRequisitions().filter((r) => r.date === date && r.type === type);
+export async function getRequisitionsByDate(date: string, type: "salle" | "emporter"): Promise<RequisitionEntry[]> {
+  const { data, error } = await supabase
+    .from("requisitions")
+    .select("*")
+    .eq("date", date)
+    .eq("type", type);
+  if (error) throw error;
+  return (data || []).map((row) => ({
+    id: row.id,
+    date: row.date,
+    type: row.type as "salle" | "emporter",
+    productId: row.product_id,
+    productName: row.product_name,
+    quantity: row.quantity,
+  }));
 }
 
 export function isRequisitionProduct(productId: string): boolean {
