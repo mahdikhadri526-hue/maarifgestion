@@ -126,18 +126,14 @@ const EMBALLAGE_PRODUCTS = [
 ];
 
 export function getProducts(category?: Category): Product[] {
-  const ali = ALIMENTAIRE_PRODUCTS.map((name, i) => ({
-    id: `ali-${i}`,
-    name,
-    category: "alimentaire" as Category,
-    initialStock: 0,
-  }));
-  const emb = EMBALLAGE_PRODUCTS.map((name, i) => ({
-    id: `emb-${i}`,
-    name,
-    category: "emballage" as Category,
-    initialStock: 0,
-  }));
+  const ali = ALIMENTAIRE_PRODUCTS.map((raw, i) => {
+    const { name, conditionnement } = parseProduct(raw);
+    return { id: `ali-${i}`, name, conditionnement, category: "alimentaire" as Category, initialStock: 0 };
+  });
+  const emb = EMBALLAGE_PRODUCTS.map((raw, i) => {
+    const { name, conditionnement } = parseProduct(raw);
+    return { id: `emb-${i}`, name, conditionnement, category: "emballage" as Category, initialStock: 0 };
+  });
   if (category === "alimentaire") return ali;
   if (category === "emballage") return emb;
   return [...ali, ...emb];
