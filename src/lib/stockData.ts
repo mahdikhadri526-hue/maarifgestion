@@ -227,7 +227,7 @@ export async function setInitialStock(productId: string, quantity: number) {
 
 export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
   const products = getProducts(category);
-  const [movements, initialStocks] = await Promise.all([getMovements(), getInitialStocks()]);
+  const [movements, initialStocks, units] = await Promise.all([getMovements(), getInitialStocks(), getProductUnits()]);
 
   return products.map((product) => {
     const initial = initialStocks[product.id] || 0;
@@ -243,6 +243,7 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
       productId: product.id,
       productName: product.name,
       conditionnement: product.conditionnement,
+      unit: units[product.id] || "PIECE",
       category: product.category,
       totalEntrees: initial + totalEntrees,
       totalSorties,
