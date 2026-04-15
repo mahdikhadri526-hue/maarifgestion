@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export type Category = "alimentaire" | "emballage";
+export type UnitType = "PIECE" | "KILO" | "LITRE";
 
 export interface Product {
   id: string;
