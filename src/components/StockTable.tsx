@@ -61,6 +61,7 @@ export function StockTable() {
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
+                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Conditionnement</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
@@ -68,7 +69,11 @@ export function StockTable() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((level) => (
+              {filtered.map((level) => {
+                const product = (levels || []).length ? undefined : undefined;
+                const allProducts = require("@/lib/stockData").getProducts();
+                const prod = allProducts.find((p: any) => p.id === level.productId);
+                return (
                 <tr key={level.productId} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                   isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
                 }`}>
@@ -76,6 +81,7 @@ export function StockTable() {
                     {isRequisitionProduct(level.productId) && <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />}
                     {level.productName}
                   </td>
+                  <td className="p-3 text-xs text-muted-foreground">{prod?.conditionnement || "—"}</td>
                   <td className="p-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       level.category === "alimentaire"
