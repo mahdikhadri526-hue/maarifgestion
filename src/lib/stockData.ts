@@ -5,8 +5,15 @@ export type Category = "alimentaire" | "emballage";
 export interface Product {
   id: string;
   name: string;
+  conditionnement: string;
   category: Category;
   initialStock: number;
+}
+
+function parseProduct(raw: string): { name: string; conditionnement: string } {
+  const match = raw.match(/^(.+?)\s*\((.+)\)\s*$/);
+  if (match) return { name: match[1].trim(), conditionnement: match[2].trim() };
+  return { name: raw.trim(), conditionnement: "" };
 }
 
 export interface StockMovement {
