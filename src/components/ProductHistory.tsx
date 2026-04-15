@@ -134,7 +134,7 @@ export function ProductHistory() {
             <SelectContent>
               <SelectItem value="all">📋 Tous les produits</SelectItem>
               {products.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                <SelectItem key={p.id} value={p.id}>{p.name}{p.conditionnement ? ` — ${p.conditionnement}` : ""}</SelectItem>
               ))}
             </SelectContent>
           </Select>

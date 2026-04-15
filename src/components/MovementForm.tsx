@@ -130,7 +130,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
             <SelectTrigger><SelectValue placeholder="Sélectionner un produit" /></SelectTrigger>
             <SelectContent>
               {products.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                <SelectItem key={p.id} value={p.id}>{p.name}{p.conditionnement ? ` — ${p.conditionnement}` : ""}</SelectItem>
               ))}
             </SelectContent>
           </Select>
