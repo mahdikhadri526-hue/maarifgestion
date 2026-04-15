@@ -29,6 +29,7 @@ export interface StockMovement {
 export interface StockLevel {
   productId: string;
   productName: string;
+  conditionnement: string;
   category: Category;
   totalEntrees: number;
   totalSorties: number;
