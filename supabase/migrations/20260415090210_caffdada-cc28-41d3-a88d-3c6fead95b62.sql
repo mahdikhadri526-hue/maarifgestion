@@ -1,0 +1,1 @@
+ALTER TABLE public.initial_stocks ADD COLUMN unit text NOT NULL DEFAULT 'PIECE';

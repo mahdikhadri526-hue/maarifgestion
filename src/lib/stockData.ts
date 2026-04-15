@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export type Category = "alimentaire" | "emballage";
+export type UnitType = "PIECE" | "KILO" | "LITRE";
 
 export interface Product {
   id: string;
@@ -30,6 +31,7 @@ export interface StockLevel {
   productId: string;
   productName: string;
   conditionnement: string;
+  unit: UnitType;
   category: Category;
   totalEntrees: number;
   totalSorties: number;
@@ -199,6 +201,23 @@ export async function getInitialStocks(): Promise<Record<string, number>> {
   return result;
 }
 
+export async function getProductUnits(): Promise<Record<string, UnitType>> {
+  const { data, error } = await supabase.from("initial_stocks").select("product_id, unit");
+  if (error) throw error;
+  const result: Record<string, UnitType> = {};
+  (data || []).forEach((row) => {
+    result[row.product_id] = (row.unit as UnitType) || "PIECE";
+  });
+  return result;
+}
+
+export async function setProductUnit(productId: string, unit: UnitType) {
+  const { error } = await supabase
+    .from("initial_stocks")
+    .upsert({ product_id: productId, unit, quantity: 0 }, { onConflict: "product_id" });
+  if (error) throw error;
+}
+
 export async function setInitialStock(productId: string, quantity: number) {
   const { error } = await supabase
     .from("initial_stocks")
@@ -208,7 +227,7 @@ export async function setInitialStock(productId: string, quantity: number) {
 
 export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
   const products = getProducts(category);
-  const [movements, initialStocks] = await Promise.all([getMovements(), getInitialStocks()]);
+  const [movements, initialStocks, units] = await Promise.all([getMovements(), getInitialStocks(), getProductUnits()]);
 
   return products.map((product) => {
     const initial = initialStocks[product.id] || 0;
@@ -224,6 +243,7 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
       productId: product.id,
       productName: product.name,
       conditionnement: product.conditionnement,
+      unit: units[product.id] || "PIECE",
       category: product.category,
       totalEntrees: initial + totalEntrees,
       totalSorties,
