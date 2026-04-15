@@ -223,6 +223,7 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
     return {
       productId: product.id,
       productName: product.name,
+      conditionnement: product.conditionnement,
       category: product.category,
       totalEntrees: initial + totalEntrees,
       totalSorties,
