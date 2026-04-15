@@ -31,6 +31,7 @@ export interface StockLevel {
   productId: string;
   productName: string;
   conditionnement: string;
+  unit: UnitType;
   category: Category;
   totalEntrees: number;
   totalSorties: number;
