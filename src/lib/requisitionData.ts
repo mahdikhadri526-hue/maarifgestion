@@ -55,13 +55,10 @@ export async function saveRequisition(entry: Omit<RequisitionEntry, "id">): Prom
     .single();
   if (error) throw error;
 
-  // Auto-create a "sortie" movement for the next day
+  // Auto-create a "sortie" movement for the same date
   const category = entry.type === "salle" ? "alimentaire" as const : "emballage" as const;
-  const nextDay = new Date(entry.date + "T00:00:00");
-  nextDay.setDate(nextDay.getDate() + 1);
-  const nextDayStr = nextDay.toISOString().split("T")[0];
   await saveMovement({
-    date: nextDayStr,
+    date: entry.date,
     productId: entry.productId,
     productName: entry.productName,
     category,
