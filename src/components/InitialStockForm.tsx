@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { Category, getProducts, getInitialStocks, setInitialStock } from "@/lib/stockData";
-import { useInitialStocks } from "@/hooks/useStockData";
+import { Category, getProducts, getInitialStocks, setInitialStock, UnitType } from "@/lib/stockData";
+import { useInitialStocks, useProductUnits } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Search, Save } from "lucide-react";
 import { toast } from "sonner";
@@ -13,8 +13,10 @@ interface Props {
 export function InitialStockForm({ onUpdated }: Props) {
   const [category, setCategory] = useState<Category | "all">("all");
   const [search, setSearch] = useState("");
+  const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre" };
   const [stocks, setStocks] = useState<Record<string, string>>({});
   const { data: savedStocks, loading } = useInitialStocks();
+  const { data: units } = useProductUnits();
 
   useEffect(() => {
     if (savedStocks) {
@@ -81,6 +83,7 @@ export function InitialStockForm({ onUpdated }: Props) {
           <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
+              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-32">Stock Initial</th>
               <th className="p-3 w-16"></th>
@@ -90,6 +93,7 @@ export function InitialStockForm({ onUpdated }: Props) {
             {filtered.map((p) => (
               <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="p-3 text-sm font-medium">{p.name}</td>
+                <td className="p-3 text-xs text-muted-foreground">{UNIT_LABELS[(units?.[p.id] as UnitType) || "PIECE"]}</td>
                 <td className="p-3">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     p.category === "alimentaire" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent-foreground"

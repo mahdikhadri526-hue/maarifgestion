@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useMovements } from "@/hooks/useStockData";
-import { deleteMovement } from "@/lib/stockData";
+import { useMovements, useProductUnits } from "@/hooks/useStockData";
+import { deleteMovement, UnitType } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { ArrowDownCircle, ArrowUpCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,8 +21,10 @@ interface MovementHistoryProps {
 }
 
 export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
+  const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre" };
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { data: movements, loading } = useMovements();
+  const { data: units } = useProductUnits();
 
   const sorted = [...(movements || [])].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -57,7 +59,8 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
-              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
+               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
+              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">Catégorie</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté</th>
               <th className="p-3 w-10"></th>
@@ -78,6 +81,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   </span>
                 </td>
                 <td className="p-3 text-sm">{m.productName}</td>
+                <td className="p-3 text-xs text-muted-foreground">{UNIT_LABELS[(units?.[m.productId] as UnitType) || "PIECE"]}</td>
                 <td className="p-3 hidden sm:table-cell">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     m.category === "alimentaire" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent-foreground"
