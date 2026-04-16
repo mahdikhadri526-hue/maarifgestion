@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { getProducts } from "@/lib/stockData";
+import { getProducts, UnitType } from "@/lib/stockData";
 import { saveRequisition, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
-import { useRequisitionsByDate } from "@/hooks/useStockData";
+import { useRequisitionsByDate, useProductUnits } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -13,11 +13,13 @@ interface Props {
 }
 
 export function RequisitionForm({ onUpdated }: Props) {
+  const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre" };
   const [reqType, setReqType] = useState<"salle" | "emporter">("salle");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const { data: units } = useProductUnits();
 
   const allProducts = getProducts();
   const productIds = reqType === "salle" ? REQUISITION_SALLE_IDS : REQUISITION_EMPORTER_IDS;
@@ -132,7 +134,7 @@ export function RequisitionForm({ onUpdated }: Props) {
           <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
-              
+              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-20">Unité</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-24">Déjà saisi</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-36">Qté / Enregistrer</th>
             </tr>
@@ -141,8 +143,8 @@ export function RequisitionForm({ onUpdated }: Props) {
             {filtered.map((p) => (
               <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="p-3 text-sm font-medium">{p.name}</td>
-                
-                <td className="p-3 text-right font-mono text-sm text-muted-foreground">
+                <td className="p-3 text-xs text-muted-foreground">{UNIT_LABELS[(units?.[p.id] as UnitType) || "PIECE"]}</td>
+                <td className="p-3 text-right font-mono text-sm font-bold text-primary">
                   {existingMap[p.id] || 0}
                 </td>
                 <td className="p-3">

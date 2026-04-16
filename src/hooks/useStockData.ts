@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  StockMovement, StockLevel, DailyStockRecord, Category,
-  getMovements, getStockLevels, getProductDailyHistory, getInitialStocks
+  StockMovement, StockLevel, DailyStockRecord, Category, UnitType,
+  getMovements, getStockLevels, getProductDailyHistory, getInitialStocks, getProductUnits
 } from "@/lib/stockData";
 import { LotEntry, getExpiringLots, getProductLots, getLotEntries } from "@/lib/lotData";
 import { RequisitionEntry, getRequisitionsByDate } from "@/lib/requisitionData";
@@ -76,6 +76,10 @@ export function useProductDailyHistory(productId: string) {
 
 export function useInitialStocks() {
   return useRealtimeData(getInitialStocks, ["initial_stocks"]);
+}
+
+export function useProductUnits() {
+  return useRealtimeData(getProductUnits, ["initial_stocks"]);
 }
 
 export function useExpiringLots(days: number = 15) {
