@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 
-const PIN_CODE = "1975";
+const PIN_CODE = "1950";
 
 interface PinLockProps {
   onUnlock: () => void;
