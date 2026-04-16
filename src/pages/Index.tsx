@@ -62,8 +62,8 @@ const Index = () => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6" key={refreshKey}>
-        {tab === "dashboard" && (
+      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {tab === "dashboard" && (<div key={refreshKey}>
           <>
             {/* Hero Section */}
             <div className="relative bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl border p-6 sm:p-8 overflow-hidden">
@@ -125,13 +125,13 @@ const Index = () => {
               </div>
               {showStock && <StockTable />}
             </div>
-          </>
+          </></div>
         )}
 
-        {tab === "stock-initial" && <InitialStockForm onUpdated={refresh} />}
+        {tab === "stock-initial" && <InitialStockForm key={refreshKey} onUpdated={refresh} />}
 
         {tab === "mouvements" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div key={refreshKey} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-1">
               <MovementForm onMovementAdded={refresh} />
             </div>
@@ -141,7 +141,7 @@ const Index = () => {
           </div>
         )}
 
-        {tab === "historique" && <MovementHistory onMovementDeleted={refresh} />}
+        {tab === "historique" && <MovementHistory key={refreshKey} onMovementDeleted={refresh} />}
 
         {tab === "produit" && <ProductHistory />}
 
