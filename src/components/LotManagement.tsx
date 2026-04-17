@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { updateLotEntry, LotEntry } from "@/lib/lotData";
+import { updateLotEntry, deleteLotEntry, LotEntry } from "@/lib/lotData";
 import { getProducts } from "@/lib/stockData";
 import { useExpiringLots, useProductLots } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, Edit2, Check, X, Package } from "lucide-react";
+import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 
@@ -77,6 +77,17 @@ export function LotManager() {
       await updateLotEntry(editingLot, { lotNumber: editLotNumber, expiryDate: editExpiryDate });
       toast.success("Lot mis à jour");
       setEditingLot(null);
+    }
+  };
+
+  const handleDelete = async (lot: LotEntry) => {
+    if (!confirm(`Supprimer le lot "${lot.lotNumber}" ?\n\nCette action est irréversible.`)) return;
+    try {
+      await deleteLotEntry(lot.id);
+      toast.success("Lot supprimé");
+    } catch (err) {
+      toast.error("Erreur lors de la suppression");
+      console.error(err);
     }
   };
 
@@ -183,9 +194,14 @@ export function LotManager() {
                               </Button>
                             </div>
                           ) : (
-                            <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEdit(lot)}>
-                              <Edit2 className="h-3.5 w-3.5" />
-                            </Button>
+                            <div className="flex gap-1 justify-center">
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEdit(lot)}>
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleDelete(lot)}>
+                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                              </Button>
+                            </div>
                           )}
                         </td>
                       </tr>
