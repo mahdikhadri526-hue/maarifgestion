@@ -19,6 +19,8 @@ export function RequisitionForm({ onUpdated }: Props) {
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
   const { data: units } = useProductUnits();
 
   const allProducts = getProducts();
