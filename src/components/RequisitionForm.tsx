@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { getProducts, UnitType } from "@/lib/stockData";
-import { saveRequisition, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
+import { saveRequisition, setRequisitionTotal, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
 import { useRequisitionsByDate, useProductUnits } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ClipboardList, Search } from "lucide-react";
+import { ClipboardList, Search, Pencil, Check, X } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
 interface Props {
