@@ -96,3 +96,61 @@ export async function getRequisitionsByDate(date: string, type: "salle" | "empor
 export function isRequisitionProduct(productId: string): boolean {
   return ALL_REQUISITION_IDS.has(productId);
 }
+
+/**
+ * Remplace la quantité totale de réquisition pour un produit/date/type.
+ * Ajuste les sorties via un mouvement compensatoire (delta).
+ */
+export async function setRequisitionTotal(
+  date: string,
+  type: "salle" | "emporter",
+  productId: string,
+  productName: string,
+  newQuantity: number
+): Promise<void> {
+  const { data: existing, error: fetchErr } = await supabase
+    .from("requisitions")
+    .select("*")
+    .eq("date", date)
+    .eq("type", type)
+    .eq("product_id", productId);
+  if (fetchErr) throw fetchErr;
+
+  const oldTotal = (existing || []).reduce((s, r) => s + r.quantity, 0);
+  const delta = newQuantity - oldTotal;
+
+  if ((existing || []).length > 0) {
+    const { error: delErr } = await supabase
+      .from("requisitions")
+      .delete()
+      .eq("date", date)
+      .eq("type", type)
+      .eq("product_id", productId);
+    if (delErr) throw delErr;
+  }
+
+  if (newQuantity > 0) {
+    const { error: insErr } = await supabase
+      .from("requisitions")
+      .insert({
+        date,
+        type,
+        product_id: productId,
+        product_name: productName,
+        quantity: newQuantity,
+      });
+    if (insErr) throw insErr;
+  }
+
+  if (delta !== 0) {
+    const category = type === "salle" ? "alimentaire" as const : "emballage" as const;
+    await saveMovement({
+      date,
+      productId,
+      productName,
+      category,
+      type: delta > 0 ? "sortie" : "entree",
+      quantity: Math.abs(delta),
+    });
+  }
+}
