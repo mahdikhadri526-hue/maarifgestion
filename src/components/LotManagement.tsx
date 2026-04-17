@@ -80,6 +80,17 @@ export function LotManager() {
     }
   };
 
+  const handleDelete = async (lot: LotEntry) => {
+    if (!confirm(`Supprimer le lot "${lot.lotNumber}" ?\n\nCette action est irréversible.`)) return;
+    try {
+      await deleteLotEntry(lot.id);
+      toast.success("Lot supprimé");
+    } catch (err) {
+      toast.error("Erreur lors de la suppression");
+      console.error(err);
+    }
+  };
+
   const getDaysUntilExpiry = (expiryDate: string) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
