@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { StockDashboard } from "@/components/StockDashboard";
 import { StockTable } from "@/components/StockTable";
 import { MovementForm } from "@/components/MovementForm";
 import { MovementHistory } from "@/components/MovementHistory";
