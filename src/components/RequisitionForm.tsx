@@ -88,6 +88,36 @@ export function RequisitionForm({ onUpdated }: Props) {
     }
   };
 
+  const startEdit = (productId: string, currentQty: number) => {
+    setEditingId(productId);
+    setEditValue(String(currentQty));
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditValue("");
+  };
+
+  const saveEdit = async (productId: string) => {
+    const product = allProducts.find((p) => p.id === productId);
+    if (!product) return;
+    const val = Number(editValue);
+    if (isNaN(val) || val < 0) {
+      toast.error("Quantité invalide");
+      return;
+    }
+    try {
+      await setRequisitionTotal(date, reqType, productId, product.name, val);
+      toast.success(`${product.name} mis à jour`);
+      setEditingId(null);
+      setEditValue("");
+      onUpdated();
+    } catch (err) {
+      toast.error("Erreur lors de la mise à jour");
+      console.error(err);
+    }
+  };
+
   return (
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
