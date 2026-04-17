@@ -1,11 +1,14 @@
 import { useState } from "react";
-import { Category, getProducts, saveMovement } from "@/lib/stockData";
+import { Category, getProducts, saveMovement, UnitType } from "@/lib/stockData";
 import { addLotEntry, consumeFromLots } from "@/lib/lotData";
+import { useProductUnits } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
+
+const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre" };
 
 interface MovementFormProps {
   onMovementAdded: () => void;
@@ -24,6 +27,8 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const products = getProducts(category);
   const selectedProduct = products.find((p) => p.id === productId);
   const isAlimentaire = category === "alimentaire";
+  const { data: units } = useProductUnits();
+  const selectedUnit = (units?.[productId] as UnitType) || "PIECE";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,7 +141,9 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
           </Select>
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Quantité</label>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">
+            Quantité {productId && <span className="text-primary">({UNIT_LABELS[selectedUnit]})</span>}
+          </label>
           <Input type="number" min="1" placeholder="0" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="font-mono" />
         </div>
 

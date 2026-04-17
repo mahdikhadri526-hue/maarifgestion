@@ -87,8 +87,6 @@ const Index = () => {
             {/* Expiry Alerts */}
             <ExpiryAlerts />
 
-            <StockDashboard />
-
             {/* Quick Actions */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
@@ -131,13 +129,8 @@ const Index = () => {
         {tab === "stock-initial" && <InitialStockForm key={refreshKey} onUpdated={refresh} />}
 
         {tab === "mouvements" && (
-          <div key={refreshKey} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-1">
-              <MovementForm onMovementAdded={refresh} />
-            </div>
-            <div className="lg:col-span-2">
-              <StockTable />
-            </div>
+          <div key={refreshKey} className="max-w-xl mx-auto">
+            <MovementForm onMovementAdded={refresh} />
           </div>
         )}
 
