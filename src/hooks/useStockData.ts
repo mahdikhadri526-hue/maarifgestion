@@ -82,7 +82,7 @@ export function useProductUnits() {
   return useRealtimeData(getProductUnits, ["initial_stocks"]);
 }
 
-export function useExpiringLots(days: number = 15) {
+export function useExpiringLots(days: number = 30) {
   return useRealtimeData(() => getExpiringLots(days), ["lot_entries"], [days]);
 }
 

@@ -90,7 +90,7 @@ export async function getProductLots(productId: string): Promise<LotEntry[]> {
   return (data || []).map(mapRow);
 }
 
-export async function getExpiringLots(days: number = 15): Promise<(LotEntry & { daysUntilExpiry: number })[]> {
+export async function getExpiringLots(days: number = 30): Promise<(LotEntry & { daysUntilExpiry: number })[]> {
   const { data, error } = await supabase
     .from("lot_entries")
     .select("*")
