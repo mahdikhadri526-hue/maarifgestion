@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 
 export function ExpiryAlerts() {
-  const { data: expiringLots, loading } = useExpiringLots(15);
+  const { data: expiringLots, loading } = useExpiringLots(30);
 
   if (loading || !expiringLots || expiringLots.length === 0) return null;
 
@@ -17,7 +17,7 @@ export function ExpiryAlerts() {
     <div className="bg-destructive/5 border border-destructive/20 rounded-xl p-4 animate-fade-in">
       <div className="flex items-center gap-2 mb-3">
         <AlertTriangle className="h-5 w-5 text-destructive" />
-        <h3 className="font-semibold text-destructive">Alertes DLC — Expiration ≤ 15 jours</h3>
+        <h3 className="font-semibold text-destructive">Alertes DLC — Expiration ≤ 1 mois</h3>
       </div>
       <div className="space-y-2">
         {expiringLots.map((lot) => {
