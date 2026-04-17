@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { updateLotEntry, LotEntry } from "@/lib/lotData";
+import { updateLotEntry, deleteLotEntry, LotEntry } from "@/lib/lotData";
 import { getProducts } from "@/lib/stockData";
 import { useExpiringLots, useProductLots } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, Edit2, Check, X, Package } from "lucide-react";
+import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 
