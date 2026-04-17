@@ -167,7 +167,7 @@ export function RequisitionForm({ onUpdated }: Props) {
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-20">Unité</th>
-              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-24">Déjà saisi</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-24">Qté commandé</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-36">Qté / Enregistrer</th>
             </tr>
           </thead>
