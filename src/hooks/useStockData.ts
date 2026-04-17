@@ -88,7 +88,11 @@ export function useExpiringLots(days: number = 30) {
 
 export function useProductLots(productId: string | null) {
   return useRealtimeData(
-    () => (productId ? getProductLots(productId) : Promise.resolve([])),
+    () => {
+      if (productId === null) return Promise.resolve([]);
+      if (productId === "__all__") return getLotEntries();
+      return getProductLots(productId);
+    },
     ["lot_entries"],
     [productId]
   );
