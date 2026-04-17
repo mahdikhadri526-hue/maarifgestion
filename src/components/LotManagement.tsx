@@ -122,6 +122,7 @@ export function LotManager() {
           className="w-full rounded-md border bg-background px-3 py-2 text-sm"
         >
           <option value="">-- Choisir un produit --</option>
+          <option value="__all__">Tous les produits</option>
           {products.map((p) => (
             <option key={p.id} value={p.id}>{p.name}</option>
           ))}
