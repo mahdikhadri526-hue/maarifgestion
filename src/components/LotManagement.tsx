@@ -137,6 +137,9 @@ export function LotManager() {
             <table className="w-full">
               <thead>
                 <tr className="border-b bg-muted/50">
+                  {selectedProductId === "__all__" && (
+                    <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">Produit</th>
+                  )}
                   <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">N° Lot</th>
                   <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">DLC</th>
                   <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase">Qté Init.</th>
@@ -148,18 +151,24 @@ export function LotManager() {
               <tbody>
                 {(!lots || lots.length === 0) ? (
                   <tr>
-                    <td colSpan={6} className="text-center text-muted-foreground py-8 text-sm">
+                    <td colSpan={selectedProductId === "__all__" ? 7 : 6} className="text-center text-muted-foreground py-8 text-sm">
                       Aucun lot pour ce produit
                     </td>
                   </tr>
                 ) : (
-                  lots.map((lot) => {
+                  [...lots]
+                    .sort((a, b) => a.expiryDate.localeCompare(b.expiryDate))
+                    .map((lot) => {
                     const days = getDaysUntilExpiry(lot.expiryDate);
                     const isEditing = editingLot === lot.id;
+                    const productName = products.find((p) => p.id === lot.productId)?.name || lot.productId;
                     return (
                       <tr key={lot.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                         days <= 0 ? "bg-destructive/5" : days <= 5 ? "bg-amber-50 dark:bg-amber-950/20" : days <= 15 ? "bg-primary/5" : ""
                       }`}>
+                        {selectedProductId === "__all__" && (
+                          <td className="p-3 text-sm font-medium">{productName}</td>
+                        )}
                         <td className="p-3 text-sm font-mono">
                           {isEditing ? (
                             <Input value={editLotNumber} onChange={(e) => setEditLotNumber(e.target.value)} className="h-8 text-xs" />
