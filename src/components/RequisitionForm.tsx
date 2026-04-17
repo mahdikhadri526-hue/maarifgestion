@@ -176,8 +176,34 @@ export function RequisitionForm({ onUpdated }: Props) {
               <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="p-3 text-sm font-medium">{p.name}</td>
                 <td className="p-3 text-xs text-muted-foreground">{UNIT_LABELS[(units?.[p.id] as UnitType) || "PIECE"]}</td>
-                <td className="p-3 text-right font-mono text-sm font-bold text-primary">
-                  {existingMap[p.id] || 0}
+                <td className="p-3 text-right">
+                  {editingId === p.id ? (
+                    <div className="flex items-center gap-1 justify-end">
+                      <Input
+                        type="number" min="0"
+                        value={editValue}
+                        onChange={(e) => setEditValue(e.target.value)}
+                        className="font-mono text-right w-20 h-8"
+                        autoFocus
+                      />
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => saveEdit(p.id)}>
+                        <Check className="h-3.5 w-3.5 text-success" />
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={cancelEdit}>
+                        <X className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => startEdit(p.id, existingMap[p.id] || 0)}
+                      className="inline-flex items-center gap-1.5 font-mono text-sm font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors"
+                      title="Modifier la quantité"
+                    >
+                      {existingMap[p.id] || 0}
+                      <Pencil className="h-3 w-3 opacity-60" />
+                    </button>
+                  )}
                 </td>
                 <td className="p-3">
                   <div className="flex items-center gap-1 justify-end">
