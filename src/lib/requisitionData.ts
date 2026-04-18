@@ -8,6 +8,7 @@ export interface RequisitionEntry {
   productId: string;
   productName: string;
   quantity: number;
+  performedBy?: string;
 }
 
 // Products in "Réquisition Salle" (alimentaire)
