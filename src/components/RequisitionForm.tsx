@@ -182,8 +182,13 @@ export function RequisitionForm({ onUpdated }: Props) {
             placeholder="Effectué par (prénom)"
             value={performedBy}
             onChange={(e) => setPerformedBy(e.target.value)}
+            list="req-operators-list"
+            autoComplete="off"
             className="w-full sm:w-48"
           />
+          <datalist id="req-operators-list">
+            {operators.map((o) => <option key={o} value={o} />)}
+          </datalist>
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Rechercher un produit..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
