@@ -22,6 +22,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [lotNumber, setLotNumber] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [performedBy, setPerformedBy] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   const products = getProducts(category);
@@ -34,6 +35,11 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
     e.preventDefault();
     if (!productId || !quantity || Number(quantity) <= 0) {
       toast.error("Veuillez remplir tous les champs correctement");
+      return;
+    }
+
+    if (!performedBy.trim()) {
+      toast.error("Veuillez saisir le prénom de la personne");
       return;
     }
 
@@ -51,6 +57,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         category,
         type,
         quantity: Number(quantity),
+        performedBy: performedBy.trim(),
       });
 
       if (isAlimentaire) {
