@@ -91,6 +91,13 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   </span>
                 </td>
                 <td className="p-3 text-right font-mono text-sm font-semibold">{m.quantity}</td>
+                <td className="p-3 text-sm">
+                  {m.performedBy ? (
+                    <span className="text-foreground">{m.performedBy}</span>
+                  ) : (
+                    <span className="text-muted-foreground italic text-xs">—</span>
+                  )}
+                </td>
                 <td className="p-2">
                   <button
                     onClick={() => setDeleteId(m.id)}
