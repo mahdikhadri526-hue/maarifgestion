@@ -44,6 +44,10 @@ export function RequisitionForm({ onUpdated }: Props) {
       toast.error("Aucune quantité saisie");
       return;
     }
+    if (!performedBy.trim()) {
+      toast.error("Veuillez saisir le prénom de la personne");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -56,6 +60,7 @@ export function RequisitionForm({ onUpdated }: Props) {
           productId,
           productName: product.name,
           quantity: Number(qty),
+          performedBy: performedBy.trim(),
         });
       }
       toast.success(`${entries.length} réquisition(s) enregistrée(s) — sorties créées automatiquement`);
@@ -72,6 +77,10 @@ export function RequisitionForm({ onUpdated }: Props) {
   const handleSingleSave = async (productId: string) => {
     const product = allProducts.find((pr) => pr.id === productId);
     if (!product) return;
+    if (!performedBy.trim()) {
+      toast.error("Veuillez saisir le prénom de la personne");
+      return;
+    }
     try {
       await saveRequisition({
         date,
@@ -79,6 +88,7 @@ export function RequisitionForm({ onUpdated }: Props) {
         productId,
         productName: product.name,
         quantity: Number(quantities[productId]),
+        performedBy: performedBy.trim(),
       });
       toast.success(`${product.name} enregistré`);
       setQuantities((q) => ({ ...q, [productId]: "" }));
@@ -107,8 +117,12 @@ export function RequisitionForm({ onUpdated }: Props) {
       toast.error("Quantité invalide");
       return;
     }
+    if (!performedBy.trim()) {
+      toast.error("Veuillez saisir le prénom de la personne");
+      return;
+    }
     try {
-      await setRequisitionTotal(date, reqType, productId, product.name, val);
+      await setRequisitionTotal(date, reqType, productId, product.name, val, performedBy.trim());
       toast.success(`${product.name} mis à jour`);
       setEditingId(null);
       setEditValue("");
