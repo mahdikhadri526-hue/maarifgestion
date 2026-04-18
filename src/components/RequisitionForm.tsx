@@ -16,6 +16,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre" };
   const [reqType, setReqType] = useState<"salle" | "emporter">("salle");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [performedBy, setPerformedBy] = useState("");
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
