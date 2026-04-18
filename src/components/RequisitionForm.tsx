@@ -86,14 +86,16 @@ export function RequisitionForm({ onUpdated }: Props) {
       return;
     }
     try {
+      const operatorName = performedBy.trim();
       await saveRequisition({
         date,
         type: reqType,
         productId,
         productName: product.name,
         quantity: Number(quantities[productId]),
-        performedBy: performedBy.trim(),
+        performedBy: operatorName,
       });
+      setOperators(rememberOperator(operatorName));
       toast.success(`${product.name} enregistré`);
       setQuantities((q) => ({ ...q, [productId]: "" }));
       onUpdated();
