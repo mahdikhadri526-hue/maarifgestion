@@ -32,13 +32,14 @@ export const ALL_REQUISITION_IDS = new Set([...REQUISITION_SALLE_IDS, ...REQUISI
 export async function getRequisitions(): Promise<RequisitionEntry[]> {
   const { data, error } = await supabase.from("requisitions").select("*");
   if (error) throw error;
-  return (data || []).map((row) => ({
+  return (data || []).map((row: any) => ({
     id: row.id,
     date: row.date,
     type: row.type as "salle" | "emporter",
     productId: row.product_id,
     productName: row.product_name,
     quantity: row.quantity,
+    performedBy: row.performed_by || undefined,
   }));
 }
 
@@ -51,7 +52,8 @@ export async function saveRequisition(entry: Omit<RequisitionEntry, "id">): Prom
       product_id: entry.productId,
       product_name: entry.productName,
       quantity: entry.quantity,
-    })
+      performed_by: entry.performedBy || null,
+    } as any)
     .select()
     .single();
   if (error) throw error;
@@ -65,15 +67,18 @@ export async function saveRequisition(entry: Omit<RequisitionEntry, "id">): Prom
     category,
     type: "sortie",
     quantity: entry.quantity,
+    performedBy: entry.performedBy,
   });
 
+  const row: any = data;
   return {
-    id: data.id,
-    date: data.date,
-    type: data.type as "salle" | "emporter",
-    productId: data.product_id,
-    productName: data.product_name,
-    quantity: data.quantity,
+    id: row.id,
+    date: row.date,
+    type: row.type as "salle" | "emporter",
+    productId: row.product_id,
+    productName: row.product_name,
+    quantity: row.quantity,
+    performedBy: row.performed_by || undefined,
   };
 }
 
@@ -84,13 +89,14 @@ export async function getRequisitionsByDate(date: string, type: "salle" | "empor
     .eq("date", date)
     .eq("type", type);
   if (error) throw error;
-  return (data || []).map((row) => ({
+  return (data || []).map((row: any) => ({
     id: row.id,
     date: row.date,
     type: row.type as "salle" | "emporter",
     productId: row.product_id,
     productName: row.product_name,
     quantity: row.quantity,
+    performedBy: row.performed_by || undefined,
   }));
 }
 
