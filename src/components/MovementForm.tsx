@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Category, getProducts, saveMovement, UnitType } from "@/lib/stockData";
 import { addLotEntry, consumeFromLots } from "@/lib/lotData";
 import { useProductUnits } from "@/hooks/useStockData";
+import { getOperators, rememberOperator } from "@/lib/operators";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
