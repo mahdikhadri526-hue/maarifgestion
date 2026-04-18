@@ -25,6 +25,7 @@ export interface StockMovement {
   category: Category;
   type: "entree" | "sortie";
   quantity: number;
+  performedBy?: string;
 }
 
 export interface StockLevel {
@@ -150,7 +151,7 @@ export async function getMovements(): Promise<StockMovement[]> {
     .select("*")
     .order("created_at", { ascending: false });
   if (error) throw error;
-  return (data || []).map((row) => ({
+  return (data || []).map((row: any) => ({
     id: row.id,
     date: row.date,
     productId: row.product_id,
@@ -158,6 +159,7 @@ export async function getMovements(): Promise<StockMovement[]> {
     category: row.category as Category,
     type: row.type as "entree" | "sortie",
     quantity: row.quantity,
+    performedBy: row.performed_by || undefined,
   }));
 }
 
@@ -171,18 +173,21 @@ export async function saveMovement(movement: Omit<StockMovement, "id">): Promise
       category: movement.category,
       type: movement.type,
       quantity: movement.quantity,
-    })
+      performed_by: movement.performedBy || null,
+    } as any)
     .select()
     .single();
   if (error) throw error;
+  const row: any = data;
   return {
-    id: data.id,
-    date: data.date,
-    productId: data.product_id,
-    productName: data.product_name,
-    category: data.category as Category,
-    type: data.type as "entree" | "sortie",
-    quantity: data.quantity,
+    id: row.id,
+    date: row.date,
+    productId: row.product_id,
+    productName: row.product_name,
+    category: row.category as Category,
+    type: row.type as "entree" | "sortie",
+    quantity: row.quantity,
+    performedBy: row.performed_by || undefined,
   };
 }
 

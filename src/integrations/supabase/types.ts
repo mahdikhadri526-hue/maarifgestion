@@ -79,6 +79,7 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          performed_by: string | null
           product_id: string
           product_name: string
           quantity: number
@@ -88,6 +89,7 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
+          performed_by?: string | null
           product_id: string
           product_name: string
           quantity: number
@@ -97,6 +99,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          performed_by?: string | null
           product_id?: string
           product_name?: string
           quantity?: number
@@ -110,6 +113,7 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          performed_by: string | null
           product_id: string
           product_name: string
           quantity: number
@@ -120,6 +124,7 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
+          performed_by?: string | null
           product_id: string
           product_name: string
           quantity: number
@@ -130,6 +135,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          performed_by?: string | null
           product_id?: string
           product_name?: string
           quantity?: number

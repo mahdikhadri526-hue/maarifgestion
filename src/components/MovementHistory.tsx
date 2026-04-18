@@ -63,6 +63,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">Catégorie</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté</th>
+              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Effectué par</th>
               <th className="p-3 w-10"></th>
             </tr>
           </thead>
@@ -90,6 +91,13 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   </span>
                 </td>
                 <td className="p-3 text-right font-mono text-sm font-semibold">{m.quantity}</td>
+                <td className="p-3 text-sm">
+                  {m.performedBy ? (
+                    <span className="text-foreground">{m.performedBy}</span>
+                  ) : (
+                    <span className="text-muted-foreground italic text-xs">—</span>
+                  )}
+                </td>
                 <td className="p-2">
                   <button
                     onClick={() => setDeleteId(m.id)}

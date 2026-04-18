@@ -16,6 +16,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre" };
   const [reqType, setReqType] = useState<"salle" | "emporter">("salle");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [performedBy, setPerformedBy] = useState("");
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -43,6 +44,10 @@ export function RequisitionForm({ onUpdated }: Props) {
       toast.error("Aucune quantité saisie");
       return;
     }
+    if (!performedBy.trim()) {
+      toast.error("Veuillez saisir le prénom de la personne");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -55,6 +60,7 @@ export function RequisitionForm({ onUpdated }: Props) {
           productId,
           productName: product.name,
           quantity: Number(qty),
+          performedBy: performedBy.trim(),
         });
       }
       toast.success(`${entries.length} réquisition(s) enregistrée(s) — sorties créées automatiquement`);
@@ -71,6 +77,10 @@ export function RequisitionForm({ onUpdated }: Props) {
   const handleSingleSave = async (productId: string) => {
     const product = allProducts.find((pr) => pr.id === productId);
     if (!product) return;
+    if (!performedBy.trim()) {
+      toast.error("Veuillez saisir le prénom de la personne");
+      return;
+    }
     try {
       await saveRequisition({
         date,
@@ -78,6 +88,7 @@ export function RequisitionForm({ onUpdated }: Props) {
         productId,
         productName: product.name,
         quantity: Number(quantities[productId]),
+        performedBy: performedBy.trim(),
       });
       toast.success(`${product.name} enregistré`);
       setQuantities((q) => ({ ...q, [productId]: "" }));
@@ -106,8 +117,12 @@ export function RequisitionForm({ onUpdated }: Props) {
       toast.error("Quantité invalide");
       return;
     }
+    if (!performedBy.trim()) {
+      toast.error("Veuillez saisir le prénom de la personne");
+      return;
+    }
     try {
-      await setRequisitionTotal(date, reqType, productId, product.name, val);
+      await setRequisitionTotal(date, reqType, productId, product.name, val, performedBy.trim());
       toast.success(`${product.name} mis à jour`);
       setEditingId(null);
       setEditValue("");
@@ -154,6 +169,13 @@ export function RequisitionForm({ onUpdated }: Props) {
             </button>
           </div>
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-auto" />
+          <Input
+            type="text"
+            placeholder="Effectué par (prénom)"
+            value={performedBy}
+            onChange={(e) => setPerformedBy(e.target.value)}
+            className="w-full sm:w-48"
+          />
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Rechercher un produit..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
