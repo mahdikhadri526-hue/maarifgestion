@@ -113,7 +113,8 @@ export async function setRequisitionTotal(
   type: "salle" | "emporter",
   productId: string,
   productName: string,
-  newQuantity: number
+  newQuantity: number,
+  performedBy?: string
 ): Promise<void> {
   const { data: existing, error: fetchErr } = await supabase
     .from("requisitions")
@@ -145,7 +146,8 @@ export async function setRequisitionTotal(
         product_id: productId,
         product_name: productName,
         quantity: newQuantity,
-      });
+        performed_by: performedBy || null,
+      } as any);
     if (insErr) throw insErr;
   }
 
@@ -158,6 +160,7 @@ export async function setRequisitionTotal(
       category,
       type: delta > 0 ? "sortie" : "entree",
       quantity: Math.abs(delta),
+      performedBy,
     });
   }
 }
