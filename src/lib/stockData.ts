@@ -25,6 +25,7 @@ export interface StockMovement {
   category: Category;
   type: "entree" | "sortie";
   quantity: number;
+  performedBy?: string;
 }
 
 export interface StockLevel {
