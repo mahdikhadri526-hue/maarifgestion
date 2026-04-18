@@ -2,6 +2,7 @@ import { useState } from "react";
 import { getProducts, UnitType } from "@/lib/stockData";
 import { saveRequisition, setRequisitionTotal, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
 import { useRequisitionsByDate, useProductUnits } from "@/hooks/useStockData";
+import { getOperators, rememberOperator } from "@/lib/operators";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [operators, setOperators] = useState<string[]>(() => getOperators());
   const { data: units } = useProductUnits();
 
   const allProducts = getProducts();
@@ -51,6 +53,7 @@ export function RequisitionForm({ onUpdated }: Props) {
 
     setSubmitting(true);
     try {
+      const operatorName = performedBy.trim();
       for (const [productId, qty] of entries) {
         const product = allProducts.find((p) => p.id === productId);
         if (!product) continue;
@@ -60,9 +63,10 @@ export function RequisitionForm({ onUpdated }: Props) {
           productId,
           productName: product.name,
           quantity: Number(qty),
-          performedBy: performedBy.trim(),
+          performedBy: operatorName,
         });
       }
+      setOperators(rememberOperator(operatorName));
       toast.success(`${entries.length} réquisition(s) enregistrée(s) — sorties créées automatiquement`);
       setQuantities({});
       onUpdated();
@@ -82,14 +86,16 @@ export function RequisitionForm({ onUpdated }: Props) {
       return;
     }
     try {
+      const operatorName = performedBy.trim();
       await saveRequisition({
         date,
         type: reqType,
         productId,
         productName: product.name,
         quantity: Number(quantities[productId]),
-        performedBy: performedBy.trim(),
+        performedBy: operatorName,
       });
+      setOperators(rememberOperator(operatorName));
       toast.success(`${product.name} enregistré`);
       setQuantities((q) => ({ ...q, [productId]: "" }));
       onUpdated();
@@ -122,7 +128,9 @@ export function RequisitionForm({ onUpdated }: Props) {
       return;
     }
     try {
-      await setRequisitionTotal(date, reqType, productId, product.name, val, performedBy.trim());
+      const operatorName = performedBy.trim();
+      await setRequisitionTotal(date, reqType, productId, product.name, val, operatorName);
+      setOperators(rememberOperator(operatorName));
       toast.success(`${product.name} mis à jour`);
       setEditingId(null);
       setEditValue("");
@@ -174,8 +182,13 @@ export function RequisitionForm({ onUpdated }: Props) {
             placeholder="Effectué par (prénom)"
             value={performedBy}
             onChange={(e) => setPerformedBy(e.target.value)}
+            list="req-operators-list"
+            autoComplete="off"
             className="w-full sm:w-48"
           />
+          <datalist id="req-operators-list">
+            {operators.map((o) => <option key={o} value={o} />)}
+          </datalist>
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Rechercher un produit..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />

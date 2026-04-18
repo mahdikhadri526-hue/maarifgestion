@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Category, getProducts, saveMovement, UnitType } from "@/lib/stockData";
 import { addLotEntry, consumeFromLots } from "@/lib/lotData";
 import { useProductUnits } from "@/hooks/useStockData";
+import { getOperators, rememberOperator } from "@/lib/operators";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,6 +24,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const [lotNumber, setLotNumber] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [performedBy, setPerformedBy] = useState("");
+  const [operators, setOperators] = useState<string[]>(() => getOperators());
   const [submitting, setSubmitting] = useState(false);
 
   const products = getProducts(category);
@@ -50,6 +52,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
 
     setSubmitting(true);
     try {
+      const operatorName = performedBy.trim();
       await saveMovement({
         date,
         productId,
@@ -57,8 +60,9 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         category,
         type,
         quantity: Number(quantity),
-        performedBy: performedBy.trim(),
+        performedBy: operatorName,
       });
+      setOperators(rememberOperator(operatorName));
 
       if (isAlimentaire) {
         if (type === "entree") {
@@ -128,7 +132,17 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Effectué par (prénom)</label>
-          <Input type="text" placeholder="Ex: Karim" value={performedBy} onChange={(e) => setPerformedBy(e.target.value)} />
+          <Input
+            type="text"
+            placeholder="Ex: Karim"
+            value={performedBy}
+            onChange={(e) => setPerformedBy(e.target.value)}
+            list="operators-list"
+            autoComplete="off"
+          />
+          <datalist id="operators-list">
+            {operators.map((o) => <option key={o} value={o} />)}
+          </datalist>
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Catégorie</label>
