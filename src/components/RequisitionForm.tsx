@@ -128,7 +128,9 @@ export function RequisitionForm({ onUpdated }: Props) {
       return;
     }
     try {
-      await setRequisitionTotal(date, reqType, productId, product.name, val, performedBy.trim());
+      const operatorName = performedBy.trim();
+      await setRequisitionTotal(date, reqType, productId, product.name, val, operatorName);
+      setOperators(rememberOperator(operatorName));
       toast.success(`${product.name} mis à jour`);
       setEditingId(null);
       setEditValue("");
