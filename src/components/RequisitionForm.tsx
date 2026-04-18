@@ -2,6 +2,7 @@ import { useState } from "react";
 import { getProducts, UnitType } from "@/lib/stockData";
 import { saveRequisition, setRequisitionTotal, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
 import { useRequisitionsByDate, useProductUnits } from "@/hooks/useStockData";
+import { getOperators, rememberOperator } from "@/lib/operators";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
