@@ -23,6 +23,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
+  const [operators, setOperators] = useState<string[]>(() => getOperators());
   const { data: units } = useProductUnits();
 
   const allProducts = getProducts();
