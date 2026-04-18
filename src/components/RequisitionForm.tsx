@@ -53,6 +53,7 @@ export function RequisitionForm({ onUpdated }: Props) {
 
     setSubmitting(true);
     try {
+      const operatorName = performedBy.trim();
       for (const [productId, qty] of entries) {
         const product = allProducts.find((p) => p.id === productId);
         if (!product) continue;
@@ -62,9 +63,10 @@ export function RequisitionForm({ onUpdated }: Props) {
           productId,
           productName: product.name,
           quantity: Number(qty),
-          performedBy: performedBy.trim(),
+          performedBy: operatorName,
         });
       }
+      setOperators(rememberOperator(operatorName));
       toast.success(`${entries.length} réquisition(s) enregistrée(s) — sorties créées automatiquement`);
       setQuantities({});
       onUpdated();
