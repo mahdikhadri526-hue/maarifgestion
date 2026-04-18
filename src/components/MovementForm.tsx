@@ -52,6 +52,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
 
     setSubmitting(true);
     try {
+      const operatorName = performedBy.trim();
       await saveMovement({
         date,
         productId,
@@ -59,8 +60,9 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         category,
         type,
         quantity: Number(quantity),
-        performedBy: performedBy.trim(),
+        performedBy: operatorName,
       });
+      setOperators(rememberOperator(operatorName));
 
       if (isAlimentaire) {
         if (type === "entree") {
