@@ -24,6 +24,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const [lotNumber, setLotNumber] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [performedBy, setPerformedBy] = useState("");
+  const [operators, setOperators] = useState<string[]>(() => getOperators());
   const [submitting, setSubmitting] = useState(false);
 
   const products = getProducts(category);
