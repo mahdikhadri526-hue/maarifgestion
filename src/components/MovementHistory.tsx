@@ -49,7 +49,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
           <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
             <img src={logo} alt="Logo" className="w-full h-full object-cover" />
           </div>
-          Historique des Mouvements
+          Historique Mouvements
         </h2>
         <p className="text-xs text-muted-foreground mt-1">{sorted.length} mouvements enregistrés</p>
       </div>
