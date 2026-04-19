@@ -119,7 +119,7 @@ export function ProductHistory() {
           <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
             <img src={logo} alt="Logo" className="w-full h-full object-cover" />
           </div>
-          Historique par Produit
+          Stock Restant
         </h2>
         <div className="flex flex-col sm:flex-row gap-3">
           <Select value={category} onValueChange={(v) => { setCategory(v as Category); setProductId(""); }}>
