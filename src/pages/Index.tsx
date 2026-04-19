@@ -24,8 +24,8 @@ const Index = () => {
     { id: "mouvements" as Tab, label: "Mouvements", icon: PlusCircle },
     { id: "historique" as Tab, label: "Historique Mouvements", icon: History },
     { id: "produit" as Tab, label: "Stock Restant", icon: FileText },
-    { id: "requisition" as Tab, label: "Réquisition", icon: ClipboardList },
     { id: "lots" as Tab, label: "Lots / DLC", icon: Boxes },
+    { id: "requisition" as Tab, label: "Réquisition", icon: ClipboardList },
   ];
 
   return (
