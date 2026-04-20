@@ -1,15 +1,14 @@
 import { useState } from "react";
-import { Category, getProducts, saveMovement, UnitType } from "@/lib/stockData";
+import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG } from "@/lib/stockData";
 import { addLotEntry, consumeFromLots } from "@/lib/lotData";
-import { useProductUnits } from "@/hooks/useStockData";
+import { useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
-
-const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre", PAQUET: "Paquet", COLIS: "Colis", ROULEAU: "Rouleau" };
+import { MultiUnitInput, MultiUnitValues, EMPTY_MULTI, totalPieces, dominantUnit } from "./MultiUnitInput";
 
 interface MovementFormProps {
   onMovementAdded: () => void;
@@ -19,7 +18,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const [type, setType] = useState<"entree" | "sortie">("entree");
   const [category, setCategory] = useState<Category>("alimentaire");
   const [productId, setProductId] = useState("");
-  const [quantity, setQuantity] = useState("");
+  const [multi, setMulti] = useState<MultiUnitValues>(EMPTY_MULTI);
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [lotNumber, setLotNumber] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
@@ -30,12 +29,13 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const products = getProducts(category);
   const selectedProduct = products.find((p) => p.id === productId);
   const isAlimentaire = category === "alimentaire";
-  const { data: units } = useProductUnits();
-  const selectedUnit = (units?.[productId] as UnitType) || "PIECE";
+  const { data: configs } = useProductUnitConfigs();
+  const config = configs?.[productId] || DEFAULT_UNIT_CONFIG;
+  const totalQty = totalPieces(multi, config);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!productId || !quantity || Number(quantity) <= 0) {
+    if (!productId || totalQty <= 0) {
       toast.error("Veuillez remplir tous les champs correctement");
       return;
     }
@@ -53,14 +53,16 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
     setSubmitting(true);
     try {
       const operatorName = performedBy.trim();
+      const unitUsed = dominantUnit(multi, config);
       await saveMovement({
         date,
         productId,
         productName: selectedProduct?.name || "",
         category,
         type,
-        quantity: Number(quantity),
+        quantity: totalQty,
         performedBy: operatorName,
+        unitUsed,
       });
       setOperators(rememberOperator(operatorName));
 
@@ -70,25 +72,25 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
             productId,
             lotNumber,
             expiryDate,
-            quantity: Number(quantity),
+            quantity: totalQty,
             entryDate: date,
           });
-          toast.success(`Entrée de ${quantity} ${selectedProduct?.name} (Lot: ${lotNumber}) enregistrée`);
+          toast.success(`Entrée de ${totalQty} pièces ${selectedProduct?.name} (Lot: ${lotNumber}) enregistrée`);
         } else {
-          const consumed = await consumeFromLots(productId, Number(quantity));
+          const consumed = await consumeFromLots(productId, totalQty);
           if (consumed.length > 0) {
             const lotInfo = consumed.map((c) => `${c.lotNumber}: ${c.consumed}`).join(", ");
-            toast.success(`Sortie FIFO de ${quantity} ${selectedProduct?.name} — Lots: ${lotInfo}`);
+            toast.success(`Sortie FIFO de ${totalQty} pièces ${selectedProduct?.name} — Lots: ${lotInfo}`);
           } else {
-            toast.success(`Sortie de ${quantity} ${selectedProduct?.name} enregistrée (aucun lot disponible)`);
+            toast.success(`Sortie de ${totalQty} pièces ${selectedProduct?.name} enregistrée (aucun lot disponible)`);
           }
         }
       } else {
-        toast.success(`${type === "entree" ? "Entrée" : "Sortie"} de ${quantity} ${selectedProduct?.name} enregistrée`);
+        toast.success(`${type === "entree" ? "Entrée" : "Sortie"} de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
       }
 
       setProductId("");
-      setQuantity("");
+      setMulti(EMPTY_MULTI);
       setLotNumber("");
       setExpiryDate("");
       onMovementAdded();
@@ -167,9 +169,13 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">
-            Quantité {productId && <span className="text-primary">({UNIT_LABELS[selectedUnit]})</span>}
+            Quantité
           </label>
-          <Input type="number" min="1" placeholder="0" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="font-mono" />
+          {productId ? (
+            <MultiUnitInput config={config} values={multi} onChange={setMulti} />
+          ) : (
+            <p className="text-xs text-muted-foreground italic">Sélectionnez un produit d'abord</p>
+          )}
         </div>
 
         {isAlimentaire && type === "entree" && (

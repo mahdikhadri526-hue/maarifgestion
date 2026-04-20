@@ -2,6 +2,21 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type Category = "alimentaire" | "emballage";
 export type UnitType = "PIECE" | "KILO" | "LITRE" | "PAQUET" | "COLIS" | "ROULEAU";
+export type MovementUnit = "CARTON" | "PAQUET" | "PIECE";
+
+export interface ProductUnitConfig {
+  cartonEnabled: boolean;
+  paquetEnabled: boolean;
+  piecesPerCarton: number;
+  piecesPerPaquet: number;
+}
+
+export const DEFAULT_UNIT_CONFIG: ProductUnitConfig = {
+  cartonEnabled: false,
+  paquetEnabled: false,
+  piecesPerCarton: 1,
+  piecesPerPaquet: 1,
+};
 
 export interface Product {
   id: string;
@@ -26,6 +41,7 @@ export interface StockMovement {
   type: "entree" | "sortie";
   quantity: number;
   performedBy?: string;
+  unitUsed?: MovementUnit;
 }
 
 export interface StockLevel {
@@ -175,6 +191,7 @@ export async function getMovements(): Promise<StockMovement[]> {
     type: row.type as "entree" | "sortie",
     quantity: row.quantity,
     performedBy: row.performed_by || undefined,
+    unitUsed: (row.unit_used as MovementUnit) || "PIECE",
   }));
 }
 
@@ -189,6 +206,7 @@ export async function saveMovement(movement: Omit<StockMovement, "id">): Promise
       type: movement.type,
       quantity: movement.quantity,
       performed_by: movement.performedBy || null,
+      unit_used: movement.unitUsed || "PIECE",
     } as any)
     .select()
     .single();
@@ -203,6 +221,7 @@ export async function saveMovement(movement: Omit<StockMovement, "id">): Promise
     type: row.type as "entree" | "sortie",
     quantity: row.quantity,
     performedBy: row.performed_by || undefined,
+    unitUsed: (row.unit_used as MovementUnit) || "PIECE",
   };
 }
 
@@ -229,6 +248,35 @@ export async function getProductUnits(): Promise<Record<string, UnitType>> {
     result[row.product_id] = (row.unit as UnitType) || "PIECE";
   });
   return result;
+}
+
+export async function getProductUnitConfigs(): Promise<Record<string, ProductUnitConfig>> {
+  const { data, error } = await supabase
+    .from("initial_stocks")
+    .select("product_id, carton_enabled, paquet_enabled, pieces_per_carton, pieces_per_paquet");
+  if (error) throw error;
+  const result: Record<string, ProductUnitConfig> = {};
+  (data || []).forEach((row: any) => {
+    result[row.product_id] = {
+      cartonEnabled: !!row.carton_enabled,
+      paquetEnabled: !!row.paquet_enabled,
+      piecesPerCarton: row.pieces_per_carton || 1,
+      piecesPerPaquet: row.pieces_per_paquet || 1,
+    };
+  });
+  return result;
+}
+
+export async function setProductUnitConfig(productId: string, config: Partial<ProductUnitConfig>) {
+  const payload: any = { product_id: productId, quantity: 0 };
+  if (config.cartonEnabled !== undefined) payload.carton_enabled = config.cartonEnabled;
+  if (config.paquetEnabled !== undefined) payload.paquet_enabled = config.paquetEnabled;
+  if (config.piecesPerCarton !== undefined) payload.pieces_per_carton = Math.max(1, config.piecesPerCarton);
+  if (config.piecesPerPaquet !== undefined) payload.pieces_per_paquet = Math.max(1, config.piecesPerPaquet);
+  const { error } = await supabase
+    .from("initial_stocks")
+    .upsert(payload, { onConflict: "product_id" });
+  if (error) throw error;
 }
 
 export async function setProductUnit(productId: string, unit: UnitType) {

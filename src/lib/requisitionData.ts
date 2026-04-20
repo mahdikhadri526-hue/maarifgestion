@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { saveMovement } from "./stockData";
+import { saveMovement, MovementUnit } from "./stockData";
 
 export interface RequisitionEntry {
   id: string;
@@ -9,6 +9,7 @@ export interface RequisitionEntry {
   productName: string;
   quantity: number;
   performedBy?: string;
+  unitUsed?: MovementUnit;
 }
 
 // Products in "Réquisition Salle" (alimentaire)
@@ -53,6 +54,7 @@ export async function saveRequisition(entry: Omit<RequisitionEntry, "id">): Prom
       product_name: entry.productName,
       quantity: entry.quantity,
       performed_by: entry.performedBy || null,
+      unit_used: entry.unitUsed || "PIECE",
     } as any)
     .select()
     .single();
@@ -68,6 +70,7 @@ export async function saveRequisition(entry: Omit<RequisitionEntry, "id">): Prom
     type: "sortie",
     quantity: entry.quantity,
     performedBy: entry.performedBy,
+    unitUsed: entry.unitUsed,
   });
 
   const row: any = data;
@@ -147,6 +150,7 @@ export async function setRequisitionTotal(
         product_name: productName,
         quantity: newQuantity,
         performed_by: performedBy || null,
+        unit_used: "PIECE",
       } as any);
     if (insErr) throw insErr;
   }

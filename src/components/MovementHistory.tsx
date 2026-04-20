@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useMovements, useProductUnits } from "@/hooks/useStockData";
-import { deleteMovement, UnitType } from "@/lib/stockData";
+import { useMovements } from "@/hooks/useStockData";
+import { deleteMovement, MovementUnit } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { ArrowDownCircle, ArrowUpCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -22,11 +22,10 @@ interface MovementHistoryProps {
 }
 
 export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
-  const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre", PAQUET: "Paquet", COLIS: "Colis", ROULEAU: "Rouleau" };
+  const UNIT_LABELS: Record<MovementUnit, string> = { CARTON: "Carton", PAQUET: "Paquet", PIECE: "Pièce" };
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const { data: movements, loading } = useMovements();
-  const { data: units } = useProductUnits();
 
   const sorted = [...(movements || [])].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -84,7 +83,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   </span>
                 </td>
                 <td className="p-3 text-sm">{m.productName}</td>
-                <td className="p-3 text-xs text-muted-foreground">{UNIT_LABELS[(units?.[m.productId] as UnitType) || "PIECE"]}</td>
+                <td className="p-3 text-xs text-muted-foreground">{UNIT_LABELS[(m.unitUsed as MovementUnit) || "PIECE"]}</td>
                 <td className="p-3 hidden sm:table-cell">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     m.category === "alimentaire" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent-foreground"

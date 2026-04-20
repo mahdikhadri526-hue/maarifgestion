@@ -16,24 +16,36 @@ export type Database = {
     Tables: {
       initial_stocks: {
         Row: {
+          carton_enabled: boolean
           created_at: string
           id: string
+          paquet_enabled: boolean
+          pieces_per_carton: number
+          pieces_per_paquet: number
           product_id: string
           quantity: number
           unit: string
           updated_at: string
         }
         Insert: {
+          carton_enabled?: boolean
           created_at?: string
           id?: string
+          paquet_enabled?: boolean
+          pieces_per_carton?: number
+          pieces_per_paquet?: number
           product_id: string
           quantity?: number
           unit?: string
           updated_at?: string
         }
         Update: {
+          carton_enabled?: boolean
           created_at?: string
           id?: string
+          paquet_enabled?: boolean
+          pieces_per_carton?: number
+          pieces_per_paquet?: number
           product_id?: string
           quantity?: number
           unit?: string
@@ -84,6 +96,7 @@ export type Database = {
           product_name: string
           quantity: number
           type: string
+          unit_used: string
         }
         Insert: {
           created_at?: string
@@ -94,6 +107,7 @@ export type Database = {
           product_name: string
           quantity: number
           type: string
+          unit_used?: string
         }
         Update: {
           created_at?: string
@@ -104,6 +118,7 @@ export type Database = {
           product_name?: string
           quantity?: number
           type?: string
+          unit_used?: string
         }
         Relationships: []
       }
@@ -118,6 +133,7 @@ export type Database = {
           product_name: string
           quantity: number
           type: string
+          unit_used: string
         }
         Insert: {
           category: string
@@ -129,6 +145,7 @@ export type Database = {
           product_name: string
           quantity: number
           type: string
+          unit_used?: string
         }
         Update: {
           category?: string
@@ -140,6 +157,7 @@ export type Database = {
           product_name?: string
           quantity?: number
           type?: string
+          unit_used?: string
         }
         Relationships: []
       }
