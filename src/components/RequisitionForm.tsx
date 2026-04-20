@@ -151,8 +151,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const saveEdit = async (productId: string) => {
     const product = allProducts.find((p) => p.id === productId);
     if (!product) return;
-    const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
-    const val = totalPieces(editValue, cfg);
+    const val = Number(editValue.pieces || 0);
     if (isNaN(val) || val < 0) {
       toast.error("Quantité invalide");
       return;
