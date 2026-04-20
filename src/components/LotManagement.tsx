@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
+import { PinPromptDialog } from "./PinPromptDialog";
 
 export function ExpiryAlerts() {
   const { data: expiringLots, loading } = useExpiringLots(30);
@@ -62,6 +63,8 @@ export function LotManager() {
   const [editingLot, setEditingLot] = useState<string | null>(null);
   const [editLotNumber, setEditLotNumber] = useState("");
   const [editExpiryDate, setEditExpiryDate] = useState("");
+  const [pendingEdit, setPendingEdit] = useState<LotEntry | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<LotEntry | null>(null);
 
   const products = getProducts("alimentaire");
   const { data: lots, loading } = useProductLots(selectedProductId);
@@ -81,7 +84,6 @@ export function LotManager() {
   };
 
   const handleDelete = async (lot: LotEntry) => {
-    if (!confirm(`Supprimer le lot "${lot.lotNumber}" ?\n\nCette action est irréversible.`)) return;
     try {
       await deleteLotEntry(lot.id);
       toast.success("Lot supprimé");
@@ -205,10 +207,10 @@ export function LotManager() {
                             </div>
                           ) : (
                             <div className="flex gap-1 justify-center">
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEdit(lot)}>
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setPendingEdit(lot)}>
                                 <Edit2 className="h-3.5 w-3.5" />
                               </Button>
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleDelete(lot)}>
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setPendingDelete(lot)}>
                                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
                               </Button>
                             </div>
@@ -223,6 +225,32 @@ export function LotManager() {
           )}
         </div>
       )}
+      <PinPromptDialog
+        open={!!pendingEdit}
+        onOpenChange={(open) => !open && setPendingEdit(null)}
+        title="Modifier un lot / DLC"
+        description="Entrez le code à 4 chiffres pour autoriser la modification."
+        onConfirm={() => {
+          if (pendingEdit) {
+            const lot = pendingEdit;
+            setPendingEdit(null);
+            startEdit(lot);
+          }
+        }}
+      />
+      <PinPromptDialog
+        open={!!pendingDelete}
+        onOpenChange={(open) => !open && setPendingDelete(null)}
+        title="Supprimer un lot"
+        description="Entrez le code à 4 chiffres pour autoriser la suppression."
+        onConfirm={() => {
+          if (pendingDelete) {
+            const lot = pendingDelete;
+            setPendingDelete(null);
+            handleDelete(lot);
+          }
+        }}
+      />
     </div>
   );
 }

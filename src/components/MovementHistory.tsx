@@ -5,6 +5,7 @@ import { isRequisitionProduct } from "@/lib/requisitionData";
 import { ArrowDownCircle, ArrowUpCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
+import { PinPromptDialog } from "./PinPromptDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +24,7 @@ interface MovementHistoryProps {
 export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre", PAQUET: "Paquet", COLIS: "Colis", ROULEAU: "Rouleau" };
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const { data: movements, loading } = useMovements();
   const { data: units } = useProductUnits();
 
@@ -100,7 +102,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                 </td>
                 <td className="p-2">
                   <button
-                    onClick={() => setDeleteId(m.id)}
+                    onClick={() => setPendingDeleteId(m.id)}
                     className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     title="Supprimer"
                   >
@@ -137,6 +139,17 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PinPromptDialog
+        open={!!pendingDeleteId}
+        onOpenChange={(open) => !open && setPendingDeleteId(null)}
+        title="Supprimer un mouvement"
+        description="Entrez le code à 4 chiffres pour autoriser la suppression."
+        onConfirm={() => {
+          setDeleteId(pendingDeleteId);
+          setPendingDeleteId(null);
+        }}
+      />
     </div>
   );
 }
