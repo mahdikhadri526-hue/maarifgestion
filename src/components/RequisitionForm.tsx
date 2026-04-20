@@ -248,19 +248,16 @@ export function RequisitionForm({ onUpdated }: Props) {
               return (
               <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="p-3 text-sm font-medium">{p.name}</td>
-                <td className="p-3 text-xs text-muted-foreground">
-                  {cfg.cartonEnabled && <div>1C={cfg.piecesPerCarton}P</div>}
-                  {cfg.paquetEnabled && <div>1Pq={cfg.piecesPerPaquet}P</div>}
-                  {!cfg.cartonEnabled && !cfg.paquetEnabled && <span>Pièce</span>}
-                </td>
                 <td className="p-3 text-right">
                   {editingId === p.id ? (
-                    <div className="flex items-end gap-1 justify-end">
-                      <MultiUnitInput
-                        config={cfg}
-                        values={editValue}
-                        onChange={setEditValue}
-                        size="sm"
+                    <div className="flex items-center gap-1 justify-end">
+                      <Input
+                        type="number"
+                        min="0"
+                        autoFocus
+                        value={editValue.pieces}
+                        onChange={(e) => setEditValue({ cartons: "", paquets: "", pieces: e.target.value })}
+                        className="h-8 w-20 font-mono text-right text-sm"
                       />
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => saveEdit(p.id)}>
                         <Check className="h-3.5 w-3.5 text-success" />
@@ -272,8 +269,6 @@ export function RequisitionForm({ onUpdated }: Props) {
                   ) : (
                     (() => {
                       const existingTotal = existingMap[p.id] || 0;
-                      const decomposed = piecesToMulti(existingTotal, cfg);
-                      const showMulti = cfg.cartonEnabled || cfg.paquetEnabled;
                       return (
                         <button
                           type="button"
@@ -285,13 +280,6 @@ export function RequisitionForm({ onUpdated }: Props) {
                             {existingTotal}
                             <Pencil className="h-3 w-3 opacity-60" />
                           </span>
-                          {showMulti && existingTotal > 0 && (
-                            <span className="text-[10px] font-normal text-muted-foreground">
-                              {cfg.cartonEnabled && Number(decomposed.cartons || 0) > 0 && `${decomposed.cartons}C `}
-                              {cfg.paquetEnabled && Number(decomposed.paquets || 0) > 0 && `${decomposed.paquets}Pq `}
-                              {Number(decomposed.pieces || 0) > 0 && `${decomposed.pieces}P`}
-                            </span>
-                          )}
                         </button>
                       );
                     })()
