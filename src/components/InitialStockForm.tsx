@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
-import { Category, getProducts, setInitialStock, setProductUnitConfig, DEFAULT_UNIT_CONFIG } from "@/lib/stockData";
-import { useInitialStocks, useProductUnitConfigs } from "@/hooks/useStockData";
+import { Category, getProducts, setInitialStock } from "@/lib/stockData";
+import { useInitialStocks } from "@/hooks/useStockData";
 import { addLotEntry } from "@/lib/lotData";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Save, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
@@ -23,7 +22,6 @@ export function InitialStockForm({ onUpdated }: Props) {
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
   const [pendingUnlockId, setPendingUnlockId] = useState<string | null>(null);
   const { data: savedStocks, loading } = useInitialStocks();
-  const { data: configs } = useProductUnitConfigs();
 
   useEffect(() => {
     if (savedStocks) {
@@ -130,7 +128,6 @@ export function InitialStockForm({ onUpdated }: Props) {
             {filtered.map((p) => {
               const isAlim = p.category === "alimentaire";
               const isUnlocked = unlockedIds.has(p.id);
-              const cfg = configs?.[p.id] || DEFAULT_UNIT_CONFIG;
               return (
                 <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="p-3 text-sm font-medium">{p.name}</td>
