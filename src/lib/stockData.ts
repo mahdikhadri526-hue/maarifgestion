@@ -250,6 +250,35 @@ export async function getProductUnits(): Promise<Record<string, UnitType>> {
   return result;
 }
 
+export async function getProductUnitConfigs(): Promise<Record<string, ProductUnitConfig>> {
+  const { data, error } = await supabase
+    .from("initial_stocks")
+    .select("product_id, carton_enabled, paquet_enabled, pieces_per_carton, pieces_per_paquet");
+  if (error) throw error;
+  const result: Record<string, ProductUnitConfig> = {};
+  (data || []).forEach((row: any) => {
+    result[row.product_id] = {
+      cartonEnabled: !!row.carton_enabled,
+      paquetEnabled: !!row.paquet_enabled,
+      piecesPerCarton: row.pieces_per_carton || 1,
+      piecesPerPaquet: row.pieces_per_paquet || 1,
+    };
+  });
+  return result;
+}
+
+export async function setProductUnitConfig(productId: string, config: Partial<ProductUnitConfig>) {
+  const payload: any = { product_id: productId, quantity: 0 };
+  if (config.cartonEnabled !== undefined) payload.carton_enabled = config.cartonEnabled;
+  if (config.paquetEnabled !== undefined) payload.paquet_enabled = config.paquetEnabled;
+  if (config.piecesPerCarton !== undefined) payload.pieces_per_carton = Math.max(1, config.piecesPerCarton);
+  if (config.piecesPerPaquet !== undefined) payload.pieces_per_paquet = Math.max(1, config.piecesPerPaquet);
+  const { error } = await supabase
+    .from("initial_stocks")
+    .upsert(payload, { onConflict: "product_id" });
+  if (error) throw error;
+}
+
 export async function setProductUnit(productId: string, unit: UnitType) {
   const { error } = await supabase
     .from("initial_stocks")
