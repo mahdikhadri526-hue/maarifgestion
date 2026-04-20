@@ -8,25 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
-import { VoiceButton } from "@/components/VoiceButton";
-
-function findProductByVoice(spoken: string, products: { id: string; name: string }[]): string | null {
-  const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ");
-  const target = norm(spoken);
-  if (!target.trim()) return null;
-  const targetWords = target.split(/\s+/).filter(Boolean);
-  let best: { id: string; score: number } | null = null;
-  for (const p of products) {
-    const name = norm(p.name);
-    let score = 0;
-    if (name.includes(target)) score += 100;
-    for (const w of targetWords) {
-      if (w.length >= 3 && name.includes(w)) score += 10;
-    }
-    if (!best || score > best.score) best = { id: p.id, score };
-  }
-  return best && best.score > 0 ? best.id : null;
-}
 
 const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre" };
 
@@ -175,55 +156,27 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Produit</label>
-          <div className="flex gap-2">
-            <Select value={productId} onValueChange={setProductId}>
-              <SelectTrigger><SelectValue placeholder="Sélectionner un produit" /></SelectTrigger>
-              <SelectContent>
-                {products.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <VoiceButton
-              title="Dicter le nom du produit"
-              onResult={(spoken) => {
-                const id = findProductByVoice(spoken, products);
-                if (id) {
-                  setProductId(id);
-                  const p = products.find((x) => x.id === id);
-                  toast.success(`Produit : ${p?.name}`);
-                } else {
-                  toast.error(`Aucun produit trouvé pour "${spoken}"`);
-                }
-              }}
-            />
-          </div>
+          <Select value={productId} onValueChange={setProductId}>
+            <SelectTrigger><SelectValue placeholder="Sélectionner un produit" /></SelectTrigger>
+            <SelectContent>
+              {products.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">
             Quantité {productId && <span className="text-primary">({UNIT_LABELS[selectedUnit]})</span>}
           </label>
-          <div className="flex gap-2">
-            <Input type="number" min="1" placeholder="0" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="font-mono" />
-            <VoiceButton
-              title="Dicter la quantité"
-              parseNumber
-              onResult={(value) => setQuantity(value)}
-            />
-          </div>
+          <Input type="number" min="1" placeholder="0" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="font-mono" />
         </div>
 
         {isAlimentaire && type === "entree" && (
           <>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">N° de Lot</label>
-              <div className="flex gap-2">
-                <Input type="text" placeholder="Ex: LOT-2026-001" value={lotNumber} onChange={(e) => setLotNumber(e.target.value)} />
-                <VoiceButton
-                  title="Dicter le numéro de lot"
-                  onResult={(value) => setLotNumber(value.toUpperCase().replace(/\s+/g, "-"))}
-                />
-              </div>
+              <Input type="text" placeholder="Ex: LOT-2026-001" value={lotNumber} onChange={(e) => setLotNumber(e.target.value)} />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Date Limite de Consommation (DLC)</label>
