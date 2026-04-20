@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
-// Convertit les mots français en nombres (ex: "cinq kilos" -> "5")
 const WORD_TO_NUMBER: Record<string, number> = {
   "zero": 0, "zéro": 0,
   "un": 1, "une": 1,
@@ -14,11 +13,8 @@ const WORD_TO_NUMBER: Record<string, number> = {
 
 export function parseFrenchNumber(text: string): string {
   const cleaned = text.toLowerCase().trim().replace(/[.,]/g, "");
-  // Si déjà un nombre, on le retourne
   const directMatch = cleaned.match(/\d+/);
   if (directMatch) return directMatch[0];
-
-  // Recherche mot à mot
   const words = cleaned.split(/\s+/);
   let total = 0;
   let found = false;
@@ -48,13 +44,39 @@ export function useVoiceInput({ onResult, parseNumber = false, lang = "fr-FR" }:
     setSupported(!!SpeechRecognition);
   }, []);
 
-  const start = useCallback(() => {
+  const start = useCallback(async () => {
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      toast.error("Reconnaissance vocale non supportée sur ce navigateur");
+      toast.error("Reconnaissance vocale non supportée. Utilisez Chrome ou Safari.");
       return;
     }
+
+    // Vérifier HTTPS (sauf localhost)
+    if (window.location.protocol !== "https:" && window.location.hostname !== "localhost") {
+      toast.error("Le micro nécessite HTTPS. Ouvrez l'app via une URL sécurisée.");
+      return;
+    }
+
+    // Demander explicitement la permission micro AVANT de lancer SpeechRecognition
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // On libère immédiatement, SpeechRecognition gère son propre flux
+      stream.getTracks().forEach((t) => t.stop());
+    } catch (err: any) {
+      console.error("Erreur accès micro:", err);
+      if (err.name === "NotAllowedError" || err.name === "PermissionDeniedError") {
+        toast.error("Accès micro refusé. Autorisez-le dans les réglages du navigateur (icône cadenas 🔒 à gauche de l'URL).", { duration: 6000 });
+      } else if (err.name === "NotFoundError") {
+        toast.error("Aucun microphone détecté sur l'appareil.");
+      } else if (err.name === "NotReadableError") {
+        toast.error("Le micro est utilisé par une autre application.");
+      } else {
+        toast.error("Erreur micro : " + (err.message || err.name));
+      }
+      return;
+    }
+
     if (recognitionRef.current) {
       try { recognitionRef.current.stop(); } catch {}
     }
@@ -69,10 +91,15 @@ export function useVoiceInput({ onResult, parseNumber = false, lang = "fr-FR" }:
     recognition.onend = () => setListening(false);
     recognition.onerror = (event: any) => {
       setListening(false);
-      if (event.error === "not-allowed") {
-        toast.error("Accès au microphone refusé");
+      console.error("SpeechRecognition error:", event.error);
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        toast.error("Accès micro refusé. Vérifiez les permissions du navigateur.", { duration: 6000 });
       } else if (event.error === "no-speech") {
-        toast.error("Aucune voix détectée, réessayez");
+        toast.error("Aucune voix détectée, réessayez.");
+      } else if (event.error === "audio-capture") {
+        toast.error("Aucun microphone trouvé.");
+      } else if (event.error === "network") {
+        toast.error("Erreur réseau. La reconnaissance vocale nécessite une connexion.");
       } else {
         toast.error("Erreur micro : " + event.error);
       }
@@ -89,6 +116,7 @@ export function useVoiceInput({ onResult, parseNumber = false, lang = "fr-FR" }:
     } catch (e) {
       setListening(false);
       console.error(e);
+      toast.error("Impossible de démarrer la reconnaissance vocale.");
     }
   }, [lang, onResult, parseNumber]);
 
