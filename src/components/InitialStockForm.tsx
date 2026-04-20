@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Save } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
+import { PinPromptDialog } from "./PinPromptDialog";
 
 interface Props {
   onUpdated: () => void;
@@ -18,6 +19,7 @@ export function InitialStockForm({ onUpdated }: Props) {
   const [stocks, setStocks] = useState<Record<string, string>>({});
   const [lotNumbers, setLotNumbers] = useState<Record<string, string>>({});
   const [expiryDates, setExpiryDates] = useState<Record<string, string>>({});
+  const [pendingSave, setPendingSave] = useState<{ productId: string; category: Category } | null>(null);
   const { data: savedStocks, loading } = useInitialStocks();
   const { data: units } = useProductUnits();
 
