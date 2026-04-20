@@ -280,6 +280,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                     </Button>
                   </div>
                 </td>
+                {showAdded && (
                 <td className="p-3 text-right">
                   {editingId === p.id ? (
                     <div className="flex items-center gap-1 justify-end">
@@ -301,14 +302,23 @@ export function RequisitionForm({ onUpdated }: Props) {
                   ) : (
                     (() => {
                       const existingTotal = existingMap[p.id] || 0;
+                      const breakdown = piecesToMulti(existingTotal, cfg);
+                      const parts: string[] = [];
+                      if (cfg.cartonEnabled && breakdown.cartons) parts.push(`${breakdown.cartons}C`);
+                      if (cfg.paquetEnabled && breakdown.paquets) parts.push(`${breakdown.paquets}P`);
+                      if (breakdown.pieces) parts.push(`${breakdown.pieces}pc`);
+                      const breakdownLabel = parts.length > 0 ? parts.join(" + ") : null;
                       if (!isToday) {
                         return (
-                          <span
-                            className="inline-flex items-center gap-1.5 font-mono text-sm font-bold text-muted-foreground px-2 py-1"
+                          <div
+                            className="inline-flex flex-col items-end gap-0.5 font-mono px-2 py-1"
                             title="Modification autorisée uniquement le jour même"
                           >
-                            {existingTotal}
-                          </span>
+                            <span className="text-sm font-bold text-muted-foreground">{existingTotal}</span>
+                            {breakdownLabel && (
+                              <span className="text-[10px] text-muted-foreground/70">{breakdownLabel}</span>
+                            )}
+                          </div>
                         );
                       }
                       return (
@@ -322,11 +332,15 @@ export function RequisitionForm({ onUpdated }: Props) {
                             {existingTotal}
                             <Pencil className="h-3 w-3 opacity-60" />
                           </span>
+                          {breakdownLabel && (
+                            <span className="text-[10px] font-normal text-primary/70">{breakdownLabel}</span>
+                          )}
                         </button>
                       );
                     })()
                   )}
                 </td>
+                )}
               </tr>
               );
             })}
