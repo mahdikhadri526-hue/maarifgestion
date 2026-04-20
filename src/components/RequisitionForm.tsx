@@ -227,6 +227,16 @@ export function RequisitionForm({ onUpdated }: Props) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Rechercher un produit..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAdded((v) => !v)}
+            className="gap-1.5"
+          >
+            {showAdded ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showAdded ? "Masquer" : "Afficher"} qté rajoutée
+          </Button>
         </div>
       </div>
 
