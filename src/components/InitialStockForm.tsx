@@ -3,7 +3,7 @@ import { Category, getProducts, getInitialStocks, setInitialStock, UnitType } fr
 import { useInitialStocks, useProductUnits } from "@/hooks/useStockData";
 import { addLotEntry } from "@/lib/lotData";
 import { Input } from "@/components/ui/input";
-import { Search, Save } from "lucide-react";
+import { Search, Save, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
@@ -20,6 +20,8 @@ export function InitialStockForm({ onUpdated }: Props) {
   const [lotNumbers, setLotNumbers] = useState<Record<string, string>>({});
   const [expiryDates, setExpiryDates] = useState<Record<string, string>>({});
   const [pendingSave, setPendingSave] = useState<{ productId: string; category: Category } | null>(null);
+  const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
+  const [pendingUnlockId, setPendingUnlockId] = useState<string | null>(null);
   const { data: savedStocks, loading } = useInitialStocks();
   const { data: units } = useProductUnits();
 
