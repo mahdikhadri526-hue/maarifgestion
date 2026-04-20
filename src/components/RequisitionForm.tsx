@@ -215,16 +215,24 @@ export function RequisitionForm({ onUpdated }: Props) {
           <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
-              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-20">Unité</th>
+              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-24">Conv.</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-24">Qté demandée</th>
-              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-36">Qté rajoutée</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté rajoutée (Carton / Paquet / Pièce)</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.map((p) => (
+            {filtered.map((p) => {
+              const cfg = configs?.[p.id] || DEFAULT_UNIT_CONFIG;
+              const val = quantities[p.id] || EMPTY_MULTI;
+              const total = totalPieces(val, cfg);
+              return (
               <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="p-3 text-sm font-medium">{p.name}</td>
-                <td className="p-3 text-xs text-muted-foreground">{UNIT_LABELS[(units?.[p.id] as UnitType) || "PIECE"]}</td>
+                <td className="p-3 text-xs text-muted-foreground">
+                  {cfg.cartonEnabled && <div>1C={cfg.piecesPerCarton}P</div>}
+                  {cfg.paquetEnabled && <div>1Pq={cfg.piecesPerPaquet}P</div>}
+                  {!cfg.cartonEnabled && !cfg.paquetEnabled && <span>Pièce</span>}
+                </td>
                 <td className="p-3 text-right">
                   {editingId === p.id ? (
                     <div className="flex items-center gap-1 justify-end">
@@ -255,19 +263,18 @@ export function RequisitionForm({ onUpdated }: Props) {
                   )}
                 </td>
                 <td className="p-3">
-                  <div className="flex items-center gap-1 justify-end">
-                    <Input
-                      type="number" min="0"
-                      value={quantities[p.id] || ""}
-                      onChange={(e) => setQuantities((q) => ({ ...q, [p.id]: e.target.value }))}
-                      className="font-mono text-right w-16"
-                      placeholder="0"
+                  <div className="flex items-end gap-2 justify-end">
+                    <MultiUnitInput
+                      config={cfg}
+                      values={val}
+                      onChange={(nv) => setQuantities((q) => ({ ...q, [p.id]: nv }))}
+                      size="sm"
                     />
                     <Button
                       size="sm"
                       variant="outline"
                       className="h-9 px-2 text-xs"
-                      disabled={!quantities[p.id] || Number(quantities[p.id]) <= 0}
+                      disabled={total <= 0}
                       onClick={() => handleSingleSave(p.id)}
                     >
                       ✓
@@ -275,7 +282,8 @@ export function RequisitionForm({ onUpdated }: Props) {
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
