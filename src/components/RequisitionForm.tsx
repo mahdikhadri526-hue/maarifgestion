@@ -175,8 +175,23 @@ export function RequisitionForm({ onUpdated }: Props) {
     }
   };
 
+  const handleDelete = async (productId: string) => {
+    const product = allProducts.find((p) => p.id === productId);
+    if (!product) return;
+    if (!confirm(`Supprimer la quantité demandée pour ${product.name} ?`)) return;
+    try {
+      await setRequisitionTotal(date, reqType, productId, product.name, 0, performedBy.trim() || undefined);
+      toast.success(`${product.name} supprimé`);
+      setEditingId(null);
+      setEditValue(EMPTY_MULTI);
+      onUpdated();
+    } catch (err) {
+      toast.error("Erreur lors de la suppression");
+      console.error(err);
+    }
+  };
+
   return (
-    // placeholder marker
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
         <div className="flex items-center gap-2 mb-3">
