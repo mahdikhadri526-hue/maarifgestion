@@ -272,8 +272,6 @@ export function RequisitionForm({ onUpdated }: Props) {
               const cfg = configs?.[p.id] || DEFAULT_UNIT_CONFIG;
               const val = quantities[p.id] || EMPTY_MULTI;
               const total = totalPieces(val, cfg);
-              const today = new Date().toISOString().split("T")[0];
-              const isToday = date === today;
               return (
               <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="p-3 text-sm font-medium">{p.name}</td>
@@ -318,17 +316,6 @@ export function RequisitionForm({ onUpdated }: Props) {
                   ) : (
                     (() => {
                       const existingTotal = existingMap[p.id] || 0;
-                      if (!isToday) {
-                        return (
-                          <div
-                            className="inline-flex flex-col items-end gap-0.5 font-mono px-2 py-1"
-                            title="Modification autorisée uniquement le jour même"
-                          >
-                            <span className="text-sm font-bold text-muted-foreground">{existingTotal}</span>
-                            <span className="text-[10px] text-muted-foreground/70">pièces</span>
-                          </div>
-                        );
-                      }
                       return (
                         <div className="inline-flex items-center gap-1 justify-end">
                           <button
