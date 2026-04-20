@@ -130,6 +130,7 @@ export function InitialStockForm({ onUpdated }: Props) {
           <tbody>
             {filtered.map((p) => {
               const isAlim = p.category === "alimentaire";
+              const isUnlocked = unlockedIds.has(p.id);
               return (
                 <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="p-3 text-sm font-medium">{p.name}</td>
@@ -148,6 +149,7 @@ export function InitialStockForm({ onUpdated }: Props) {
                       onChange={(e) => setStocks((s) => ({ ...s, [p.id]: e.target.value }))}
                       className="font-mono text-right w-24 ml-auto"
                       placeholder="0"
+                      disabled={!isUnlocked}
                     />
                   </td>
                   <td className="p-3">
@@ -158,6 +160,7 @@ export function InitialStockForm({ onUpdated }: Props) {
                         onChange={(e) => setLotNumbers((s) => ({ ...s, [p.id]: e.target.value }))}
                         className="text-xs w-32"
                         placeholder="LOT-..."
+                        disabled={!isUnlocked}
                       />
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
@@ -170,18 +173,41 @@ export function InitialStockForm({ onUpdated }: Props) {
                         value={expiryDates[p.id] || ""}
                         onChange={(e) => setExpiryDates((s) => ({ ...s, [p.id]: e.target.value }))}
                         className="text-xs w-36"
+                        disabled={!isUnlocked}
                       />
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
                   </td>
                   <td className="p-3">
-                    <button
-                      onClick={() => setPendingSave({ productId: p.id, category: p.category })}
-                      className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                    >
-                      <Save className="h-4 w-4" />
-                    </button>
+                    <div className="flex items-center gap-1">
+                      {isUnlocked ? (
+                        <>
+                          <button
+                            onClick={() => handleSave(p.id, p.category)}
+                            className="p-1.5 rounded-md hover:bg-muted transition-colors text-primary"
+                            title="Enregistrer"
+                          >
+                            <Save className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setUnlockedIds((s) => { const n = new Set(s); n.delete(p.id); return n; })}
+                            className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground"
+                            title="Verrouiller"
+                          >
+                            <Unlock className="h-4 w-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => setPendingUnlockId(p.id)}
+                          className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                          title="Déverrouiller pour modifier"
+                        >
+                          <Lock className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
