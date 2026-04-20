@@ -139,9 +139,8 @@ export function RequisitionForm({ onUpdated }: Props) {
   };
 
   const startEdit = (productId: string, currentQty: number) => {
-    const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
     setEditingId(productId);
-    setEditValue(piecesToMulti(currentQty, cfg));
+    setEditValue({ cartons: "", paquets: "", pieces: currentQty > 0 ? String(currentQty) : "" });
   };
 
   const cancelEdit = () => {
@@ -311,11 +310,6 @@ export function RequisitionForm({ onUpdated }: Props) {
         </table>
       </div>
 
-      <div className="p-4 border-t">
-        <Button onClick={handleSubmitAll} className="w-full" disabled={submitting}>
-          {submitting ? "Enregistrement..." : "Enregistrer tout"}
-        </Button>
-      </div>
     </div>
   );
 }
