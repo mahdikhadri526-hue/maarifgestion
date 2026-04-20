@@ -189,27 +189,9 @@ export function RequisitionForm({ onUpdated }: Props) {
           <datalist id="req-operators-list">
             {operators.map((o) => <option key={o} value={o} />)}
           </datalist>
-          <div className="flex-1 flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Rechercher un produit..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
-            </div>
-            <VoiceButton
-              title="Dicter le nom du produit pour le rechercher"
-              onResult={(spoken) => {
-                const id = findProductByVoice(spoken, products);
-                if (id) {
-                  const p = products.find((x) => x.id === id);
-                  if (p) {
-                    setSearch(p.name);
-                    toast.success(`Produit : ${p.name}`);
-                  }
-                } else {
-                  setSearch(spoken);
-                  toast.error(`Aucun produit trouvé pour "${spoken}"`);
-                }
-              }}
-            />
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Rechercher un produit..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
         </div>
       </div>
@@ -266,11 +248,6 @@ export function RequisitionForm({ onUpdated }: Props) {
                       onChange={(e) => setQuantities((q) => ({ ...q, [p.id]: e.target.value }))}
                       className="font-mono text-right w-16"
                       placeholder="0"
-                    />
-                    <VoiceButton
-                      title={`Dicter la quantité pour ${p.name}`}
-                      parseNumber
-                      onResult={(value) => setQuantities((q) => ({ ...q, [p.id]: value }))}
                     />
                     <Button
                       size="sm"
