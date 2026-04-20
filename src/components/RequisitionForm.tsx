@@ -246,7 +246,9 @@ export function RequisitionForm({ onUpdated }: Props) {
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté demandée (Carton / Paquet / Pièce)</th>
-              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-32">Qté rajoutée</th>
+              {showAdded && (
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-56">Qté rajoutée (C / P / Pc)</th>
+              )}
             </tr>
           </thead>
           <tbody>
