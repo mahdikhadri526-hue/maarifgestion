@@ -6,7 +6,7 @@ import { getOperators, rememberOperator } from "@/lib/operators";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ClipboardList, Search, Pencil, Check, X } from "lucide-react";
+import { ClipboardList, Search, Pencil, Check, X, Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { MultiUnitInput, MultiUnitValues, EMPTY_MULTI, totalPieces, dominantUnit } from "./MultiUnitInput";
 
@@ -43,6 +43,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<MultiUnitValues>(EMPTY_MULTI);
   const [operators, setOperators] = useState<string[]>(() => getOperators());
+  const [showAdded, setShowAdded] = useState(true);
   const { data: configs } = useProductUnitConfigs();
 
   const allProducts = getProducts();
