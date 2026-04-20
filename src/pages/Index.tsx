@@ -5,7 +5,7 @@ import { MovementHistory } from "@/components/MovementHistory";
 import { InitialStockForm } from "@/components/InitialStockForm";
 import { ProductHistory } from "@/components/ProductHistory";
 import { RequisitionForm } from "@/components/RequisitionForm";
-import { ExpiryAlerts, LotManager } from "@/components/LotManagement";
+import { ExpiryAlerts, LotManager, StockOutAlerts } from "@/components/LotManagement";
 import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
@@ -82,6 +82,9 @@ const Index = () => {
                 </div>
               </div>
             </div>
+
+            {/* Stock Alerts */}
+            <StockOutAlerts />
 
             {/* Expiry Alerts */}
             <ExpiryAlerts />
