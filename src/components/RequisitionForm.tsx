@@ -316,17 +316,6 @@ export function RequisitionForm({ onUpdated }: Props) {
                   ) : (
                     (() => {
                       const existingTotal = existingMap[p.id] || 0;
-                      if (!isToday) {
-                        return (
-                          <div
-                            className="inline-flex flex-col items-end gap-0.5 font-mono px-2 py-1"
-                            title="Modification autorisée uniquement le jour même"
-                          >
-                            <span className="text-sm font-bold text-muted-foreground">{existingTotal}</span>
-                            <span className="text-[10px] text-muted-foreground/70">pièces</span>
-                          </div>
-                        );
-                      }
                       return (
                         <div className="inline-flex items-center gap-1 justify-end">
                           <button
