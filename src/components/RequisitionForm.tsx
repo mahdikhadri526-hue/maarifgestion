@@ -235,7 +235,7 @@ export function RequisitionForm({ onUpdated }: Props) {
             className="gap-1.5"
           >
             {showAdded ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            {showAdded ? "Masquer" : "Afficher"} qté rajoutée
+            {showAdded ? "Masquer" : "Afficher"} qté demandée
           </Button>
         </div>
       </div>
@@ -245,9 +245,9 @@ export function RequisitionForm({ onUpdated }: Props) {
           <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
-              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté demandée</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté demandée</th>
               {showAdded && (
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-56">Qté rajoutée (pièces)</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-56">Qté demandée (pièces)</th>
               )}
             </tr>
           </thead>
