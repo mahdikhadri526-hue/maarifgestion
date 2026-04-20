@@ -135,7 +135,7 @@ const Index = () => {
 
         {tab === "historique" && <MovementHistory key={refreshKey} onMovementDeleted={refresh} />}
 
-        {tab === "produit" && <ProductHistory />}
+        {tab === "produit" && <StockTable />}
 
         {tab === "requisition" && <RequisitionForm onUpdated={refresh} />}
 
