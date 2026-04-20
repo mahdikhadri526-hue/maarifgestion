@@ -22,7 +22,6 @@ interface MovementHistoryProps {
 }
 
 export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
-  const UNIT_LABELS: Record<MovementUnit, string> = { CARTON: "Carton", PAQUET: "Paquet", PIECE: "Pièce" };
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const { data: movements, loading } = useMovements();
@@ -61,9 +60,8 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
-              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">Catégorie</th>
-              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté (pièces)</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Effectué par</th>
               <th className="p-3 w-10"></th>
             </tr>
@@ -83,7 +81,6 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   </span>
                 </td>
                 <td className="p-3 text-sm">{m.productName}</td>
-                <td className="p-3 text-xs text-muted-foreground">{UNIT_LABELS[(m.unitUsed as MovementUnit) || "PIECE"]}</td>
                 <td className="p-3 hidden sm:table-cell">
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     m.category === "alimentaire" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent-foreground"
