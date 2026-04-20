@@ -150,6 +150,7 @@ export async function setRequisitionTotal(
         product_name: productName,
         quantity: newQuantity,
         performed_by: performedBy || null,
+        unit_used: "PIECE",
       } as any);
     if (insErr) throw insErr;
   }
