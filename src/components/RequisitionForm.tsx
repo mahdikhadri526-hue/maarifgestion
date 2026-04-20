@@ -235,7 +235,7 @@ export function RequisitionForm({ onUpdated }: Props) {
             className="gap-1.5"
           >
             {showAdded ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            {showAdded ? "Masquer" : "Afficher"} qté rajoutée
+            {showAdded ? "Masquer" : "Afficher"} qté demandée
           </Button>
         </div>
       </div>
