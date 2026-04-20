@@ -245,9 +245,9 @@ export function RequisitionForm({ onUpdated }: Props) {
           <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
-              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté demandée (Carton / Paquet / Pièce)</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté demandée</th>
               {showAdded && (
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-56">Qté rajoutée (C / P / Pc)</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-56">Qté rajoutée (pièces)</th>
               )}
             </tr>
           </thead>
@@ -302,12 +302,6 @@ export function RequisitionForm({ onUpdated }: Props) {
                   ) : (
                     (() => {
                       const existingTotal = existingMap[p.id] || 0;
-                      const breakdown = piecesToMulti(existingTotal, cfg);
-                      const parts: string[] = [];
-                      if (cfg.cartonEnabled && breakdown.cartons) parts.push(`${breakdown.cartons}C`);
-                      if (cfg.paquetEnabled && breakdown.paquets) parts.push(`${breakdown.paquets}P`);
-                      if (breakdown.pieces) parts.push(`${breakdown.pieces}pc`);
-                      const breakdownLabel = parts.length > 0 ? parts.join(" + ") : null;
                       if (!isToday) {
                         return (
                           <div
@@ -315,9 +309,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                             title="Modification autorisée uniquement le jour même"
                           >
                             <span className="text-sm font-bold text-muted-foreground">{existingTotal}</span>
-                            {breakdownLabel && (
-                              <span className="text-[10px] text-muted-foreground/70">{breakdownLabel}</span>
-                            )}
+                            <span className="text-[10px] text-muted-foreground/70">pièces</span>
                           </div>
                         );
                       }
@@ -332,9 +324,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                             {existingTotal}
                             <Pencil className="h-3 w-3 opacity-60" />
                           </span>
-                          {breakdownLabel && (
-                            <span className="text-[10px] font-normal text-primary/70">{breakdownLabel}</span>
-                          )}
+                          <span className="text-[10px] font-normal text-primary/70">pièces</span>
                         </button>
                       );
                     })()
