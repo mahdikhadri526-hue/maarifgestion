@@ -14,6 +14,25 @@ interface Props {
   onUpdated: () => void;
 }
 
+// Décompose un total en pièces vers cartons/paquets/pièces selon la config (greedy).
+function piecesToMulti(total: number, cfg: { cartonEnabled: boolean; paquetEnabled: boolean; piecesPerCarton: number; piecesPerPaquet: number }): MultiUnitValues {
+  let remaining = Math.max(0, Math.floor(total));
+  let cartons = 0, paquets = 0;
+  if (cfg.cartonEnabled && cfg.piecesPerCarton > 0) {
+    cartons = Math.floor(remaining / cfg.piecesPerCarton);
+    remaining -= cartons * cfg.piecesPerCarton;
+  }
+  if (cfg.paquetEnabled && cfg.piecesPerPaquet > 0) {
+    paquets = Math.floor(remaining / cfg.piecesPerPaquet);
+    remaining -= paquets * cfg.piecesPerPaquet;
+  }
+  return {
+    cartons: cartons ? String(cartons) : "",
+    paquets: paquets ? String(paquets) : "",
+    pieces: remaining ? String(remaining) : "",
+  };
+}
+
 export function RequisitionForm({ onUpdated }: Props) {
   const [reqType, setReqType] = useState<"salle" | "emporter">("salle");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
@@ -22,7 +41,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState("");
+  const [editValue, setEditValue] = useState<MultiUnitValues>(EMPTY_MULTI);
   const [operators, setOperators] = useState<string[]>(() => getOperators());
   const { data: configs } = useProductUnitConfigs();
 
@@ -120,19 +139,21 @@ export function RequisitionForm({ onUpdated }: Props) {
   };
 
   const startEdit = (productId: string, currentQty: number) => {
+    const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
     setEditingId(productId);
-    setEditValue(String(currentQty));
+    setEditValue(piecesToMulti(currentQty, cfg));
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditValue("");
+    setEditValue(EMPTY_MULTI);
   };
 
   const saveEdit = async (productId: string) => {
     const product = allProducts.find((p) => p.id === productId);
     if (!product) return;
-    const val = Number(editValue);
+    const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
+    const val = totalPieces(editValue, cfg);
     if (isNaN(val) || val < 0) {
       toast.error("Quantité invalide");
       return;
@@ -147,7 +168,7 @@ export function RequisitionForm({ onUpdated }: Props) {
       setOperators(rememberOperator(operatorName));
       toast.success(`${product.name} mis à jour`);
       setEditingId(null);
-      setEditValue("");
+      setEditValue(EMPTY_MULTI);
       onUpdated();
     } catch (err) {
       toast.error("Erreur lors de la mise à jour");
@@ -216,7 +237,7 @@ export function RequisitionForm({ onUpdated }: Props) {
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-24">Conv.</th>
-              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-24">Qté demandée</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté demandée (Carton / Paquet / Pièce)</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté rajoutée (Carton / Paquet / Pièce)</th>
             </tr>
           </thead>
@@ -235,13 +256,12 @@ export function RequisitionForm({ onUpdated }: Props) {
                 </td>
                 <td className="p-3 text-right">
                   {editingId === p.id ? (
-                    <div className="flex items-center gap-1 justify-end">
-                      <Input
-                        type="number" min="0"
-                        value={editValue}
-                        onChange={(e) => setEditValue(e.target.value)}
-                        className="font-mono text-right w-20 h-8"
-                        autoFocus
+                    <div className="flex items-end gap-1 justify-end">
+                      <MultiUnitInput
+                        config={cfg}
+                        values={editValue}
+                        onChange={setEditValue}
+                        size="sm"
                       />
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => saveEdit(p.id)}>
                         <Check className="h-3.5 w-3.5 text-success" />
@@ -251,15 +271,31 @@ export function RequisitionForm({ onUpdated }: Props) {
                       </Button>
                     </div>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => startEdit(p.id, existingMap[p.id] || 0)}
-                      className="inline-flex items-center gap-1.5 font-mono text-sm font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors"
-                      title="Modifier la quantité"
-                    >
-                      {existingMap[p.id] || 0}
-                      <Pencil className="h-3 w-3 opacity-60" />
-                    </button>
+                    (() => {
+                      const existingTotal = existingMap[p.id] || 0;
+                      const decomposed = piecesToMulti(existingTotal, cfg);
+                      const showMulti = cfg.cartonEnabled || cfg.paquetEnabled;
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => startEdit(p.id, existingTotal)}
+                          className="inline-flex flex-col items-end gap-0.5 font-mono text-sm font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors"
+                          title="Modifier la quantité"
+                        >
+                          <span className="inline-flex items-center gap-1.5">
+                            {existingTotal}
+                            <Pencil className="h-3 w-3 opacity-60" />
+                          </span>
+                          {showMulti && existingTotal > 0 && (
+                            <span className="text-[10px] font-normal text-muted-foreground">
+                              {cfg.cartonEnabled && Number(decomposed.cartons || 0) > 0 && `${decomposed.cartons}C `}
+                              {cfg.paquetEnabled && Number(decomposed.paquets || 0) > 0 && `${decomposed.paquets}Pq `}
+                              {Number(decomposed.pieces || 0) > 0 && `${decomposed.pieces}P`}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })()
                   )}
                 </td>
                 <td className="p-3">
