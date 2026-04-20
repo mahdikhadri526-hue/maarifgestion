@@ -6,7 +6,7 @@ import { getOperators, rememberOperator } from "@/lib/operators";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ClipboardList, Search, Pencil, Check, X, Eye, EyeOff } from "lucide-react";
+import { ClipboardList, Search, Pencil, Check, X, Eye, EyeOff, Trash2 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { MultiUnitInput, MultiUnitValues, EMPTY_MULTI, totalPieces, dominantUnit } from "./MultiUnitInput";
 
