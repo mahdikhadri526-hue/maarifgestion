@@ -139,6 +139,17 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PinPromptDialog
+        open={!!pendingDeleteId}
+        onOpenChange={(open) => !open && setPendingDeleteId(null)}
+        title="Supprimer un mouvement"
+        description="Entrez le code à 4 chiffres pour autoriser la suppression."
+        onConfirm={() => {
+          setDeleteId(pendingDeleteId);
+          setPendingDeleteId(null);
+        }}
+      />
     </div>
   );
 }
