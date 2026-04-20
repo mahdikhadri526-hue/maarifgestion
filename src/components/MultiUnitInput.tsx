@@ -46,7 +46,6 @@ export function MultiUnitInput({ config, values, onChange, size = "md", disabled
               onChange={(e) => onChange({ ...values, cartons: e.target.value })}
               className={`font-mono text-right w-20 ${sizeCls}`}
             />
-            <span className="text-[10px] text-muted-foreground mt-0.5">×{config.piecesPerCarton}</span>
           </div>
         )}
         {config.paquetEnabled && (
@@ -59,7 +58,6 @@ export function MultiUnitInput({ config, values, onChange, size = "md", disabled
               onChange={(e) => onChange({ ...values, paquets: e.target.value })}
               className={`font-mono text-right w-20 ${sizeCls}`}
             />
-            <span className="text-[10px] text-muted-foreground mt-0.5">×{config.piecesPerPaquet}</span>
           </div>
         )}
         <div className="flex flex-col">
@@ -71,7 +69,6 @@ export function MultiUnitInput({ config, values, onChange, size = "md", disabled
             onChange={(e) => onChange({ ...values, pieces: e.target.value })}
             className={`font-mono text-right w-20 ${sizeCls}`}
           />
-          <span className="text-[10px] text-muted-foreground mt-0.5">&nbsp;</span>
         </div>
       </div>
       {total > 0 && (config.cartonEnabled || config.paquetEnabled) && (
