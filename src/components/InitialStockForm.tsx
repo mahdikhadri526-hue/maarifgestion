@@ -228,6 +228,18 @@ export function InitialStockForm({ onUpdated }: Props) {
           }
         }}
       />
+      <PinPromptDialog
+        open={!!pendingUnlockId}
+        onOpenChange={(open) => !open && setPendingUnlockId(null)}
+        title="Déverrouiller le stock initial"
+        description="Entrez le code à 4 chiffres pour autoriser la modification de ce produit."
+        onConfirm={() => {
+          if (pendingUnlockId) {
+            setUnlockedIds((s) => new Set(s).add(pendingUnlockId));
+            setPendingUnlockId(null);
+          }
+        }}
+      />
     </div>
   );
 }
