@@ -34,6 +34,7 @@ export interface StockLevel {
   conditionnement: string;
   unit: UnitType;
   category: Category;
+  stockInitial: number;
   totalEntrees: number;
   totalSorties: number;
   stockRestant: number;
