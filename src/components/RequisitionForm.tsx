@@ -14,6 +14,25 @@ interface Props {
   onUpdated: () => void;
 }
 
+// Décompose un total en pièces vers cartons/paquets/pièces selon la config (greedy).
+function piecesToMulti(total: number, cfg: { cartonEnabled: boolean; paquetEnabled: boolean; piecesPerCarton: number; piecesPerPaquet: number }): MultiUnitValues {
+  let remaining = Math.max(0, Math.floor(total));
+  let cartons = 0, paquets = 0;
+  if (cfg.cartonEnabled && cfg.piecesPerCarton > 0) {
+    cartons = Math.floor(remaining / cfg.piecesPerCarton);
+    remaining -= cartons * cfg.piecesPerCarton;
+  }
+  if (cfg.paquetEnabled && cfg.piecesPerPaquet > 0) {
+    paquets = Math.floor(remaining / cfg.piecesPerPaquet);
+    remaining -= paquets * cfg.piecesPerPaquet;
+  }
+  return {
+    cartons: cartons ? String(cartons) : "",
+    paquets: paquets ? String(paquets) : "",
+    pieces: remaining ? String(remaining) : "",
+  };
+}
+
 export function RequisitionForm({ onUpdated }: Props) {
   const [reqType, setReqType] = useState<"salle" | "emporter">("salle");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
@@ -22,7 +41,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editValue, setEditValue] = useState("");
+  const [editValue, setEditValue] = useState<MultiUnitValues>(EMPTY_MULTI);
   const [operators, setOperators] = useState<string[]>(() => getOperators());
   const { data: configs } = useProductUnitConfigs();
 
