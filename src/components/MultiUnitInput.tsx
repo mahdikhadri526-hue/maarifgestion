@@ -28,9 +28,10 @@ interface Props {
   onChange: (v: MultiUnitValues) => void;
   size?: "sm" | "md";
   disabled?: boolean;
+  pieceLabel?: string;
 }
 
-export function MultiUnitInput({ config, values, onChange, size = "md", disabled }: Props) {
+export function MultiUnitInput({ config, values, onChange, size = "md", disabled, pieceLabel = "Pièces" }: Props) {
   const sizeCls = size === "sm" ? "h-8 text-xs" : "";
   const total = totalPieces(values, config);
   return (
@@ -61,7 +62,7 @@ export function MultiUnitInput({ config, values, onChange, size = "md", disabled
           </div>
         )}
         <div className="flex flex-col">
-          <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">Pièces</label>
+          <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">{pieceLabel}</label>
           <Input
             type="number" min="0" placeholder="0"
             value={values.pieces}
