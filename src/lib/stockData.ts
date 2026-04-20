@@ -57,6 +57,7 @@ export interface StockLevel {
 }
 
 const ALIMENTAIRE_PRODUCTS = [
+  "__HIDDEN__",
   "SMARTIES TOPPING (20 KG)",
   "OREO TOPPING (BOITE 24 P)",
   "SIDI ALI 0,33 (PAQUET = 12P)",
@@ -163,11 +164,11 @@ export function getProducts(category?: Category): Product[] {
   const ali = ALIMENTAIRE_PRODUCTS.map((raw, i) => {
     const { name, conditionnement } = parseProduct(raw);
     return { id: `ali-${i}`, name, conditionnement, category: "alimentaire" as Category, initialStock: 0 };
-  });
+  }).filter((p) => p.name !== "__HIDDEN__");
   const emb = EMBALLAGE_PRODUCTS.map((raw, i) => {
     const { name, conditionnement } = parseProduct(raw);
     return { id: `emb-${i}`, name, conditionnement, category: "emballage" as Category, initialStock: 0 };
-  });
+  }).filter((p) => p.name !== "__HIDDEN__");
   if (category === "alimentaire") return ali;
   if (category === "emballage") return emb;
   return [...ali, ...emb];
