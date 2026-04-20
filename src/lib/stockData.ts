@@ -140,6 +140,8 @@ const EMBALLAGE_PRODUCTS = [
   "GANT",
   "PAPIER ESSUIE-TOUT",
   "PAPIER HYGIENIQUE",
+  "BAC 2.5",
+  "CVC BAC 2.5",
 ];
 
 export function getProducts(category?: Category): Product[] {
