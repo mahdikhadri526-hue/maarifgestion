@@ -330,18 +330,31 @@ export function RequisitionForm({ onUpdated }: Props) {
                         );
                       }
                       return (
-                        <button
-                          type="button"
-                          onClick={() => startEdit(p.id, existingTotal)}
-                          className="inline-flex flex-col items-end gap-0.5 font-mono text-sm font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors"
-                          title="Modifier la quantité"
-                        >
-                          <span className="inline-flex items-center gap-1.5">
-                            {existingTotal}
-                            <Pencil className="h-3 w-3 opacity-60" />
-                          </span>
-                          <span className="text-[10px] font-normal text-primary/70">pièces</span>
-                        </button>
+                        <div className="inline-flex items-center gap-1 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(p.id, existingTotal)}
+                            className="inline-flex flex-col items-end gap-0.5 font-mono text-sm font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors"
+                            title="Modifier la quantité"
+                          >
+                            <span className="inline-flex items-center gap-1.5">
+                              {existingTotal}
+                              <Pencil className="h-3 w-3 opacity-60" />
+                            </span>
+                            <span className="text-[10px] font-normal text-primary/70">pièces</span>
+                          </button>
+                          {existingTotal > 0 && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                              onClick={() => handleDelete(p.id)}
+                              title="Supprimer la quantité"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
                       );
                     })()
                   )}
