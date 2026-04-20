@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Category, getProducts, getInitialStocks, setInitialStock, UnitType } from "@/lib/stockData";
-import { useInitialStocks, useProductUnits } from "@/hooks/useStockData";
+import { Category, getProducts, setInitialStock, setProductUnitConfig, DEFAULT_UNIT_CONFIG } from "@/lib/stockData";
+import { useInitialStocks, useProductUnitConfigs } from "@/hooks/useStockData";
 import { addLotEntry } from "@/lib/lotData";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Save, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
@@ -15,7 +16,6 @@ interface Props {
 export function InitialStockForm({ onUpdated }: Props) {
   const [category, setCategory] = useState<Category | "all">("all");
   const [search, setSearch] = useState("");
-  const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre", PAQUET: "Paquet", COLIS: "Colis", ROULEAU: "Rouleau" };
   const [stocks, setStocks] = useState<Record<string, string>>({});
   const [lotNumbers, setLotNumbers] = useState<Record<string, string>>({});
   const [expiryDates, setExpiryDates] = useState<Record<string, string>>({});
@@ -23,7 +23,7 @@ export function InitialStockForm({ onUpdated }: Props) {
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
   const [pendingUnlockId, setPendingUnlockId] = useState<string | null>(null);
   const { data: savedStocks, loading } = useInitialStocks();
-  const { data: units } = useProductUnits();
+  const { data: configs } = useProductUnitConfigs();
 
   useEffect(() => {
     if (savedStocks) {
