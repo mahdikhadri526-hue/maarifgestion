@@ -98,7 +98,7 @@ export function StockTable() {
                   </td>
                   <td className="p-3">
                     <button
-                      onClick={() => cycleUnit(level.productId, level.unit)}
+                      onClick={() => setPendingUnit({ productId: level.productId, currentUnit: level.unit })}
                       className="cursor-pointer text-xs px-2 py-1 rounded-md border font-medium transition-colors hover:bg-muted select-none"
                       title="Cliquer pour changer l'unité"
                     >
