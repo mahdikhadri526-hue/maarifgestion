@@ -207,10 +207,10 @@ export function LotManager() {
                             </div>
                           ) : (
                             <div className="flex gap-1 justify-center">
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => startEdit(lot)}>
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setPendingEdit(lot)}>
                                 <Edit2 className="h-3.5 w-3.5" />
                               </Button>
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => handleDelete(lot)}>
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setPendingDelete(lot)}>
                                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
                               </Button>
                             </div>
