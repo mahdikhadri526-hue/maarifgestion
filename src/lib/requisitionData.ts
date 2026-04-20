@@ -54,6 +54,7 @@ export async function saveRequisition(entry: Omit<RequisitionEntry, "id">): Prom
       product_name: entry.productName,
       quantity: entry.quantity,
       performed_by: entry.performedBy || null,
+      unit_used: entry.unitUsed || "PIECE",
     } as any)
     .select()
     .single();
@@ -69,6 +70,7 @@ export async function saveRequisition(entry: Omit<RequisitionEntry, "id">): Prom
     type: "sortie",
     quantity: entry.quantity,
     performedBy: entry.performedBy,
+    unitUsed: entry.unitUsed,
   });
 
   const row: any = data;
