@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
+import { PinPromptDialog } from "./PinPromptDialog";
 
 export function ExpiryAlerts() {
   const { data: expiringLots, loading } = useExpiringLots(30);
@@ -62,6 +63,8 @@ export function LotManager() {
   const [editingLot, setEditingLot] = useState<string | null>(null);
   const [editLotNumber, setEditLotNumber] = useState("");
   const [editExpiryDate, setEditExpiryDate] = useState("");
+  const [pendingEdit, setPendingEdit] = useState<LotEntry | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<LotEntry | null>(null);
 
   const products = getProducts("alimentaire");
   const { data: lots, loading } = useProductLots(selectedProductId);
@@ -81,7 +84,6 @@ export function LotManager() {
   };
 
   const handleDelete = async (lot: LotEntry) => {
-    if (!confirm(`Supprimer le lot "${lot.lotNumber}" ?\n\nCette action est irréversible.`)) return;
     try {
       await deleteLotEntry(lot.id);
       toast.success("Lot supprimé");
