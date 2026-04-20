@@ -156,55 +156,27 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Produit</label>
-          <div className="flex gap-2">
-            <Select value={productId} onValueChange={setProductId}>
-              <SelectTrigger><SelectValue placeholder="Sélectionner un produit" /></SelectTrigger>
-              <SelectContent>
-                {products.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <VoiceButton
-              title="Dicter le nom du produit"
-              onResult={(spoken) => {
-                const id = findProductByVoice(spoken, products);
-                if (id) {
-                  setProductId(id);
-                  const p = products.find((x) => x.id === id);
-                  toast.success(`Produit : ${p?.name}`);
-                } else {
-                  toast.error(`Aucun produit trouvé pour "${spoken}"`);
-                }
-              }}
-            />
-          </div>
+          <Select value={productId} onValueChange={setProductId}>
+            <SelectTrigger><SelectValue placeholder="Sélectionner un produit" /></SelectTrigger>
+            <SelectContent>
+              {products.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">
             Quantité {productId && <span className="text-primary">({UNIT_LABELS[selectedUnit]})</span>}
           </label>
-          <div className="flex gap-2">
-            <Input type="number" min="1" placeholder="0" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="font-mono" />
-            <VoiceButton
-              title="Dicter la quantité"
-              parseNumber
-              onResult={(value) => setQuantity(value)}
-            />
-          </div>
+          <Input type="number" min="1" placeholder="0" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="font-mono" />
         </div>
 
         {isAlimentaire && type === "entree" && (
           <>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">N° de Lot</label>
-              <div className="flex gap-2">
-                <Input type="text" placeholder="Ex: LOT-2026-001" value={lotNumber} onChange={(e) => setLotNumber(e.target.value)} />
-                <VoiceButton
-                  title="Dicter le numéro de lot"
-                  onResult={(value) => setLotNumber(value.toUpperCase().replace(/\s+/g, "-"))}
-                />
-              </div>
+              <Input type="text" placeholder="Ex: LOT-2026-001" value={lotNumber} onChange={(e) => setLotNumber(e.target.value)} />
             </div>
             <div>
               <label className="text-xs font-medium text-muted-foreground mb-1 block">Date Limite de Consommation (DLC)</label>
