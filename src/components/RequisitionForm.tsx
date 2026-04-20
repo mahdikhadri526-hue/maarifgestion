@@ -6,7 +6,7 @@ import { getOperators, rememberOperator } from "@/lib/operators";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ClipboardList, Search, Pencil, Check, X } from "lucide-react";
+import { ClipboardList, Search, Pencil, Check, X, Eye, EyeOff } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { MultiUnitInput, MultiUnitValues, EMPTY_MULTI, totalPieces, dominantUnit } from "./MultiUnitInput";
 
@@ -43,6 +43,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<MultiUnitValues>(EMPTY_MULTI);
   const [operators, setOperators] = useState<string[]>(() => getOperators());
+  const [showAdded, setShowAdded] = useState(true);
   const { data: configs } = useProductUnitConfigs();
 
   const allProducts = getProducts();
@@ -226,6 +227,16 @@ export function RequisitionForm({ onUpdated }: Props) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Rechercher un produit..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAdded((v) => !v)}
+            className="gap-1.5"
+          >
+            {showAdded ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showAdded ? "Masquer" : "Afficher"} qté rajoutée
+          </Button>
         </div>
       </div>
 
@@ -235,7 +246,9 @@ export function RequisitionForm({ onUpdated }: Props) {
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté demandée (Carton / Paquet / Pièce)</th>
-              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-32">Qté rajoutée</th>
+              {showAdded && (
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-56">Qté rajoutée (C / P / Pc)</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -267,6 +280,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                     </Button>
                   </div>
                 </td>
+                {showAdded && (
                 <td className="p-3 text-right">
                   {editingId === p.id ? (
                     <div className="flex items-center gap-1 justify-end">
@@ -288,14 +302,23 @@ export function RequisitionForm({ onUpdated }: Props) {
                   ) : (
                     (() => {
                       const existingTotal = existingMap[p.id] || 0;
+                      const breakdown = piecesToMulti(existingTotal, cfg);
+                      const parts: string[] = [];
+                      if (cfg.cartonEnabled && breakdown.cartons) parts.push(`${breakdown.cartons}C`);
+                      if (cfg.paquetEnabled && breakdown.paquets) parts.push(`${breakdown.paquets}P`);
+                      if (breakdown.pieces) parts.push(`${breakdown.pieces}pc`);
+                      const breakdownLabel = parts.length > 0 ? parts.join(" + ") : null;
                       if (!isToday) {
                         return (
-                          <span
-                            className="inline-flex items-center gap-1.5 font-mono text-sm font-bold text-muted-foreground px-2 py-1"
+                          <div
+                            className="inline-flex flex-col items-end gap-0.5 font-mono px-2 py-1"
                             title="Modification autorisée uniquement le jour même"
                           >
-                            {existingTotal}
-                          </span>
+                            <span className="text-sm font-bold text-muted-foreground">{existingTotal}</span>
+                            {breakdownLabel && (
+                              <span className="text-[10px] text-muted-foreground/70">{breakdownLabel}</span>
+                            )}
+                          </div>
                         );
                       }
                       return (
@@ -309,11 +332,15 @@ export function RequisitionForm({ onUpdated }: Props) {
                             {existingTotal}
                             <Pencil className="h-3 w-3 opacity-60" />
                           </span>
+                          {breakdownLabel && (
+                            <span className="text-[10px] font-normal text-primary/70">{breakdownLabel}</span>
+                          )}
                         </button>
                       );
                     })()
                   )}
                 </td>
+                )}
               </tr>
               );
             })}
