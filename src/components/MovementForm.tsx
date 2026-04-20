@@ -169,9 +169,13 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">
-            Quantité {productId && <span className="text-primary">({UNIT_LABELS[selectedUnit]})</span>}
+            Quantité
           </label>
-          <Input type="number" min="1" placeholder="0" value={quantity} onChange={(e) => setQuantity(e.target.value)} className="font-mono" />
+          {productId ? (
+            <MultiUnitInput config={config} values={multi} onChange={setMulti} />
+          ) : (
+            <p className="text-xs text-muted-foreground italic">Sélectionnez un produit d'abord</p>
+          )}
         </div>
 
         {isAlimentaire && type === "entree" && (
