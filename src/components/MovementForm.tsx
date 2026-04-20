@@ -8,25 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Minus } from "lucide-react";
 import { toast } from "sonner";
-import { VoiceButton } from "@/components/VoiceButton";
-
-function findProductByVoice(spoken: string, products: { id: string; name: string }[]): string | null {
-  const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9 ]/g, " ");
-  const target = norm(spoken);
-  if (!target.trim()) return null;
-  const targetWords = target.split(/\s+/).filter(Boolean);
-  let best: { id: string; score: number } | null = null;
-  for (const p of products) {
-    const name = norm(p.name);
-    let score = 0;
-    if (name.includes(target)) score += 100;
-    for (const w of targetWords) {
-      if (w.length >= 3 && name.includes(w)) score += 10;
-    }
-    if (!best || score > best.score) best = { id: p.id, score };
-  }
-  return best && best.score > 0 ? best.id : null;
-}
 
 const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre" };
 
