@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { saveMovement } from "./stockData";
+import { saveMovement, MovementUnit } from "./stockData";
 
 export interface RequisitionEntry {
   id: string;
@@ -9,6 +9,7 @@ export interface RequisitionEntry {
   productName: string;
   quantity: number;
   performedBy?: string;
+  unitUsed?: MovementUnit;
 }
 
 // Products in "Réquisition Salle" (alimentaire)
