@@ -175,7 +175,7 @@ export function InitialStockForm({ onUpdated }: Props) {
                   </td>
                   <td className="p-3">
                     <button
-                      onClick={() => handleSave(p.id, p.category)}
+                      onClick={() => setPendingSave({ productId: p.id, category: p.category })}
                       className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                     >
                       <Save className="h-4 w-4" />
