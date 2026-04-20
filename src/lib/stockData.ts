@@ -57,7 +57,6 @@ export interface StockLevel {
 }
 
 const ALIMENTAIRE_PRODUCTS = [
-  "PEPITES TOPPING (20 KG)",
   "SMARTIES TOPPING (20 KG)",
   "OREO TOPPING (BOITE 24 P)",
   "SIDI ALI 0,33 (PAQUET = 12P)",
@@ -172,6 +171,18 @@ export function getProducts(category?: Category): Product[] {
   if (category === "alimentaire") return ali;
   if (category === "emballage") return emb;
   return [...ali, ...emb];
+}
+
+// Détecte l'unité naturelle d'un produit selon son nom (huile→Litre, sucre→Kg, etc.)
+export function detectProductUnit(name: string): string {
+  const n = name.toUpperCase();
+  if (/HUILE|HUILLE|SIROP|LAIT|EAU|SIDI ALI|OULMESS|NUTELLA|MIEL|CONFITURE|CHOCOLT|PROTOXYDE/.test(n)) {
+    if (/\bL\b|LITRE|CL|ML/.test(n) || /SIROP|HUILE|HUILLE|LAIT|EAU|OULMESS|SIDI ALI/.test(n)) return "L";
+  }
+  if (/\bKG\b|KILO|FARINE|SEL|SUCRE|CAFE|THE\b|VANILLE|BEURRE|LEVURE|TOPPING/.test(n)) return "Kg";
+  if (/PAPIER|FILM|ALUMINIUM|ROULEAU/.test(n)) return "Rouleau";
+  if (/SACHET/.test(n)) return "Sachet";
+  return "Pièce";
 }
 
 // ===== Async Supabase functions =====
