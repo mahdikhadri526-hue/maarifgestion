@@ -6,7 +6,7 @@ import { getOperators, rememberOperator } from "@/lib/operators";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { ClipboardList, Search, Pencil, Check, X, Eye, EyeOff } from "lucide-react";
+import { ClipboardList, Search, Pencil, Check, X, Eye, EyeOff, Trash2 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { MultiUnitInput, MultiUnitValues, EMPTY_MULTI, totalPieces, dominantUnit } from "./MultiUnitInput";
 
@@ -175,6 +175,22 @@ export function RequisitionForm({ onUpdated }: Props) {
     }
   };
 
+  const handleDelete = async (productId: string) => {
+    const product = allProducts.find((p) => p.id === productId);
+    if (!product) return;
+    if (!confirm(`Supprimer la quantité demandée pour ${product.name} ?`)) return;
+    try {
+      await setRequisitionTotal(date, reqType, productId, product.name, 0, performedBy.trim() || undefined);
+      toast.success(`${product.name} supprimé`);
+      setEditingId(null);
+      setEditValue(EMPTY_MULTI);
+      onUpdated();
+    } catch (err) {
+      toast.error("Erreur lors de la suppression");
+      console.error(err);
+    }
+  };
+
   return (
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
@@ -314,18 +330,31 @@ export function RequisitionForm({ onUpdated }: Props) {
                         );
                       }
                       return (
-                        <button
-                          type="button"
-                          onClick={() => startEdit(p.id, existingTotal)}
-                          className="inline-flex flex-col items-end gap-0.5 font-mono text-sm font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors"
-                          title="Modifier la quantité"
-                        >
-                          <span className="inline-flex items-center gap-1.5">
-                            {existingTotal}
-                            <Pencil className="h-3 w-3 opacity-60" />
-                          </span>
-                          <span className="text-[10px] font-normal text-primary/70">pièces</span>
-                        </button>
+                        <div className="inline-flex items-center gap-1 justify-end">
+                          <button
+                            type="button"
+                            onClick={() => startEdit(p.id, existingTotal)}
+                            className="inline-flex flex-col items-end gap-0.5 font-mono text-sm font-bold text-primary hover:bg-primary/10 px-2 py-1 rounded transition-colors"
+                            title="Modifier la quantité"
+                          >
+                            <span className="inline-flex items-center gap-1.5">
+                              {existingTotal}
+                              <Pencil className="h-3 w-3 opacity-60" />
+                            </span>
+                            <span className="text-[10px] font-normal text-primary/70">pièces</span>
+                          </button>
+                          {existingTotal > 0 && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                              onClick={() => handleDelete(p.id)}
+                              title="Supprimer la quantité"
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          )}
+                        </div>
                       );
                     })()
                   )}
