@@ -131,6 +131,19 @@ export function StockTable() {
           )}
         </div>
       )}
+      <PinPromptDialog
+        open={!!pendingUnit}
+        onOpenChange={(open) => !open && setPendingUnit(null)}
+        title="Changer l'unité"
+        description="Entrez le code à 4 chiffres pour autoriser le changement d'unité."
+        onConfirm={() => {
+          if (pendingUnit) {
+            const { productId, currentUnit } = pendingUnit;
+            setPendingUnit(null);
+            cycleUnit(productId, currentUnit);
+          }
+        }}
+      />
     </div>
   );
 }
