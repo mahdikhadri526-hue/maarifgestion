@@ -2,6 +2,21 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type Category = "alimentaire" | "emballage";
 export type UnitType = "PIECE" | "KILO" | "LITRE" | "PAQUET" | "COLIS" | "ROULEAU";
+export type MovementUnit = "CARTON" | "PAQUET" | "PIECE";
+
+export interface ProductUnitConfig {
+  cartonEnabled: boolean;
+  paquetEnabled: boolean;
+  piecesPerCarton: number;
+  piecesPerPaquet: number;
+}
+
+export const DEFAULT_UNIT_CONFIG: ProductUnitConfig = {
+  cartonEnabled: false,
+  paquetEnabled: false,
+  piecesPerCarton: 1,
+  piecesPerPaquet: 1,
+};
 
 export interface Product {
   id: string;
@@ -26,6 +41,7 @@ export interface StockMovement {
   type: "entree" | "sortie";
   quantity: number;
   performedBy?: string;
+  unitUsed?: MovementUnit;
 }
 
 export interface StockLevel {
