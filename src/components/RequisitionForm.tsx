@@ -139,19 +139,21 @@ export function RequisitionForm({ onUpdated }: Props) {
   };
 
   const startEdit = (productId: string, currentQty: number) => {
+    const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
     setEditingId(productId);
-    setEditValue(String(currentQty));
+    setEditValue(piecesToMulti(currentQty, cfg));
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditValue("");
+    setEditValue(EMPTY_MULTI);
   };
 
   const saveEdit = async (productId: string) => {
     const product = allProducts.find((p) => p.id === productId);
     if (!product) return;
-    const val = Number(editValue);
+    const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
+    const val = totalPieces(editValue, cfg);
     if (isNaN(val) || val < 0) {
       toast.error("Quantité invalide");
       return;
@@ -166,7 +168,7 @@ export function RequisitionForm({ onUpdated }: Props) {
       setOperators(rememberOperator(operatorName));
       toast.success(`${product.name} mis à jour`);
       setEditingId(null);
-      setEditValue("");
+      setEditValue(EMPTY_MULTI);
       onUpdated();
     } catch (err) {
       toast.error("Erreur lors de la mise à jour");
