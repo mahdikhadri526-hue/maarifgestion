@@ -234,8 +234,8 @@ export function RequisitionForm({ onUpdated }: Props) {
           <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
-              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-32">Qté demandée</th>
-              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté rajoutée (Carton / Paquet / Pièce)</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté demandée (Carton / Paquet / Pièce)</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-32">Qté rajoutée</th>
             </tr>
           </thead>
           <tbody>
@@ -243,9 +243,30 @@ export function RequisitionForm({ onUpdated }: Props) {
               const cfg = configs?.[p.id] || DEFAULT_UNIT_CONFIG;
               const val = quantities[p.id] || EMPTY_MULTI;
               const total = totalPieces(val, cfg);
+              const today = new Date().toISOString().split("T")[0];
+              const isToday = date === today;
               return (
               <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="p-3 text-sm font-medium">{p.name}</td>
+                <td className="p-3">
+                  <div className="flex items-end gap-2 justify-end">
+                    <MultiUnitInput
+                      config={cfg}
+                      values={val}
+                      onChange={(nv) => setQuantities((q) => ({ ...q, [p.id]: nv }))}
+                      size="sm"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-9 px-2 text-xs"
+                      disabled={total <= 0}
+                      onClick={() => handleSingleSave(p.id)}
+                    >
+                      ✓
+                    </Button>
+                  </div>
+                </td>
                 <td className="p-3 text-right">
                   {editingId === p.id ? (
                     <div className="flex items-center gap-1 justify-end">
@@ -267,6 +288,16 @@ export function RequisitionForm({ onUpdated }: Props) {
                   ) : (
                     (() => {
                       const existingTotal = existingMap[p.id] || 0;
+                      if (!isToday) {
+                        return (
+                          <span
+                            className="inline-flex items-center gap-1.5 font-mono text-sm font-bold text-muted-foreground px-2 py-1"
+                            title="Modification autorisée uniquement le jour même"
+                          >
+                            {existingTotal}
+                          </span>
+                        );
+                      }
                       return (
                         <button
                           type="button"
@@ -282,25 +313,6 @@ export function RequisitionForm({ onUpdated }: Props) {
                       );
                     })()
                   )}
-                </td>
-                <td className="p-3">
-                  <div className="flex items-end gap-2 justify-end">
-                    <MultiUnitInput
-                      config={cfg}
-                      values={val}
-                      onChange={(nv) => setQuantities((q) => ({ ...q, [p.id]: nv }))}
-                      size="sm"
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-9 px-2 text-xs"
-                      disabled={total <= 0}
-                      onClick={() => handleSingleSave(p.id)}
-                    >
-                      ✓
-                    </Button>
-                  </div>
                 </td>
               </tr>
               );
