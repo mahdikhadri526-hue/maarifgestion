@@ -177,10 +177,14 @@ export function getProducts(category?: Category): Product[] {
 // Détecte l'unité naturelle d'un produit selon son nom (huile→Litre, sucre→Kg, etc.)
 export function detectProductUnit(name: string): string {
   const n = name.toUpperCase();
-  if (/HUILE|HUILLE|SIROP|LAIT|EAU|SIDI ALI|OULMESS|NUTELLA|MIEL|CONFITURE|CHOCOLT|PROTOXYDE/.test(n)) {
-    if (/\bL\b|LITRE|CL|ML/.test(n) || /SIROP|HUILE|HUILLE|LAIT|EAU|OULMESS|SIDI ALI/.test(n)) return "L";
+  // Overrides explicites demandés par l'utilisateur → Pièce
+  if (/OREO|SIDI ALI|OULMESS|SULTAN|HUILE|HUILLE|\bSEL\b|THE NOIR/.test(n)) return "Pièce";
+  // Chocolat classique → Kilo
+  if (/CHOCOLT?A?\s*CLASSIC/.test(n)) return "Kg";
+  if (/SIROP|LAIT|EAU|NUTELLA|MIEL|CONFITURE|PROTOXYDE/.test(n)) {
+    if (/\bL\b|LITRE|CL|ML/.test(n) || /SIROP|LAIT|EAU/.test(n)) return "L";
   }
-  if (/\bKG\b|KILO|FARINE|SEL|SUCRE|CAFE|THE\b|VANILLE|BEURRE|LEVURE|TOPPING/.test(n)) return "Kg";
+  if (/\bKG\b|KILO|FARINE|SUCRE|CAFE|THE\b|VANILLE|BEURRE|LEVURE|TOPPING/.test(n)) return "Kg";
   if (/PAPIER|FILM|ALUMINIUM|ROULEAU/.test(n)) return "Rouleau";
   if (/SACHET/.test(n)) return "Sachet";
   return "Pièce";
