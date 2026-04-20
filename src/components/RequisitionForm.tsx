@@ -1,30 +1,30 @@
 import { useState } from "react";
-import { getProducts, UnitType } from "@/lib/stockData";
+import { getProducts, DEFAULT_UNIT_CONFIG } from "@/lib/stockData";
 import { saveRequisition, setRequisitionTotal, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
-import { useRequisitionsByDate, useProductUnits } from "@/hooks/useStockData";
+import { useRequisitionsByDate, useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { ClipboardList, Search, Pencil, Check, X } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
+import { MultiUnitInput, MultiUnitValues, EMPTY_MULTI, totalPieces, dominantUnit } from "./MultiUnitInput";
 
 interface Props {
   onUpdated: () => void;
 }
 
 export function RequisitionForm({ onUpdated }: Props) {
-  const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre", PAQUET: "Paquet", COLIS: "Colis", ROULEAU: "Rouleau" };
   const [reqType, setReqType] = useState<"salle" | "emporter">("salle");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [performedBy, setPerformedBy] = useState("");
-  const [quantities, setQuantities] = useState<Record<string, string>>({});
+  const [quantities, setQuantities] = useState<Record<string, MultiUnitValues>>({});
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [operators, setOperators] = useState<string[]>(() => getOperators());
-  const { data: units } = useProductUnits();
+  const { data: configs } = useProductUnitConfigs();
 
   const allProducts = getProducts();
   const productIds = reqType === "salle" ? REQUISITION_SALLE_IDS : REQUISITION_EMPORTER_IDS;
