@@ -102,7 +102,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                 </td>
                 <td className="p-2">
                   <button
-                    onClick={() => setDeleteId(m.id)}
+                    onClick={() => setPendingDeleteId(m.id)}
                     className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     title="Supprimer"
                   >
