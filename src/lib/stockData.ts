@@ -251,7 +251,8 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
       conditionnement: product.conditionnement,
       unit: units[product.id] || "PIECE",
       category: product.category,
-      totalEntrees: initial + totalEntrees,
+      stockInitial: initial,
+      totalEntrees,
       totalSorties,
       stockRestant: initial + totalEntrees - totalSorties,
     };
