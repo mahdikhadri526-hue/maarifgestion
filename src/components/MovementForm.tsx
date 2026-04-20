@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG } from "@/lib/stockData";
+import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG, detectProductUnit } from "@/lib/stockData";
 import { addLotEntry, consumeFromLots } from "@/lib/lotData";
 import { useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
@@ -32,6 +32,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const { data: configs } = useProductUnitConfigs();
   const config = configs?.[productId] || DEFAULT_UNIT_CONFIG;
   const totalQty = totalPieces(multi, config);
+  const unitLabel = selectedProduct ? detectProductUnit(selectedProduct.name) : "Pièces";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,7 +173,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
             Quantité
           </label>
           {productId ? (
-            <MultiUnitInput config={config} values={multi} onChange={setMulti} />
+            <MultiUnitInput config={config} values={multi} onChange={setMulti} pieceLabel={unitLabel} />
           ) : (
             <p className="text-xs text-muted-foreground italic">Sélectionnez un produit d'abord</p>
           )}
