@@ -21,9 +21,11 @@ function AllProductsSummary({ category }: { category: Category }) {
         products.map(async (p) => {
           const h = await getProductDailyHistory(p.id);
           const lastRow = h.length > 0 ? h[h.length - 1] : null;
+          const firstRow = h.length > 0 ? h[0] : null;
           return {
             ...p,
             stockRestant: lastRow ? lastRow.stockRestant : 0,
+            stockInitial: firstRow ? firstRow.stockInitial : 0,
             totalEntrees: h.reduce((s, r) => s + r.entrees, 0),
             totalSorties: h.reduce((s, r) => s + r.sorties, 0),
           };
@@ -42,6 +44,7 @@ function AllProductsSummary({ category }: { category: Category }) {
         <thead>
           <tr className="border-b bg-muted/50">
             <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
+            <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Restant</th>
@@ -51,6 +54,7 @@ function AllProductsSummary({ category }: { category: Category }) {
           {data.map((p) => (
             <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
               <td className="p-3 text-sm font-medium">{p.name}</td>
+              <td className="p-3 text-right font-mono text-sm text-primary">{p.stockInitial || "-"}</td>
               <td className="p-3 text-right font-mono text-sm text-success">{p.totalEntrees || "-"}</td>
               <td className="p-3 text-right font-mono text-sm text-destructive">{p.totalSorties || "-"}</td>
               <td className={`p-3 text-right font-mono text-sm font-semibold ${p.stockRestant < 0 ? "text-destructive" : ""}`}>
