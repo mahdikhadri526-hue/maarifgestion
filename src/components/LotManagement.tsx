@@ -1,13 +1,59 @@
 import { useState } from "react";
 import { updateLotEntry, deleteLotEntry, LotEntry } from "@/lib/lotData";
 import { getProducts } from "@/lib/stockData";
-import { useExpiringLots, useProductLots } from "@/hooks/useStockData";
+import { useExpiringLots, useProductLots, useStockLevels } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2 } from "lucide-react";
+import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2, PackageX } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
+
+export function StockOutAlerts() {
+  const { data: levels, loading } = useStockLevels();
+  if (loading || !levels) return null;
+  const outOfStock = levels.filter((l) => l.stockRestant <= 0);
+  if (outOfStock.length === 0) return null;
+
+  return (
+    <div className="bg-destructive/5 border border-destructive/30 rounded-xl p-4 animate-fade-in">
+      <div className="flex items-center gap-2 mb-3">
+        <PackageX className="h-5 w-5 text-destructive" />
+        <h3 className="font-semibold text-destructive">
+          Alertes Rupture de Stock ({outOfStock.length})
+        </h3>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {outOfStock.map((l) => (
+          <div
+            key={l.productId}
+            className={`flex items-center justify-between rounded-lg p-2.5 text-sm border ${
+              l.stockRestant < 0
+                ? "bg-destructive/10 border-destructive/40"
+                : "bg-muted border-border"
+            }`}
+          >
+            <div className="flex-1 min-w-0">
+              <p className="font-medium truncate">{l.productName}</p>
+              <p className="text-xs text-muted-foreground">
+                {l.category === "alimentaire" ? "Alimentaire" : "Emballage"}
+              </p>
+            </div>
+            <div
+              className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${
+                l.stockRestant < 0
+                  ? "bg-destructive text-destructive-foreground"
+                  : "bg-muted-foreground/20 text-foreground"
+              }`}
+            >
+              {l.stockRestant < 0 ? `${l.stockRestant}` : "RUPTURE"}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function ExpiryAlerts() {
   const { data: expiringLots, loading } = useExpiringLots(30);
