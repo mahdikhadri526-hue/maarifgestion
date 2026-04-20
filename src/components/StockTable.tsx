@@ -79,6 +79,7 @@ export function StockTable() {
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock</th>
@@ -111,6 +112,7 @@ export function StockTable() {
                       {level.category === "alimentaire" ? "Alimentaire" : "Emballage"}
                     </span>
                   </td>
+                  <td className="p-3 text-right font-mono text-sm text-primary">{level.stockInitial}</td>
                   <td className="p-3 text-right font-mono text-sm text-success">{level.totalEntrees}</td>
                   <td className="p-3 text-right font-mono text-sm text-accent-foreground">{level.totalSorties}</td>
                   <td className={`p-3 text-right font-mono text-sm font-semibold ${

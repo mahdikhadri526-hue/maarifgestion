@@ -34,6 +34,7 @@ export interface StockLevel {
   conditionnement: string;
   unit: UnitType;
   category: Category;
+  stockInitial: number;
   totalEntrees: number;
   totalSorties: number;
   stockRestant: number;
@@ -250,7 +251,8 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
       conditionnement: product.conditionnement,
       unit: units[product.id] || "PIECE",
       category: product.category,
-      totalEntrees: initial + totalEntrees,
+      stockInitial: initial,
+      totalEntrees,
       totalSorties,
       stockRestant: initial + totalEntrees - totalSorties,
     };
