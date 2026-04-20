@@ -119,7 +119,7 @@ export function InitialStockForm({ onUpdated }: Props) {
           <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
-              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité</th>
+              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-44">Configuration unités</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-28">Stock Initial</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-36">N° Lot (Alim.)</th>
@@ -131,10 +131,58 @@ export function InitialStockForm({ onUpdated }: Props) {
             {filtered.map((p) => {
               const isAlim = p.category === "alimentaire";
               const isUnlocked = unlockedIds.has(p.id);
+              const cfg = configs?.[p.id] || DEFAULT_UNIT_CONFIG;
               return (
                 <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="p-3 text-sm font-medium">{p.name}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{UNIT_LABELS[(units?.[p.id] as UnitType) || "PIECE"]}</td>
+                  <td className="p-3">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id={`c-${p.id}`}
+                          checked={cfg.cartonEnabled}
+                          disabled={!isUnlocked}
+                          onCheckedChange={(v) => setProductUnitConfig(p.id, { cartonEnabled: !!v })}
+                        />
+                        <label htmlFor={`c-${p.id}`} className="text-xs font-medium cursor-pointer">Carton</label>
+                        {cfg.cartonEnabled && (
+                          <Input
+                            type="number" min="1"
+                            defaultValue={cfg.piecesPerCarton}
+                            disabled={!isUnlocked}
+                            onBlur={(e) => {
+                              const n = Number(e.target.value);
+                              if (n > 0 && n !== cfg.piecesPerCarton) setProductUnitConfig(p.id, { piecesPerCarton: n });
+                            }}
+                            className="h-7 w-16 text-xs font-mono"
+                            title="Pièces par carton"
+                          />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id={`pq-${p.id}`}
+                          checked={cfg.paquetEnabled}
+                          disabled={!isUnlocked}
+                          onCheckedChange={(v) => setProductUnitConfig(p.id, { paquetEnabled: !!v })}
+                        />
+                        <label htmlFor={`pq-${p.id}`} className="text-xs font-medium cursor-pointer">Paquet</label>
+                        {cfg.paquetEnabled && (
+                          <Input
+                            type="number" min="1"
+                            defaultValue={cfg.piecesPerPaquet}
+                            disabled={!isUnlocked}
+                            onBlur={(e) => {
+                              const n = Number(e.target.value);
+                              if (n > 0 && n !== cfg.piecesPerPaquet) setProductUnitConfig(p.id, { piecesPerPaquet: n });
+                            }}
+                            className="h-7 w-16 text-xs font-mono"
+                            title="Pièces par paquet"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </td>
                   <td className="p-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       isAlim ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent-foreground"
