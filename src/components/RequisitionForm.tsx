@@ -41,7 +41,12 @@ export function RequisitionForm({ onUpdated }: Props) {
   (existing || []).forEach((r) => { existingMap[r.productId] = (existingMap[r.productId] || 0) + r.quantity; });
 
   const handleSubmitAll = async () => {
-    const entries = Object.entries(quantities).filter(([, v]) => Number(v) > 0);
+    const entries = Object.entries(quantities)
+      .map(([pid, v]) => {
+        const cfg = configs?.[pid] || DEFAULT_UNIT_CONFIG;
+        return { pid, total: totalPieces(v, cfg), unitUsed: dominantUnit(v, cfg) };
+      })
+      .filter((e) => e.total > 0);
     if (entries.length === 0) {
       toast.error("Aucune quantité saisie");
       return;
@@ -54,7 +59,7 @@ export function RequisitionForm({ onUpdated }: Props) {
     setSubmitting(true);
     try {
       const operatorName = performedBy.trim();
-      for (const [productId, qty] of entries) {
+      for (const { pid: productId, total, unitUsed } of entries) {
         const product = allProducts.find((p) => p.id === productId);
         if (!product) continue;
         await saveRequisition({
@@ -62,8 +67,9 @@ export function RequisitionForm({ onUpdated }: Props) {
           type: reqType,
           productId,
           productName: product.name,
-          quantity: Number(qty),
+          quantity: total,
           performedBy: operatorName,
+          unitUsed,
         });
       }
       setOperators(rememberOperator(operatorName));
@@ -85,6 +91,13 @@ export function RequisitionForm({ onUpdated }: Props) {
       toast.error("Veuillez saisir le prénom de la personne");
       return;
     }
+    const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
+    const v = quantities[productId] || EMPTY_MULTI;
+    const total = totalPieces(v, cfg);
+    if (total <= 0) {
+      toast.error("Quantité invalide");
+      return;
+    }
     try {
       const operatorName = performedBy.trim();
       await saveRequisition({
@@ -92,12 +105,13 @@ export function RequisitionForm({ onUpdated }: Props) {
         type: reqType,
         productId,
         productName: product.name,
-        quantity: Number(quantities[productId]),
+        quantity: total,
         performedBy: operatorName,
+        unitUsed: dominantUnit(v, cfg),
       });
       setOperators(rememberOperator(operatorName));
       toast.success(`${product.name} enregistré`);
-      setQuantities((q) => ({ ...q, [productId]: "" }));
+      setQuantities((q) => ({ ...q, [productId]: EMPTY_MULTI }));
       onUpdated();
     } catch (err) {
       toast.error("Erreur");
