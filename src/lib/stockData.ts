@@ -191,6 +191,7 @@ export async function getMovements(): Promise<StockMovement[]> {
     type: row.type as "entree" | "sortie",
     quantity: row.quantity,
     performedBy: row.performed_by || undefined,
+    unitUsed: (row.unit_used as MovementUnit) || "PIECE",
   }));
 }
 
@@ -205,6 +206,7 @@ export async function saveMovement(movement: Omit<StockMovement, "id">): Promise
       type: movement.type,
       quantity: movement.quantity,
       performed_by: movement.performedBy || null,
+      unit_used: movement.unitUsed || "PIECE",
     } as any)
     .select()
     .single();
@@ -219,6 +221,7 @@ export async function saveMovement(movement: Omit<StockMovement, "id">): Promise
     type: row.type as "entree" | "sortie",
     quantity: row.quantity,
     performedBy: row.performed_by || undefined,
+    unitUsed: (row.unit_used as MovementUnit) || "PIECE",
   };
 }
 
