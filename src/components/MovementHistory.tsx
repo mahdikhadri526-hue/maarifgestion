@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMovements } from "@/hooks/useStockData";
-import { deleteMovement, MovementUnit } from "@/lib/stockData";
+import { deleteMovement } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { ArrowDownCircle, ArrowUpCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
