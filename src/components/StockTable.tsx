@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
+import { PinPromptDialog } from "./PinPromptDialog";
 
 const UNITS: UnitType[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU"];
 const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre", PAQUET: "Paquet", COLIS: "Colis", ROULEAU: "Rouleau" };
@@ -13,6 +14,7 @@ const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", L
 export function StockTable() {
   const [category, setCategory] = useState<Category | "all">("all");
   const [search, setSearch] = useState("");
+  const [pendingUnit, setPendingUnit] = useState<{ productId: string; currentUnit: UnitType } | null>(null);
 
   const { data: levels, loading, refresh } = useStockLevels(category === "all" ? undefined : category);
   const filtered = (levels || []).filter((l) =>
