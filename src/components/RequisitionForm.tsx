@@ -215,7 +215,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                 reqType === "salle" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"
               }`}
             >
-              🏪 Salle
+              🏪 Alimentaire
             </button>
             <button
               onClick={() => { setReqType("emporter"); setQuantities({}); }}
@@ -223,7 +223,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                 reqType === "emporter" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"
               }`}
             >
-              🛍️ Emporter
+              🛍️ Emballage
             </button>
           </div>
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-auto" />
