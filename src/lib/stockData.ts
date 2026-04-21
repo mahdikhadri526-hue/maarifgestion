@@ -18,6 +18,16 @@ export const DEFAULT_UNIT_CONFIG: ProductUnitConfig = {
   piecesPerPaquet: 1,
 };
 
+// Overrides du label "pièce" pour des produits vendus en vrac (kg, L, etc.)
+// Clé = product id (ex: "ali-1" pour SMARTIES TOPPING)
+export const PIECE_LABEL_OVERRIDES: Record<string, { singular: string; plural: string; short: string }> = {
+  "ali-1": { singular: "Kg", plural: "Kg", short: "kg" }, // SMARTIES TOPPING
+};
+
+export function getPieceLabel(productId: string): { singular: string; plural: string; short: string } {
+  return PIECE_LABEL_OVERRIDES[productId] || { singular: "Pièce", plural: "Pièces", short: "pcs" };
+}
+
 export interface Product {
   id: string;
   name: string;
