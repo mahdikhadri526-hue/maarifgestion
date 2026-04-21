@@ -228,6 +228,17 @@ export async function saveMovement(movement: Omit<StockMovement, "id">): Promise
     .single();
   if (error) throw error;
   const row: any = data;
+
+  // Auto-consume FIFO from lots for any "sortie" on alimentaire
+  if (movement.type === "sortie" && movement.category === "alimentaire" && movement.quantity > 0) {
+    try {
+      const { consumeFromLots } = await import("./lotData");
+      await consumeFromLots(movement.productId, movement.quantity);
+    } catch (e) {
+      console.error("FIFO consumption failed", e);
+    }
+  }
+
   return {
     id: row.id,
     date: row.date,
