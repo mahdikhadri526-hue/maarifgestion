@@ -388,16 +388,24 @@ export interface DailyStockRecord {
 }
 
 export async function getProductDailyHistory(productId: string): Promise<DailyStockRecord[]> {
-  const [allMovements, initialStocks] = await Promise.all([getMovements(), getInitialStocks()]);
+  const [allMovements, initialStocks, units, configs] = await Promise.all([
+    getMovements(),
+    getInitialStocks(),
+    getProductUnits(),
+    getProductUnitConfigs(),
+  ]);
   const movements = allMovements.filter((m) => m.productId === productId);
   const initial = initialStocks[productId] || 0;
+  const unit = units[productId] || "PIECE";
+  const config = configs[productId];
 
   const byDate: Record<string, { entrees: number; sorties: number }> = {};
   movements.forEach((m) => {
     const d = m.date.split("T")[0];
     if (!byDate[d]) byDate[d] = { entrees: 0, sorties: 0 };
-    if (m.type === "entree") byDate[d].entrees += m.quantity;
-    else byDate[d].sorties += m.quantity;
+    const displayQuantity = movementPiecesToDisplay(m.quantity, unit, config);
+    if (m.type === "entree") byDate[d].entrees += displayQuantity;
+    else byDate[d].sorties += displayQuantity;
   });
 
   const dates = Object.keys(byDate).sort();
@@ -406,6 +414,12 @@ export async function getProductDailyHistory(productId: string): Promise<DailySt
     const stockInitial = cumul;
     const { entrees, sorties } = byDate[date];
     cumul = stockInitial + entrees - sorties;
-    return { date, stockInitial, entrees, sorties, stockRestant: cumul };
+    return {
+      date,
+      stockInitial: roundStockQuantity(stockInitial),
+      entrees: roundStockQuantity(entrees),
+      sorties: roundStockQuantity(sorties),
+      stockRestant: roundStockQuantity(cumul),
+    };
   });
 }
