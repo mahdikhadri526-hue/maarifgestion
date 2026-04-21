@@ -62,7 +62,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">Catégorie</th>
-              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté (pièces)</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quantité</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Effectué par</th>
               <th className="p-3 w-10"></th>
             </tr>
