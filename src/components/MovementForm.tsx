@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG, detectProductUnit } from "@/lib/stockData";
+import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG, detectProductUnit, PAQUET_LABEL_OVERRIDES, getPieceLabel } from "@/lib/stockData";
 import { addLotEntry } from "@/lib/lotData";
 import { useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
@@ -32,7 +32,9 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const { data: configs } = useProductUnitConfigs();
   const config = configs?.[productId] || DEFAULT_UNIT_CONFIG;
   const totalQty = totalPieces(multi, config);
-  const unitLabel = selectedProduct ? detectProductUnit(selectedProduct.name) : "Pièces";
+  const pieceOverride = productId ? getPieceLabel(productId) : null;
+  const unitLabel = pieceOverride ? pieceOverride.singular : (selectedProduct ? detectProductUnit(selectedProduct.name) : "Pièces");
+  const paquetLabel = productId ? (PAQUET_LABEL_OVERRIDES[productId] || "Paquets") : "Paquets";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,7 +169,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
             Quantité
           </label>
           {productId ? (
-            <MultiUnitInput config={config} values={multi} onChange={setMulti} pieceLabel={unitLabel} />
+            <MultiUnitInput config={config} values={multi} onChange={setMulti} pieceLabel={unitLabel} paquetLabel={paquetLabel} showTotal={false} />
           ) : (
             <p className="text-xs text-muted-foreground italic">Sélectionnez un produit d'abord</p>
           )}
