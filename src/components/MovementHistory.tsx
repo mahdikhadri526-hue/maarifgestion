@@ -2,10 +2,18 @@ import { useState } from "react";
 import { useMovements, useProductUnitConfigs } from "@/hooks/useStockData";
 import { deleteMovement, formatQuantityForProduct } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
-import { ArrowDownCircle, ArrowUpCircle, Trash2 } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +32,12 @@ interface MovementHistoryProps {
 export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [filterDate, setFilterDate] = useState<string>("");
+  const [filterStartDate, setFilterStartDate] = useState<string>("");
+  const [filterEndDate, setFilterEndDate] = useState<string>("");
+  const [filterProduct, setFilterProduct] = useState<string>("all");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterPerformedBy, setFilterPerformedBy] = useState<string>("all");
   const { data: movements, loading } = useMovements();
   const { data: configs } = useProductUnitConfigs();
 
@@ -31,7 +45,43 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
   );
 
-  const movementToDelete = sorted.find((m) => m.id === deleteId);
+  // Unique products & operators for select options
+  const productOptions = Array.from(
+    new Map(sorted.map((m) => [m.productId, m.productName])).entries()
+  ).sort((a, b) => a[1].localeCompare(b[1]));
+  const operatorOptions = Array.from(
+    new Set(sorted.map((m) => m.performedBy).filter((v): v is string => !!v))
+  ).sort();
+
+  const filtered = sorted.filter((m) => {
+    const mDate = m.date.slice(0, 10);
+    if (filterDate && mDate !== filterDate) return false;
+    if (filterStartDate && mDate < filterStartDate) return false;
+    if (filterEndDate && mDate > filterEndDate) return false;
+    if (filterProduct !== "all" && m.productId !== filterProduct) return false;
+    if (filterType !== "all" && m.type !== filterType) return false;
+    if (filterPerformedBy !== "all" && (m.performedBy || "") !== filterPerformedBy) return false;
+    return true;
+  });
+
+  const hasFilters =
+    !!filterDate ||
+    !!filterStartDate ||
+    !!filterEndDate ||
+    filterProduct !== "all" ||
+    filterType !== "all" ||
+    filterPerformedBy !== "all";
+
+  const resetFilters = () => {
+    setFilterDate("");
+    setFilterStartDate("");
+    setFilterEndDate("");
+    setFilterProduct("all");
+    setFilterType("all");
+    setFilterPerformedBy("all");
+  };
+
+  const movementToDelete = filtered.find((m) => m.id === deleteId);
 
   const handleDelete = async () => {
     if (!deleteId) return;
@@ -52,8 +102,103 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
           </div>
           Historique Mouvements
         </h2>
-        <p className="text-xs text-muted-foreground mt-1">{sorted.length} mouvements enregistrés</p>
+        <p className="text-xs text-muted-foreground mt-1">
+          {filtered.length} / {sorted.length} mouvements
+        </p>
       </div>
+
+      {/* Filters */}
+      <div className="p-4 border-b bg-muted/30 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <Filter className="h-4 w-4 text-primary" />
+            Filtres
+          </div>
+          {hasFilters && (
+            <button
+              onClick={resetFilters}
+              className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+            >
+              <X className="h-3 w-3" /> Réinitialiser
+            </button>
+          )}
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Date précise</label>
+            <Input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Période — du</label>
+            <Input
+              type="date"
+              value={filterStartDate}
+              onChange={(e) => setFilterStartDate(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Période — au</label>
+            <Input
+              type="date"
+              value={filterEndDate}
+              onChange={(e) => setFilterEndDate(e.target.value)}
+              className="h-9"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Produit</label>
+            <Select value={filterProduct} onValueChange={setFilterProduct}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Tous" />
+              </SelectTrigger>
+              <SelectContent className="max-h-72 bg-popover z-50">
+                <SelectItem value="all">Tous les produits</SelectItem>
+                {productOptions.map(([id, name]) => (
+                  <SelectItem key={id} value={id}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Type</label>
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="h-9">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-popover z-50">
+                <SelectItem value="all">Entrées + Sorties</SelectItem>
+                <SelectItem value="entree">Entrées uniquement</SelectItem>
+                <SelectItem value="sortie">Sorties uniquement</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs text-muted-foreground">Effectué par</label>
+            <Select value={filterPerformedBy} onValueChange={setFilterPerformedBy}>
+              <SelectTrigger className="h-9">
+                <SelectValue placeholder="Tous" />
+              </SelectTrigger>
+              <SelectContent className="max-h-72 bg-popover z-50">
+                <SelectItem value="all">Tout le monde</SelectItem>
+                {operatorOptions.map((op) => (
+                  <SelectItem key={op} value={op}>
+                    {op}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+
       <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
         <table className="w-full">
           <thead className="sticky top-0 bg-card z-10">
