@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getProducts, DEFAULT_UNIT_CONFIG } from "@/lib/stockData";
+import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabel } from "@/lib/stockData";
 import { saveRequisition, setRequisitionTotal, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
 import { useRequisitionsByDate, useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
@@ -272,6 +272,7 @@ export function RequisitionForm({ onUpdated }: Props) {
               const cfg = configs?.[p.id] || DEFAULT_UNIT_CONFIG;
               const val = quantities[p.id] || EMPTY_MULTI;
               const total = totalPieces(val, cfg);
+              const pieceLbl = getPieceLabel(p.id);
               return (
               <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="p-3 text-sm font-medium">{p.name}</td>
@@ -282,6 +283,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                       values={val}
                       onChange={(nv) => setQuantities((q) => ({ ...q, [p.id]: nv }))}
                       size="sm"
+                      pieceLabel={pieceLbl.plural}
                     />
                     <Button
                       size="sm"
@@ -320,8 +322,8 @@ export function RequisitionForm({ onUpdated }: Props) {
                       const parts: string[] = [];
                       if (cfg.cartonEnabled && decomposed.cartons) parts.push(`${decomposed.cartons} cart.`);
                       if (cfg.paquetEnabled && decomposed.paquets) parts.push(`${decomposed.paquets} paq.`);
-                      if (decomposed.pieces) parts.push(`${decomposed.pieces} pcs`);
-                      const breakdown = parts.length > 0 ? parts.join(" + ") : "0 pcs";
+                      if (decomposed.pieces) parts.push(`${decomposed.pieces} ${pieceLbl.short}`);
+                      const breakdown = parts.length > 0 ? parts.join(" + ") : `0 ${pieceLbl.short}`;
                       return (
                         <div className="inline-flex items-center gap-1 justify-end">
                           <button
@@ -334,7 +336,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                               {breakdown}
                               <Pencil className="h-3 w-3 opacity-60" />
                             </span>
-                            <span className="text-[10px] font-normal text-primary/70">= {existingTotal} pièces</span>
+                            <span className="text-[10px] font-normal text-primary/70">= {existingTotal} {pieceLbl.short}</span>
                           </button>
                           {existingTotal > 0 && (
                             <Button
