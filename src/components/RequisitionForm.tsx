@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabel, PAQUET_LABEL_OVERRIDES } from "@/lib/stockData";
+import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabel, PAQUET_LABEL_OVERRIDES, formatQuantityForProduct } from "@/lib/stockData";
 import { saveRequisition, setRequisitionTotal, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
 import { useRequisitionsByDate, useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
@@ -325,7 +325,12 @@ export function RequisitionForm({ onUpdated }: Props) {
                       if (cfg.cartonEnabled && decomposed.cartons) parts.push(`${decomposed.cartons} cart.`);
                       if (cfg.paquetEnabled && decomposed.paquets) parts.push(`${decomposed.paquets} paq.`);
                       if (decomposed.pieces) parts.push(`${decomposed.pieces} ${pieceLbl.short}`);
-                      const breakdown = parts.length > 0 ? parts.join(" + ") : `0 ${pieceLbl.short}`;
+                      const breakdown = p.id === "ali-7"
+                        ? formatQuantityForProduct(p.id, existingTotal, cfg)
+                        : (parts.length > 0 ? parts.join(" + ") : `0 ${pieceLbl.short}`);
+                      const totalLabel = p.id === "ali-7"
+                        ? formatQuantityForProduct(p.id, existingTotal, cfg)
+                        : `${existingTotal} ${pieceLbl.short}`;
                       return (
                         <div className="inline-flex items-center gap-1 justify-end">
                           <button
@@ -338,7 +343,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                               {breakdown}
                               <Pencil className="h-3 w-3 opacity-60" />
                             </span>
-                            <span className="text-[10px] font-normal text-primary/70">= {existingTotal} {pieceLbl.short}</span>
+                            <span className="text-[10px] font-normal text-primary/70">= {totalLabel}</span>
                           </button>
                           {existingTotal > 0 && (
                             <Button

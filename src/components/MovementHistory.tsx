@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useMovements } from "@/hooks/useStockData";
-import { deleteMovement } from "@/lib/stockData";
+import { useMovements, useProductUnitConfigs } from "@/hooks/useStockData";
+import { deleteMovement, formatQuantityForProduct } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { ArrowDownCircle, ArrowUpCircle, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +25,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const { data: movements, loading } = useMovements();
+  const { data: configs } = useProductUnitConfigs();
 
   const sorted = [...(movements || [])].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -61,7 +62,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Type</th>
                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider hidden sm:table-cell">Catégorie</th>
-              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté (pièces)</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Quantité</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Effectué par</th>
               <th className="p-3 w-10"></th>
             </tr>
@@ -88,7 +89,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                     {m.category === "alimentaire" ? "Alim." : "Emb."}
                   </span>
                 </td>
-                <td className="p-3 text-right font-mono text-sm font-semibold">{m.quantity}</td>
+                <td className="p-3 text-right font-mono text-sm font-semibold">{formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])}</td>
                 <td className="p-3 text-sm">
                   {m.performedBy ? (
                     <span className="text-foreground">{m.performedBy}</span>
@@ -122,7 +123,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
               Voulez-vous vraiment supprimer ce mouvement ?
               {movementToDelete && (
                 <span className="block mt-2 font-medium text-foreground">
-                  {movementToDelete.type === "entree" ? "Entrée" : "Sortie"} de {movementToDelete.quantity} × {movementToDelete.productName}
+                  {movementToDelete.type === "entree" ? "Entrée" : "Sortie"} de {formatQuantityForProduct(movementToDelete.productId, movementToDelete.quantity, configs?.[movementToDelete.productId])} × {movementToDelete.productName}
                 </span>
               )}
             </AlertDialogDescription>

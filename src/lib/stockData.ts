@@ -87,6 +87,17 @@ function movementPiecesToDisplay(quantity: number, unit: UnitType, config?: Prod
   return roundStockQuantity(quantity / getDisplayFactor(unit, config));
 }
 
+export function displayQuantityForProduct(productId: string, quantity: number, config?: ProductUnitConfig): number {
+  if (productId === "ali-7") return roundStockQuantity(quantity / (config?.piecesPerPaquet || 2));
+  return roundStockQuantity(quantity);
+}
+
+export function formatQuantityForProduct(productId: string, quantity: number, config?: ProductUnitConfig): string {
+  const displayQuantity = displayQuantityForProduct(productId, quantity, config);
+  if (productId === "ali-7") return `${displayQuantity.toLocaleString("fr-FR")} Kg`;
+  return String(displayQuantity);
+}
+
 const ALIMENTAIRE_PRODUCTS = [
   "__HIDDEN__",
   "SMARTIES TOPPING (20 KG)",
