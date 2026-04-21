@@ -191,6 +191,7 @@ export function LotManager() {
                   <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">N° Lot</th>
                   <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">DLC</th>
                   <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase">Qté Init.</th>
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase">Sorti</th>
                   <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase">Restant</th>
                   <th className="text-center p-3 text-xs font-semibold text-muted-foreground uppercase">Statut</th>
                   <th className="text-center p-3 text-xs font-semibold text-muted-foreground uppercase">Actions</th>
@@ -199,13 +200,18 @@ export function LotManager() {
               <tbody>
                 {(!lots || lots.length === 0) ? (
                   <tr>
-                    <td colSpan={selectedProductId === "__all__" ? 7 : 6} className="text-center text-muted-foreground py-8 text-sm">
+                    <td colSpan={selectedProductId === "__all__" ? 8 : 7} className="text-center text-muted-foreground py-8 text-sm">
                       Aucun lot pour ce produit
                     </td>
                   </tr>
                 ) : (
                   [...lots]
-                    .sort((a, b) => a.expiryDate.localeCompare(b.expiryDate))
+                    .sort((a, b) => {
+                      const aEmpty = a.remainingQuantity === 0 ? 1 : 0;
+                      const bEmpty = b.remainingQuantity === 0 ? 1 : 0;
+                      if (aEmpty !== bEmpty) return aEmpty - bEmpty;
+                      return a.expiryDate.localeCompare(b.expiryDate);
+                    })
                     .map((lot) => {
                     const days = getDaysUntilExpiry(lot.expiryDate);
                     const isEditing = editingLot === lot.id;
