@@ -212,6 +212,7 @@ export function LotManager() {
                     const productName = products.find((p) => p.id === lot.productId)?.name || lot.productId;
                     return (
                       <tr key={lot.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
+                        lot.remainingQuantity === 0 ? "bg-muted/40 opacity-70" :
                         days <= 0 ? "bg-destructive/5" : days <= 5 ? "bg-amber-50 dark:bg-amber-950/20" : days <= 15 ? "bg-primary/5" : ""
                       }`}>
                         {selectedProductId === "__all__" && (
@@ -233,12 +234,13 @@ export function LotManager() {
                         </td>
                         <td className="p-3 text-center">
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                            days <= 0 ? "bg-destructive text-destructive-foreground"
+                            lot.remainingQuantity === 0 ? "bg-muted-foreground/20 text-muted-foreground"
+                            : days <= 0 ? "bg-destructive text-destructive-foreground"
                             : days <= 5 ? "bg-amber-500 text-white"
                             : days <= 15 ? "bg-primary/10 text-primary"
                             : "bg-success/10 text-success"
                           }`}>
-                            {days <= 0 ? "Expiré" : `${days}j`}
+                            {lot.remainingQuantity === 0 ? "Épuisé" : days <= 0 ? "Expiré" : `${days}j`}
                           </span>
                         </td>
                         <td className="p-3 text-center">
