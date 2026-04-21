@@ -64,7 +64,7 @@ export function MultiUnitInput({ config, values, onChange, size = "md", disabled
         <div className="flex flex-col">
           <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">{pieceLabel}</label>
           <Input
-            type="number" min="0" placeholder="0"
+            type="number" min="0" step="0.1" placeholder="0"
             value={values.pieces}
             disabled={disabled}
             onChange={(e) => onChange({ ...values, pieces: e.target.value })}
