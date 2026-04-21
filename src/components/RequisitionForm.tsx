@@ -272,6 +272,7 @@ export function RequisitionForm({ onUpdated }: Props) {
               const cfg = configs?.[p.id] || DEFAULT_UNIT_CONFIG;
               const val = quantities[p.id] || EMPTY_MULTI;
               const total = totalPieces(val, cfg);
+              const pieceLbl = getPieceLabel(p.id);
               return (
               <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="p-3 text-sm font-medium">{p.name}</td>
@@ -282,6 +283,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                       values={val}
                       onChange={(nv) => setQuantities((q) => ({ ...q, [p.id]: nv }))}
                       size="sm"
+                      pieceLabel={pieceLbl.plural}
                     />
                     <Button
                       size="sm"
