@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG, detectProductUnit } from "@/lib/stockData";
-import { addLotEntry, consumeFromLots } from "@/lib/lotData";
+import { addLotEntry } from "@/lib/lotData";
 import { useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
 import { Input } from "@/components/ui/input";
@@ -78,13 +78,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
           });
           toast.success(`Entrée de ${totalQty} pièces ${selectedProduct?.name} (Lot: ${lotNumber}) enregistrée`);
         } else {
-          const consumed = await consumeFromLots(productId, totalQty);
-          if (consumed.length > 0) {
-            const lotInfo = consumed.map((c) => `${c.lotNumber}: ${c.consumed}`).join(", ");
-            toast.success(`Sortie FIFO de ${totalQty} pièces ${selectedProduct?.name} — Lots: ${lotInfo}`);
-          } else {
-            toast.success(`Sortie de ${totalQty} pièces ${selectedProduct?.name} enregistrée (aucun lot disponible)`);
-          }
+          toast.success(`Sortie FIFO de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
         }
       } else {
         toast.success(`${type === "entree" ? "Entrée" : "Sortie"} de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
