@@ -211,9 +211,11 @@ export function getProducts(category?: Category): Product[] {
     const { name, conditionnement } = parseProduct(raw);
     return { id: `emb-${i}`, name, conditionnement, category: "emballage" as Category, initialStock: 0 };
   }).filter((p) => p.name !== "__HIDDEN__");
-  if (category === "alimentaire") return ali;
-  if (category === "emballage") return emb;
-  return [...ali, ...emb];
+  const sortByName = (a: Product, b: Product) =>
+    a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
+  if (category === "alimentaire") return ali.sort(sortByName);
+  if (category === "emballage") return emb.sort(sortByName);
+  return [...ali.sort(sortByName), ...emb.sort(sortByName)];
 }
 
 // Détecte l'unité naturelle d'un produit selon son nom (huile→Litre, sucre→Kg, etc.)
