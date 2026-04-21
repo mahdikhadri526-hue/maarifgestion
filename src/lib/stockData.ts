@@ -346,28 +346,35 @@ export async function setInitialStock(productId: string, quantity: number) {
 
 export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
   const products = getProducts(category);
-  const [movements, initialStocks, units] = await Promise.all([getMovements(), getInitialStocks(), getProductUnits()]);
+  const [movements, initialStocks, units, configs] = await Promise.all([
+    getMovements(),
+    getInitialStocks(),
+    getProductUnits(),
+    getProductUnitConfigs(),
+  ]);
 
   return products.map((product) => {
     const initial = initialStocks[product.id] || 0;
+    const unit = units[product.id] || "PIECE";
+    const config = configs[product.id];
     const productMovements = movements.filter((m) => m.productId === product.id);
     const totalEntrees = productMovements
       .filter((m) => m.type === "entree")
-      .reduce((sum, m) => sum + m.quantity, 0);
+      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config), 0);
     const totalSorties = productMovements
       .filter((m) => m.type === "sortie")
-      .reduce((sum, m) => sum + m.quantity, 0);
+      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config), 0);
 
     return {
       productId: product.id,
       productName: product.name,
       conditionnement: product.conditionnement,
-      unit: units[product.id] || "PIECE",
+      unit,
       category: product.category,
       stockInitial: initial,
-      totalEntrees,
-      totalSorties,
-      stockRestant: initial + totalEntrees - totalSorties,
+      totalEntrees: roundStockQuantity(totalEntrees),
+      totalSorties: roundStockQuantity(totalSorties),
+      stockRestant: roundStockQuantity(initial + totalEntrees - totalSorties),
     };
   });
 }
