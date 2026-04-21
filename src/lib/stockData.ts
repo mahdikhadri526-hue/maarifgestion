@@ -22,12 +22,12 @@ export const DEFAULT_UNIT_CONFIG: ProductUnitConfig = {
 // Clé = product id (ex: "ali-1" pour SMARTIES TOPPING)
 export const PIECE_LABEL_OVERRIDES: Record<string, { singular: string; plural: string; short: string }> = {
   "ali-1": { singular: "Kg", plural: "Kg", short: "kg" }, // SMARTIES TOPPING
-  "ali-6": { singular: "0,5 Kg", plural: "0,5 Kg", short: "0,5 kg" }, // CAFE BRESIL
+  "ali-7": { singular: "0,5 Kg", plural: "0,5 Kg", short: "0,5 kg" }, // CAFE BRESIL
 };
 
 // Override du label "paquet" pour des produits configurés en multi-conditionnement
 export const PAQUET_LABEL_OVERRIDES: Record<string, string> = {
-  "ali-6": "1 Kg", // CAFE BRESIL
+  "ali-7": "1 Kg", // CAFE BRESIL
 };
 
 export function getPieceLabel(productId: string): { singular: string; plural: string; short: string } {
@@ -77,6 +77,7 @@ function roundStockQuantity(value: number): number {
 }
 
 function getDisplayFactor(unit: UnitType, config?: ProductUnitConfig): number {
+  if (unit === "KILO" && config?.paquetEnabled && config.piecesPerPaquet > 0) return config.piecesPerPaquet;
   if (unit === "PAQUET" && config?.paquetEnabled && config.piecesPerPaquet > 0) return config.piecesPerPaquet;
   if (unit === "COLIS" && config?.cartonEnabled && config.piecesPerCarton > 0) return config.piecesPerCarton;
   return 1;
