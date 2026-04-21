@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { updateLotEntry, deleteLotEntry, LotEntry } from "@/lib/lotData";
-import { getProducts } from "@/lib/stockData";
-import { useExpiringLots, useProductLots, useStockLevels } from "@/hooks/useStockData";
+import { formatQuantityForProduct, getProducts } from "@/lib/stockData";
+import { useExpiringLots, useProductLots, useProductUnitConfigs, useStockLevels } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2, PackageX } from "lucide-react";
@@ -114,6 +114,7 @@ export function LotManager() {
 
   const products = getProducts("alimentaire");
   const { data: lots, loading } = useProductLots(selectedProductId);
+  const { data: configs } = useProductUnitConfigs();
 
   const startEdit = (lot: LotEntry) => {
     setEditingLot(lot.id);
@@ -216,6 +217,10 @@ export function LotManager() {
                     const days = getDaysUntilExpiry(lot.expiryDate);
                     const isEditing = editingLot === lot.id;
                     const productName = products.find((p) => p.id === lot.productId)?.name || lot.productId;
+                    const cfg = configs?.[lot.productId];
+                    const initialQuantity = formatQuantityForProduct(lot.productId, lot.quantity, cfg);
+                    const consumedQuantity = formatQuantityForProduct(lot.productId, lot.quantity - lot.remainingQuantity, cfg);
+                    const remainingQuantity = formatQuantityForProduct(lot.productId, lot.remainingQuantity, cfg);
                     return (
                       <tr key={lot.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                         lot.remainingQuantity === 0 ? "bg-muted/40 opacity-70" :
@@ -234,10 +239,10 @@ export function LotManager() {
                             <Input type="date" value={editExpiryDate} onChange={(e) => setEditExpiryDate(e.target.value)} className="h-8 text-xs" />
                           ) : lot.expiryDate}
                         </td>
-                        <td className="p-3 text-right font-mono text-sm">{lot.quantity}</td>
-                        <td className="p-3 text-right font-mono text-sm text-accent-foreground">{lot.quantity - lot.remainingQuantity}</td>
+                        <td className="p-3 text-right font-mono text-sm">{initialQuantity}</td>
+                        <td className="p-3 text-right font-mono text-sm text-accent-foreground">{consumedQuantity}</td>
                         <td className={`p-3 text-right font-mono text-sm font-semibold ${lot.remainingQuantity === 0 ? "text-muted-foreground" : ""}`}>
-                          {lot.remainingQuantity}
+                          {remainingQuantity}
                         </td>
                         <td className="p-3 text-center">
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
