@@ -235,6 +235,7 @@ export function LotManager() {
                           ) : lot.expiryDate}
                         </td>
                         <td className="p-3 text-right font-mono text-sm">{lot.quantity}</td>
+                        <td className="p-3 text-right font-mono text-sm text-accent-foreground">{lot.quantity - lot.remainingQuantity}</td>
                         <td className={`p-3 text-right font-mono text-sm font-semibold ${lot.remainingQuantity === 0 ? "text-muted-foreground" : ""}`}>
                           {lot.remainingQuantity}
                         </td>
