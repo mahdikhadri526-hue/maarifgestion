@@ -191,6 +191,7 @@ export function LotManager() {
                   <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">N° Lot</th>
                   <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase">DLC</th>
                   <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase">Qté Init.</th>
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase">Sorti</th>
                   <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase">Restant</th>
                   <th className="text-center p-3 text-xs font-semibold text-muted-foreground uppercase">Statut</th>
                   <th className="text-center p-3 text-xs font-semibold text-muted-foreground uppercase">Actions</th>
@@ -199,19 +200,25 @@ export function LotManager() {
               <tbody>
                 {(!lots || lots.length === 0) ? (
                   <tr>
-                    <td colSpan={selectedProductId === "__all__" ? 7 : 6} className="text-center text-muted-foreground py-8 text-sm">
+                    <td colSpan={selectedProductId === "__all__" ? 8 : 7} className="text-center text-muted-foreground py-8 text-sm">
                       Aucun lot pour ce produit
                     </td>
                   </tr>
                 ) : (
                   [...lots]
-                    .sort((a, b) => a.expiryDate.localeCompare(b.expiryDate))
+                    .sort((a, b) => {
+                      const aEmpty = a.remainingQuantity === 0 ? 1 : 0;
+                      const bEmpty = b.remainingQuantity === 0 ? 1 : 0;
+                      if (aEmpty !== bEmpty) return aEmpty - bEmpty;
+                      return a.expiryDate.localeCompare(b.expiryDate);
+                    })
                     .map((lot) => {
                     const days = getDaysUntilExpiry(lot.expiryDate);
                     const isEditing = editingLot === lot.id;
                     const productName = products.find((p) => p.id === lot.productId)?.name || lot.productId;
                     return (
                       <tr key={lot.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
+                        lot.remainingQuantity === 0 ? "bg-muted/40 opacity-70" :
                         days <= 0 ? "bg-destructive/5" : days <= 5 ? "bg-amber-50 dark:bg-amber-950/20" : days <= 15 ? "bg-primary/5" : ""
                       }`}>
                         {selectedProductId === "__all__" && (
@@ -228,17 +235,19 @@ export function LotManager() {
                           ) : lot.expiryDate}
                         </td>
                         <td className="p-3 text-right font-mono text-sm">{lot.quantity}</td>
+                        <td className="p-3 text-right font-mono text-sm text-accent-foreground">{lot.quantity - lot.remainingQuantity}</td>
                         <td className={`p-3 text-right font-mono text-sm font-semibold ${lot.remainingQuantity === 0 ? "text-muted-foreground" : ""}`}>
                           {lot.remainingQuantity}
                         </td>
                         <td className="p-3 text-center">
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                            days <= 0 ? "bg-destructive text-destructive-foreground"
+                            lot.remainingQuantity === 0 ? "bg-muted-foreground/20 text-muted-foreground"
+                            : days <= 0 ? "bg-destructive text-destructive-foreground"
                             : days <= 5 ? "bg-amber-500 text-white"
                             : days <= 15 ? "bg-primary/10 text-primary"
                             : "bg-success/10 text-success"
                           }`}>
-                            {days <= 0 ? "Expiré" : `${days}j`}
+                            {lot.remainingQuantity === 0 ? "Épuisé" : days <= 0 ? "Expiré" : `${days}j`}
                           </span>
                         </td>
                         <td className="p-3 text-center">
