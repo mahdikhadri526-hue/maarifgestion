@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { syncLotBalances } from "./lotBalance";
 
 export interface LotEntry {
   id: string;
@@ -23,6 +24,7 @@ function mapRow(row: any): LotEntry {
 }
 
 export async function getLotEntries(): Promise<LotEntry[]> {
+  await syncLotBalances();
   const { data, error } = await supabase.from("lot_entries").select("*");
   if (error) throw error;
   return (data || []).map(mapRow);
@@ -54,33 +56,30 @@ export async function updateLotEntry(id: string, updates: Partial<Pick<LotEntry,
 }
 
 export async function consumeFromLots(productId: string, quantity: number): Promise<{ lotId: string; lotNumber: string; consumed: number }[]> {
-  const { data, error } = await supabase
+  const { data: beforeSync, error: beforeSyncError } = await supabase
     .from("lot_entries")
-    .select("*")
-    .eq("product_id", productId)
-    .gt("remaining_quantity", 0)
-    .order("expiry_date", { ascending: true });
-  if (error) throw error;
+    .select("id, lot_number, remaining_quantity")
+    .eq("product_id", productId);
+  if (beforeSyncError) throw beforeSyncError;
 
-  let remaining = quantity;
-  const consumed: { lotId: string; lotNumber: string; consumed: number }[] = [];
+  const remainingByLot = await syncLotBalances(productId);
+  const consumedLots = (beforeSync || [])
+    .map((lot: any) => {
+      const afterRemaining = remainingByLot.get(lot.id) ?? lot.remaining_quantity;
+      const consumed = Math.max(0, lot.remaining_quantity - afterRemaining);
+      return consumed > 0 ? { lotId: lot.id, lotNumber: lot.lot_number, consumed } : null;
+    })
+    .filter(Boolean) as { lotId: string; lotNumber: string; consumed: number }[];
 
-  for (const lot of data || []) {
-    if (remaining <= 0) break;
-    const take = Math.min(lot.remaining_quantity, remaining);
-    remaining -= take;
-    consumed.push({ lotId: lot.id, lotNumber: lot.lot_number, consumed: take });
-
-    await supabase
-      .from("lot_entries")
-      .update({ remaining_quantity: lot.remaining_quantity - take })
-      .eq("id", lot.id);
+  if (quantity > 0 && consumedLots.length > 0) {
+    return consumedLots;
   }
 
-  return consumed;
+  return [];
 }
 
 export async function getProductLots(productId: string): Promise<LotEntry[]> {
+  await syncLotBalances(productId);
   const { data, error } = await supabase
     .from("lot_entries")
     .select("*")
@@ -91,6 +90,7 @@ export async function getProductLots(productId: string): Promise<LotEntry[]> {
 }
 
 export async function getExpiringLots(days: number = 30): Promise<(LotEntry & { daysUntilExpiry: number })[]> {
+  await syncLotBalances();
   const { data, error } = await supabase
     .from("lot_entries")
     .select("*")
