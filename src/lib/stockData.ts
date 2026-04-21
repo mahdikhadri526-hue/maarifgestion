@@ -22,7 +22,12 @@ export const DEFAULT_UNIT_CONFIG: ProductUnitConfig = {
 // Clé = product id (ex: "ali-1" pour SMARTIES TOPPING)
 export const PIECE_LABEL_OVERRIDES: Record<string, { singular: string; plural: string; short: string }> = {
   "ali-1": { singular: "Kg", plural: "Kg", short: "kg" }, // SMARTIES TOPPING
-  "ali-6": { singular: "Kg", plural: "Kg", short: "kg" }, // CAFE BRESIL
+  "ali-6": { singular: "0,5 Kg", plural: "0,5 Kg", short: "0,5 kg" }, // CAFE BRESIL
+};
+
+// Override du label "paquet" pour des produits configurés en multi-conditionnement
+export const PAQUET_LABEL_OVERRIDES: Record<string, string> = {
+  "ali-6": "1 Kg", // CAFE BRESIL
 };
 
 export function getPieceLabel(productId: string): { singular: string; plural: string; short: string } {

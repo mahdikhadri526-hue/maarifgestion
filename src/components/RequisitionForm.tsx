@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabel } from "@/lib/stockData";
+import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabel, PAQUET_LABEL_OVERRIDES } from "@/lib/stockData";
 import { saveRequisition, setRequisitionTotal, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
 import { useRequisitionsByDate, useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
@@ -284,6 +284,8 @@ export function RequisitionForm({ onUpdated }: Props) {
                       onChange={(nv) => setQuantities((q) => ({ ...q, [p.id]: nv }))}
                       size="sm"
                       pieceLabel={pieceLbl.plural}
+                      paquetLabel={(PAQUET_LABEL_OVERRIDES[p.id] || "Paquets")}
+                      showTotal={false}
                     />
                     <Button
                       size="sm"
