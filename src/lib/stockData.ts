@@ -66,6 +66,20 @@ export interface StockLevel {
   stockRestant: number;
 }
 
+function roundStockQuantity(value: number): number {
+  return Number.isInteger(value) ? value : Number(value.toFixed(2));
+}
+
+function getDisplayFactor(unit: UnitType, config?: ProductUnitConfig): number {
+  if (unit === "PAQUET" && config?.paquetEnabled && config.piecesPerPaquet > 0) return config.piecesPerPaquet;
+  if (unit === "COLIS" && config?.cartonEnabled && config.piecesPerCarton > 0) return config.piecesPerCarton;
+  return 1;
+}
+
+function movementPiecesToDisplay(quantity: number, unit: UnitType, config?: ProductUnitConfig): number {
+  return roundStockQuantity(quantity / getDisplayFactor(unit, config));
+}
+
 const ALIMENTAIRE_PRODUCTS = [
   "__HIDDEN__",
   "SMARTIES TOPPING (20 KG)",
