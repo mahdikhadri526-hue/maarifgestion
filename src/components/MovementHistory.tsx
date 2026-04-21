@@ -213,7 +213,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
             </tr>
           </thead>
           <tbody>
-            {sorted.map((m) => (
+            {filtered.map((m) => (
               <tr key={m.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                 isRequisitionProduct(m.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
               }`}>
@@ -255,8 +255,10 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
             ))}
           </tbody>
         </table>
-        {sorted.length === 0 && (
-          <p className="text-center text-muted-foreground py-8">Aucun mouvement enregistré</p>
+        {filtered.length === 0 && (
+          <p className="text-center text-muted-foreground py-8">
+            {sorted.length === 0 ? "Aucun mouvement enregistré" : "Aucun mouvement ne correspond aux filtres"}
+          </p>
         )}
       </div>
 
