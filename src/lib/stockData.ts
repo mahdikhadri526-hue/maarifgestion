@@ -66,6 +66,20 @@ export interface StockLevel {
   stockRestant: number;
 }
 
+function roundStockQuantity(value: number): number {
+  return Number.isInteger(value) ? value : Number(value.toFixed(2));
+}
+
+function getDisplayFactor(unit: UnitType, config?: ProductUnitConfig): number {
+  if (unit === "PAQUET" && config?.paquetEnabled && config.piecesPerPaquet > 0) return config.piecesPerPaquet;
+  if (unit === "COLIS" && config?.cartonEnabled && config.piecesPerCarton > 0) return config.piecesPerCarton;
+  return 1;
+}
+
+function movementPiecesToDisplay(quantity: number, unit: UnitType, config?: ProductUnitConfig): number {
+  return roundStockQuantity(quantity / getDisplayFactor(unit, config));
+}
+
 const ALIMENTAIRE_PRODUCTS = [
   "__HIDDEN__",
   "SMARTIES TOPPING (20 KG)",
@@ -332,28 +346,35 @@ export async function setInitialStock(productId: string, quantity: number) {
 
 export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
   const products = getProducts(category);
-  const [movements, initialStocks, units] = await Promise.all([getMovements(), getInitialStocks(), getProductUnits()]);
+  const [movements, initialStocks, units, configs] = await Promise.all([
+    getMovements(),
+    getInitialStocks(),
+    getProductUnits(),
+    getProductUnitConfigs(),
+  ]);
 
   return products.map((product) => {
     const initial = initialStocks[product.id] || 0;
+    const unit = units[product.id] || "PIECE";
+    const config = configs[product.id];
     const productMovements = movements.filter((m) => m.productId === product.id);
     const totalEntrees = productMovements
       .filter((m) => m.type === "entree")
-      .reduce((sum, m) => sum + m.quantity, 0);
+      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config), 0);
     const totalSorties = productMovements
       .filter((m) => m.type === "sortie")
-      .reduce((sum, m) => sum + m.quantity, 0);
+      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config), 0);
 
     return {
       productId: product.id,
       productName: product.name,
       conditionnement: product.conditionnement,
-      unit: units[product.id] || "PIECE",
+      unit,
       category: product.category,
       stockInitial: initial,
-      totalEntrees,
-      totalSorties,
-      stockRestant: initial + totalEntrees - totalSorties,
+      totalEntrees: roundStockQuantity(totalEntrees),
+      totalSorties: roundStockQuantity(totalSorties),
+      stockRestant: roundStockQuantity(initial + totalEntrees - totalSorties),
     };
   });
 }
@@ -367,16 +388,24 @@ export interface DailyStockRecord {
 }
 
 export async function getProductDailyHistory(productId: string): Promise<DailyStockRecord[]> {
-  const [allMovements, initialStocks] = await Promise.all([getMovements(), getInitialStocks()]);
+  const [allMovements, initialStocks, units, configs] = await Promise.all([
+    getMovements(),
+    getInitialStocks(),
+    getProductUnits(),
+    getProductUnitConfigs(),
+  ]);
   const movements = allMovements.filter((m) => m.productId === productId);
   const initial = initialStocks[productId] || 0;
+  const unit = units[productId] || "PIECE";
+  const config = configs[productId];
 
   const byDate: Record<string, { entrees: number; sorties: number }> = {};
   movements.forEach((m) => {
     const d = m.date.split("T")[0];
     if (!byDate[d]) byDate[d] = { entrees: 0, sorties: 0 };
-    if (m.type === "entree") byDate[d].entrees += m.quantity;
-    else byDate[d].sorties += m.quantity;
+    const displayQuantity = movementPiecesToDisplay(m.quantity, unit, config);
+    if (m.type === "entree") byDate[d].entrees += displayQuantity;
+    else byDate[d].sorties += displayQuantity;
   });
 
   const dates = Object.keys(byDate).sort();
@@ -385,6 +414,12 @@ export async function getProductDailyHistory(productId: string): Promise<DailySt
     const stockInitial = cumul;
     const { entrees, sorties } = byDate[date];
     cumul = stockInitial + entrees - sorties;
-    return { date, stockInitial, entrees, sorties, stockRestant: cumul };
+    return {
+      date,
+      stockInitial: roundStockQuantity(stockInitial),
+      entrees: roundStockQuantity(entrees),
+      sorties: roundStockQuantity(sorties),
+      stockRestant: roundStockQuantity(cumul),
+    };
   });
 }
