@@ -1,6 +1,19 @@
 import { supabase } from "@/integrations/supabase/client";
 import { saveMovement, MovementUnit, getProducts } from "./stockData";
 
+// Produits à exclure de la réquisition (mais conservés dans le stock global)
+const REQUISITION_EXCLUDED_NAMES = [
+  "BEURRE LEDDA 250 G",
+  "FARINE 10 KGS",
+  "HUILLE 500 CL",
+  "LEVURE 125 G",
+  "POUDRE VANILLE",
+  "PROTOXYDE",
+  "SEL 1 KG",
+  "SUCRE GRANULE 2 KG",
+  "SUCRE PERLE 10KG",
+];
+
 export interface RequisitionEntry {
   id: string;
   date: string;
@@ -12,10 +25,12 @@ export interface RequisitionEntry {
   unitUsed?: MovementUnit;
 }
 
-// Tous les produits alimentaires → Réquisition Salle
-export const REQUISITION_SALLE_IDS: string[] = getProducts("alimentaire").map((p) => p.id);
+// Tous les produits alimentaires → Réquisition Alimentaire (sauf exclus)
+export const REQUISITION_SALLE_IDS: string[] = getProducts("alimentaire")
+  .filter((p) => !REQUISITION_EXCLUDED_NAMES.includes(p.name))
+  .map((p) => p.id);
 
-// Tous les produits emballage → Réquisition Emporter
+// Tous les produits emballage → Réquisition Emballage
 export const REQUISITION_EMPORTER_IDS: string[] = getProducts("emballage").map((p) => p.id);
 
 export const ALL_REQUISITION_IDS = new Set<string>([
