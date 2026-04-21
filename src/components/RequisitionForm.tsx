@@ -322,8 +322,8 @@ export function RequisitionForm({ onUpdated }: Props) {
                       const parts: string[] = [];
                       if (cfg.cartonEnabled && decomposed.cartons) parts.push(`${decomposed.cartons} cart.`);
                       if (cfg.paquetEnabled && decomposed.paquets) parts.push(`${decomposed.paquets} paq.`);
-                      if (decomposed.pieces) parts.push(`${decomposed.pieces} pcs`);
-                      const breakdown = parts.length > 0 ? parts.join(" + ") : "0 pcs";
+                      if (decomposed.pieces) parts.push(`${decomposed.pieces} ${pieceLbl.short}`);
+                      const breakdown = parts.length > 0 ? parts.join(" + ") : `0 ${pieceLbl.short}`;
                       return (
                         <div className="inline-flex items-center gap-1 justify-end">
                           <button
@@ -336,7 +336,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                               {breakdown}
                               <Pencil className="h-3 w-3 opacity-60" />
                             </span>
-                            <span className="text-[10px] font-normal text-primary/70">= {existingTotal} pièces</span>
+                            <span className="text-[10px] font-normal text-primary/70">= {existingTotal} {pieceLbl.short}</span>
                           </button>
                           {existingTotal > 0 && (
                             <Button
