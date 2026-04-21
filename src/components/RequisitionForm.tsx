@@ -284,6 +284,8 @@ export function RequisitionForm({ onUpdated }: Props) {
                       onChange={(nv) => setQuantities((q) => ({ ...q, [p.id]: nv }))}
                       size="sm"
                       pieceLabel={pieceLbl.plural}
+                      paquetLabel={(PAQUET_LABEL_OVERRIDES[p.id] || "Paquets")}
+                      showTotal={false}
                     />
                     <Button
                       size="sm"
