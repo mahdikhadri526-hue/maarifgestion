@@ -253,11 +253,14 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   {m.destination ? (
                     <div className="flex flex-col">
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
-                        <Send className="h-3 w-3" /> Transfert
+                        <Send className="h-3 w-3" />
+                        {m.destination === "Mr Hassan" ? "Mr Hassan" : "Transfert"}
                       </span>
+                      {m.destination !== "Mr Hassan" && (
                       <span className="text-[10px] text-muted-foreground mt-0.5">
                         → {m.destination}
                       </span>
+                      )}
                     </div>
                   ) : (
                     <span className={`inline-flex items-center gap-1 text-xs font-medium ${
