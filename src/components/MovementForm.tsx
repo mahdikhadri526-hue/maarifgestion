@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG, detectProductUnit, PAQUET_LABEL_OVERRIDES, getPieceLabel } from "@/lib/stockData";
+import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG, detectProductUnit, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, getPieceLabel } from "@/lib/stockData";
 import { addLotEntry } from "@/lib/lotData";
 import { useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
@@ -217,7 +217,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
             Quantité
           </label>
           {productId ? (
-            <MultiUnitInput config={config} values={multi} onChange={setMulti} pieceLabel={unitLabel} paquetLabel={paquetLabel} showTotal={false} />
+            <MultiUnitInput config={config} values={multi} onChange={setMulti} pieceLabel={unitLabel} paquetLabel={paquetLabel} showTotal={false} hidePiece={HIDE_PIECE_PRODUCTS.has(productId)} />
           ) : (
             <p className="text-xs text-muted-foreground italic">Sélectionnez un produit d'abord</p>
           )}

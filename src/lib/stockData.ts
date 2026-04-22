@@ -30,6 +30,12 @@ export const PAQUET_LABEL_OVERRIDES: Record<string, string> = {
   "ali-7": "1 Kg", // CAFE BRESIL
 };
 
+// Produits pour lesquels l'unité "Pièces" doit être masquée (saisie en paquets uniquement)
+export const HIDE_PIECE_PRODUCTS: Set<string> = new Set([
+  "emb-43", // MASQUE
+  "emb-44", // GANT
+]);
+
 export function getPieceLabel(productId: string): { singular: string; plural: string; short: string } {
   return PIECE_LABEL_OVERRIDES[productId] || { singular: "Pièce", plural: "Pièces", short: "pcs" };
 }
