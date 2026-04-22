@@ -6,7 +6,7 @@ import {
   getProductUnitConfigs
 } from "@/lib/stockData";
 import { LotEntry, getExpiringLots, getProductLots, getLotEntries } from "@/lib/lotData";
-import { RequisitionEntry, getRequisitionsByDate } from "@/lib/requisitionData";
+import { RequisitionEntry, getRequisitionsByDate, getRequisitions } from "@/lib/requisitionData";
 
 // Generic hook for async data with realtime refresh
 function useRealtimeData<T>(
@@ -109,4 +109,8 @@ export function useRequisitionsByDate(date: string, type: "salle" | "emporter") 
     ["requisitions"],
     [date, type]
   );
+}
+
+export function useAllRequisitions() {
+  return useRealtimeData(getRequisitions, ["requisitions"]);
 }
