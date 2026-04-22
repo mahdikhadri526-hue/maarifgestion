@@ -349,7 +349,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                 </td>
                 <td className="p-2">
                   <div className="flex items-center justify-end gap-1">
-                  {m.destination && m.type === "sortie" && (
+                  {ENABLE_TRANSFERTS && m.destination && m.type === "sortie" && (
                     <button
                       onClick={() => handleReintegrate(m)}
                       disabled={m.destination.startsWith("✓") || reintegratingId === m.id}
