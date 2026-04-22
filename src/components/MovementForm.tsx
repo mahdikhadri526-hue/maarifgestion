@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, getPieceLabelForProduct } from "@/lib/stockData";
+import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, getPieceLabelForProduct, getProductAvailableStockInBasePieces, formatQuantityForProduct } from "@/lib/stockData";
 import { addLotEntry } from "@/lib/lotData";
 import { useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
@@ -68,6 +68,16 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
       // Les transferts et "Mr Hassan" sont stockés comme des sorties pour que le calcul du stock reste correct
       const movementType: "entree" | "sortie" =
         type === "transfert" || type === "hassan" ? "sortie" : type;
+      // Bloquer toute sortie qui dépasserait le stock disponible
+      if (movementType === "sortie") {
+        const available = await getProductAvailableStockInBasePieces(productId);
+        if (totalQty > available) {
+          const availableLabel = formatQuantityForProduct(productId, available, config);
+          toast.error(`Stock insuffisant : seulement ${availableLabel} disponible(s) pour ${selectedProduct?.name}`);
+          setSubmitting(false);
+          return;
+        }
+      }
       const destinationValue =
         type === "transfert" ? destination.trim() : type === "hassan" ? "Mr Hassan" : undefined;
       await saveMovement({

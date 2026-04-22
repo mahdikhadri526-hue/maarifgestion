@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabelForProduct, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, formatQuantityForProduct } from "@/lib/stockData";
+import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabelForProduct, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, formatQuantityForProduct, getProductAvailableStockInBasePieces } from "@/lib/stockData";
 import { saveRequisition, setRequisitionTotal, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
 import { useRequisitionsByDate, useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
@@ -93,6 +93,19 @@ export function RequisitionForm({ onUpdated }: Props) {
     setSubmitting(true);
     try {
       const operatorName = performedBy.trim();
+      // Vérifier le stock disponible AVANT d'enregistrer quoi que ce soit
+      for (const { pid: productId, total } of entries) {
+        const product = allProducts.find((p) => p.id === productId);
+        if (!product) continue;
+        const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
+        const available = await getProductAvailableStockInBasePieces(productId);
+        if (total > available) {
+          const availableLabel = formatQuantityForProduct(productId, available, cfg);
+          toast.error(`Stock insuffisant pour ${product.name} : seulement ${availableLabel} disponible(s)`);
+          setSubmitting(false);
+          return;
+        }
+      }
       for (const { pid: productId, total, unitUsed } of entries) {
         const product = allProducts.find((p) => p.id === productId);
         if (!product) continue;
@@ -134,6 +147,12 @@ export function RequisitionForm({ onUpdated }: Props) {
     const total = totalPieces(v, cfg);
     if (total <= 0) {
       toast.error("Quantité invalide");
+      return;
+    }
+    const available = await getProductAvailableStockInBasePieces(productId);
+    if (total > available) {
+      const availableLabel = formatQuantityForProduct(productId, available, cfg);
+      toast.error(`Stock insuffisant pour ${product.name} : seulement ${availableLabel} disponible(s)`);
       return;
     }
     try {
@@ -194,6 +213,16 @@ export function RequisitionForm({ onUpdated }: Props) {
     }
     if (!performedBy.trim()) {
       toast.error("Veuillez saisir le prénom de la personne");
+      return;
+    }
+    // La modification remplace la quantité existante : on doit comparer la
+    // nouvelle valeur avec le stock disponible APRÈS avoir "rendu" l'ancienne.
+    const previousTotal = existingMap[productId] || 0;
+    const available = await getProductAvailableStockInBasePieces(productId);
+    const allowedMax = available + previousTotal;
+    if (val > allowedMax) {
+      const availableLabel = formatQuantityForProduct(productId, allowedMax, cfg);
+      toast.error(`Stock insuffisant pour ${product.name} : maximum ${availableLabel} possible`);
       return;
     }
     try {
