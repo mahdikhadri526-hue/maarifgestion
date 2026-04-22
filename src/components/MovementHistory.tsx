@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useMovements, useProductUnitConfigs } from "@/hooks/useStockData";
+import { useMovements, useProductUnitConfigs, useAllRequisitions } from "@/hooks/useStockData";
 import { deleteMovement, formatQuantityForProduct, saveMovement } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
-import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send, Undo2, CheckCircle2 } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send, Undo2, CheckCircle2, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
@@ -49,6 +49,22 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const [filterPerformedBy, setFilterPerformedBy] = useState<string>("all");
   const { data: movements, loading } = useMovements();
   const { data: configs } = useProductUnitConfigs();
+  const { data: requisitions } = useAllRequisitions();
+
+  // Set des clés "date|productId|category" pour identifier les sorties issues
+  // d'une réquisition (la sortie est créée avec la même date et le même produit
+  // par saveRequisition / setRequisitionTotal).
+  const requisitionKeys = new Set<string>(
+    (requisitions || []).map((r) => {
+      const category = r.type === "salle" ? "alimentaire" : "emballage";
+      return `${r.date}|${r.productId}|${category}`;
+    })
+  );
+  const isFromRequisition = (m: { date: string; productId: string; category: string; type: string; destination?: string | null }) => {
+    if (m.type !== "sortie") return false;
+    if (m.destination) return false; // exclut transferts / Mr Hassan
+    return requisitionKeys.has(`${m.date.slice(0, 10)}|${m.productId}|${m.category}`);
+  };
 
   const sorted = [...(movements || [])].sort(
     (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -325,12 +341,20 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                       )}
                     </div>
                   ) : (
-                    <span className={`inline-flex items-center gap-1 text-xs font-medium ${
-                      m.type === "entree" ? "text-success" : "text-destructive"
-                    }`}>
-                      {m.type === "entree" ? <ArrowDownCircle className="h-3.5 w-3.5" /> : <ArrowUpCircle className="h-3.5 w-3.5" />}
-                      {m.type === "entree" ? "Entrée" : "Sortie"}
-                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className={`inline-flex items-center gap-1 text-xs font-medium ${
+                        m.type === "entree" ? "text-success" : "text-destructive"
+                      }`}>
+                        {m.type === "entree" ? <ArrowDownCircle className="h-3.5 w-3.5" /> : <ArrowUpCircle className="h-3.5 w-3.5" />}
+                        {m.type === "entree" ? "Entrée" : "Sortie"}
+                      </span>
+                      {isFromRequisition(m) && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded w-fit">
+                          <ClipboardList className="h-3 w-3" />
+                          Réquisition
+                        </span>
+                      )}
+                    </div>
                   )}
                 </td>
                 <td className="p-3 text-sm">{m.productName}</td>
