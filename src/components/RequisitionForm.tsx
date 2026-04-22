@@ -141,7 +141,13 @@ export function RequisitionForm({ onUpdated }: Props) {
 
   const startEdit = (productId: string, currentQty: number) => {
     setEditingId(productId);
-    setEditValue({ cartons: "", paquets: "", pieces: currentQty > 0 ? String(currentQty) : "" });
+    const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
+    if (HIDE_PIECE_PRODUCTS.has(productId) && cfg.paquetEnabled && cfg.piecesPerPaquet > 0) {
+      const paquets = currentQty / cfg.piecesPerPaquet;
+      setEditValue({ cartons: "", paquets: paquets > 0 ? String(paquets) : "", pieces: "" });
+    } else {
+      setEditValue({ cartons: "", paquets: "", pieces: currentQty > 0 ? String(currentQty) : "" });
+    }
   };
 
   const cancelEdit = () => {
@@ -152,7 +158,10 @@ export function RequisitionForm({ onUpdated }: Props) {
   const saveEdit = async (productId: string) => {
     const product = allProducts.find((p) => p.id === productId);
     if (!product) return;
-    const val = Number(editValue.pieces || 0);
+    const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
+    const val = HIDE_PIECE_PRODUCTS.has(productId) && cfg.paquetEnabled
+      ? Number(editValue.paquets || 0) * cfg.piecesPerPaquet
+      : Number(editValue.pieces || 0);
     if (isNaN(val) || val < 0) {
       toast.error("Quantité invalide");
       return;
