@@ -93,6 +93,19 @@ export function RequisitionForm({ onUpdated }: Props) {
     setSubmitting(true);
     try {
       const operatorName = performedBy.trim();
+      // Vérifier le stock disponible AVANT d'enregistrer quoi que ce soit
+      for (const { pid: productId, total } of entries) {
+        const product = allProducts.find((p) => p.id === productId);
+        if (!product) continue;
+        const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
+        const available = await getProductAvailableStockInBasePieces(productId);
+        if (total > available) {
+          const availableLabel = formatQuantityForProduct(productId, available, cfg);
+          toast.error(`Stock insuffisant pour ${product.name} : seulement ${availableLabel} disponible(s)`);
+          setSubmitting(false);
+          return;
+        }
+      }
       for (const { pid: productId, total, unitUsed } of entries) {
         const product = allProducts.find((p) => p.id === productId);
         if (!product) continue;
