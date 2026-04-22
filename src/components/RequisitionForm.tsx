@@ -272,7 +272,7 @@ export function RequisitionForm({ onUpdated }: Props) {
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté demandée</th>
               {showAdded && (
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-56">Qté demandée (pièces)</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-56">Qté demandée (total)</th>
               )}
             </tr>
           </thead>
@@ -312,14 +312,27 @@ export function RequisitionForm({ onUpdated }: Props) {
                 <td className="p-3 text-right">
                   {editingId === p.id ? (
                     <div className="flex items-center gap-1 justify-end">
-                      <Input
-                        type="number"
-                        min="0"
-                        autoFocus
-                        value={editValue.pieces}
-                        onChange={(e) => setEditValue({ cartons: "", paquets: "", pieces: e.target.value })}
-                        className="h-8 w-20 font-mono text-right text-sm"
-                      />
+                      {HIDE_PIECE_PRODUCTS.has(p.id) ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          autoFocus
+                          value={editValue.paquets}
+                          onChange={(e) => setEditValue({ cartons: "", paquets: e.target.value, pieces: "" })}
+                          className="h-8 w-20 font-mono text-right text-sm"
+                          placeholder="paquets"
+                        />
+                      ) : (
+                        <Input
+                          type="number"
+                          min="0"
+                          autoFocus
+                          value={editValue.pieces}
+                          onChange={(e) => setEditValue({ cartons: "", paquets: "", pieces: e.target.value })}
+                          className="h-8 w-20 font-mono text-right text-sm"
+                        />
+                      )}
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => saveEdit(p.id)}>
                         <Check className="h-3.5 w-3.5 text-success" />
                       </Button>
