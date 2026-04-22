@@ -295,7 +295,7 @@ export function RequisitionForm({ onUpdated }: Props) {
         </div>
         {isLocked && (
           <div className="mt-3 px-3 py-2 rounded-md bg-muted border text-xs text-muted-foreground">
-            🔒 Date verrouillée (au-delà de J+1) — la qté demandée ne peut plus être modifiée ni supprimée.
+            🔒 Date verrouillée (jour J dépassé) — la qté demandée ne peut plus être modifiée ni supprimée.
           </div>
         )}
       </div>
