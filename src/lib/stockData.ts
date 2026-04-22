@@ -477,3 +477,25 @@ export async function getProductDailyHistory(productId: string): Promise<DailySt
     };
   });
 }
+
+// Retourne le stock restant courant d'un produit, exprimé en "pièces affichées"
+// (même unité que celle saisie dans MultiUnitInput / totalPieces).
+export async function getProductAvailableStock(productId: string): Promise<number> {
+  const [allMovements, initialStocks, units, configs] = await Promise.all([
+    getMovements(),
+    getInitialStocks(),
+    getProductUnits(),
+    getProductUnitConfigs(),
+  ]);
+  const initial = initialStocks[productId] || 0;
+  const unit = units[productId] || "PIECE";
+  const config = configs[productId];
+  const productMovements = allMovements.filter((m) => m.productId === productId);
+  const totalEntrees = productMovements
+    .filter((m) => m.type === "entree")
+    .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config), 0);
+  const totalSorties = productMovements
+    .filter((m) => m.type === "sortie")
+    .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config), 0);
+  return roundStockQuantity(initial + totalEntrees - totalSorties);
+}
