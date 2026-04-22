@@ -478,9 +478,11 @@ export async function getProductDailyHistory(productId: string): Promise<DailySt
   });
 }
 
-// Retourne le stock restant courant d'un produit, exprimé en "pièces affichées"
-// (même unité que celle saisie dans MultiUnitInput / totalPieces).
-export async function getProductAvailableStock(productId: string): Promise<number> {
+// Retourne le stock restant courant d'un produit, exprimé dans la MÊME unité
+// de base que `totalPieces` (= pièces "brutes" multipliées par la config).
+// Permet de comparer directement avec une saisie MultiUnitInput pour bloquer
+// une sortie/réquisition qui dépasserait le stock disponible.
+export async function getProductAvailableStockInBasePieces(productId: string): Promise<number> {
   const [allMovements, initialStocks, units, configs] = await Promise.all([
     getMovements(),
     getInitialStocks(),
@@ -490,12 +492,21 @@ export async function getProductAvailableStock(productId: string): Promise<numbe
   const initial = initialStocks[productId] || 0;
   const unit = units[productId] || "PIECE";
   const config = configs[productId];
+  const factor = (() => {
+    // Inverse de movementPiecesToDisplay : on remet le stock initial dans
+    // la même unité que les mouvements (= pièces brutes).
+    if (unit === "KILO" && config?.paquetEnabled && config.piecesPerPaquet > 0) return config.piecesPerPaquet;
+    if (unit === "PAQUET" && config?.paquetEnabled && config.piecesPerPaquet > 0) return config.piecesPerPaquet;
+    if (unit === "COLIS" && config?.cartonEnabled && config.piecesPerCarton > 0) return config.piecesPerCarton;
+    return 1;
+  })();
+  const initialBase = initial * factor;
   const productMovements = allMovements.filter((m) => m.productId === productId);
-  const totalEntrees = productMovements
+  const totalEntreesBase = productMovements
     .filter((m) => m.type === "entree")
-    .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config), 0);
-  const totalSorties = productMovements
+    .reduce((sum, m) => sum + m.quantity, 0);
+  const totalSortiesBase = productMovements
     .filter((m) => m.type === "sortie")
-    .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config), 0);
-  return roundStockQuantity(initial + totalEntrees - totalSorties);
+    .reduce((sum, m) => sum + m.quantity, 0);
+  return roundStockQuantity(initialBase + totalEntreesBase - totalSortiesBase);
 }
