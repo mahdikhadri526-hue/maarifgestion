@@ -49,6 +49,11 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
       return;
     }
 
+    if (type === "transfert" && !destination.trim()) {
+      toast.error("Veuillez saisir la destination du transfert");
+      return;
+    }
+
     if (isAlimentaire && type === "entree" && (!lotNumber || !expiryDate)) {
       toast.error("Veuillez saisir le numéro de lot et la date limite de consommation");
       return;
@@ -58,15 +63,18 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
     try {
       const operatorName = performedBy.trim();
       const unitUsed = dominantUnit(multi, config);
+      // Les transferts sont stockés comme des sorties pour que le calcul du stock reste correct
+      const movementType: "entree" | "sortie" = type === "transfert" ? "sortie" : type;
       await saveMovement({
         date,
         productId,
         productName: selectedProduct?.name || "",
         category,
-        type,
+        type: movementType,
         quantity: totalQty,
         performedBy: operatorName,
         unitUsed,
+        destination: type === "transfert" ? destination.trim() : undefined,
       });
       setOperators(rememberOperator(operatorName));
 
@@ -80,17 +88,21 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
             entryDate: date,
           });
           toast.success(`Entrée de ${totalQty} pièces ${selectedProduct?.name} (Lot: ${lotNumber}) enregistrée`);
-        } else {
+        } else if (type === "sortie") {
           toast.success(`Sortie FIFO de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
+        } else {
+          toast.success(`Transfert FIFO de ${totalQty} pièces ${selectedProduct?.name} → ${destination.trim()} enregistré`);
         }
       } else {
-        toast.success(`${type === "entree" ? "Entrée" : "Sortie"} de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
+        const label = type === "entree" ? "Entrée" : type === "sortie" ? "Sortie" : `Transfert → ${destination.trim()}`;
+        toast.success(`${label} de ${totalQty} pièces ${selectedProduct?.name} enregistré`);
       }
 
       setProductId("");
       setMulti(EMPTY_MULTI);
       setLotNumber("");
       setExpiryDate("");
+      setDestination("");
       onMovementAdded();
     } catch (err) {
       toast.error("Erreur lors de l'enregistrement");
