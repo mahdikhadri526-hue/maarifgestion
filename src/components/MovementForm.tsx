@@ -15,7 +15,7 @@ interface MovementFormProps {
 }
 
 export function MovementForm({ onMovementAdded }: MovementFormProps) {
-  const [type, setType] = useState<"entree" | "sortie" | "transfert">("entree");
+  const [type, setType] = useState<"entree" | "sortie" | "transfert" | "hassan">("entree");
   const [category, setCategory] = useState<Category>("alimentaire");
   const [productId, setProductId] = useState("");
   const [multi, setMulti] = useState<MultiUnitValues>(EMPTY_MULTI);
@@ -63,8 +63,11 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
     try {
       const operatorName = performedBy.trim();
       const unitUsed = dominantUnit(multi, config);
-      // Les transferts sont stockés comme des sorties pour que le calcul du stock reste correct
-      const movementType: "entree" | "sortie" = type === "transfert" ? "sortie" : type;
+      // Les transferts et "Mr Hassan" sont stockés comme des sorties pour que le calcul du stock reste correct
+      const movementType: "entree" | "sortie" =
+        type === "transfert" || type === "hassan" ? "sortie" : type;
+      const destinationValue =
+        type === "transfert" ? destination.trim() : type === "hassan" ? "Mr Hassan" : undefined;
       await saveMovement({
         date,
         productId,
@@ -74,7 +77,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         quantity: totalQty,
         performedBy: operatorName,
         unitUsed,
-        destination: type === "transfert" ? destination.trim() : undefined,
+        destination: destinationValue,
       });
       setOperators(rememberOperator(operatorName));
 
@@ -90,11 +93,20 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
           toast.success(`Entrée de ${totalQty} pièces ${selectedProduct?.name} (Lot: ${lotNumber}) enregistrée`);
         } else if (type === "sortie") {
           toast.success(`Sortie FIFO de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
-        } else {
+        } else if (type === "transfert") {
           toast.success(`Transfert FIFO de ${totalQty} pièces ${selectedProduct?.name} → ${destination.trim()} enregistré`);
+        } else {
+          toast.success(`Sortie Mr Hassan de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
         }
       } else {
-        const label = type === "entree" ? "Entrée" : type === "sortie" ? "Sortie" : `Transfert → ${destination.trim()}`;
+        const label =
+          type === "entree"
+            ? "Entrée"
+            : type === "sortie"
+            ? "Sortie"
+            : type === "transfert"
+            ? `Transfert → ${destination.trim()}`
+            : "Sortie Mr Hassan";
         toast.success(`${label} de ${totalQty} pièces ${selectedProduct?.name} enregistré`);
       }
 
