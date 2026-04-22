@@ -117,6 +117,10 @@ export function RequisitionForm({ onUpdated }: Props) {
   const handleSingleSave = async (productId: string) => {
     const product = allProducts.find((pr) => pr.id === productId);
     if (!product) return;
+    if (isLocked) {
+      toast.error("Saisie verrouillée : la date est au-delà de J+1");
+      return;
+    }
     if (!performedBy.trim()) {
       toast.error("Veuillez saisir le prénom de la personne");
       return;
@@ -150,6 +154,10 @@ export function RequisitionForm({ onUpdated }: Props) {
   };
 
   const startEdit = (productId: string, currentQty: number) => {
+    if (isLocked) {
+      toast.error("Modification interdite : la date est au-delà de J+1");
+      return;
+    }
     setEditingId(productId);
     const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
     if (HIDE_PIECE_PRODUCTS.has(productId) && cfg.paquetEnabled && cfg.piecesPerPaquet > 0) {
@@ -168,6 +176,10 @@ export function RequisitionForm({ onUpdated }: Props) {
   const saveEdit = async (productId: string) => {
     const product = allProducts.find((p) => p.id === productId);
     if (!product) return;
+    if (isLocked) {
+      toast.error("Modification interdite : la date est au-delà de J+1");
+      return;
+    }
     const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
     const val = HIDE_PIECE_PRODUCTS.has(productId) && cfg.paquetEnabled
       ? Number(editValue.paquets || 0) * cfg.piecesPerPaquet
@@ -197,6 +209,10 @@ export function RequisitionForm({ onUpdated }: Props) {
   const handleDelete = async (productId: string) => {
     const product = allProducts.find((p) => p.id === productId);
     if (!product) return;
+    if (isLocked) {
+      toast.error("Suppression interdite : la date est au-delà de J+1");
+      return;
+    }
     if (!confirm(`Supprimer la quantité demandée pour ${product.name} ?`)) return;
     try {
       await setRequisitionTotal(date, reqType, productId, product.name, 0, performedBy.trim() || undefined);
