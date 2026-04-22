@@ -141,7 +141,13 @@ export function RequisitionForm({ onUpdated }: Props) {
 
   const startEdit = (productId: string, currentQty: number) => {
     setEditingId(productId);
-    setEditValue({ cartons: "", paquets: "", pieces: currentQty > 0 ? String(currentQty) : "" });
+    const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
+    if (HIDE_PIECE_PRODUCTS.has(productId) && cfg.paquetEnabled && cfg.piecesPerPaquet > 0) {
+      const paquets = currentQty / cfg.piecesPerPaquet;
+      setEditValue({ cartons: "", paquets: paquets > 0 ? String(paquets) : "", pieces: "" });
+    } else {
+      setEditValue({ cartons: "", paquets: "", pieces: currentQty > 0 ? String(currentQty) : "" });
+    }
   };
 
   const cancelEdit = () => {
@@ -152,7 +158,10 @@ export function RequisitionForm({ onUpdated }: Props) {
   const saveEdit = async (productId: string) => {
     const product = allProducts.find((p) => p.id === productId);
     if (!product) return;
-    const val = Number(editValue.pieces || 0);
+    const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
+    const val = HIDE_PIECE_PRODUCTS.has(productId) && cfg.paquetEnabled
+      ? Number(editValue.paquets || 0) * cfg.piecesPerPaquet
+      : Number(editValue.pieces || 0);
     if (isNaN(val) || val < 0) {
       toast.error("Quantité invalide");
       return;
@@ -263,7 +272,7 @@ export function RequisitionForm({ onUpdated }: Props) {
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté demandée</th>
               {showAdded && (
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-56">Qté demandée (pièces)</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-56">Qté demandée (total)</th>
               )}
             </tr>
           </thead>
@@ -303,14 +312,27 @@ export function RequisitionForm({ onUpdated }: Props) {
                 <td className="p-3 text-right">
                   {editingId === p.id ? (
                     <div className="flex items-center gap-1 justify-end">
-                      <Input
-                        type="number"
-                        min="0"
-                        autoFocus
-                        value={editValue.pieces}
-                        onChange={(e) => setEditValue({ cartons: "", paquets: "", pieces: e.target.value })}
-                        className="h-8 w-20 font-mono text-right text-sm"
-                      />
+                      {HIDE_PIECE_PRODUCTS.has(p.id) ? (
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          autoFocus
+                          value={editValue.paquets}
+                          onChange={(e) => setEditValue({ cartons: "", paquets: e.target.value, pieces: "" })}
+                          className="h-8 w-20 font-mono text-right text-sm"
+                          placeholder="paquets"
+                        />
+                      ) : (
+                        <Input
+                          type="number"
+                          min="0"
+                          autoFocus
+                          value={editValue.pieces}
+                          onChange={(e) => setEditValue({ cartons: "", paquets: "", pieces: e.target.value })}
+                          className="h-8 w-20 font-mono text-right text-sm"
+                        />
+                      )}
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => saveEdit(p.id)}>
                         <Check className="h-3.5 w-3.5 text-success" />
                       </Button>
@@ -325,13 +347,17 @@ export function RequisitionForm({ onUpdated }: Props) {
                       const parts: string[] = [];
                       if (cfg.cartonEnabled && decomposed.cartons) parts.push(`${decomposed.cartons} cart.`);
                       if (cfg.paquetEnabled && decomposed.paquets) parts.push(`${decomposed.paquets} paq.`);
-                      if (decomposed.pieces) parts.push(`${decomposed.pieces} ${pieceLbl.short}`);
+                      if (decomposed.pieces && !HIDE_PIECE_PRODUCTS.has(p.id)) parts.push(`${decomposed.pieces} ${pieceLbl.short}`);
+                      const paquetLbl = (PAQUET_LABEL_OVERRIDES[p.id] || "paq.").toLowerCase();
+                      const emptyLabel = HIDE_PIECE_PRODUCTS.has(p.id) ? `0 ${paquetLbl}` : `0 ${pieceLbl.short}`;
                       const breakdown = p.id === "ali-7"
                         ? formatQuantityForProduct(p.id, existingTotal, cfg)
-                        : (parts.length > 0 ? parts.join(" + ") : `0 ${pieceLbl.short}`);
+                        : (parts.length > 0 ? parts.join(" + ") : emptyLabel);
                       const totalLabel = p.id === "ali-7"
                         ? formatQuantityForProduct(p.id, existingTotal, cfg)
-                        : `${existingTotal} ${pieceLbl.short}`;
+                        : HIDE_PIECE_PRODUCTS.has(p.id) && cfg.paquetEnabled && cfg.piecesPerPaquet > 0
+                          ? `${(existingTotal / cfg.piecesPerPaquet).toFixed(existingTotal % cfg.piecesPerPaquet === 0 ? 0 : 2)} ${paquetLbl}`
+                          : `${existingTotal} ${pieceLbl.short}`;
                       return (
                         <div className="inline-flex items-center gap-1 justify-end">
                           <button
