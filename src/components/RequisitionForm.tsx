@@ -325,13 +325,17 @@ export function RequisitionForm({ onUpdated }: Props) {
                       const parts: string[] = [];
                       if (cfg.cartonEnabled && decomposed.cartons) parts.push(`${decomposed.cartons} cart.`);
                       if (cfg.paquetEnabled && decomposed.paquets) parts.push(`${decomposed.paquets} paq.`);
-                      if (decomposed.pieces) parts.push(`${decomposed.pieces} ${pieceLbl.short}`);
+                      if (decomposed.pieces && !HIDE_PIECE_PRODUCTS.has(p.id)) parts.push(`${decomposed.pieces} ${pieceLbl.short}`);
+                      const paquetLbl = (PAQUET_LABEL_OVERRIDES[p.id] || "paq.").toLowerCase();
+                      const emptyLabel = HIDE_PIECE_PRODUCTS.has(p.id) ? `0 ${paquetLbl}` : `0 ${pieceLbl.short}`;
                       const breakdown = p.id === "ali-7"
                         ? formatQuantityForProduct(p.id, existingTotal, cfg)
-                        : (parts.length > 0 ? parts.join(" + ") : `0 ${pieceLbl.short}`);
+                        : (parts.length > 0 ? parts.join(" + ") : emptyLabel);
                       const totalLabel = p.id === "ali-7"
                         ? formatQuantityForProduct(p.id, existingTotal, cfg)
-                        : `${existingTotal} ${pieceLbl.short}`;
+                        : HIDE_PIECE_PRODUCTS.has(p.id) && cfg.paquetEnabled && cfg.piecesPerPaquet > 0
+                          ? `${(existingTotal / cfg.piecesPerPaquet).toFixed(existingTotal % cfg.piecesPerPaquet === 0 ? 0 : 2)} ${paquetLbl}`
+                          : `${existingTotal} ${pieceLbl.short}`;
                       return (
                         <div className="inline-flex items-center gap-1 justify-end">
                           <button
