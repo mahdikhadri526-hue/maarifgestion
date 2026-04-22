@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG, detectProductUnit, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, getPieceLabel } from "@/lib/stockData";
+import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, getPieceLabelForProduct } from "@/lib/stockData";
 import { addLotEntry } from "@/lib/lotData";
 import { useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
@@ -34,8 +34,9 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const { data: configs } = useProductUnitConfigs();
   const config = configs?.[productId] || DEFAULT_UNIT_CONFIG;
   const totalQty = totalPieces(multi, config);
-  const pieceOverride = productId ? getPieceLabel(productId) : null;
-  const unitLabel = pieceOverride ? pieceOverride.singular : (selectedProduct ? detectProductUnit(selectedProduct.name) : "Pièces");
+  const unitLabel = selectedProduct
+    ? getPieceLabelForProduct(selectedProduct.id, selectedProduct.name, selectedProduct.category).plural
+    : "Pièces";
   const paquetLabel = productId ? (PAQUET_LABEL_OVERRIDES[productId] || "Paquets") : "Paquets";
 
   const handleSubmit = async (e: React.FormEvent) => {
