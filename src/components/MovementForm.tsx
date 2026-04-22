@@ -223,6 +223,25 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
           </div>
         )}
 
+        {type === "transfert" && (
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              Destination du transfert
+            </label>
+            <Input
+              type="text"
+              placeholder="Ex: Maarif, Atelier, Boutique 2..."
+              value={destination}
+              onChange={(e) => setDestination(e.target.value)}
+            />
+            {isAlimentaire && (
+              <p className="text-[11px] text-primary mt-1">
+                ℹ️ FIFO : déduit des lots les plus anciens.
+              </p>
+            )}
+          </div>
+        )}
+
         <Button type="submit" className="w-full" disabled={submitting}>
           {submitting ? "Enregistrement..." : "Enregistrer"}
         </Button>
