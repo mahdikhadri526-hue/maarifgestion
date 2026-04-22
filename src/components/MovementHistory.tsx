@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
 import { Input } from "@/components/ui/input";
+import { ENABLE_TRANSFERTS } from "@/lib/featureFlags";
 import {
   Select,
   SelectContent,
@@ -243,8 +244,12 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   <SelectItem value="all">Tous les types</SelectItem>
                   <SelectItem value="entree">Entrées</SelectItem>
                   <SelectItem value="sortie">Sorties</SelectItem>
-                  <SelectItem value="transfert">Transferts</SelectItem>
-                  <SelectItem value="hassan">Mr Hassan</SelectItem>
+                  {ENABLE_TRANSFERTS && (
+                    <>
+                      <SelectItem value="transfert">Transferts</SelectItem>
+                      <SelectItem value="hassan">Mr Hassan</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -344,7 +349,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                 </td>
                 <td className="p-2">
                   <div className="flex items-center justify-end gap-1">
-                  {m.destination && m.type === "sortie" && (
+                  {ENABLE_TRANSFERTS && m.destination && m.type === "sortie" && (
                     <button
                       onClick={() => handleReintegrate(m)}
                       disabled={m.destination.startsWith("✓") || reintegratingId === m.id}

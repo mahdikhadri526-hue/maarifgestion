@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Minus, Send } from "lucide-react";
 import { toast } from "sonner";
 import { MultiUnitInput, MultiUnitValues, EMPTY_MULTI, totalPieces, dominantUnit } from "./MultiUnitInput";
+import { ENABLE_TRANSFERTS } from "@/lib/featureFlags";
 
 interface MovementFormProps {
   onMovementAdded: () => void;
@@ -147,24 +148,28 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         >
           <Minus className="h-4 w-4" /> Sortie
         </button>
-        <button
-          type="button"
-          onClick={() => setType("transfert")}
-          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-md text-xs font-medium transition-colors ${
-            type === "transfert" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-          }`}
-        >
-          <Send className="h-3.5 w-3.5" /> Transfert
-        </button>
-        <button
-          type="button"
-          onClick={() => setType("hassan")}
-          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-md text-xs font-medium transition-colors ${
-            type === "hassan" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-          }`}
-        >
-          <Send className="h-3.5 w-3.5" /> Mr Hassan
-        </button>
+        {ENABLE_TRANSFERTS && (
+          <>
+            <button
+              type="button"
+              onClick={() => setType("transfert")}
+              className={`flex items-center justify-center gap-1.5 py-2.5 rounded-md text-xs font-medium transition-colors ${
+                type === "transfert" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <Send className="h-3.5 w-3.5" /> Transfert
+            </button>
+            <button
+              type="button"
+              onClick={() => setType("hassan")}
+              className={`flex items-center justify-center gap-1.5 py-2.5 rounded-md text-xs font-medium transition-colors ${
+                type === "hassan" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              <Send className="h-3.5 w-3.5" /> Mr Hassan
+            </button>
+          </>
+        )}
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3">
