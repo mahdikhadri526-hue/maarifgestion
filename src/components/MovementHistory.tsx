@@ -244,8 +244,12 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   <SelectItem value="all">Tous les types</SelectItem>
                   <SelectItem value="entree">Entrées</SelectItem>
                   <SelectItem value="sortie">Sorties</SelectItem>
-                  <SelectItem value="transfert">Transferts</SelectItem>
-                  <SelectItem value="hassan">Mr Hassan</SelectItem>
+                  {ENABLE_TRANSFERTS && (
+                    <>
+                      <SelectItem value="transfert">Transferts</SelectItem>
+                      <SelectItem value="hassan">Mr Hassan</SelectItem>
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
