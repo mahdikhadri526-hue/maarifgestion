@@ -34,6 +34,7 @@ export const PAQUET_LABEL_OVERRIDES: Record<string, string> = {
 export const HIDE_PIECE_PRODUCTS: Set<string> = new Set([
   "emb-43", // MASQUE
   "emb-44", // GANT
+  "ali-7",  // CAFE BRESIL — saisie en Kg uniquement (1 paquet = 1 Kg)
 ]);
 
 export function getPieceLabel(productId: string): { singular: string; plural: string; short: string } {
