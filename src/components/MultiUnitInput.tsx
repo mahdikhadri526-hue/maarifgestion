@@ -32,9 +32,10 @@ interface Props {
   paquetLabel?: string;
   cartonLabel?: string;
   showTotal?: boolean;
+  hidePiece?: boolean;
 }
 
-export function MultiUnitInput({ config, values, onChange, size = "md", disabled, pieceLabel = "Pièces", paquetLabel = "Paquets", cartonLabel = "Cartons", showTotal = true }: Props) {
+export function MultiUnitInput({ config, values, onChange, size = "md", disabled, pieceLabel = "Pièces", paquetLabel = "Paquets", cartonLabel = "Cartons", showTotal = true, hidePiece = false }: Props) {
   const sizeCls = size === "sm" ? "h-8 text-xs" : "";
   const total = totalPieces(values, config);
   return (
@@ -64,6 +65,7 @@ export function MultiUnitInput({ config, values, onChange, size = "md", disabled
             />
           </div>
         )}
+        {!hidePiece && (
         <div className="flex flex-col">
           <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">{pieceLabel}</label>
           <Input
@@ -74,6 +76,7 @@ export function MultiUnitInput({ config, values, onChange, size = "md", disabled
             className={`font-mono text-right w-20 ${sizeCls}`}
           />
         </div>
+        )}
       </div>
       {showTotal && total > 0 && (config.cartonEnabled || config.paquetEnabled) && (
         <p className="text-xs text-primary font-medium">= {total} pièces</p>
