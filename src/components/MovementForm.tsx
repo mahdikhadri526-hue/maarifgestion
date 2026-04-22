@@ -6,7 +6,7 @@ import { getOperators, rememberOperator } from "@/lib/operators";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, Send } from "lucide-react";
 import { toast } from "sonner";
 import { MultiUnitInput, MultiUnitValues, EMPTY_MULTI, totalPieces, dominantUnit } from "./MultiUnitInput";
 
@@ -15,7 +15,7 @@ interface MovementFormProps {
 }
 
 export function MovementForm({ onMovementAdded }: MovementFormProps) {
-  const [type, setType] = useState<"entree" | "sortie">("entree");
+  const [type, setType] = useState<"entree" | "sortie" | "transfert">("entree");
   const [category, setCategory] = useState<Category>("alimentaire");
   const [productId, setProductId] = useState("");
   const [multi, setMulti] = useState<MultiUnitValues>(EMPTY_MULTI);
@@ -23,6 +23,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const [lotNumber, setLotNumber] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [performedBy, setPerformedBy] = useState("");
+  const [destination, setDestination] = useState("");
   const [operators, setOperators] = useState<string[]>(() => getOperators());
   const [submitting, setSubmitting] = useState(false);
 
