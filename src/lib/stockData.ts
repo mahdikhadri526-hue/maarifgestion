@@ -58,6 +58,7 @@ export interface StockMovement {
   quantity: number;
   performedBy?: string;
   unitUsed?: MovementUnit;
+  destination?: string;
 }
 
 export interface StockLevel {
