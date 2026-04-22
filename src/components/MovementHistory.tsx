@@ -164,6 +164,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
       </div>
 
       {/* Filters */}
+      {ENABLE_TRANSFERTS && (
       <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
         <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between gap-2">
           <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors">
@@ -272,6 +273,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
           </div>
         </CollapsibleContent>
       </Collapsible>
+      )}
 
       <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
         <table className="w-full">
