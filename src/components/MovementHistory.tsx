@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useMovements, useProductUnitConfigs } from "@/hooks/useStockData";
-import { deleteMovement, formatQuantityForProduct } from "@/lib/stockData";
+import { deleteMovement, formatQuantityForProduct, saveMovement } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
-import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send, Undo2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
 import { Input } from "@/components/ui/input";
