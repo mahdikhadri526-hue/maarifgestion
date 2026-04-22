@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabel, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, formatQuantityForProduct } from "@/lib/stockData";
+import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabelForProduct, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, formatQuantityForProduct } from "@/lib/stockData";
 import { saveRequisition, setRequisitionTotal, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
 import { useRequisitionsByDate, useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
@@ -316,7 +316,7 @@ export function RequisitionForm({ onUpdated }: Props) {
               const cfg = configs?.[p.id] || DEFAULT_UNIT_CONFIG;
               const val = quantities[p.id] || EMPTY_MULTI;
               const total = totalPieces(val, cfg);
-              const pieceLbl = getPieceLabel(p.id);
+              const pieceLbl = getPieceLabelForProduct(p.id, p.name, p.category);
               return (
               <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="p-3 text-sm font-medium">{p.name}</td>
