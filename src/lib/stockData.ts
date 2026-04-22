@@ -41,6 +41,20 @@ export function getPieceLabel(productId: string): { singular: string; plural: st
   return PIECE_LABEL_OVERRIDES[productId] || { singular: "Pièce", plural: "Pièces", short: "pcs" };
 }
 
+// Retourne le label d'unité à afficher pour un produit donné.
+// Pour les produits alimentaires sans override explicite, on détecte l'unité naturelle
+// depuis le nom (Kg, L, etc.) afin de toujours afficher l'unité concrète.
+export function getPieceLabelForProduct(productId: string, productName?: string, category?: Category): { singular: string; plural: string; short: string } {
+  if (PIECE_LABEL_OVERRIDES[productId]) return PIECE_LABEL_OVERRIDES[productId];
+  if (category === "alimentaire" && productName) {
+    const u = detectProductUnit(productName);
+    if (u && u !== "Pièce") {
+      return { singular: u, plural: u, short: u.toLowerCase() };
+    }
+  }
+  return { singular: "Pièce", plural: "Pièces", short: "pcs" };
+}
+
 export interface Product {
   id: string;
   name: string;
