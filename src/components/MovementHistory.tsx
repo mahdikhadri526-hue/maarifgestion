@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
 import { Input } from "@/components/ui/input";
+import { ENABLE_TRANSFERTS } from "@/lib/featureFlags";
 import {
   Select,
   SelectContent,
