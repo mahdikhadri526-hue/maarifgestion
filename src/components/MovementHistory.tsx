@@ -67,7 +67,9 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     if (filterProduct !== "all" && m.productId !== filterProduct) return false;
     if (filterType !== "all") {
       if (filterType === "transfert") {
-        if (!m.destination) return false;
+        if (!m.destination || m.destination === "Mr Hassan") return false;
+      } else if (filterType === "hassan") {
+        if (m.destination !== "Mr Hassan") return false;
       } else if (filterType === "sortie") {
         // Sorties "pures" (hors transferts)
         if (m.type !== "sortie" || m.destination) return false;
@@ -204,6 +206,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   <SelectItem value="entree">Entrées</SelectItem>
                   <SelectItem value="sortie">Sorties</SelectItem>
                   <SelectItem value="transfert">Transferts</SelectItem>
+                  <SelectItem value="hassan">Mr Hassan</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -250,11 +253,14 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   {m.destination ? (
                     <div className="flex flex-col">
                       <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
-                        <Send className="h-3 w-3" /> Transfert
+                        <Send className="h-3 w-3" />
+                        {m.destination === "Mr Hassan" ? "Mr Hassan" : "Transfert"}
                       </span>
+                      {m.destination !== "Mr Hassan" && (
                       <span className="text-[10px] text-muted-foreground mt-0.5">
                         → {m.destination}
                       </span>
+                      )}
                     </div>
                   ) : (
                     <span className={`inline-flex items-center gap-1 text-xs font-medium ${

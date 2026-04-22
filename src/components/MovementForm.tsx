@@ -15,7 +15,7 @@ interface MovementFormProps {
 }
 
 export function MovementForm({ onMovementAdded }: MovementFormProps) {
-  const [type, setType] = useState<"entree" | "sortie" | "transfert">("entree");
+  const [type, setType] = useState<"entree" | "sortie" | "transfert" | "hassan">("entree");
   const [category, setCategory] = useState<Category>("alimentaire");
   const [productId, setProductId] = useState("");
   const [multi, setMulti] = useState<MultiUnitValues>(EMPTY_MULTI);
@@ -63,8 +63,11 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
     try {
       const operatorName = performedBy.trim();
       const unitUsed = dominantUnit(multi, config);
-      // Les transferts sont stockés comme des sorties pour que le calcul du stock reste correct
-      const movementType: "entree" | "sortie" = type === "transfert" ? "sortie" : type;
+      // Les transferts et "Mr Hassan" sont stockés comme des sorties pour que le calcul du stock reste correct
+      const movementType: "entree" | "sortie" =
+        type === "transfert" || type === "hassan" ? "sortie" : type;
+      const destinationValue =
+        type === "transfert" ? destination.trim() : type === "hassan" ? "Mr Hassan" : undefined;
       await saveMovement({
         date,
         productId,
@@ -74,7 +77,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         quantity: totalQty,
         performedBy: operatorName,
         unitUsed,
-        destination: type === "transfert" ? destination.trim() : undefined,
+        destination: destinationValue,
       });
       setOperators(rememberOperator(operatorName));
 
@@ -90,11 +93,20 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
           toast.success(`Entrée de ${totalQty} pièces ${selectedProduct?.name} (Lot: ${lotNumber}) enregistrée`);
         } else if (type === "sortie") {
           toast.success(`Sortie FIFO de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
-        } else {
+        } else if (type === "transfert") {
           toast.success(`Transfert FIFO de ${totalQty} pièces ${selectedProduct?.name} → ${destination.trim()} enregistré`);
+        } else {
+          toast.success(`Sortie Mr Hassan de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
         }
       } else {
-        const label = type === "entree" ? "Entrée" : type === "sortie" ? "Sortie" : `Transfert → ${destination.trim()}`;
+        const label =
+          type === "entree"
+            ? "Entrée"
+            : type === "sortie"
+            ? "Sortie"
+            : type === "transfert"
+            ? `Transfert → ${destination.trim()}`
+            : "Sortie Mr Hassan";
         toast.success(`${label} de ${totalQty} pièces ${selectedProduct?.name} enregistré`);
       }
 
@@ -116,7 +128,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
     <div className="bg-card rounded-lg border p-5 animate-fade-in">
       <h2 className="text-lg font-semibold mb-4">Nouveau Mouvement</h2>
       
-      <div className="grid grid-cols-3 gap-2 mb-4">
+      <div className="grid grid-cols-2 gap-2 mb-4">
         <button
           type="button"
           onClick={() => setType("entree")}
@@ -144,12 +156,16 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         >
           <Send className="h-3.5 w-3.5" /> Transfert
         </button>
+        <button
+          type="button"
+          onClick={() => setType("hassan")}
+          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-md text-xs font-medium transition-colors ${
+            type === "hassan" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+          }`}
+        >
+          <Send className="h-3.5 w-3.5" /> Mr Hassan
+        </button>
       </div>
-      {type === "transfert" && (
-        <p className="text-[11px] text-muted-foreground mb-3 -mt-2">
-          Transfert / Mr Hassan — comptabilisé comme une sortie de stock.
-        </p>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
@@ -230,7 +246,6 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
             </label>
             <Input
               type="text"
-              placeholder="Ex: Maarif, Atelier, Boutique 2..."
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
             />
