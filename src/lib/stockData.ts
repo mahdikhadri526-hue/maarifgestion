@@ -102,6 +102,12 @@ export function displayQuantityForProduct(productId: string, quantity: number, c
 export function formatQuantityForProduct(productId: string, quantity: number, config?: ProductUnitConfig): string {
   const displayQuantity = displayQuantityForProduct(productId, quantity, config);
   if (productId === "ali-7") return `${displayQuantity.toLocaleString("fr-FR")} Kg`;
+  if (HIDE_PIECE_PRODUCTS.has(productId) && config?.paquetEnabled && config.piecesPerPaquet > 0) {
+    if (quantity % config.piecesPerPaquet === 0) {
+      return `${quantity / config.piecesPerPaquet} paq.`;
+    }
+    return `${quantity} pcs`;
+  }
   return String(displayQuantity);
 }
 
