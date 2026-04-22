@@ -290,14 +290,31 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                 <td className="p-3">
                   {m.destination ? (
                     <div className="flex flex-col">
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
-                        <Send className="h-3 w-3" />
-                        {m.destination === "Mr Hassan" ? "Mr Hassan" : "Transfert"}
-                      </span>
-                      {m.destination !== "Mr Hassan" && (
-                      <span className="text-[10px] text-muted-foreground mt-0.5">
-                        → {m.destination}
-                      </span>
+                      {m.type === "entree" && m.destination.startsWith("Retour ") ? (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
+                            <Undo2 className="h-3 w-3" />
+                            Retour
+                          </span>
+                          <span className="text-[10px] text-muted-foreground mt-0.5">
+                            ← {m.destination.replace(/^Retour\s+/, "").replace(/^✓\s*/, "")}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                            <Send className="h-3 w-3" />
+                            {(m.destination.replace(/^✓\s*/, "")) === "Mr Hassan" ? "Mr Hassan" : "Transfert"}
+                            {m.destination.startsWith("✓") && (
+                              <CheckCircle2 className="h-3 w-3 text-success" />
+                            )}
+                          </span>
+                          {m.destination.replace(/^✓\s*/, "") !== "Mr Hassan" && (
+                            <span className="text-[10px] text-muted-foreground mt-0.5">
+                              → {m.destination.replace(/^✓\s*/, "")}
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                   ) : (
