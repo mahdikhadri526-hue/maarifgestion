@@ -117,7 +117,9 @@ export function isRequisitionProduct(productId: string): boolean {
 
 /**
  * Remplace la quantité totale de réquisition pour un produit/date/type.
- * Ajuste les sorties via un mouvement compensatoire (delta).
+ * Supprime les sorties existantes liées (même date/produit/catégorie) et
+ * recrée une sortie unique si la nouvelle quantité > 0.
+ * Évite ainsi de polluer l'historique avec un mouvement "entrée" compensatoire.
  */
 export async function setRequisitionTotal(
   date: string,
@@ -135,9 +137,6 @@ export async function setRequisitionTotal(
     .eq("product_id", productId);
   if (fetchErr) throw fetchErr;
 
-  const oldTotal = (existing || []).reduce((s, r) => s + r.quantity, 0);
-  const delta = newQuantity - oldTotal;
-
   if ((existing || []).length > 0) {
     const { error: delErr } = await supabase
       .from("requisitions")
@@ -147,6 +146,19 @@ export async function setRequisitionTotal(
       .eq("product_id", productId);
     if (delErr) throw delErr;
   }
+
+  // Supprimer toutes les sorties de stock existantes pour ce produit/date/catégorie
+  // (générées précédemment par les réquisitions). Ainsi le stock se rééquilibre
+  // sans créer d'écriture compensatoire "entrée".
+  const category = type === "salle" ? ("alimentaire" as const) : ("emballage" as const);
+  const { error: delMovErr } = await supabase
+    .from("stock_movements")
+    .delete()
+    .eq("date", date)
+    .eq("product_id", productId)
+    .eq("category", category)
+    .eq("type", "sortie");
+  if (delMovErr) throw delMovErr;
 
   if (newQuantity > 0) {
     const { error: insErr } = await supabase
@@ -161,17 +173,15 @@ export async function setRequisitionTotal(
         unit_used: "PIECE",
       } as any);
     if (insErr) throw insErr;
-  }
 
-  if (delta !== 0) {
-    const category = type === "salle" ? "alimentaire" as const : "emballage" as const;
+    // Recrée une sortie unique correspondant à la nouvelle quantité totale
     await saveMovement({
       date,
       productId,
       productName,
       category,
-      type: delta > 0 ? "sortie" : "entree",
-      quantity: Math.abs(delta),
+      type: "sortie",
+      quantity: newQuantity,
       performedBy,
     });
   }
