@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMovements, useProductUnitConfigs } from "@/hooks/useStockData";
 import { deleteMovement, formatQuantityForProduct } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
-import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
@@ -65,7 +65,16 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     if (filterStartDate && mDate < filterStartDate) return false;
     if (filterEndDate && mDate > filterEndDate) return false;
     if (filterProduct !== "all" && m.productId !== filterProduct) return false;
-    if (filterType !== "all" && m.type !== filterType) return false;
+    if (filterType !== "all") {
+      if (filterType === "transfert") {
+        if (!m.destination) return false;
+      } else if (filterType === "sortie") {
+        // Sorties "pures" (hors transferts)
+        if (m.type !== "sortie" || m.destination) return false;
+      } else if (m.type !== filterType) {
+        return false;
+      }
+    }
     if (filterPerformedBy !== "all" && (m.performedBy || "") !== filterPerformedBy) return false;
     return true;
   });
@@ -191,9 +200,10 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all">Entrées + Sorties</SelectItem>
+                  <SelectItem value="all">Tous les types</SelectItem>
                   <SelectItem value="entree">Entrées</SelectItem>
                   <SelectItem value="sortie">Sorties</SelectItem>
+                  <SelectItem value="transfert">Transferts</SelectItem>
                 </SelectContent>
               </Select>
             </div>
