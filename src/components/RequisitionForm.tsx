@@ -331,12 +331,13 @@ export function RequisitionForm({ onUpdated }: Props) {
                       paquetLabel={(PAQUET_LABEL_OVERRIDES[p.id] || "Paquets")}
                       showTotal={false}
                       hidePiece={HIDE_PIECE_PRODUCTS.has(p.id)}
+                      disabled={isLocked}
                     />
                     <Button
                       size="sm"
                       variant="outline"
                       className="h-9 px-2 text-xs"
-                      disabled={total <= 0}
+                      disabled={total <= 0 || isLocked}
                       onClick={() => handleSingleSave(p.id)}
                     >
                       ✓
