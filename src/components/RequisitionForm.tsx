@@ -149,6 +149,12 @@ export function RequisitionForm({ onUpdated }: Props) {
       toast.error("Quantité invalide");
       return;
     }
+    const available = await getProductAvailableStockInBasePieces(productId);
+    if (total > available) {
+      const availableLabel = formatQuantityForProduct(productId, available, cfg);
+      toast.error(`Stock insuffisant pour ${product.name} : seulement ${availableLabel} disponible(s)`);
+      return;
+    }
     try {
       const operatorName = performedBy.trim();
       await saveRequisition({
