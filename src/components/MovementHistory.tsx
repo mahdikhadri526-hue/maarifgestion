@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useMovements, useProductUnitConfigs } from "@/hooks/useStockData";
-import { deleteMovement, formatQuantityForProduct } from "@/lib/stockData";
+import { deleteMovement, formatQuantityForProduct, saveMovement } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
-import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send, Undo2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ interface MovementHistoryProps {
 export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [reintegratingId, setReintegratingId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterDate, setFilterDate] = useState<string>("");
   const [filterStartDate, setFilterStartDate] = useState<string>("");
@@ -106,6 +108,42 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     toast.success("Mouvement supprimé");
     setDeleteId(null);
     onMovementDeleted?.();
+  };
+
+  const handleReintegrate = async (m: typeof filtered[number]) => {
+    if (!m.destination) return;
+    if (m.destination.startsWith("✓")) {
+      toast.info("Ce transfert a déjà été réintégré");
+      return;
+    }
+    setReintegratingId(m.id);
+    try {
+      // Crée une entrée équivalente pour réintégrer la quantité au stock
+      await saveMovement({
+        date: new Date().toISOString().split("T")[0],
+        productId: m.productId,
+        productName: m.productName,
+        category: m.category,
+        type: "entree",
+        quantity: m.quantity,
+        performedBy: m.performedBy,
+        unitUsed: m.unitUsed,
+        destination: `Retour ${m.destination}`,
+      });
+      // Marque le transfert d'origine comme réintégré
+      const { error } = await supabase
+        .from("stock_movements")
+        .update({ destination: `✓ ${m.destination}` })
+        .eq("id", m.id);
+      if (error) throw error;
+      toast.success(`Quantité réintégrée au stock (+${formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])})`);
+      onMovementDeleted?.();
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors de la réintégration");
+    } finally {
+      setReintegratingId(null);
+    }
   };
 
   if (loading) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
@@ -252,14 +290,31 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                 <td className="p-3">
                   {m.destination ? (
                     <div className="flex flex-col">
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
-                        <Send className="h-3 w-3" />
-                        {m.destination === "Mr Hassan" ? "Mr Hassan" : "Transfert"}
-                      </span>
-                      {m.destination !== "Mr Hassan" && (
-                      <span className="text-[10px] text-muted-foreground mt-0.5">
-                        → {m.destination}
-                      </span>
+                      {m.type === "entree" && m.destination.startsWith("Retour ") ? (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
+                            <Undo2 className="h-3 w-3" />
+                            Retour
+                          </span>
+                          <span className="text-[10px] text-muted-foreground mt-0.5">
+                            ← {m.destination.replace(/^Retour\s+/, "").replace(/^✓\s*/, "")}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                            <Send className="h-3 w-3" />
+                            {(m.destination.replace(/^✓\s*/, "")) === "Mr Hassan" ? "Mr Hassan" : "Transfert"}
+                            {m.destination.startsWith("✓") && (
+                              <CheckCircle2 className="h-3 w-3 text-success" />
+                            )}
+                          </span>
+                          {m.destination.replace(/^✓\s*/, "") !== "Mr Hassan" && (
+                            <span className="text-[10px] text-muted-foreground mt-0.5">
+                              → {m.destination.replace(/^✓\s*/, "")}
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
                   ) : (
@@ -288,6 +343,17 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   )}
                 </td>
                 <td className="p-2">
+                  <div className="flex items-center justify-end gap-1">
+                  {m.destination && m.type === "sortie" && (
+                    <button
+                      onClick={() => handleReintegrate(m)}
+                      disabled={m.destination.startsWith("✓") || reintegratingId === m.id}
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-success hover:bg-success/10 transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                      title={m.destination.startsWith("✓") ? "Déjà réintégré" : "Réintégrer la quantité au stock"}
+                    >
+                      <Undo2 className="h-4 w-4" />
+                    </button>
+                  )}
                   <button
                     onClick={() => setPendingDeleteId(m.id)}
                     className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
@@ -295,6 +361,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
+                  </div>
                 </td>
               </tr>
             ))}
