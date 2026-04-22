@@ -128,7 +128,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
     <div className="bg-card rounded-lg border p-5 animate-fade-in">
       <h2 className="text-lg font-semibold mb-4">Nouveau Mouvement</h2>
       
-      <div className="grid grid-cols-3 gap-2 mb-4">
+      <div className="grid grid-cols-2 gap-2 mb-4">
         <button
           type="button"
           onClick={() => setType("entree")}
@@ -156,12 +156,16 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         >
           <Send className="h-3.5 w-3.5" /> Transfert
         </button>
+        <button
+          type="button"
+          onClick={() => setType("hassan")}
+          className={`flex items-center justify-center gap-1.5 py-2.5 rounded-md text-xs font-medium transition-colors ${
+            type === "hassan" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+          }`}
+        >
+          <Send className="h-3.5 w-3.5" /> Mr Hassan
+        </button>
       </div>
-      {type === "transfert" && (
-        <p className="text-[11px] text-muted-foreground mb-3 -mt-2">
-          Transfert / Mr Hassan — comptabilisé comme une sortie de stock.
-        </p>
-      )}
 
       <form onSubmit={handleSubmit} className="space-y-3">
         <div>
@@ -242,7 +246,6 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
             </label>
             <Input
               type="text"
-              placeholder="Ex: Maarif, Atelier, Boutique 2..."
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
             />
