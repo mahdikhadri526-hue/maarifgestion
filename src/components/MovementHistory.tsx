@@ -389,7 +389,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
               Voulez-vous vraiment supprimer ce mouvement ?
               {movementToDelete && (
                 <span className="block mt-2 font-medium text-foreground">
-                  {movementToDelete.type === "entree" ? "Entrée" : "Sortie"} de {formatQuantityForProduct(movementToDelete.productId, movementToDelete.quantity, configs?.[movementToDelete.productId])} × {movementToDelete.productName}
+                  Mouvement : {movementToDelete.type === "entree" ? "Entrée" : "Sortie"} — {movementToDelete.productName} ({formatQuantityForProduct(movementToDelete.productId, movementToDelete.quantity, configs?.[movementToDelete.productId])})
                 </span>
               )}
             </AlertDialogDescription>
