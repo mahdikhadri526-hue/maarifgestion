@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabelForProduct, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, formatQuantityForProduct } from "@/lib/stockData";
+import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabelForProduct, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, formatQuantityForProduct, getProductAvailableStockInBasePieces } from "@/lib/stockData";
 import { saveRequisition, setRequisitionTotal, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
 import { useRequisitionsByDate, useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
