@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
 import { Input } from "@/components/ui/input";
-import { ENABLE_TRANSFERTS } from "@/lib/featureFlags";
+import { ENABLE_TRANSFERTS, ENABLE_REQUISITION_BADGE } from "@/lib/featureFlags";
 import {
   Select,
   SelectContent,
@@ -348,7 +348,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                         {m.type === "entree" ? <ArrowDownCircle className="h-3.5 w-3.5" /> : <ArrowUpCircle className="h-3.5 w-3.5" />}
                         {m.type === "entree" ? "Entrée" : "Sortie"}
                       </span>
-                      {isFromRequisition(m) && (
+                      {ENABLE_REQUISITION_BADGE && isFromRequisition(m) && (
                         <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded w-fit">
                           <ClipboardList className="h-3 w-3" />
                           Réquisition
