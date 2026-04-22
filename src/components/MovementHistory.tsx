@@ -343,6 +343,17 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   )}
                 </td>
                 <td className="p-2">
+                  <div className="flex items-center justify-end gap-1">
+                  {m.destination && m.type === "sortie" && (
+                    <button
+                      onClick={() => handleReintegrate(m)}
+                      disabled={m.destination.startsWith("✓") || reintegratingId === m.id}
+                      className="p-1.5 rounded-md text-muted-foreground hover:text-success hover:bg-success/10 transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
+                      title={m.destination.startsWith("✓") ? "Déjà réintégré" : "Réintégrer la quantité au stock"}
+                    >
+                      <Undo2 className="h-4 w-4" />
+                    </button>
+                  )}
                   <button
                     onClick={() => setPendingDeleteId(m.id)}
                     className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
@@ -350,6 +361,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
+                  </div>
                 </td>
               </tr>
             ))}
