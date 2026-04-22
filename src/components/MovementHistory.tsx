@@ -110,6 +110,42 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     onMovementDeleted?.();
   };
 
+  const handleReintegrate = async (m: typeof filtered[number]) => {
+    if (!m.destination) return;
+    if (m.destination.startsWith("✓")) {
+      toast.info("Ce transfert a déjà été réintégré");
+      return;
+    }
+    setReintegratingId(m.id);
+    try {
+      // Crée une entrée équivalente pour réintégrer la quantité au stock
+      await saveMovement({
+        date: new Date().toISOString().split("T")[0],
+        productId: m.productId,
+        productName: m.productName,
+        category: m.category,
+        type: "entree",
+        quantity: m.quantity,
+        performedBy: m.performedBy,
+        unitUsed: m.unitUsed,
+        destination: `Retour ${m.destination}`,
+      });
+      // Marque le transfert d'origine comme réintégré
+      const { error } = await supabase
+        .from("stock_movements")
+        .update({ destination: `✓ ${m.destination}` })
+        .eq("id", m.id);
+      if (error) throw error;
+      toast.success(`Quantité réintégrée au stock (+${formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])})`);
+      onMovementDeleted?.();
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors de la réintégration");
+    } finally {
+      setReintegratingId(null);
+    }
+  };
+
   if (loading) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
 
   return (
