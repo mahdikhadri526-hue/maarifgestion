@@ -60,6 +60,16 @@ export function RequisitionForm({ onUpdated }: Props) {
   const existingMap: Record<string, number> = {};
   (existing || []).forEach((r) => { existingMap[r.productId] = (existingMap[r.productId] || 0) + r.quantity; });
 
+  // Verrou J+1 : on peut modifier/supprimer uniquement le jour même (J)
+  // ou le lendemain (J+1). Au-delà, lecture seule.
+  const isLocked = (() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const target = new Date(date + "T00:00:00");
+    const diffDays = Math.floor((today.getTime() - target.getTime()) / (1000 * 60 * 60 * 24));
+    return diffDays > 1;
+  })();
+
   const handleSubmitAll = async () => {
     const entries = Object.entries(quantities)
       .map(([pid, v]) => {
