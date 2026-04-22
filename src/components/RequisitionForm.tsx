@@ -293,6 +293,11 @@ export function RequisitionForm({ onUpdated }: Props) {
             {showAdded ? "Masquer" : "Afficher"} qté demandée
           </Button>
         </div>
+        {isLocked && (
+          <div className="mt-3 px-3 py-2 rounded-md bg-amber-50 border border-amber-200 text-xs text-amber-800">
+            🔒 Date verrouillée (au-delà de J+1) — la qté demandée ne peut plus être modifiée ni supprimée.
+          </div>
+        )}
       </div>
 
       <div className="overflow-x-auto max-h-[450px] overflow-y-auto">
