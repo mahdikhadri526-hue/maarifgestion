@@ -341,12 +341,20 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                       )}
                     </div>
                   ) : (
-                    <span className={`inline-flex items-center gap-1 text-xs font-medium ${
-                      m.type === "entree" ? "text-success" : "text-destructive"
-                    }`}>
-                      {m.type === "entree" ? <ArrowDownCircle className="h-3.5 w-3.5" /> : <ArrowUpCircle className="h-3.5 w-3.5" />}
-                      {m.type === "entree" ? "Entrée" : "Sortie"}
-                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className={`inline-flex items-center gap-1 text-xs font-medium ${
+                        m.type === "entree" ? "text-success" : "text-destructive"
+                      }`}>
+                        {m.type === "entree" ? <ArrowDownCircle className="h-3.5 w-3.5" /> : <ArrowUpCircle className="h-3.5 w-3.5" />}
+                        {m.type === "entree" ? "Entrée" : "Sortie"}
+                      </span>
+                      {isFromRequisition(m) && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/40 px-1.5 py-0.5 rounded w-fit">
+                          <ClipboardList className="h-3 w-3" />
+                          Réquisition
+                        </span>
+                      )}
+                    </div>
                   )}
                 </td>
                 <td className="p-3 text-sm">{m.productName}</td>
