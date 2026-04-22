@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMovements, useProductUnitConfigs } from "@/hooks/useStockData";
 import { deleteMovement, formatQuantityForProduct } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
-import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
@@ -14,6 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +37,7 @@ interface MovementHistoryProps {
 export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterDate, setFilterDate] = useState<string>("");
   const [filterStartDate, setFilterStartDate] = useState<string>("");
   const [filterEndDate, setFilterEndDate] = useState<string>("");
@@ -108,12 +114,22 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
       </div>
 
       {/* Filters */}
-      <div className="p-4 border-b bg-muted/30 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-medium">
+      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <div className="px-4 py-2 border-b bg-muted/30 flex items-center justify-between gap-2">
+          <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors">
             <Filter className="h-4 w-4 text-primary" />
             Filtres
-          </div>
+            {hasFilters && (
+              <span className="ml-1 text-[10px] bg-primary text-primary-foreground rounded-full px-1.5 py-0.5 font-semibold">
+                actifs
+              </span>
+            )}
+            <ChevronDown
+              className={`h-4 w-4 text-muted-foreground transition-transform ${
+                filtersOpen ? "rotate-180" : ""
+              }`}
+            />
+          </CollapsibleTrigger>
           {hasFilters && (
             <button
               onClick={resetFilters}
@@ -123,81 +139,83 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
             </button>
           )}
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Date précise</label>
-            <Input
-              type="date"
-              value={filterDate}
-              onChange={(e) => setFilterDate(e.target.value)}
-              className="h-9"
-            />
+        <CollapsibleContent>
+          <div className="p-3 border-b bg-muted/20 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Date</label>
+              <Input
+                type="date"
+                value={filterDate}
+                onChange={(e) => setFilterDate(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Du</label>
+              <Input
+                type="date"
+                value={filterStartDate}
+                onChange={(e) => setFilterStartDate(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Au</label>
+              <Input
+                type="date"
+                value={filterEndDate}
+                onChange={(e) => setFilterEndDate(e.target.value)}
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Produit</label>
+              <Select value={filterProduct} onValueChange={setFilterProduct}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Tous" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72 bg-popover z-50">
+                  <SelectItem value="all">Tous</SelectItem>
+                  {productOptions.map(([id, name]) => (
+                    <SelectItem key={id} value={id}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Type</label>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">Entrées + Sorties</SelectItem>
+                  <SelectItem value="entree">Entrées</SelectItem>
+                  <SelectItem value="sortie">Sorties</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Par</label>
+              <Select value={filterPerformedBy} onValueChange={setFilterPerformedBy}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Tous" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72 bg-popover z-50">
+                  <SelectItem value="all">Tous</SelectItem>
+                  {operatorOptions.map((op) => (
+                    <SelectItem key={op} value={op}>
+                      {op}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Période — du</label>
-            <Input
-              type="date"
-              value={filterStartDate}
-              onChange={(e) => setFilterStartDate(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Période — au</label>
-            <Input
-              type="date"
-              value={filterEndDate}
-              onChange={(e) => setFilterEndDate(e.target.value)}
-              className="h-9"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Produit</label>
-            <Select value={filterProduct} onValueChange={setFilterProduct}>
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Tous" />
-              </SelectTrigger>
-              <SelectContent className="max-h-72 bg-popover z-50">
-                <SelectItem value="all">Tous les produits</SelectItem>
-                {productOptions.map(([id, name]) => (
-                  <SelectItem key={id} value={id}>
-                    {name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Type</label>
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="h-9">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent className="bg-popover z-50">
-                <SelectItem value="all">Entrées + Sorties</SelectItem>
-                <SelectItem value="entree">Entrées uniquement</SelectItem>
-                <SelectItem value="sortie">Sorties uniquement</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-1">
-            <label className="text-xs text-muted-foreground">Effectué par</label>
-            <Select value={filterPerformedBy} onValueChange={setFilterPerformedBy}>
-              <SelectTrigger className="h-9">
-                <SelectValue placeholder="Tous" />
-              </SelectTrigger>
-              <SelectContent className="max-h-72 bg-popover z-50">
-                <SelectItem value="all">Tout le monde</SelectItem>
-                {operatorOptions.map((op) => (
-                  <SelectItem key={op} value={op}>
-                    {op}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-      </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
         <table className="w-full">
