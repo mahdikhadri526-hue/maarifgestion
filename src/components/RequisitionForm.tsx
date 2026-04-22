@@ -72,7 +72,7 @@ export function RequisitionForm({ onUpdated }: Props) {
 
   const handleSubmitAll = async () => {
     if (isLocked) {
-      toast.error("Saisie verrouillée : la date est au-delà de J+1");
+      toast.error("Saisie verrouillée : la date n'est plus le jour J");
       return;
     }
     const entries = Object.entries(quantities)
