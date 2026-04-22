@@ -127,6 +127,7 @@ export type Database = {
           category: string
           created_at: string
           date: string
+          destination: string | null
           id: string
           performed_by: string | null
           product_id: string
@@ -139,6 +140,7 @@ export type Database = {
           category: string
           created_at?: string
           date: string
+          destination?: string | null
           id?: string
           performed_by?: string | null
           product_id: string
@@ -151,6 +153,7 @@ export type Database = {
           category?: string
           created_at?: string
           date?: string
+          destination?: string | null
           id?: string
           performed_by?: string | null
           product_id?: string

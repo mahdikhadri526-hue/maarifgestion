@@ -58,6 +58,7 @@ export interface StockMovement {
   quantity: number;
   performedBy?: string;
   unitUsed?: MovementUnit;
+  destination?: string;
 }
 
 export interface StockLevel {
@@ -253,6 +254,7 @@ export async function getMovements(): Promise<StockMovement[]> {
     quantity: row.quantity,
     performedBy: row.performed_by || undefined,
     unitUsed: (row.unit_used as MovementUnit) || "PIECE",
+    destination: row.destination || undefined,
   }));
 }
 
@@ -268,6 +270,7 @@ export async function saveMovement(movement: Omit<StockMovement, "id">): Promise
       quantity: movement.quantity,
       performed_by: movement.performedBy || null,
       unit_used: movement.unitUsed || "PIECE",
+      destination: movement.destination || null,
     } as any)
     .select()
     .single();
@@ -294,6 +297,7 @@ export async function saveMovement(movement: Omit<StockMovement, "id">): Promise
     quantity: row.quantity,
     performedBy: row.performed_by || undefined,
     unitUsed: (row.unit_used as MovementUnit) || "PIECE",
+    destination: row.destination || undefined,
   };
 }
 
