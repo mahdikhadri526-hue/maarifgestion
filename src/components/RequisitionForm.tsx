@@ -122,7 +122,7 @@ export function RequisitionForm({ onUpdated }: Props) {
     const product = allProducts.find((pr) => pr.id === productId);
     if (!product) return;
     if (isLocked) {
-      toast.error("Saisie verrouillée : la date est au-delà de J+1");
+      toast.error("Saisie verrouillée : la date n'est plus le jour J");
       return;
     }
     if (!performedBy.trim()) {
@@ -159,7 +159,7 @@ export function RequisitionForm({ onUpdated }: Props) {
 
   const startEdit = (productId: string, currentQty: number) => {
     if (isLocked) {
-      toast.error("Modification interdite : la date est au-delà de J+1");
+      toast.error("Modification interdite : la date n'est plus le jour J");
       return;
     }
     setEditingId(productId);
@@ -181,7 +181,7 @@ export function RequisitionForm({ onUpdated }: Props) {
     const product = allProducts.find((p) => p.id === productId);
     if (!product) return;
     if (isLocked) {
-      toast.error("Modification interdite : la date est au-delà de J+1");
+      toast.error("Modification interdite : la date n'est plus le jour J");
       return;
     }
     const cfg = configs?.[productId] || DEFAULT_UNIT_CONFIG;
@@ -214,7 +214,7 @@ export function RequisitionForm({ onUpdated }: Props) {
     const product = allProducts.find((p) => p.id === productId);
     if (!product) return;
     if (isLocked) {
-      toast.error("Suppression interdite : la date est au-delà de J+1");
+      toast.error("Suppression interdite : la date n'est plus le jour J");
       return;
     }
     if (!confirm(`Supprimer la quantité demandée pour ${product.name} ?`)) return;
