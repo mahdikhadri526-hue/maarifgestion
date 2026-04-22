@@ -215,6 +215,16 @@ export function RequisitionForm({ onUpdated }: Props) {
       toast.error("Veuillez saisir le prénom de la personne");
       return;
     }
+    // La modification remplace la quantité existante : on doit comparer la
+    // nouvelle valeur avec le stock disponible APRÈS avoir "rendu" l'ancienne.
+    const previousTotal = existingMap[productId] || 0;
+    const available = await getProductAvailableStockInBasePieces(productId);
+    const allowedMax = available + previousTotal;
+    if (val > allowedMax) {
+      const availableLabel = formatQuantityForProduct(productId, allowedMax, cfg);
+      toast.error(`Stock insuffisant pour ${product.name} : maximum ${availableLabel} possible`);
+      return;
+    }
     try {
       const operatorName = performedBy.trim();
       await setRequisitionTotal(date, reqType, productId, product.name, val, operatorName);
