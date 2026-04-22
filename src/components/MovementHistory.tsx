@@ -247,12 +247,23 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
               }`}>
                 <td className="p-3 text-sm font-mono">{new Date(m.date).toLocaleDateString("fr-FR")}</td>
                 <td className="p-3">
-                  <span className={`inline-flex items-center gap-1 text-xs font-medium ${
-                    m.type === "entree" ? "text-success" : "text-destructive"
-                  }`}>
-                    {m.type === "entree" ? <ArrowDownCircle className="h-3.5 w-3.5" /> : <ArrowUpCircle className="h-3.5 w-3.5" />}
-                    {m.type === "entree" ? "Entrée" : "Sortie"}
-                  </span>
+                  {m.destination ? (
+                    <div className="flex flex-col">
+                      <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                        <Send className="h-3 w-3" /> Transfert
+                      </span>
+                      <span className="text-[10px] text-muted-foreground mt-0.5">
+                        → {m.destination}
+                      </span>
+                    </div>
+                  ) : (
+                    <span className={`inline-flex items-center gap-1 text-xs font-medium ${
+                      m.type === "entree" ? "text-success" : "text-destructive"
+                    }`}>
+                      {m.type === "entree" ? <ArrowDownCircle className="h-3.5 w-3.5" /> : <ArrowUpCircle className="h-3.5 w-3.5" />}
+                      {m.type === "entree" ? "Entrée" : "Sortie"}
+                    </span>
+                  )}
                 </td>
                 <td className="p-3 text-sm">{m.productName}</td>
                 <td className="p-3 hidden sm:table-cell">
