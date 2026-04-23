@@ -238,6 +238,9 @@ export function StockTable() {
                   }`}>
                     {v.stockRestant}
                   </td>
+                  <td className="p-3 text-right font-mono text-sm font-semibold text-warning">
+                    {mode === "all" ? "-" : Math.max(0, v.sorties - level.stockRestant)}
+                  </td>
                 </tr>
                 );
               })}
