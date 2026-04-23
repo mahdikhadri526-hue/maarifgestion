@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { Category, UnitType, setProductUnit } from "@/lib/stockData";
+import { useState, useEffect } from "react";
+import { Category, UnitType, setProductUnit, getProductDailyHistory } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { useStockLevels } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
@@ -11,15 +12,87 @@ import { PinPromptDialog } from "./PinPromptDialog";
 const UNITS: UnitType[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU"];
 const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre", PAQUET: "Paquet", COLIS: "Colis", ROULEAU: "Rouleau" };
 
+type FilterMode = "all" | "day" | "month" | "period";
+const todayISO = () => new Date().toISOString().split("T")[0];
+const currentMonthISO = () => new Date().toISOString().slice(0, 7);
+
 export function StockTable() {
   const [category, setCategory] = useState<Category | "all">("all");
   const [search, setSearch] = useState("");
   const [pendingUnit, setPendingUnit] = useState<{ productId: string; currentUnit: UnitType } | null>(null);
+  const [mode, setMode] = useState<FilterMode>("all");
+  const [day, setDay] = useState<string>(todayISO());
+  const [month, setMonth] = useState<string>(currentMonthISO());
+  const [start, setStart] = useState<string>("");
+  const [end, setEnd] = useState<string>(todayISO());
+  const [periodTotals, setPeriodTotals] = useState<Record<string, { stockInitial: number; entrees: number; sorties: number; stockRestant: number }>>({});
+  const [periodLoading, setPeriodLoading] = useState(false);
 
   const { data: levels, loading, refresh } = useStockLevels(category === "all" ? undefined : category);
   const filtered = (levels || []).filter((l) =>
     l.productName.toLowerCase().includes(search.toLowerCase())
   );
+
+  // Recalcule les totaux par produit selon le filtre période
+  useEffect(() => {
+    if (mode === "all" || !levels) {
+      setPeriodTotals({});
+      return;
+    }
+    let cancelled = false;
+    setPeriodLoading(true);
+    (async () => {
+      const matchDate = (d: string) => {
+        const dd = d.slice(0, 10);
+        if (mode === "day") return day ? dd === day : true;
+        if (mode === "month") return month ? dd.startsWith(month) : true;
+        if (mode === "period") {
+          if (start && dd < start) return false;
+          if (end && dd > end) return false;
+          return true;
+        }
+        return true;
+      };
+      const isBefore = (d: string) => {
+        const dd = d.slice(0, 10);
+        if (mode === "day") return dd < day;
+        if (mode === "month") return dd < `${month}-01`;
+        if (mode === "period") return start ? dd < start : false;
+        return false;
+      };
+      const results: Record<string, { stockInitial: number; entrees: number; sorties: number; stockRestant: number }> = {};
+      await Promise.all(
+        levels.map(async (lvl) => {
+          const h = await getProductDailyHistory(lvl.productId);
+          const inPeriod = h.filter((r) => matchDate(r.date));
+          let stockInitial = 0;
+          let stockRestant = 0;
+          if (inPeriod.length > 0) {
+            stockInitial = inPeriod[0].stockInitial;
+            stockRestant = inPeriod[inPeriod.length - 1].stockRestant;
+          } else {
+            const before = h.filter((r) => isBefore(r.date));
+            const last = before[before.length - 1];
+            stockInitial = last ? last.stockRestant : (h[0]?.stockInitial ?? 0);
+            stockRestant = stockInitial;
+          }
+          results[lvl.productId] = {
+            stockInitial,
+            entrees: inPeriod.reduce((s, r) => s + r.entrees, 0),
+            sorties: inPeriod.reduce((s, r) => s + r.sorties, 0),
+            stockRestant,
+          };
+        })
+      );
+      if (!cancelled) {
+        setPeriodTotals(results);
+        setPeriodLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [mode, day, month, start, end, levels]);
 
   const cycleUnit = async (productId: string, currentUnit: UnitType) => {
     const nextIndex = (UNITS.indexOf(currentUnit) + 1) % UNITS.length;
@@ -31,6 +104,18 @@ export function StockTable() {
     } catch {
       toast.error("Erreur lors du changement d'unité");
     }
+  };
+
+  const getRowValues = (level: typeof filtered[number]) => {
+    if (mode === "all") {
+      return {
+        stockInitial: level.stockInitial,
+        entrees: level.totalEntrees,
+        sorties: level.totalSorties,
+        stockRestant: level.stockRestant,
+      };
+    }
+    return periodTotals[level.productId] ?? { stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 };
   };
 
   return (
@@ -70,8 +155,36 @@ export function StockTable() {
             </div>
           </div>
         </div>
+
+        {/* Filtres par date */}
+        <div className="mt-3 flex flex-col gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant={mode === "all" ? "default" : "outline"} onClick={() => setMode("all")}>Tout</Button>
+            <Button size="sm" variant={mode === "day" ? "default" : "outline"} onClick={() => setMode("day")}>Jour</Button>
+            <Button size="sm" variant={mode === "month" ? "default" : "outline"} onClick={() => setMode("month")}>Mois</Button>
+            <Button size="sm" variant={mode === "period" ? "default" : "outline"} onClick={() => setMode("period")}>Période</Button>
+          </div>
+          {mode === "day" && (
+            <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="w-full sm:w-48" />
+          )}
+          {mode === "month" && (
+            <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-48" />
+          )}
+          {mode === "period" && (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-8">Du</span>
+                <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} className="w-full sm:w-44" />
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground w-8">Au</span>
+                <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="w-full sm:w-44" />
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-      {loading ? (
+      {loading || periodLoading ? (
         <p className="text-center text-muted-foreground py-8">Chargement...</p>
       ) : (
         <div className="overflow-x-auto">
@@ -84,11 +197,14 @@ export function StockTable() {
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté utilisée</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((level) => (
+              {filtered.map((level) => {
+                const v = getRowValues(level);
+                return (
                 <tr key={level.productId} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                   isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
                 }`}>
@@ -114,16 +230,18 @@ export function StockTable() {
                       {level.category === "alimentaire" ? "Alimentaire" : "Emballage"}
                     </span>
                   </td>
-                  <td className="p-3 text-right font-mono text-sm text-primary">{level.stockInitial}</td>
-                  <td className="p-3 text-right font-mono text-sm text-success">{level.totalEntrees}</td>
-                  <td className="p-3 text-right font-mono text-sm text-accent-foreground">{level.totalSorties}</td>
+                  <td className="p-3 text-right font-mono text-sm text-primary">{v.stockInitial}</td>
+                  <td className="p-3 text-right font-mono text-sm text-success">{v.entrees}</td>
+                  <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
+                  <td className="p-3 text-right font-mono text-sm text-warning">{v.sorties || "-"}</td>
                   <td className={`p-3 text-right font-mono text-sm font-semibold ${
-                    level.stockRestant < 0 ? "text-destructive" : level.stockRestant === 0 ? "text-muted-foreground" : ""
+                    v.stockRestant < 0 ? "text-destructive" : v.stockRestant === 0 ? "text-muted-foreground" : ""
                   }`}>
-                    {level.stockRestant}
+                    {v.stockRestant}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
           {filtered.length === 0 && (
