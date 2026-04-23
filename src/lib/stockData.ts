@@ -80,6 +80,7 @@ export interface StockMovement {
   performedBy?: string;
   unitUsed?: MovementUnit;
   destination?: string;
+  createdAt?: string;
 }
 
 export interface StockLevel {
