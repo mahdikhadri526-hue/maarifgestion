@@ -16,7 +16,7 @@ type FilterMode = "all" | "day" | "month" | "period";
 const todayISO = () => new Date().toISOString().split("T")[0];
 const currentMonthISO = () => new Date().toISOString().slice(0, 7);
 
-export function StockTable() {
+export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
   const [category, setCategory] = useState<Category | "all">("all");
   const [search, setSearch] = useState("");
   const [pendingUnit, setPendingUnit] = useState<{ productId: string; currentUnit: UnitType } | null>(null);
@@ -35,7 +35,7 @@ export function StockTable() {
 
   // Recalcule les totaux par produit selon le filtre période
   useEffect(() => {
-    if (mode === "all" || !levels) {
+    if (variant !== "order" || mode === "all" || !levels) {
       setPeriodTotals({});
       return;
     }
@@ -92,7 +92,7 @@ export function StockTable() {
     return () => {
       cancelled = true;
     };
-  }, [mode, day, month, start, end, levels]);
+  }, [mode, day, month, start, end, levels, variant]);
 
   const cycleUnit = async (productId: string, currentUnit: UnitType) => {
     const nextIndex = (UNITS.indexOf(currentUnit) + 1) % UNITS.length;
@@ -107,7 +107,7 @@ export function StockTable() {
   };
 
   const getRowValues = (level: typeof filtered[number]) => {
-    if (mode === "all") {
+    if (variant !== "order" || mode === "all") {
       return {
         stockInitial: level.stockInitial,
         entrees: level.totalEntrees,
@@ -122,11 +122,11 @@ export function StockTable() {
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
             <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
               <img src={logo} alt="Logo" className="w-full h-full object-cover" />
             </div>
-            Stock Restant
+            {variant === "order" ? "Qté à commander" : "Stock Restant"}
           </h2>
           <div className="flex gap-2 items-center flex-wrap">
             <div className="relative">
@@ -156,7 +156,8 @@ export function StockTable() {
           </div>
         </div>
 
-        {/* Filtres par date */}
+        {/* Filtres par date - uniquement pour la variante "order" */}
+        {variant === "order" && (
         <div className="mt-3 flex flex-col gap-2">
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant={mode === "all" ? "default" : "outline"} onClick={() => setMode("all")}>Tout</Button>
@@ -183,6 +184,7 @@ export function StockTable() {
             </div>
           )}
         </div>
+        )}
       </div>
       {loading || periodLoading ? (
         <p className="text-center text-muted-foreground py-8">Chargement...</p>
@@ -198,8 +200,12 @@ export function StockTable() {
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock actuel</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté à commander</th>
+                {variant === "order" && (
+                  <>
+                    <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock actuel</th>
+                    <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté à commander</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -239,12 +245,16 @@ export function StockTable() {
                   }`}>
                     {v.stockRestant}
                   </td>
-                  <td className="p-3 text-right font-mono text-sm text-muted-foreground">
-                    {level.stockRestant}
-                  </td>
-                  <td className="p-3 text-right font-mono text-sm font-semibold text-warning">
-                    {mode === "all" ? "-" : Math.max(0, v.sorties - level.stockRestant)}
-                  </td>
+                  {variant === "order" && (
+                    <>
+                      <td className="p-3 text-right font-mono text-sm text-muted-foreground">
+                        {level.stockRestant}
+                      </td>
+                      <td className="p-3 text-right font-mono text-sm font-semibold text-warning">
+                        {mode === "all" ? "-" : Math.max(0, v.sorties - level.stockRestant)}
+                      </td>
+                    </>
+                  )}
                 </tr>
                 );
               })}

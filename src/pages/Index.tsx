@@ -114,16 +114,16 @@ const Index = () => {
                   <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
                     <img src={logo} alt="Logo" className="w-full h-full object-cover" />
                   </div>
-                  Stock Restant
+                  Qté à commander
                 </h2>
                 <button
                   onClick={() => setShowStock(!showStock)}
                   className="text-sm font-medium text-primary hover:underline flex items-center gap-1"
                 >
-                  {showStock ? "Masquer" : "Consulter le stock"}
+                  {showStock ? "Masquer" : "Consulter"}
                 </button>
               </div>
-              {showStock && <StockTable />}
+              {showStock && <StockTable variant="order" />}
             </div>
           </></div>
         )}
