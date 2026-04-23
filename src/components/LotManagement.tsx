@@ -20,7 +20,7 @@ export function StockOutAlerts() {
       <div className="flex items-center gap-2 mb-3">
         <PackageX className="h-5 w-5 text-destructive" />
         <h3 className="font-semibold text-destructive">
-          Risque de Rupture de Stock ({outOfStock.length})
+          Rupture de Stock ({outOfStock.length}) — Merci de passer votre commande
         </h3>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -46,7 +46,7 @@ export function StockOutAlerts() {
                   : "bg-muted-foreground/20 text-foreground"
               }`}
             >
-              {l.stockRestant < 0 ? `${l.stockRestant}` : "RISQUE"}
+              {l.stockRestant < 0 ? `${l.stockRestant}` : "RUPTURE"}
             </div>
           </div>
         ))}
