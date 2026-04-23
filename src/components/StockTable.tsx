@@ -122,11 +122,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
             <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
               <img src={logo} alt="Logo" className="w-full h-full object-cover" />
             </div>
-            Stock Restant
+            {variant === "order" ? "Qté à commander" : "Stock Restant"}
           </h2>
           <div className="flex gap-2 items-center flex-wrap">
             <div className="relative">
