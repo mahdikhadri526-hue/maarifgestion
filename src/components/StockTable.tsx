@@ -156,7 +156,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           </div>
         </div>
 
-        {/* Filtres par date */}
+        {/* Filtres par date - uniquement pour la variante "order" */}
+        {variant === "order" && (
         <div className="mt-3 flex flex-col gap-2">
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant={mode === "all" ? "default" : "outline"} onClick={() => setMode("all")}>Tout</Button>
@@ -183,6 +184,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             </div>
           )}
         </div>
+        )}
       </div>
       {loading || periodLoading ? (
         <p className="text-center text-muted-foreground py-8">Chargement...</p>
