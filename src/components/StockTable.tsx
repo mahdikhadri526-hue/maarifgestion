@@ -198,7 +198,6 @@ export function StockTable() {
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté utilisée</th>
               </tr>
             </thead>
             <tbody>
@@ -238,7 +237,6 @@ export function StockTable() {
                   }`}>
                     {v.stockRestant}
                   </td>
-                  <td className="p-3 text-right font-mono text-sm text-warning">{v.sorties || "-"}</td>
                 </tr>
                 );
               })}
