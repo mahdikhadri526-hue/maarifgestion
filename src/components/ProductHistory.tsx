@@ -185,6 +185,11 @@ function SingleProductHistory({
 export function ProductHistory() {
   const [category, setCategory] = useState<Category>("alimentaire");
   const [productId, setProductId] = useState("");
+  const [mode, setMode] = useState<FilterMode>("all");
+  const [day, setDay] = useState<string>(todayISO());
+  const [month, setMonth] = useState<string>(currentMonthISO());
+  const [start, setStart] = useState<string>("");
+  const [end, setEnd] = useState<string>(todayISO());
 
   const products = getProducts(category);
 
@@ -215,10 +220,48 @@ export function ProductHistory() {
             </SelectContent>
           </Select>
         </div>
+
+        {productId && productId !== "all" && (
+          <div className="mt-3 flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant={mode === "all" ? "default" : "outline"} onClick={() => setMode("all")}>Tout</Button>
+              <Button size="sm" variant={mode === "day" ? "default" : "outline"} onClick={() => setMode("day")}>Jour</Button>
+              <Button size="sm" variant={mode === "month" ? "default" : "outline"} onClick={() => setMode("month")}>Mois</Button>
+              <Button size="sm" variant={mode === "period" ? "default" : "outline"} onClick={() => setMode("period")}>Période</Button>
+            </div>
+            {mode === "day" && (
+              <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="w-full sm:w-48" />
+            )}
+            {mode === "month" && (
+              <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-48" />
+            )}
+            {mode === "period" && (
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-8">Du</span>
+                  <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} className="w-full sm:w-44" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-8">Au</span>
+                  <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="w-full sm:w-44" />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {productId === "all" && <AllProductsSummary category={category} />}
-      {productId && productId !== "all" && <SingleProductHistory productId={productId} />}
+      {productId && productId !== "all" && (
+        <SingleProductHistory
+          productId={productId}
+          mode={mode}
+          day={day}
+          month={month}
+          start={start}
+          end={end}
+        />
+      )}
       {!productId && (
         <p className="text-center text-muted-foreground py-8">Sélectionner un produit pour voir son historique</p>
       )}
