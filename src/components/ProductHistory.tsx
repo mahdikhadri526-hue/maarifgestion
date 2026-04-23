@@ -259,7 +259,7 @@ export function ProductHistory() {
           </Select>
         </div>
 
-        {productId && productId !== "all" && (
+        {productId && (
           <div className="mt-3 flex flex-col gap-2">
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant={mode === "all" ? "default" : "outline"} onClick={() => setMode("all")}>Tout</Button>
@@ -289,7 +289,16 @@ export function ProductHistory() {
         )}
       </div>
 
-      {productId === "all" && <AllProductsSummary category={category} />}
+      {productId === "all" && (
+        <AllProductsSummary
+          category={category}
+          mode={mode}
+          day={day}
+          month={month}
+          start={start}
+          end={end}
+        />
+      )}
       {productId && productId !== "all" && (
         <SingleProductHistory
           productId={productId}
