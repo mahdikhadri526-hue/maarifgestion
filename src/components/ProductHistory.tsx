@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Category, getProducts } from "@/lib/stockData";
 import { useProductDailyHistory } from "@/hooks/useStockData";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -38,36 +38,72 @@ function filterRows<T extends { date: string }>(
   });
 }
 
-function AllProductsSummary({ category }: { category: Category }) {
+function AllProductsSummary({
+  category,
+  mode,
+  day,
+  month,
+  start,
+  end,
+}: {
+  category: Category;
+  mode: FilterMode;
+  day: string;
+  month: string;
+  start: string;
+  end: string;
+}) {
   const products = getProducts(category);
-  // For "all" mode we show each product's summary using individual hooks isn't practical,
-  // so we'll fetch inline
   const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  if (!loaded) {
-    setLoaded(true);
+  useEffect(() => {
+    let cancelled = false;
     setLoading(true);
     import("@/lib/stockData").then(async ({ getProductDailyHistory }) => {
       const results = await Promise.all(
         products.map(async (p) => {
           const h = await getProductDailyHistory(p.id);
-          const lastRow = h.length > 0 ? h[h.length - 1] : null;
-          const firstRow = h.length > 0 ? h[0] : null;
+          const filtered = filterRows(h, mode, day, month, start, end);
+          const firstRow = filtered.length > 0 ? filtered[0] : null;
+          const lastRow = filtered.length > 0 ? filtered[filtered.length - 1] : null;
+          // Si filtré et vide : stock initial = stock restant cumulé jusque là
+          // Approximation simple : si aucun mouvement sur la période, on prend le dernier connu avant
+          let stockInitial = firstRow ? firstRow.stockInitial : 0;
+          let stockRestant = lastRow ? lastRow.stockRestant : 0;
+          if (filtered.length === 0 && h.length > 0) {
+            // chercher la dernière ligne avant la période
+            const beforeRows = h.filter((r) => {
+              const d = r.date.slice(0, 10);
+              if (mode === "day") return d < day;
+              if (mode === "month") return d < `${month}-01`;
+              if (mode === "period") return start ? d < start : false;
+              return false;
+            });
+            const last = beforeRows[beforeRows.length - 1];
+            if (last) {
+              stockInitial = last.stockRestant;
+              stockRestant = last.stockRestant;
+            }
+          }
           return {
             ...p,
-            stockRestant: lastRow ? lastRow.stockRestant : 0,
-            stockInitial: firstRow ? firstRow.stockInitial : 0,
-            totalEntrees: h.reduce((s, r) => s + r.entrees, 0),
-            totalSorties: h.reduce((s, r) => s + r.sorties, 0),
+            stockInitial,
+            stockRestant,
+            totalEntrees: filtered.reduce((s, r) => s + r.entrees, 0),
+            totalSorties: filtered.reduce((s, r) => s + r.sorties, 0),
           };
         })
       );
-      setData(results);
-      setLoading(false);
+      if (!cancelled) {
+        setData(results);
+        setLoading(false);
+      }
     });
-  }
+    return () => {
+      cancelled = true;
+    };
+  }, [category, mode, day, month, start, end]);
 
   if (loading) return <p className="text-center text-muted-foreground py-8">Chargement...</p>;
 
@@ -80,6 +116,7 @@ function AllProductsSummary({ category }: { category: Category }) {
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
+            <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté utilisée</th>
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Restant</th>
           </tr>
         </thead>
@@ -90,6 +127,7 @@ function AllProductsSummary({ category }: { category: Category }) {
               <td className="p-3 text-right font-mono text-sm text-primary">{p.stockInitial || "-"}</td>
               <td className="p-3 text-right font-mono text-sm text-success">{p.totalEntrees || "-"}</td>
               <td className="p-3 text-right font-mono text-sm text-destructive">{p.totalSorties || "-"}</td>
+              <td className="p-3 text-right font-mono text-sm text-warning">{p.totalSorties || "-"}</td>
               <td className={`p-3 text-right font-mono text-sm font-semibold ${p.stockRestant < 0 ? "text-destructive" : ""}`}>
                 {p.stockRestant}
               </td>
@@ -221,7 +259,7 @@ export function ProductHistory() {
           </Select>
         </div>
 
-        {productId && productId !== "all" && (
+        {productId && (
           <div className="mt-3 flex flex-col gap-2">
             <div className="flex flex-wrap gap-2">
               <Button size="sm" variant={mode === "all" ? "default" : "outline"} onClick={() => setMode("all")}>Tout</Button>
@@ -251,7 +289,16 @@ export function ProductHistory() {
         )}
       </div>
 
-      {productId === "all" && <AllProductsSummary category={category} />}
+      {productId === "all" && (
+        <AllProductsSummary
+          category={category}
+          mode={mode}
+          day={day}
+          month={month}
+          start={start}
+          end={end}
+        />
+      )}
       {productId && productId !== "all" && (
         <SingleProductHistory
           productId={productId}
