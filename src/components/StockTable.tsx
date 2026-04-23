@@ -245,12 +245,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   }`}>
                     {v.stockRestant}
                   </td>
-                  <td className="p-3 text-right font-mono text-sm text-muted-foreground">
-                    {level.stockRestant}
-                  </td>
-                  <td className="p-3 text-right font-mono text-sm font-semibold text-warning">
-                    {mode === "all" ? "-" : Math.max(0, v.sorties - level.stockRestant)}
-                  </td>
+                  {variant === "order" && (
+                    <>
+                      <td className="p-3 text-right font-mono text-sm text-muted-foreground">
+                        {level.stockRestant}
+                      </td>
+                      <td className="p-3 text-right font-mono text-sm font-semibold text-warning">
+                        {mode === "all" ? "-" : Math.max(0, v.sorties - level.stockRestant)}
+                      </td>
+                    </>
+                  )}
                 </tr>
                 );
               })}
