@@ -16,7 +16,7 @@ type FilterMode = "all" | "day" | "month" | "period";
 const todayISO = () => new Date().toISOString().split("T")[0];
 const currentMonthISO = () => new Date().toISOString().slice(0, 7);
 
-export function StockTable() {
+export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
   const [category, setCategory] = useState<Category | "all">("all");
   const [search, setSearch] = useState("");
   const [pendingUnit, setPendingUnit] = useState<{ productId: string; currentUnit: UnitType } | null>(null);
@@ -35,7 +35,7 @@ export function StockTable() {
 
   // Recalcule les totaux par produit selon le filtre période
   useEffect(() => {
-    if (mode === "all" || !levels) {
+    if (variant !== "order" || mode === "all" || !levels) {
       setPeriodTotals({});
       return;
     }
@@ -92,7 +92,7 @@ export function StockTable() {
     return () => {
       cancelled = true;
     };
-  }, [mode, day, month, start, end, levels]);
+  }, [mode, day, month, start, end, levels, variant]);
 
   const cycleUnit = async (productId: string, currentUnit: UnitType) => {
     const nextIndex = (UNITS.indexOf(currentUnit) + 1) % UNITS.length;
