@@ -107,7 +107,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   };
 
   const getRowValues = (level: typeof filtered[number]) => {
-    if (mode === "all") {
+    if (variant !== "order" || mode === "all") {
       return {
         stockInitial: level.stockInitial,
         entrees: level.totalEntrees,
