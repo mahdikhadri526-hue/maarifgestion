@@ -141,7 +141,7 @@ function SingleProductHistory({
           <div><div className="text-muted-foreground">Stock Initial</div><div className="font-mono font-semibold text-primary">{stockInitialPeriode}</div></div>
           <div><div className="text-muted-foreground">Entrées</div><div className="font-mono font-semibold text-success">{totals.entrees}</div></div>
           <div><div className="text-muted-foreground">Sorties</div><div className="font-mono font-semibold text-destructive">{totals.sorties}</div></div>
-          <div><div className="text-muted-foreground">Quantité utilisée</div><div className="font-mono font-semibold text-amber-600">{quantiteUtilisee}</div></div>
+          <div><div className="text-muted-foreground">Quantité utilisée</div><div className="font-mono font-semibold text-warning">{quantiteUtilisee}</div></div>
           <div><div className="text-muted-foreground">Stock Restant</div><div className={`font-mono font-semibold ${stockRestantFinal < 0 ? "text-destructive" : ""}`}>{stockRestantFinal}</div></div>
         </div>
       )}
@@ -164,7 +164,7 @@ function SingleProductHistory({
                 <td className="p-3 text-right font-mono text-sm">{row.stockInitial}</td>
                 <td className="p-3 text-right font-mono text-sm text-success">{row.entrees || "-"}</td>
                 <td className="p-3 text-right font-mono text-sm text-destructive">{row.sorties || "-"}</td>
-                <td className="p-3 text-right font-mono text-sm text-amber-600">{row.sorties || "-"}</td>
+                <td className="p-3 text-right font-mono text-sm text-warning">{row.sorties || "-"}</td>
                 <td className={`p-3 text-right font-mono text-sm font-semibold ${row.stockRestant < 0 ? "text-destructive" : ""}`}>
                   {row.stockRestant}
                 </td>
