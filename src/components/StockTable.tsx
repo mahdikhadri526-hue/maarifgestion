@@ -198,6 +198,7 @@ export function StockTable() {
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté à commander</th>
               </tr>
             </thead>
             <tbody>
@@ -236,6 +237,9 @@ export function StockTable() {
                     v.stockRestant < 0 ? "text-destructive" : v.stockRestant === 0 ? "text-muted-foreground" : ""
                   }`}>
                     {v.stockRestant}
+                  </td>
+                  <td className="p-3 text-right font-mono text-sm font-semibold text-warning">
+                    {mode === "all" ? "-" : Math.max(0, v.sorties - level.stockRestant)}
                   </td>
                 </tr>
                 );
