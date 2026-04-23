@@ -6,8 +6,7 @@ import { InitialStockForm } from "@/components/InitialStockForm";
 import { ProductHistory } from "@/components/ProductHistory";
 import { RequisitionForm } from "@/components/RequisitionForm";
 import { ExpiryAlerts, LotManager, StockOutAlerts } from "@/components/LotManagement";
-import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes, LogOut } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 
 type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots";
@@ -36,18 +35,10 @@ const Index = () => {
           <div className="w-10 h-10 rounded-full overflow-hidden">
             <img src={logo} alt="Oliveri Logo" className="w-full h-full object-cover" />
           </div>
-          <div className="flex-1 min-w-0">
+          <div>
             <h1 className="text-lg font-bold tracking-tight">Gestion de Stock Maarif</h1>
             <p className="text-xs text-sidebar-foreground/60">Suivi des entrées, sorties et stock restant</p>
           </div>
-          <button
-            onClick={() => supabase.auth.signOut()}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium bg-sidebar-foreground/10 hover:bg-sidebar-foreground/20 transition-colors"
-            title="Déconnexion"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Déconnexion</span>
-          </button>
         </div>
       </header>
 
