@@ -3,7 +3,40 @@ import { Category, getProducts } from "@/lib/stockData";
 import { useProductDailyHistory } from "@/hooks/useStockData";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.jpeg";
+
+type FilterMode = "all" | "day" | "month" | "period";
+
+function todayISO() {
+  return new Date().toISOString().split("T")[0];
+}
+function currentMonthISO() {
+  return new Date().toISOString().slice(0, 7);
+}
+
+function filterRows<T extends { date: string }>(
+  rows: T[],
+  mode: FilterMode,
+  day: string,
+  month: string,
+  start: string,
+  end: string,
+): T[] {
+  if (mode === "all") return rows;
+  return rows.filter((r) => {
+    const d = r.date.slice(0, 10);
+    if (mode === "day") return day ? d === day : true;
+    if (mode === "month") return month ? d.startsWith(month) : true;
+    if (mode === "period") {
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    }
+    return true;
+  });
+}
 
 function AllProductsSummary({ category }: { category: Category }) {
   const products = getProducts(category);
@@ -68,44 +101,83 @@ function AllProductsSummary({ category }: { category: Category }) {
   );
 }
 
-function SingleProductHistory({ productId }: { productId: string }) {
+function SingleProductHistory({
+  productId,
+  mode,
+  day,
+  month,
+  start,
+  end,
+}: {
+  productId: string;
+  mode: FilterMode;
+  day: string;
+  month: string;
+  start: string;
+  end: string;
+}) {
   const { data: history, loading } = useProductDailyHistory(productId);
   const products = getProducts();
   const product = products.find((p) => p.id === productId);
 
   if (loading) return <p className="text-center text-muted-foreground py-8">Chargement...</p>;
 
+  const rows = filterRows(history || [], mode, day, month, start, end);
+  const totals = rows.reduce(
+    (acc, r) => ({
+      entrees: acc.entrees + (r.entrees || 0),
+      sorties: acc.sorties + (r.sorties || 0),
+    }),
+    { entrees: 0, sorties: 0 }
+  );
+  const stockInitialPeriode = rows.length > 0 ? rows[0].stockInitial : 0;
+  const stockRestantFinal = rows.length > 0 ? rows[rows.length - 1].stockRestant : 0;
+  const quantiteUtilisee = totals.sorties;
+
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full">
-        <thead>
-          <tr className="border-b bg-muted/50">
-            <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
-            <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
-            <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
-            <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
-            <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Restant</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(history || []).map((row) => (
-            <tr key={row.date} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-              <td className="p-3 text-sm font-mono">{new Date(row.date).toLocaleDateString("fr-FR")}</td>
-              <td className="p-3 text-right font-mono text-sm">{row.stockInitial}</td>
-              <td className="p-3 text-right font-mono text-sm text-success">{row.entrees || "-"}</td>
-              <td className="p-3 text-right font-mono text-sm text-destructive">{row.sorties || "-"}</td>
-              <td className={`p-3 text-right font-mono text-sm font-semibold ${row.stockRestant < 0 ? "text-destructive" : ""}`}>
-                {row.stockRestant}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {(!history || history.length === 0) && (
-        <p className="text-center text-muted-foreground py-8">
-          {product ? `Aucun mouvement pour ${product.name}` : "Sélectionner un produit"}
-        </p>
+    <div>
+      {rows.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 bg-muted/30 border-b text-xs">
+          <div><div className="text-muted-foreground">Stock Initial</div><div className="font-mono font-semibold text-primary">{stockInitialPeriode}</div></div>
+          <div><div className="text-muted-foreground">Entrées</div><div className="font-mono font-semibold text-success">{totals.entrees}</div></div>
+          <div><div className="text-muted-foreground">Sorties</div><div className="font-mono font-semibold text-destructive">{totals.sorties}</div></div>
+          <div><div className="text-muted-foreground">Quantité utilisée</div><div className="font-mono font-semibold text-warning">{quantiteUtilisee}</div></div>
+          <div><div className="text-muted-foreground">Stock Restant</div><div className={`font-mono font-semibold ${stockRestantFinal < 0 ? "text-destructive" : ""}`}>{stockRestantFinal}</div></div>
+        </div>
       )}
+      <div className="overflow-x-auto">
+        <table className="w-full">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Date</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté utilisée</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Restant</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.date} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                <td className="p-3 text-sm font-mono">{new Date(row.date).toLocaleDateString("fr-FR")}</td>
+                <td className="p-3 text-right font-mono text-sm">{row.stockInitial}</td>
+                <td className="p-3 text-right font-mono text-sm text-success">{row.entrees || "-"}</td>
+                <td className="p-3 text-right font-mono text-sm text-destructive">{row.sorties || "-"}</td>
+                <td className="p-3 text-right font-mono text-sm text-warning">{row.sorties || "-"}</td>
+                <td className={`p-3 text-right font-mono text-sm font-semibold ${row.stockRestant < 0 ? "text-destructive" : ""}`}>
+                  {row.stockRestant}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {rows.length === 0 && (
+          <p className="text-center text-muted-foreground py-8">
+            {product ? `Aucun mouvement pour ${product.name} sur la période sélectionnée` : "Sélectionner un produit"}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -113,6 +185,11 @@ function SingleProductHistory({ productId }: { productId: string }) {
 export function ProductHistory() {
   const [category, setCategory] = useState<Category>("alimentaire");
   const [productId, setProductId] = useState("");
+  const [mode, setMode] = useState<FilterMode>("all");
+  const [day, setDay] = useState<string>(todayISO());
+  const [month, setMonth] = useState<string>(currentMonthISO());
+  const [start, setStart] = useState<string>("");
+  const [end, setEnd] = useState<string>(todayISO());
 
   const products = getProducts(category);
 
@@ -143,10 +220,48 @@ export function ProductHistory() {
             </SelectContent>
           </Select>
         </div>
+
+        {productId && productId !== "all" && (
+          <div className="mt-3 flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant={mode === "all" ? "default" : "outline"} onClick={() => setMode("all")}>Tout</Button>
+              <Button size="sm" variant={mode === "day" ? "default" : "outline"} onClick={() => setMode("day")}>Jour</Button>
+              <Button size="sm" variant={mode === "month" ? "default" : "outline"} onClick={() => setMode("month")}>Mois</Button>
+              <Button size="sm" variant={mode === "period" ? "default" : "outline"} onClick={() => setMode("period")}>Période</Button>
+            </div>
+            {mode === "day" && (
+              <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="w-full sm:w-48" />
+            )}
+            {mode === "month" && (
+              <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-48" />
+            )}
+            {mode === "period" && (
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-8">Du</span>
+                  <Input type="date" value={start} onChange={(e) => setStart(e.target.value)} className="w-full sm:w-44" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground w-8">Au</span>
+                  <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="w-full sm:w-44" />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {productId === "all" && <AllProductsSummary category={category} />}
-      {productId && productId !== "all" && <SingleProductHistory productId={productId} />}
+      {productId && productId !== "all" && (
+        <SingleProductHistory
+          productId={productId}
+          mode={mode}
+          day={day}
+          month={month}
+          start={start}
+          end={end}
+        />
+      )}
       {!productId && (
         <p className="text-center text-muted-foreground py-8">Sélectionner un produit pour voir son historique</p>
       )}
