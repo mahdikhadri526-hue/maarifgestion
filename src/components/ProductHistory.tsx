@@ -3,7 +3,40 @@ import { Category, getProducts } from "@/lib/stockData";
 import { useProductDailyHistory } from "@/hooks/useStockData";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.jpeg";
+
+type FilterMode = "all" | "day" | "month" | "period";
+
+function todayISO() {
+  return new Date().toISOString().split("T")[0];
+}
+function currentMonthISO() {
+  return new Date().toISOString().slice(0, 7);
+}
+
+function filterRows<T extends { date: string }>(
+  rows: T[],
+  mode: FilterMode,
+  day: string,
+  month: string,
+  start: string,
+  end: string,
+): T[] {
+  if (mode === "all") return rows;
+  return rows.filter((r) => {
+    const d = r.date.slice(0, 10);
+    if (mode === "day") return day ? d === day : true;
+    if (mode === "month") return month ? d.startsWith(month) : true;
+    if (mode === "period") {
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    }
+    return true;
+  });
+}
 
 function AllProductsSummary({ category }: { category: Category }) {
   const products = getProducts(category);
