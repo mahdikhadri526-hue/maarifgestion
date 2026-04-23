@@ -206,14 +206,34 @@ export function LotManager() {
                     </td>
                   </tr>
                 ) : (
-                  [...lots]
-                    .sort((a, b) => {
+                  (() => {
+                    const sorted = [...lots].sort((a, b) => {
                       const aEmpty = a.remainingQuantity === 0 ? 1 : 0;
                       const bEmpty = b.remainingQuantity === 0 ? 1 : 0;
                       if (aEmpty !== bEmpty) return aEmpty - bEmpty;
                       return a.expiryDate.localeCompare(b.expiryDate);
-                    })
-                    .map((lot) => {
+                    });
+                    // Compte d'ordre FIFO par produit, uniquement parmi les lots non épuisés
+                    const orderByLotId = new Map<string, number>();
+                    const countByProduct = new Map<string, number>();
+                    sorted.forEach((l) => {
+                      if (l.remainingQuantity > 0) {
+                        countByProduct.set(l.productId, (countByProduct.get(l.productId) || 0) + 1);
+                      }
+                    });
+                    const seenByProduct = new Map<string, number>();
+                    sorted.forEach((l) => {
+                      if (l.remainingQuantity > 0) {
+                        const n = (seenByProduct.get(l.productId) || 0) + 1;
+                        seenByProduct.set(l.productId, n);
+                        orderByLotId.set(l.id, n);
+                      }
+                    });
+                    const ordinalLabel = (n: number) => {
+                      const labels = ["Première sortie", "Deuxième sortie", "Troisième sortie", "Quatrième sortie", "Cinquième sortie", "Sixième sortie", "Septième sortie", "Huitième sortie", "Neuvième sortie", "Dixième sortie"];
+                      return labels[n - 1] || `${n}ème sortie`;
+                    };
+                    return sorted.map((lot) => {
                     const days = getDaysUntilExpiry(lot.expiryDate);
                     const isEditing = editingLot === lot.id;
                     const productName = products.find((p) => p.id === lot.productId)?.name || lot.productId;
@@ -221,6 +241,9 @@ export function LotManager() {
                     const initialQuantity = formatQuantityForProduct(lot.productId, lot.quantity, cfg);
                     const consumedQuantity = formatQuantityForProduct(lot.productId, lot.quantity - lot.remainingQuantity, cfg);
                     const remainingQuantity = formatQuantityForProduct(lot.productId, lot.remainingQuantity, cfg);
+                    const totalActive = countByProduct.get(lot.productId) || 0;
+                    const orderNum = orderByLotId.get(lot.id);
+                    const showOrder = totalActive > 1 && orderNum !== undefined;
                     return (
                       <tr key={lot.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                         lot.remainingQuantity === 0 ? "bg-muted/40 opacity-70" :
@@ -232,7 +255,18 @@ export function LotManager() {
                         <td className="p-3 text-sm font-mono">
                           {isEditing ? (
                             <Input value={editLotNumber} onChange={(e) => setEditLotNumber(e.target.value)} className="h-8 text-xs" />
-                          ) : lot.lotNumber}
+                          ) : (
+                            <div className="flex flex-col leading-tight">
+                              {showOrder && (
+                                <span className={`text-[10px] font-sans font-medium italic ${
+                                  orderNum === 1 ? "text-primary" : orderNum === 2 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"
+                                }`}>
+                                  {ordinalLabel(orderNum!)}
+                                </span>
+                              )}
+                              <span>{lot.lotNumber}</span>
+                            </div>
+                          )}
                         </td>
                         <td className="p-3 text-sm">
                           {isEditing ? (
@@ -278,7 +312,8 @@ export function LotManager() {
                         </td>
                       </tr>
                     );
-                  })
+                  });
+                  })()
                 )}
               </tbody>
             </table>
