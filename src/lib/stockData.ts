@@ -80,6 +80,7 @@ export interface StockMovement {
   performedBy?: string;
   unitUsed?: MovementUnit;
   destination?: string;
+  createdAt?: string;
 }
 
 export interface StockLevel {
@@ -284,6 +285,7 @@ export async function getMovements(): Promise<StockMovement[]> {
     performedBy: row.performed_by || undefined,
     unitUsed: (row.unit_used as MovementUnit) || "PIECE",
     destination: row.destination || undefined,
+    createdAt: row.created_at || undefined,
   }));
 }
 

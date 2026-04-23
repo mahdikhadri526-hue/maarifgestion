@@ -309,7 +309,19 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
               <tr key={m.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                 isRequisitionProduct(m.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
               }`}>
-                <td className="p-3 text-sm font-mono">{new Date(m.date).toLocaleDateString("fr-FR")}</td>
+                <td className="p-3 text-sm font-mono">
+                  <div className="flex flex-col leading-tight">
+                    <span>{new Date(m.date).toLocaleDateString("fr-FR")}</span>
+                    {m.createdAt && (
+                      <span className="text-[10px] text-muted-foreground">
+                        {new Date(m.createdAt).toLocaleTimeString("fr-FR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    )}
+                  </div>
+                </td>
                 <td className="p-3">
                   {m.destination ? (
                     <div className="flex flex-col">
