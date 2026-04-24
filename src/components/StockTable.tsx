@@ -8,6 +8,7 @@ import { Search } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
+import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 
 const UNITS: UnitType[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU"];
 const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre", PAQUET: "Paquet", COLIS: "Colis", ROULEAU: "Rouleau" };
@@ -200,7 +201,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock</th>
-                {variant === "order" && (
+                {variant === "order" && ENABLE_ORDER_COLUMNS && (
                   <>
                     <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock actuel</th>
                     <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté à commander</th>
@@ -245,7 +246,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   }`}>
                     {v.stockRestant}
                   </td>
-                  {variant === "order" && (
+                  {variant === "order" && ENABLE_ORDER_COLUMNS && (
                     <>
                       <td className="p-3 text-right font-mono text-sm text-muted-foreground">
                         {level.stockRestant}
