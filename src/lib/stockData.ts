@@ -183,6 +183,8 @@ const ALIMENTAIRE_PRODUCTS = [
   "ORANGE",
   "CITRON",
   "FRAISE",
+  "POIRE",
+  "POMME",
 ];
 
 const EMBALLAGE_PRODUCTS = [
