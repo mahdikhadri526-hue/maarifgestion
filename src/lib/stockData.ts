@@ -178,6 +178,11 @@ const ALIMENTAIRE_PRODUCTS = [
   "CONFITURE PECHE",
   "CONFITURE FRAISE",
   "OEUFS",
+  "ANANAS",
+  "KIWI",
+  "ORANGE",
+  "CITRON",
+  "FRAISE",
 ];
 
 const EMBALLAGE_PRODUCTS = [
@@ -262,6 +267,8 @@ export function detectProductUnit(name: string): string {
     if (/\bL\b|LITRE|CL|ML/.test(n) || /SIROP|LAIT|EAU/.test(n)) return "L";
   }
   if (/\bKG\b|KILO|FARINE|SUCRE|CAFE|THE\b|VANILLE|BEURRE|TOPPING/.test(n)) return "Kg";
+  // Fruits vendus au kilo
+  if (/\bKIWI\b|\bORANGE\b|\bCITRON\b|\bFRAISE\b/.test(n)) return "Kg";
   if (/PAPIER|FILM|ALUMINIUM|ROULEAU/.test(n)) return "Rouleau";
   if (/SACHET/.test(n)) return "Sachet";
   return "Pièce";
