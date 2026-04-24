@@ -18,3 +18,30 @@ export const ENABLE_TRANSFERTS = false;
  * Tant que ce flag est `false`, l'historique se comporte comme avant.
  */
 export const ENABLE_REQUISITION_BADGE = false;
+
+/**
+ * Affiche l'heure et les minutes de création sous la date dans l'historique
+ * des mouvements. Tant que ce flag est `false`, seule la date s'affiche.
+ */
+export const ENABLE_MOVEMENT_TIME = false;
+
+/**
+ * Affiche le tableau "Qté à commander" (variant order) sur le tableau de bord,
+ * incluant les filtres par période. Tant que ce flag est `false`, le bloc
+ * complet est masqué sur le dashboard.
+ */
+export const ENABLE_DASHBOARD_ORDER_TABLE = false;
+
+/**
+ * Affiche les colonnes supplémentaires "Stock actuel" et "Qté à commander"
+ * dans le tableau (variant order). Tant que ce flag est `false`, ces colonnes
+ * sont masquées et seules les colonnes d'origine restent visibles.
+ */
+export const ENABLE_ORDER_COLUMNS = false;
+
+/**
+ * Affiche les indicateurs FIFO ("Première sortie", "Deuxième sortie", ...)
+ * au-dessus des numéros de lot dans la gestion des lots. Tant que ce flag
+ * est `false`, seule la liste des lots reste visible sans annotation FIFO.
+ */
+export const ENABLE_FIFO_INDICATOR = false;
