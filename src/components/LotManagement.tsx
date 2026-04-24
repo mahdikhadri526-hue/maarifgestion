@@ -8,6 +8,7 @@ import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2, PackageX } from
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
+import { ENABLE_FIFO_INDICATOR } from "@/lib/featureFlags";
 
 export function StockOutAlerts() {
   const { data: levels, loading } = useStockLevels();
@@ -257,7 +258,7 @@ export function LotManager() {
                             <Input value={editLotNumber} onChange={(e) => setEditLotNumber(e.target.value)} className="h-8 text-xs" />
                           ) : (
                             <div className="flex flex-col leading-tight">
-                              {showOrder && (
+                              {ENABLE_FIFO_INDICATOR && showOrder && (
                                 <span className={`text-[10px] font-sans font-medium italic ${
                                   orderNum === 1 ? "text-primary" : orderNum === 2 ? "text-amber-600 dark:text-amber-400" : "text-muted-foreground"
                                 }`}>

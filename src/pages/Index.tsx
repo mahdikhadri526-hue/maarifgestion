@@ -8,6 +8,7 @@ import { RequisitionForm } from "@/components/RequisitionForm";
 import { ExpiryAlerts, LotManager, StockOutAlerts } from "@/components/LotManagement";
 import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
+import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 
 type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots";
 
@@ -108,6 +109,7 @@ const Index = () => {
               ))}
             </div>
 
+            {ENABLE_DASHBOARD_ORDER_TABLE && (
             <div className="bg-card rounded-lg border p-4">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -125,6 +127,7 @@ const Index = () => {
               </div>
               {showStock && <StockTable variant="order" />}
             </div>
+            )}
           </></div>
         )}
 

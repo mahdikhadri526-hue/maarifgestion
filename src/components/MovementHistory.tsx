@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
 import { Input } from "@/components/ui/input";
-import { ENABLE_TRANSFERTS, ENABLE_REQUISITION_BADGE } from "@/lib/featureFlags";
+import { ENABLE_TRANSFERTS, ENABLE_REQUISITION_BADGE, ENABLE_MOVEMENT_TIME } from "@/lib/featureFlags";
 import {
   Select,
   SelectContent,
@@ -312,7 +312,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                 <td className="p-3 text-sm font-mono">
                   <div className="flex flex-col leading-tight">
                     <span>{new Date(m.date).toLocaleDateString("fr-FR")}</span>
-                    {m.createdAt && (
+                    {ENABLE_MOVEMENT_TIME && m.createdAt && (
                       <span className="text-[10px] text-muted-foreground">
                         {new Date(m.createdAt).toLocaleTimeString("fr-FR", {
                           hour: "2-digit",
