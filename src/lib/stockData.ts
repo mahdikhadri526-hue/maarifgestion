@@ -270,7 +270,7 @@ export function detectProductUnit(name: string): string {
   }
   if (/\bKG\b|KILO|FARINE|SUCRE|CAFE|THE\b|VANILLE|BEURRE|TOPPING/.test(n)) return "Kg";
   // Fruits vendus au kilo
-  if (/\bKIWI\b|\bORANGE\b|\bCITRON\b|\bFRAISE\b/.test(n)) return "Kg";
+  if (/\bKIWI\b|\bORANGE\b|\bCITRON\b|\bFRAISE\b|\bPOIRE\b|\bPOMME\b/.test(n)) return "Kg";
   if (/PAPIER|FILM|ALUMINIUM|ROULEAU/.test(n)) return "Rouleau";
   if (/SACHET/.test(n)) return "Sachet";
   return "Pièce";
