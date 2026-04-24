@@ -3,7 +3,15 @@ name: Signal de publication
 description: Mot-clé requis avant de publier les modifications du jour
 type: preference
 ---
-Les modifications faites aujourd'hui (boutons Transfert / Mr Hassan, réintégration des transferts, filtres historique mouvements) ne doivent PAS être publiées tant que l'utilisateur n'a pas envoyé le signal.
+Toutes les modifications faites à partir de 16:32 ne doivent PAS être publiées tant que l'utilisateur n'a pas envoyé le signal.
+
+**Modifications concernées (cumulées) :**
+- Boutons Transfert / Mr Hassan
+- Réintégration des transferts
+- Filtres historique mouvements
+- Tableau "Qté à commander" sur le dashboard (variant order)
+- Colonne "Stock actuel" + filtres par période
+- Toute modification ultérieure tant que le signal n'a pas été donné
 
 **Signal de publication : `go`**
 
