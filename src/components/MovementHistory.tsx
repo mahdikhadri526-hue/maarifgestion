@@ -377,7 +377,14 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                     {m.category === "alimentaire" ? "Alim." : "Emb."}
                   </span>
                 </td>
-                <td className="p-3 text-right font-mono text-sm font-semibold">{formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])}</td>
+                <td className="p-3 text-right font-mono text-sm font-semibold">
+                  <span>{formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])}</span>
+                  {m.unitUsed && (
+                    <span className="ml-1 text-[10px] uppercase tracking-wide text-muted-foreground font-sans font-medium">
+                      {m.unitUsed}
+                    </span>
+                  )}
+                </td>
                 <td className="p-3 text-sm">
                   {m.performedBy ? (
                     <span className="text-foreground">{m.performedBy}</span>
