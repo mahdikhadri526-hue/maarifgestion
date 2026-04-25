@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMovements, useProductUnitConfigs, useAllRequisitions } from "@/hooks/useStockData";
-import { deleteMovement, formatQuantityForProduct, saveMovement } from "@/lib/stockData";
+import { deleteMovement, formatQuantityForProduct, getPieceLabelForProduct, saveMovement } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send, Undo2, CheckCircle2, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
@@ -379,11 +379,13 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                 </td>
                 <td className="p-3 text-right font-mono text-sm font-semibold">
                   <span>{formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])}</span>
-                  {m.unitUsed && (
-                    <span className="ml-1 text-[10px] uppercase tracking-wide text-muted-foreground font-sans font-medium">
-                      {m.unitUsed}
-                    </span>
-                  )}
+                  <span className="ml-1 text-[10px] uppercase tracking-wide text-muted-foreground font-sans font-medium">
+                    {m.unitUsed === "CARTON"
+                      ? "Carton"
+                      : m.unitUsed === "PAQUET"
+                        ? "Paquet"
+                        : getPieceLabelForProduct(m.productId, m.productName, m.category).singular}
+                  </span>
                 </td>
                 <td className="p-3 text-sm">
                   {m.performedBy ? (
