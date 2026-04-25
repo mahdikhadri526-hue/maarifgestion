@@ -260,8 +260,7 @@ export function getProducts(category?: Category): Product[] {
 export function detectProductUnit(name: string): string {
   const n = name.toUpperCase();
   // Overrides explicites demandés par l'utilisateur → Pièce
-  // (Oreo, eaux, thés/tchaba, nespresso, confitures, sirops en pot, etc. comptés à la pièce)
-  if (/OREO|SIDI ALI|OULMESS|SULTAN|\bSEL\b|THE NOIR|EAU\s*5\s*L|LEVURE|TCHABA|NESPRESSO|CONFITURE|VERVINE|CIGARE|PECHE CONSERVE|NESTLE|BOUGIE|OEUFS|POUDRE VANILLE|PROTOXYDE/.test(n)) return "Pièce";
+  if (/OREO|SIDI ALI|OULMESS|SULTAN|\bSEL\b|THE NOIR|EAU\s*5\s*L|LEVURE/.test(n)) return "Pièce";
   // Huile → Litre
   if (/HUILE|HUILLE/.test(n)) return "L";
   // Chocolat classique → Kilo
@@ -269,9 +268,7 @@ export function detectProductUnit(name: string): string {
   if (/SIROP|LAIT|EAU|NUTELLA|MIEL|CONFITURE|PROTOXYDE/.test(n)) {
     if (/\bL\b|LITRE|CL|ML/.test(n) || /SIROP|LAIT|EAU/.test(n)) return "L";
   }
-  if (/\bKG\b|KILO|FARINE|SUCRE|CAFE|THE\b|VANILLE|BEURRE/.test(n)) return "Kg";
-  // TOPPING → Kg sauf OREO TOPPING (déjà capturé en Pièce ci-dessus)
-  if (/TOPPING/.test(n)) return "Kg";
+  if (/\bKG\b|KILO|FARINE|SUCRE|CAFE|THE\b|VANILLE|BEURRE|TOPPING/.test(n)) return "Kg";
   // Fruits vendus au kilo
   if (/\bKIWI\b|\bORANGE\b|\bCITRON\b|\bFRAISE\b|\bPOIRE\b|\bPOMME\b/.test(n)) return "Kg";
   if (/PAPIER|FILM|ALUMINIUM|ROULEAU/.test(n)) return "Rouleau";
