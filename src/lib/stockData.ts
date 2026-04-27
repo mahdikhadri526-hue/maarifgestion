@@ -268,7 +268,7 @@ export function detectProductUnit(name: string): string {
   if (/SIROP|LAIT|EAU|NUTELLA|MIEL|CONFITURE|PROTOXYDE/.test(n)) {
     if (/\bL\b|LITRE|CL|ML/.test(n) || /SIROP|LAIT|EAU/.test(n)) return "L";
   }
-  if (/\bKG\b|KILO|FARINE|SUCRE|CAFE|THE\b|VANILLE|BEURRE|TOPPING/.test(n)) return "Kg";
+  if (/\bKG\b|KILO|FARINE|SUCRE|CAFE|THE\b|VANILLE|TOPPING/.test(n)) return "Kg";
   // Fruits vendus au kilo
   if (/\bKIWI\b|\bORANGE\b|\bCITRON\b|\bFRAISE\b|\bPOIRE\b|\bPOMME\b/.test(n)) return "Kg";
   if (/PAPIER|FILM|ALUMINIUM|ROULEAU/.test(n)) return "Rouleau";
