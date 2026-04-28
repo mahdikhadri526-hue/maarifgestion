@@ -96,7 +96,11 @@ export function AutocontrolManager() {
         notes: form.notes.trim() || null,
       });
       toast.success("Fiche ajoutée");
-      setForm({ ...initialForm, ficheType: form.ficheType });
+      setForm({
+        ...initialForm,
+        ficheType: form.ficheType,
+        article: DEFAULT_ARTICLE_BY_FICHE[form.ficheType] ?? "",
+      });
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
     } finally {
