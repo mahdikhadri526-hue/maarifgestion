@@ -280,7 +280,7 @@ export function AutocontrolManager() {
       <PinPromptDialog
         open={deleteId !== null}
         onOpenChange={(open) => !open && setDeleteId(null)}
-        onSuccess={confirmDelete}
+        onConfirm={confirmDelete}
         title="Confirmer la suppression"
         description="Entrez le code PIN pour supprimer cette fiche."
       />
