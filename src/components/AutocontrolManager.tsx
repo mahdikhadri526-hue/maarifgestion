@@ -26,8 +26,13 @@ const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Oranges/Bigarreaux confits": "Orange confit",
   "Décoration": "",
   "Panaché": "Panaché",
-  "Cornet/Tulipe/Gaufrette": "Cornet, Tulipe, Gaufrette",
+  "Cornet/Tulipe/Gaufrette": "Cornet",
   "Autre": "",
+};
+
+const ARTICLE_OPTIONS_BY_FICHE: Partial<Record<FicheType, string[]>> = {
+  "Cornet/Tulipe/Gaufrette": ["Cornet", "Tulipe", "Gaufrette"],
+  "Oranges/Bigarreaux confits": ["Orange confit", "Bigarreaux confits"],
 };
 
 const initialForm = {
@@ -175,11 +180,25 @@ export function AutocontrolManager() {
           </div>
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Article / Désignation *</label>
-            <Input
-              value={form.article}
-              onChange={(e) => setForm((f) => ({ ...f, article: e.target.value }))}
-              required
-            />
+            {ARTICLE_OPTIONS_BY_FICHE[form.ficheType] ? (
+              <Select
+                value={form.article}
+                onValueChange={(v) => setForm((f) => ({ ...f, article: v }))}
+              >
+                <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                <SelectContent>
+                  {ARTICLE_OPTIONS_BY_FICHE[form.ficheType]!.map((opt) => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                value={form.article}
+                onChange={(e) => setForm((f) => ({ ...f, article: e.target.value }))}
+                required
+              />
+            )}
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
