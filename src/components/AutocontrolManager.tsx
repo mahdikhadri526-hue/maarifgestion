@@ -22,11 +22,19 @@ import { ClipboardCheck, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { PinPromptDialog } from "./PinPromptDialog";
 
+const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
+  "Oranges/Bigarreaux confits": "Orange confit",
+  "Décoration": "",
+  "Panaché": "Panaché",
+  "Cornet/Tulipe/Gaufrette": "Cornet, Tulipe, Gaufrette",
+  "Autre": "",
+};
+
 const initialForm = {
   ficheType: "Oranges/Bigarreaux confits" as FicheType,
   controlDate: new Date().toISOString().slice(0, 10),
   collaborateur: "",
-  article: "",
+  article: DEFAULT_ARTICLE_BY_FICHE["Oranges/Bigarreaux confits"],
   lotNumber: "",
   quantity: "",
   dlc: "",
@@ -88,7 +96,11 @@ export function AutocontrolManager() {
         notes: form.notes.trim() || null,
       });
       toast.success("Fiche ajoutée");
-      setForm({ ...initialForm, ficheType: form.ficheType });
+      setForm({
+        ...initialForm,
+        ficheType: form.ficheType,
+        article: DEFAULT_ARTICLE_BY_FICHE[form.ficheType] ?? "",
+      });
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
     } finally {
@@ -126,7 +138,14 @@ export function AutocontrolManager() {
             <label className="text-xs font-medium text-muted-foreground">Type de fiche *</label>
             <Select
               value={form.ficheType}
-              onValueChange={(v) => setForm((f) => ({ ...f, ficheType: v as FicheType }))}
+              onValueChange={(v) => {
+                const newType = v as FicheType;
+                setForm((f) => ({
+                  ...f,
+                  ficheType: newType,
+                  article: DEFAULT_ARTICLE_BY_FICHE[newType] ?? f.article,
+                }));
+              }}
             >
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
