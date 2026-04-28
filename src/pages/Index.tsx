@@ -6,11 +6,12 @@ import { InitialStockForm } from "@/components/InitialStockForm";
 import { ProductHistory } from "@/components/ProductHistory";
 import { RequisitionForm } from "@/components/RequisitionForm";
 import { ExpiryAlerts, LotManager, StockOutAlerts } from "@/components/LotManagement";
-import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes } from "lucide-react";
+import { AutocontrolManager } from "@/components/AutocontrolManager";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes, ClipboardCheck } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 
-type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots";
+type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -27,6 +28,7 @@ const Index = () => {
     { id: "produit" as Tab, label: "Stock Restant", icon: FileText },
     { id: "lots" as Tab, label: "Lots / DLC", icon: Boxes },
     { id: "requisition" as Tab, label: "Réquisition", icon: ClipboardList },
+    { id: "autocontrole" as Tab, label: "Autocontrôle", icon: ClipboardCheck },
   ];
 
   return (
@@ -146,6 +148,8 @@ const Index = () => {
         {tab === "requisition" && <RequisitionForm onUpdated={refresh} />}
 
         {tab === "lots" && <LotManager />}
+
+        {tab === "autocontrole" && <AutocontrolManager />}
       </main>
     </div>
   );

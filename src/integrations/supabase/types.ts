@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      autocontrols: {
+        Row: {
+          article: string
+          collaborateur: string
+          control_date: string
+          created_at: string
+          dlc: string | null
+          fiche_type: string
+          id: string
+          lot_number: string | null
+          notes: string | null
+          quantity: number | null
+          updated_at: string
+          visa_manager: string | null
+        }
+        Insert: {
+          article: string
+          collaborateur: string
+          control_date: string
+          created_at?: string
+          dlc?: string | null
+          fiche_type: string
+          id?: string
+          lot_number?: string | null
+          notes?: string | null
+          quantity?: number | null
+          updated_at?: string
+          visa_manager?: string | null
+        }
+        Update: {
+          article?: string
+          collaborateur?: string
+          control_date?: string
+          created_at?: string
+          dlc?: string | null
+          fiche_type?: string
+          id?: string
+          lot_number?: string | null
+          notes?: string | null
+          quantity?: number | null
+          updated_at?: string
+          visa_manager?: string | null
+        }
+        Relationships: []
+      }
       initial_stocks: {
         Row: {
           carton_enabled: boolean
