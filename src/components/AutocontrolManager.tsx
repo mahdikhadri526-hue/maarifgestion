@@ -644,7 +644,7 @@ export function AutocontrolManager() {
                         <details className="text-xs">
                           <summary className="cursor-pointer text-primary">Détails</summary>
                           <div className="mt-1 space-y-1">
-                            {e.extraData.ingredients?.length > 0 && (
+                            {e.extraData.ingredients && e.extraData.ingredients.length > 0 && (
                               <div>
                                 <strong>Ingrédients :</strong>
                                 <ul className="ml-3 list-disc">
@@ -656,20 +656,24 @@ export function AutocontrolManager() {
                                 </ul>
                               </div>
                             )}
-                            <div>
-                              <strong>Nettoyage :</strong>{" "}
-                              {Object.entries(e.extraData.cleaning)
-                                .filter(([k]) => k !== "notes")
-                                .map(([k, v]) => `${k}: ${v === true || v === "conforme" ? "✓ Fait" : "—"}`)
-                                .join(" • ") || "—"}
-                            </div>
-                            <div>
-                              <strong>Contrôle :</strong>{" "}
-                              {Object.entries(e.extraData.managerControl)
-                                .filter(([k]) => k !== "notes")
-                                .map(([k, v]) => `${k}: ${v === "conforme" || v === true ? "✓ Conforme" : v === "non_conforme" ? "✗ Non conforme" : "—"}`)
-                                .join(" • ") || "—"}
-                            </div>
+                            {e.extraData.cleaning && (
+                              <div>
+                                <strong>Nettoyage :</strong>{" "}
+                                {Object.entries(e.extraData.cleaning)
+                                  .filter(([k]) => k !== "notes")
+                                  .map(([k, v]) => `${k}: ${v === true || v === "conforme" ? "✓ Fait" : "—"}`)
+                                  .join(" • ") || "—"}
+                              </div>
+                            )}
+                            {e.extraData.managerControl && (
+                              <div>
+                                <strong>Contrôle :</strong>{" "}
+                                {Object.entries(e.extraData.managerControl)
+                                  .filter(([k]) => k !== "notes")
+                                  .map(([k, v]) => `${k}: ${v === "conforme" || v === true ? "✓ Conforme" : v === "non_conforme" ? "✗ Non conforme" : "—"}`)
+                                  .join(" • ") || "—"}
+                              </div>
+                            )}
                             {e.notes && <div><strong>Obs :</strong> {e.notes}</div>}
                           </div>
                         </details>
