@@ -261,24 +261,24 @@ export function AutocontrolManager() {
                     </div>
                     <Input
                       className="col-span-3"
-                      placeholder="N° lot"
-                      value={ing.lot}
-                      onChange={(e) =>
-                        setForm((f) => {
-                          const arr = [...f.extraData!.ingredients];
-                          arr[idx] = { ...arr[idx], lot: e.target.value };
-                          return { ...f, extraData: { ...f.extraData!, ingredients: arr } };
-                        })
-                      }
-                    />
-                    <Input
-                      className="col-span-4"
                       placeholder="Quantité"
                       value={ing.quantity}
                       onChange={(e) =>
                         setForm((f) => {
                           const arr = [...f.extraData!.ingredients];
                           arr[idx] = { ...arr[idx], quantity: e.target.value };
+                          return { ...f, extraData: { ...f.extraData!, ingredients: arr } };
+                        })
+                      }
+                    />
+                    <Input
+                      className="col-span-4"
+                      placeholder="N° lot"
+                      value={ing.lot}
+                      onChange={(e) =>
+                        setForm((f) => {
+                          const arr = [...f.extraData!.ingredients];
+                          arr[idx] = { ...arr[idx], lot: e.target.value };
                           return { ...f, extraData: { ...f.extraData!, ingredients: arr } };
                         })
                       }
@@ -314,18 +314,18 @@ export function AutocontrolManager() {
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
-            <Input
-              value={form.visaManager}
-              onChange={(e) => setForm((f) => ({ ...f, visaManager: e.target.value }))}
-            />
-          </div>
-          <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Observations</label>
             <Textarea
               rows={2}
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
+            <Input
+              value={form.visaManager}
+              onChange={(e) => setForm((f) => ({ ...f, visaManager: e.target.value }))}
             />
           </div>
 
