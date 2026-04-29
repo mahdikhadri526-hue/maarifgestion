@@ -278,6 +278,154 @@ export function AutocontrolManager() {
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
             />
           </div>
+
+          {isCtg && form.extraData && (
+            <div className="sm:col-span-2 space-y-4 mt-2 border-t pt-4">
+              {/* Ingrédients */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-semibold">Ingrédients (recette)</h4>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setForm((f) => ({
+                        ...f,
+                        extraData: {
+                          ...f.extraData!,
+                          ingredients: [...f.extraData!.ingredients, emptyIngredient()],
+                        },
+                      }))
+                    }
+                  >
+                    <Plus className="h-3 w-3 mr-1" /> Ajouter
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {form.extraData.ingredients.map((ing, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                      <Input
+                        className="col-span-5"
+                        placeholder="Ingrédient (ex: Farine)"
+                        value={ing.name}
+                        onChange={(e) =>
+                          setForm((f) => {
+                            const arr = [...f.extraData!.ingredients];
+                            arr[idx] = { ...arr[idx], name: e.target.value };
+                            return { ...f, extraData: { ...f.extraData!, ingredients: arr } };
+                          })
+                        }
+                      />
+                      <Input
+                        className="col-span-3"
+                        placeholder="N° lot"
+                        value={ing.lot}
+                        onChange={(e) =>
+                          setForm((f) => {
+                            const arr = [...f.extraData!.ingredients];
+                            arr[idx] = { ...arr[idx], lot: e.target.value };
+                            return { ...f, extraData: { ...f.extraData!, ingredients: arr } };
+                          })
+                        }
+                      />
+                      <Input
+                        className="col-span-3"
+                        placeholder="Qté"
+                        value={ing.quantity}
+                        onChange={(e) =>
+                          setForm((f) => {
+                            const arr = [...f.extraData!.ingredients];
+                            arr[idx] = { ...arr[idx], quantity: e.target.value };
+                            return { ...f, extraData: { ...f.extraData!, ingredients: arr } };
+                          })
+                        }
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="col-span-1"
+                        onClick={() =>
+                          setForm((f) => {
+                            const arr = f.extraData!.ingredients.filter((_, i) => i !== idx);
+                            return {
+                              ...f,
+                              extraData: {
+                                ...f.extraData!,
+                                ingredients: arr.length ? arr : [emptyIngredient()],
+                              },
+                            };
+                          })
+                        }
+                      >
+                        <X className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Nettoyage machine */}
+              <div className="bg-muted/30 rounded-lg p-3">
+                <h4 className="text-sm font-semibold mb-2">Nettoyage machine</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {([
+                    ["lavageMachine", "Lavage machine"],
+                    ["lavageTorchons", "Lavage torchons"],
+                    ["desinfection", "Désinfection"],
+                    ["rangementUstensiles", "Rangement ustensiles"],
+                  ] as const).map(([key, label]) => (
+                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={form.extraData!.cleaning[key]}
+                        onCheckedChange={(v) =>
+                          setForm((f) => ({
+                            ...f,
+                            extraData: {
+                              ...f.extraData!,
+                              cleaning: { ...f.extraData!.cleaning, [key]: !!v },
+                            },
+                          }))
+                        }
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Contrôle manager */}
+              <div className="bg-primary/5 rounded-lg p-3">
+                <h4 className="text-sm font-semibold mb-2">Contrôle manager</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {([
+                    ["etiquettes", "Étiquettes"],
+                    ["cuisson", "Cuisson"],
+                    ["forme", "Forme"],
+                    ["nettoyage", "Nettoyage"],
+                  ] as const).map(([key, label]) => (
+                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={form.extraData!.managerControl[key]}
+                        onCheckedChange={(v) =>
+                          setForm((f) => ({
+                            ...f,
+                            extraData: {
+                              ...f.extraData!,
+                              managerControl: { ...f.extraData!.managerControl, [key]: !!v },
+                            },
+                          }))
+                        }
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="sm:col-span-2">
             <Button type="submit" disabled={submitting} className="w-full">
               <Plus className="h-4 w-4 mr-1" />
