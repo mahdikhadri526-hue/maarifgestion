@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AutocontrolEntry,
+  CtgExtraData,
+  IngredientLine,
   FICHE_TYPES,
   FicheType,
   addAutocontrol,
@@ -11,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -18,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ClipboardCheck, Trash2, Plus } from "lucide-react";
+import { ClipboardCheck, Trash2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { PinPromptDialog } from "./PinPromptDialog";
 
@@ -35,6 +38,26 @@ const ARTICLE_OPTIONS_BY_FICHE: Partial<Record<FicheType, string[]>> = {
   "Oranges/Bigarreaux confits": ["Orange confit", "Bigarreaux confits"],
 };
 
+const emptyIngredient = (): IngredientLine => ({ name: "", lot: "", quantity: "" });
+
+const initialCtgExtra = (): CtgExtraData => ({
+  ingredients: [emptyIngredient()],
+  cleaning: {
+    lavageMachine: false,
+    lavageTorchons: false,
+    desinfection: false,
+    rangementUstensiles: false,
+    notes: "",
+  },
+  managerControl: {
+    etiquettes: false,
+    cuisson: false,
+    forme: false,
+    nettoyage: false,
+    notes: "",
+  },
+});
+
 const initialForm = {
   ficheType: "Oranges/Bigarreaux confits" as FicheType,
   controlDate: new Date().toISOString().slice(0, 10),
@@ -45,6 +68,7 @@ const initialForm = {
   dlc: "",
   visaManager: "",
   notes: "",
+  extraData: null as CtgExtraData | null,
 };
 
 export function AutocontrolManager() {
@@ -54,6 +78,8 @@ export function AutocontrolManager() {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
 
   const refresh = useCallback(async () => {
     try {
@@ -99,12 +125,21 @@ export function AutocontrolManager() {
         dlc: form.dlc || null,
         visaManager: form.visaManager.trim() || null,
         notes: form.notes.trim() || null,
+        extraData: isCtg
+          ? {
+              ...form.extraData!,
+              ingredients: (form.extraData?.ingredients ?? []).filter(
+                (i) => i.name.trim() || i.lot.trim() || i.quantity.trim()
+              ),
+            }
+          : null,
       });
       toast.success("Fiche ajoutée");
       setForm({
         ...initialForm,
         ficheType: form.ficheType,
         article: DEFAULT_ARTICLE_BY_FICHE[form.ficheType] ?? "",
+        extraData: isCtg ? initialCtgExtra() : null,
       });
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
@@ -149,6 +184,10 @@ export function AutocontrolManager() {
                   ...f,
                   ficheType: newType,
                   article: DEFAULT_ARTICLE_BY_FICHE[newType] ?? f.article,
+                  extraData:
+                    newType === "Cornet/Tulipe/Gaufrette"
+                      ? f.extraData ?? initialCtgExtra()
+                      : null,
                 }));
               }}
             >
@@ -239,6 +278,154 @@ export function AutocontrolManager() {
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
             />
           </div>
+
+          {isCtg && form.extraData && (
+            <div className="sm:col-span-2 space-y-4 mt-2 border-t pt-4">
+              {/* Ingrédients */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-sm font-semibold">Ingrédients (recette)</h4>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setForm((f) => ({
+                        ...f,
+                        extraData: {
+                          ...f.extraData!,
+                          ingredients: [...f.extraData!.ingredients, emptyIngredient()],
+                        },
+                      }))
+                    }
+                  >
+                    <Plus className="h-3 w-3 mr-1" /> Ajouter
+                  </Button>
+                </div>
+                <div className="space-y-2">
+                  {form.extraData.ingredients.map((ing, idx) => (
+                    <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                      <Input
+                        className="col-span-5"
+                        placeholder="Ingrédient (ex: Farine)"
+                        value={ing.name}
+                        onChange={(e) =>
+                          setForm((f) => {
+                            const arr = [...f.extraData!.ingredients];
+                            arr[idx] = { ...arr[idx], name: e.target.value };
+                            return { ...f, extraData: { ...f.extraData!, ingredients: arr } };
+                          })
+                        }
+                      />
+                      <Input
+                        className="col-span-3"
+                        placeholder="N° lot"
+                        value={ing.lot}
+                        onChange={(e) =>
+                          setForm((f) => {
+                            const arr = [...f.extraData!.ingredients];
+                            arr[idx] = { ...arr[idx], lot: e.target.value };
+                            return { ...f, extraData: { ...f.extraData!, ingredients: arr } };
+                          })
+                        }
+                      />
+                      <Input
+                        className="col-span-3"
+                        placeholder="Qté"
+                        value={ing.quantity}
+                        onChange={(e) =>
+                          setForm((f) => {
+                            const arr = [...f.extraData!.ingredients];
+                            arr[idx] = { ...arr[idx], quantity: e.target.value };
+                            return { ...f, extraData: { ...f.extraData!, ingredients: arr } };
+                          })
+                        }
+                      />
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="col-span-1"
+                        onClick={() =>
+                          setForm((f) => {
+                            const arr = f.extraData!.ingredients.filter((_, i) => i !== idx);
+                            return {
+                              ...f,
+                              extraData: {
+                                ...f.extraData!,
+                                ingredients: arr.length ? arr : [emptyIngredient()],
+                              },
+                            };
+                          })
+                        }
+                      >
+                        <X className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Nettoyage machine */}
+              <div className="bg-muted/30 rounded-lg p-3">
+                <h4 className="text-sm font-semibold mb-2">Nettoyage machine</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {([
+                    ["lavageMachine", "Lavage machine"],
+                    ["lavageTorchons", "Lavage torchons"],
+                    ["desinfection", "Désinfection"],
+                    ["rangementUstensiles", "Rangement ustensiles"],
+                  ] as const).map(([key, label]) => (
+                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={form.extraData!.cleaning[key]}
+                        onCheckedChange={(v) =>
+                          setForm((f) => ({
+                            ...f,
+                            extraData: {
+                              ...f.extraData!,
+                              cleaning: { ...f.extraData!.cleaning, [key]: !!v },
+                            },
+                          }))
+                        }
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Contrôle manager */}
+              <div className="bg-primary/5 rounded-lg p-3">
+                <h4 className="text-sm font-semibold mb-2">Contrôle manager</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {([
+                    ["etiquettes", "Étiquettes"],
+                    ["cuisson", "Cuisson"],
+                    ["forme", "Forme"],
+                    ["nettoyage", "Nettoyage"],
+                  ] as const).map(([key, label]) => (
+                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={form.extraData!.managerControl[key]}
+                        onCheckedChange={(v) =>
+                          setForm((f) => ({
+                            ...f,
+                            extraData: {
+                              ...f.extraData!,
+                              managerControl: { ...f.extraData!.managerControl, [key]: !!v },
+                            },
+                          }))
+                        }
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="sm:col-span-2">
             <Button type="submit" disabled={submitting} className="w-full">
               <Plus className="h-4 w-4 mr-1" />
@@ -295,8 +482,45 @@ export function AutocontrolManager() {
                     <td className="py-2 pr-2">{e.quantity ?? "—"}</td>
                     <td className="py-2 pr-2">{e.dlc || "—"}</td>
                     <td className="py-2 pr-2">{e.visaManager || "—"}</td>
-                    <td className="py-2 pr-2 max-w-[200px] truncate" title={e.notes || ""}>
-                      {e.notes || "—"}
+                    <td className="py-2 pr-2 max-w-[260px]">
+                      {e.extraData ? (
+                        <details className="text-xs">
+                          <summary className="cursor-pointer text-primary">Détails</summary>
+                          <div className="mt-1 space-y-1">
+                            {e.extraData.ingredients?.length > 0 && (
+                              <div>
+                                <strong>Ingrédients :</strong>
+                                <ul className="ml-3 list-disc">
+                                  {e.extraData.ingredients.map((i, k) => (
+                                    <li key={k}>
+                                      {i.name} — {i.quantity} (lot {i.lot || "—"})
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            <div>
+                              <strong>Nettoyage :</strong>{" "}
+                              {Object.entries(e.extraData.cleaning)
+                                .filter(([k, v]) => k !== "notes" && v === true)
+                                .map(([k]) => k)
+                                .join(", ") || "—"}
+                            </div>
+                            <div>
+                              <strong>Contrôle :</strong>{" "}
+                              {Object.entries(e.extraData.managerControl)
+                                .filter(([k, v]) => k !== "notes" && v === true)
+                                .map(([k]) => k)
+                                .join(", ") || "—"}
+                            </div>
+                            {e.notes && <div><strong>Obs :</strong> {e.notes}</div>}
+                          </div>
+                        </details>
+                      ) : (
+                        <span className="truncate block" title={e.notes || ""}>
+                          {e.notes || "—"}
+                        </span>
+                      )}
                     </td>
                     <td className="py-2 pr-2">
                       <Button

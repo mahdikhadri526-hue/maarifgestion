@@ -21,6 +21,7 @@ export type Database = {
           control_date: string
           created_at: string
           dlc: string | null
+          extra_data: Json | null
           fiche_type: string
           id: string
           lot_number: string | null
@@ -35,6 +36,7 @@ export type Database = {
           control_date: string
           created_at?: string
           dlc?: string | null
+          extra_data?: Json | null
           fiche_type: string
           id?: string
           lot_number?: string | null
@@ -49,6 +51,7 @@ export type Database = {
           control_date?: string
           created_at?: string
           dlc?: string | null
+          extra_data?: Json | null
           fiche_type?: string
           id?: string
           lot_number?: string | null
