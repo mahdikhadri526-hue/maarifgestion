@@ -290,13 +290,6 @@ export function AutocontrolManager() {
           )}
 
           <div>
-            <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
-            <Input
-              value={form.lotNumber}
-              onChange={(e) => setForm((f) => ({ ...f, lotNumber: e.target.value }))}
-            />
-          </div>
-          <div>
             <label className="text-xs font-medium text-muted-foreground">Quantité</label>
             <Input
               type="number"
@@ -306,26 +299,18 @@ export function AutocontrolManager() {
             />
           </div>
           <div>
+            <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
+            <Input
+              value={form.lotNumber}
+              onChange={(e) => setForm((f) => ({ ...f, lotNumber: e.target.value }))}
+            />
+          </div>
+          <div>
             <label className="text-xs font-medium text-muted-foreground">DLC</label>
             <Input
               type="date"
               value={form.dlc}
               onChange={(e) => setForm((f) => ({ ...f, dlc: e.target.value }))}
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-muted-foreground">Observations</label>
-            <Textarea
-              rows={2}
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
-            <Input
-              value={form.visaManager}
-              onChange={(e) => setForm((f) => ({ ...f, visaManager: e.target.value }))}
             />
           </div>
 
@@ -390,6 +375,22 @@ export function AutocontrolManager() {
               </div>
             </div>
           )}
+
+          <div className="sm:col-span-2">
+            <label className="text-xs font-medium text-muted-foreground">Observations</label>
+            <Textarea
+              rows={2}
+              value={form.notes}
+              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
+            <Input
+              value={form.visaManager}
+              onChange={(e) => setForm((f) => ({ ...f, visaManager: e.target.value }))}
+            />
+          </div>
 
           <div className="sm:col-span-2">
             <Button type="submit" disabled={submitting} className="w-full">
