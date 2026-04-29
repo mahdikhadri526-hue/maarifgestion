@@ -36,6 +36,21 @@ const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
 const ARTICLE_OPTIONS_BY_FICHE: Partial<Record<FicheType, string[]>> = {
   "Cornet/Tulipe/Gaufrette": ["Cornet", "Tulipe", "Gaufrette"],
   "Oranges/Bigarreaux confits": ["Orange confit", "Bigarreaux confits"],
+  "Décoration": [
+    "Tarte 10",
+    "Tarte 6",
+    "Tarte 12",
+    "Tarte spéciale",
+    "Tarte spéciale 8",
+    "Tarte sorbet",
+    "Tarte macarons",
+    "Tranche napolitaine",
+    "Tranche macarons",
+    "Tranche sorbet",
+    "Bûche normale",
+    "Bûche spéciale",
+    "Cassate sicilienne",
+  ],
 };
 
 const DEFAULT_CTG_INGREDIENTS = [
