@@ -24,19 +24,22 @@ export interface IngredientLine {
 export type ConformityStatus = "conforme" | "non_conforme" | null;
 
 export interface CtgExtraData {
-  ingredients: IngredientLine[];
-  cleaning: {
+  ingredients?: IngredientLine[];
+  cleaning?: {
     lavageMachine: ConformityStatus | boolean;
     lavageTorchons: ConformityStatus | boolean;
     desinfection: ConformityStatus | boolean;
     rangementUstensiles: ConformityStatus | boolean;
     notes?: string;
   };
-  managerControl: {
-    etiquettes: ConformityStatus | boolean;
-    cuisson: ConformityStatus | boolean;
-    forme: ConformityStatus | boolean;
-    nettoyage: ConformityStatus | boolean;
+  managerControl?: {
+    etiquettes?: ConformityStatus | boolean;
+    cuisson?: ConformityStatus | boolean;
+    forme?: ConformityStatus | boolean;
+    nettoyage?: ConformityStatus | boolean;
+    etiquettesInterneExterne?: ConformityStatus;
+    conformiteDecoration?: ConformityStatus;
+    etatEmballage?: ConformityStatus;
     notes?: string;
   };
 }
