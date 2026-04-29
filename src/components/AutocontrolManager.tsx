@@ -51,17 +51,17 @@ const DEFAULT_CTG_INGREDIENTS = [
 const initialCtgExtra = (): CtgExtraData => ({
   ingredients: DEFAULT_CTG_INGREDIENTS.map((name) => ({ name, lot: "", quantity: "" })),
   cleaning: {
-    lavageMachine: false,
-    lavageTorchons: false,
-    desinfection: false,
-    rangementUstensiles: false,
+    lavageMachine: null,
+    lavageTorchons: null,
+    desinfection: null,
+    rangementUstensiles: null,
     notes: "",
   },
   managerControl: {
-    etiquettes: false,
-    cuisson: false,
-    forme: false,
-    nettoyage: false,
+    etiquettes: null,
+    cuisson: null,
+    forme: null,
+    nettoyage: null,
     notes: "",
   },
 });
@@ -82,6 +82,11 @@ const initialForm = {
 const requiredText = (label: string, max = 120) =>
   z.string().trim().min(1, `${label} obligatoire`).max(max, `${label} trop long`);
 
+const conformity = (label: string) =>
+  z.enum(["conforme", "non_conforme"], {
+    errorMap: () => ({ message: `${label} : cocher Conforme ou Non conforme` }),
+  });
+
 const ctgExtraSchema = z.object({
   ingredients: z.array(z.object({
     name: requiredText("Ingrédient", 80),
@@ -89,17 +94,17 @@ const ctgExtraSchema = z.object({
     lot: requiredText("N° lot ingrédient", 120),
   })).length(DEFAULT_CTG_INGREDIENTS.length, "Tous les ingrédients doivent être remplis"),
   cleaning: z.object({
-    lavageMachine: z.literal(true, { errorMap: () => ({ message: "Lavage machine à cocher" }) }),
-    lavageTorchons: z.literal(true, { errorMap: () => ({ message: "Lavage torchons à cocher" }) }),
-    desinfection: z.literal(true, { errorMap: () => ({ message: "Désinfection à cocher" }) }),
-    rangementUstensiles: z.literal(true, { errorMap: () => ({ message: "Rangement ustensiles à cocher" }) }),
+    lavageMachine: conformity("Lavage machine"),
+    lavageTorchons: conformity("Lavage torchons"),
+    desinfection: conformity("Désinfection"),
+    rangementUstensiles: conformity("Rangement ustensiles"),
     notes: z.string().optional(),
   }),
   managerControl: z.object({
-    etiquettes: z.literal(true, { errorMap: () => ({ message: "Étiquettes à cocher" }) }),
-    cuisson: z.literal(true, { errorMap: () => ({ message: "Cuisson à cocher" }) }),
-    forme: z.literal(true, { errorMap: () => ({ message: "Forme à cocher" }) }),
-    nettoyage: z.literal(true, { errorMap: () => ({ message: "Nettoyage manager à cocher" }) }),
+    etiquettes: conformity("Étiquettes"),
+    cuisson: conformity("Cuisson"),
+    forme: conformity("Forme"),
+    nettoyage: conformity("Nettoyage"),
     notes: z.string().optional(),
   }),
 });
