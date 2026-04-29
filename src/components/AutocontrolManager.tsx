@@ -130,10 +130,27 @@ const baseAutocontrolSchema = z.object({
   article: requiredText("Désignation", 120),
   lotNumber: requiredText("N° de lot", 120),
   quantity: z.coerce.number({ invalid_type_error: "Quantité obligatoire" }).positive("Quantité obligatoire"),
-  dlc: requiredText("DLC", 20),
+  dlc: z.string().max(20, "DLC trop long").optional().or(z.literal("")),
   notes: requiredText("Observations", 1000),
   visaManager: requiredText("Visa manager", 100),
 });
+
+const decorationExtraSchema = z.object({
+  managerControl: z.object({
+    etiquettesInterneExterne: conformity("Étiquette interne et externe"),
+    conformiteDecoration: conformity("Conformité de décoration"),
+    etatEmballage: conformity("État de l'emballage"),
+  }),
+});
+
+const initialDecorationExtra = (): CtgExtraData => ({
+  ingredients: [],
+  managerControl: {
+    etiquettesInterneExterne: null,
+    conformiteDecoration: null,
+    etatEmballage: null,
+  },
+}) as any;
 
 export function AutocontrolManager() {
   const [entries, setEntries] = useState<AutocontrolEntry[]>([]);
@@ -145,6 +162,7 @@ export function AutocontrolManager() {
 
   const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
   const isConfit = form.article === "Orange confit" || form.article === "Bigarreaux confits";
+  const isDecoration = form.ficheType === "Décoration";
 
   const refresh = useCallback(async () => {
     try {
