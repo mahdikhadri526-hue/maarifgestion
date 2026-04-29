@@ -482,8 +482,45 @@ export function AutocontrolManager() {
                     <td className="py-2 pr-2">{e.quantity ?? "—"}</td>
                     <td className="py-2 pr-2">{e.dlc || "—"}</td>
                     <td className="py-2 pr-2">{e.visaManager || "—"}</td>
-                    <td className="py-2 pr-2 max-w-[200px] truncate" title={e.notes || ""}>
-                      {e.notes || "—"}
+                    <td className="py-2 pr-2 max-w-[260px]">
+                      {e.extraData ? (
+                        <details className="text-xs">
+                          <summary className="cursor-pointer text-primary">Détails</summary>
+                          <div className="mt-1 space-y-1">
+                            {e.extraData.ingredients?.length > 0 && (
+                              <div>
+                                <strong>Ingrédients :</strong>
+                                <ul className="ml-3 list-disc">
+                                  {e.extraData.ingredients.map((i, k) => (
+                                    <li key={k}>
+                                      {i.name} — {i.quantity} (lot {i.lot || "—"})
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                            <div>
+                              <strong>Nettoyage :</strong>{" "}
+                              {Object.entries(e.extraData.cleaning)
+                                .filter(([k, v]) => k !== "notes" && v === true)
+                                .map(([k]) => k)
+                                .join(", ") || "—"}
+                            </div>
+                            <div>
+                              <strong>Contrôle :</strong>{" "}
+                              {Object.entries(e.extraData.managerControl)
+                                .filter(([k, v]) => k !== "notes" && v === true)
+                                .map(([k]) => k)
+                                .join(", ") || "—"}
+                            </div>
+                            {e.notes && <div><strong>Obs :</strong> {e.notes}</div>}
+                          </div>
+                        </details>
+                      ) : (
+                        <span className="truncate block" title={e.notes || ""}>
+                          {e.notes || "—"}
+                        </span>
+                      )}
                     </td>
                     <td className="py-2 pr-2">
                       <Button
