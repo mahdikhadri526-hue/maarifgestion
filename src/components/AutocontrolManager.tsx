@@ -380,28 +380,40 @@ export function AutocontrolManager() {
               {/* Nettoyage */}
               <div className="bg-muted/30 rounded-lg p-3">
                 <h4 className="text-sm font-semibold mb-2">Nettoyage</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-2">
                   {([
                     ["lavageMachine", "Lavage machine"],
                     ["lavageTorchons", "Lavage torchons"],
                     ["desinfection", "Désinfection"],
                     ["rangementUstensiles", "Rangement ustensiles"],
                   ] as const).map(([key, label]) => (
-                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={form.extraData!.cleaning[key]}
-                        onCheckedChange={(v) =>
-                          setForm((f) => ({
-                            ...f,
-                            extraData: {
-                              ...f.extraData!,
-                              cleaning: { ...f.extraData!.cleaning, [key]: !!v },
-                            },
-                          }))
-                        }
-                      />
-                      {label}
-                    </label>
+                    <div key={key} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span className="font-medium">{label}</span>
+                      <div className="flex items-center gap-3">
+                        {(["conforme", "non_conforme"] as const).map((status) => (
+                          <label key={status} className="flex items-center gap-1 cursor-pointer">
+                            <Checkbox
+                              checked={form.extraData!.cleaning[key] === status}
+                              onCheckedChange={(v) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  extraData: {
+                                    ...f.extraData!,
+                                    cleaning: {
+                                      ...f.extraData!.cleaning,
+                                      [key]: v ? status : null,
+                                    },
+                                  },
+                                }))
+                              }
+                            />
+                            <span className={status === "conforme" ? "text-emerald-600" : "text-destructive"}>
+                              {status === "conforme" ? "Conforme" : "Non conforme"}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -409,28 +421,40 @@ export function AutocontrolManager() {
               {/* Contrôle manager */}
               <div className="bg-primary/5 rounded-lg p-3">
                 <h4 className="text-sm font-semibold mb-2">Contrôle manager</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-2">
                   {([
                     ["etiquettes", "Étiquettes"],
                     ["cuisson", "Cuisson"],
                     ["forme", "Forme"],
                     ["nettoyage", "Nettoyage"],
                   ] as const).map(([key, label]) => (
-                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={form.extraData!.managerControl[key]}
-                        onCheckedChange={(v) =>
-                          setForm((f) => ({
-                            ...f,
-                            extraData: {
-                              ...f.extraData!,
-                              managerControl: { ...f.extraData!.managerControl, [key]: !!v },
-                            },
-                          }))
-                        }
-                      />
-                      {label}
-                    </label>
+                    <div key={key} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span className="font-medium">{label}</span>
+                      <div className="flex items-center gap-3">
+                        {(["conforme", "non_conforme"] as const).map((status) => (
+                          <label key={status} className="flex items-center gap-1 cursor-pointer">
+                            <Checkbox
+                              checked={form.extraData!.managerControl[key] === status}
+                              onCheckedChange={(v) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  extraData: {
+                                    ...f.extraData!,
+                                    managerControl: {
+                                      ...f.extraData!.managerControl,
+                                      [key]: v ? status : null,
+                                    },
+                                  },
+                                }))
+                              }
+                            />
+                            <span className={status === "conforme" ? "text-emerald-600" : "text-destructive"}>
+                              {status === "conforme" ? "Conforme" : "Non conforme"}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
