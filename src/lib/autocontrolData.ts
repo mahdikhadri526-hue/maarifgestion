@@ -23,8 +23,15 @@ export interface IngredientLine {
 
 export type ConformityStatus = "conforme" | "non_conforme" | null;
 
+export interface PanacheMatiere {
+  name: string;
+  selected: boolean;
+  lot: string;
+}
+
 export interface CtgExtraData {
   ingredients?: IngredientLine[];
+  matieresPremieres?: PanacheMatiere[];
   cleaning?: {
     lavageMachine: ConformityStatus | boolean;
     lavageTorchons: ConformityStatus | boolean;
