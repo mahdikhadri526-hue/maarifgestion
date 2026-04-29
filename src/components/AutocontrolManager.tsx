@@ -129,7 +129,7 @@ export function AutocontrolManager() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
-  const isOrange = form.article === "Orange confit";
+  const isConfit = form.article === "Orange confit" || form.article === "Bigarreaux confits";
 
   const refresh = useCallback(async () => {
     try {
@@ -311,7 +311,7 @@ export function AutocontrolManager() {
             )}
           </div>
 
-          {isOrange && (
+          {isConfit && (
             <div className="sm:col-span-2">
               <label className="text-xs font-medium text-muted-foreground">N° de lot avant découpe *</label>
               <Input
@@ -377,7 +377,7 @@ export function AutocontrolManager() {
               // validated by Zod
             />
           </div>
-          {!isOrange && (
+          {!isConfit && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
               <Input
