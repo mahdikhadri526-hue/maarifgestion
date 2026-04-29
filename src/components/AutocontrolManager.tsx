@@ -153,32 +153,43 @@ export function AutocontrolManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.collaborateur.trim() || !form.article.trim()) {
-      toast.error("Collaborateur et Article sont obligatoires");
+
+    const baseResult = baseAutocontrolSchema.safeParse(form);
+    if (!baseResult.success) {
+      toast.error("Fiche incomplète", { description: baseResult.error.issues[0]?.message });
       return;
     }
+
+    const extraData = isCtg ? form.extraData : null;
+    if (isCtg) {
+      const extraResult = ctgExtraSchema.safeParse(extraData);
+      if (!extraResult.success) {
+        toast.error("Fiche incomplète", { description: extraResult.error.issues[0]?.message });
+        return;
+      }
+    }
+
+    if (!Number.isFinite(baseResult.data.quantity)) {
+      toast.error("Fiche incomplète", { description: "Quantité obligatoire" });
+      return;
+    }
+
     setSubmitting(true);
     try {
       await addAutocontrol({
         ficheType: form.ficheType,
-        controlDate: form.controlDate,
-        collaborateur: form.collaborateur.trim(),
-        article: form.article.trim(),
-        lotNumber: form.lotNumber.trim() || null,
-        quantity: form.quantity === "" ? null : Number(form.quantity),
-        dlc: form.dlc || null,
-        visaManager: form.visaManager.trim() || null,
-        notes: form.notes.trim() || null,
-        extraData: isCtg
-          ? {
-              ...form.extraData!,
-              ingredients: (form.extraData?.ingredients ?? []).filter(
-                (i) => i.name.trim() || i.lot.trim() || i.quantity.trim()
-              ),
-            }
-          : null,
+        controlDate: baseResult.data.controlDate,
+        collaborateur: baseResult.data.collaborateur,
+        article: baseResult.data.article,
+        lotNumber: baseResult.data.lotNumber,
+        quantity: baseResult.data.quantity,
+        dlc: baseResult.data.dlc,
+        visaManager: baseResult.data.visaManager,
+        notes: baseResult.data.notes,
+        extraData,
       });
       toast.success("Fiche ajoutée");
+      await refresh();
       setForm({
         ...initialForm,
         ficheType: form.ficheType,
