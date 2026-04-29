@@ -28,7 +28,7 @@ import { PinPromptDialog } from "./PinPromptDialog";
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Oranges/Bigarreaux confits": "Orange confit",
   "Décoration": "",
-  "Panaché": "Panaché",
+  "Panaché": "",
   "Cornet/Tulipe/Gaufrette": "Cornet",
   "Autre": "",
 };
@@ -62,6 +62,19 @@ const DEFAULT_CTG_INGREDIENTS = [
   "Sel",
   "Beurre",
 ];
+
+const PANACHE_MATIERES = [
+  "Vanille",
+  "Parfait café",
+  "Nougat",
+  "Chocolat",
+  "Caramel",
+  "Biscuit",
+];
+
+const initialPanacheExtra = (): CtgExtraData => ({
+  matieresPremieres: PANACHE_MATIERES.map((name) => ({ name, selected: false, lot: "" })),
+}) as any;
 
 const initialCtgExtra = (): CtgExtraData => ({
   ingredients: DEFAULT_CTG_INGREDIENTS.map((name) => ({ name, lot: "", quantity: "" })),
@@ -143,6 +156,19 @@ const decorationExtraSchema = z.object({
   }),
 });
 
+const panacheExtraSchema = z.object({
+  matieresPremieres: z.array(z.object({
+    name: z.string(),
+    selected: z.boolean(),
+    lot: z.string(),
+  }))
+    .refine((arr) => arr.some((m) => m.selected), { message: "Sélectionnez au moins une matière première" })
+    .refine(
+      (arr) => arr.filter((m) => m.selected).every((m) => m.lot.trim().length > 0),
+      { message: "Saisir le N° de lot pour chaque matière sélectionnée" },
+    ),
+});
+
 const initialDecorationExtra = (): CtgExtraData => ({
   ingredients: [],
   managerControl: {
@@ -163,6 +189,7 @@ export function AutocontrolManager() {
   const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
   const isConfit = form.article === "Orange confit" || form.article === "Bigarreaux confits";
   const isDecoration = form.ficheType === "Décoration";
+  const isPanache = form.ficheType === "Panaché";
 
   const refresh = useCallback(async () => {
     try {
@@ -194,7 +221,11 @@ export function AutocontrolManager() {
     e.preventDefault();
 
     const errors: string[] = [];
-    const baseResult = baseAutocontrolSchema.safeParse(form);
+    // Pour Panaché on relâche l'exigence article/lot dans la validation client
+    const formForBase = isPanache
+      ? { ...form, article: form.article || "Panaché", lotNumber: form.lotNumber || "—" }
+      : form;
+    const baseResult = baseAutocontrolSchema.safeParse(formForBase);
     if (!baseResult.success) {
       baseResult.error.issues.forEach((i) => errors.push(i.message));
     }
@@ -215,6 +246,14 @@ export function AutocontrolManager() {
       }
     }
 
+    const panacheExtra = isPanache ? form.extraData : null;
+    if (isPanache) {
+      const pRes = panacheExtraSchema.safeParse(panacheExtra);
+      if (!pRes.success) {
+        pRes.error.issues.forEach((i) => errors.push(i.message));
+      }
+    }
+
     if (errors.length > 0) {
       const unique = Array.from(new Set(errors));
       toast.error("Fiche incomplète — remplissez tous les champs", {
@@ -223,7 +262,7 @@ export function AutocontrolManager() {
       return;
     }
 
-    if (!baseResult.success || (isCtg && !extraData) || (isDecoration && !decorationExtra)) return;
+    if (!baseResult.success || (isCtg && !extraData) || (isDecoration && !decorationExtra) || (isPanache && !panacheExtra)) return;
     if (!Number.isFinite(baseResult.data.quantity)) {
       toast.error("Fiche incomplète", { description: "Quantité obligatoire" });
       return;
@@ -231,17 +270,25 @@ export function AutocontrolManager() {
 
     setSubmitting(true);
     try {
+      // Pour Panaché : article = liste des matières sélectionnées, lot = liste lots
+      let articleToSave = baseResult.data.article;
+      let lotToSave: string | null = baseResult.data.lotNumber;
+      if (isPanache && panacheExtra?.matieresPremieres) {
+        const sel = panacheExtra.matieresPremieres.filter((m) => m.selected);
+        articleToSave = sel.map((m) => m.name).join(", ");
+        lotToSave = sel.map((m) => `${m.name}: ${m.lot}`).join(" | ");
+      }
       await addAutocontrol({
         ficheType: form.ficheType,
         controlDate: baseResult.data.controlDate,
         collaborateur: baseResult.data.collaborateur,
-        article: baseResult.data.article,
-        lotNumber: baseResult.data.lotNumber,
+        article: articleToSave,
+        lotNumber: lotToSave,
         quantity: baseResult.data.quantity,
-        dlc: isDecoration ? null : (baseResult.data.dlc || null),
+        dlc: (isDecoration || isPanache) ? null : (baseResult.data.dlc || null),
         visaManager: baseResult.data.visaManager,
         notes: baseResult.data.notes,
-        extraData: isCtg ? extraData : isDecoration ? decorationExtra : null,
+        extraData: isCtg ? extraData : isDecoration ? decorationExtra : isPanache ? panacheExtra : null,
       });
       toast.success("Fiche ajoutée");
       await refresh();
@@ -249,7 +296,7 @@ export function AutocontrolManager() {
         ...initialForm,
         ficheType: form.ficheType,
         article: DEFAULT_ARTICLE_BY_FICHE[form.ficheType] ?? "",
-        extraData: isCtg ? initialCtgExtra() : isDecoration ? initialDecorationExtra() : null,
+        extraData: isCtg ? initialCtgExtra() : isDecoration ? initialDecorationExtra() : isPanache ? initialPanacheExtra() : null,
       });
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
