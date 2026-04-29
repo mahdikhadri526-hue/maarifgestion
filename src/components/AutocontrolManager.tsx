@@ -557,16 +557,16 @@ export function AutocontrolManager() {
                             <div>
                               <strong>Nettoyage :</strong>{" "}
                               {Object.entries(e.extraData.cleaning)
-                                .filter(([k, v]) => k !== "notes" && v === true)
-                                .map(([k]) => k)
-                                .join(", ") || "—"}
+                                .filter(([k]) => k !== "notes")
+                                .map(([k, v]) => `${k}: ${v === "conforme" || v === true ? "✓ Conforme" : v === "non_conforme" ? "✗ Non conforme" : "—"}`)
+                                .join(" • ") || "—"}
                             </div>
                             <div>
                               <strong>Contrôle :</strong>{" "}
                               {Object.entries(e.extraData.managerControl)
-                                .filter(([k, v]) => k !== "notes" && v === true)
-                                .map(([k]) => k)
-                                .join(", ") || "—"}
+                                .filter(([k]) => k !== "notes")
+                                .map(([k, v]) => `${k}: ${v === "conforme" || v === true ? "✓ Conforme" : v === "non_conforme" ? "✗ Non conforme" : "—"}`)
+                                .join(" • ") || "—"}
                             </div>
                             {e.notes && <div><strong>Obs :</strong> {e.notes}</div>}
                           </div>
