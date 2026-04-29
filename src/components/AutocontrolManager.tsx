@@ -51,17 +51,17 @@ const DEFAULT_CTG_INGREDIENTS = [
 const initialCtgExtra = (): CtgExtraData => ({
   ingredients: DEFAULT_CTG_INGREDIENTS.map((name) => ({ name, lot: "", quantity: "" })),
   cleaning: {
-    lavageMachine: false,
-    lavageTorchons: false,
-    desinfection: false,
-    rangementUstensiles: false,
+    lavageMachine: null,
+    lavageTorchons: null,
+    desinfection: null,
+    rangementUstensiles: null,
     notes: "",
   },
   managerControl: {
-    etiquettes: false,
-    cuisson: false,
-    forme: false,
-    nettoyage: false,
+    etiquettes: null,
+    cuisson: null,
+    forme: null,
+    nettoyage: null,
     notes: "",
   },
 });
@@ -82,6 +82,11 @@ const initialForm = {
 const requiredText = (label: string, max = 120) =>
   z.string().trim().min(1, `${label} obligatoire`).max(max, `${label} trop long`);
 
+const conformity = (label: string) =>
+  z.enum(["conforme", "non_conforme"], {
+    errorMap: () => ({ message: `${label} : cocher Conforme ou Non conforme` }),
+  });
+
 const ctgExtraSchema = z.object({
   ingredients: z.array(z.object({
     name: requiredText("Ingrédient", 80),
@@ -89,17 +94,17 @@ const ctgExtraSchema = z.object({
     lot: requiredText("N° lot ingrédient", 120),
   })).length(DEFAULT_CTG_INGREDIENTS.length, "Tous les ingrédients doivent être remplis"),
   cleaning: z.object({
-    lavageMachine: z.literal(true, { errorMap: () => ({ message: "Lavage machine à cocher" }) }),
-    lavageTorchons: z.literal(true, { errorMap: () => ({ message: "Lavage torchons à cocher" }) }),
-    desinfection: z.literal(true, { errorMap: () => ({ message: "Désinfection à cocher" }) }),
-    rangementUstensiles: z.literal(true, { errorMap: () => ({ message: "Rangement ustensiles à cocher" }) }),
+    lavageMachine: conformity("Lavage machine"),
+    lavageTorchons: conformity("Lavage torchons"),
+    desinfection: conformity("Désinfection"),
+    rangementUstensiles: conformity("Rangement ustensiles"),
     notes: z.string().optional(),
   }),
   managerControl: z.object({
-    etiquettes: z.literal(true, { errorMap: () => ({ message: "Étiquettes à cocher" }) }),
-    cuisson: z.literal(true, { errorMap: () => ({ message: "Cuisson à cocher" }) }),
-    forme: z.literal(true, { errorMap: () => ({ message: "Forme à cocher" }) }),
-    nettoyage: z.literal(true, { errorMap: () => ({ message: "Nettoyage manager à cocher" }) }),
+    etiquettes: conformity("Étiquettes"),
+    cuisson: conformity("Cuisson"),
+    forme: conformity("Forme"),
+    nettoyage: conformity("Nettoyage"),
     notes: z.string().optional(),
   }),
 });
@@ -375,28 +380,40 @@ export function AutocontrolManager() {
               {/* Nettoyage */}
               <div className="bg-muted/30 rounded-lg p-3">
                 <h4 className="text-sm font-semibold mb-2">Nettoyage</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-2">
                   {([
                     ["lavageMachine", "Lavage machine"],
                     ["lavageTorchons", "Lavage torchons"],
                     ["desinfection", "Désinfection"],
                     ["rangementUstensiles", "Rangement ustensiles"],
                   ] as const).map(([key, label]) => (
-                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={form.extraData!.cleaning[key]}
-                        onCheckedChange={(v) =>
-                          setForm((f) => ({
-                            ...f,
-                            extraData: {
-                              ...f.extraData!,
-                              cleaning: { ...f.extraData!.cleaning, [key]: !!v },
-                            },
-                          }))
-                        }
-                      />
-                      {label}
-                    </label>
+                    <div key={key} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span className="font-medium">{label}</span>
+                      <div className="flex items-center gap-3">
+                        {(["conforme", "non_conforme"] as const).map((status) => (
+                          <label key={status} className="flex items-center gap-1 cursor-pointer">
+                            <Checkbox
+                              checked={form.extraData!.cleaning[key] === status}
+                              onCheckedChange={(v) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  extraData: {
+                                    ...f.extraData!,
+                                    cleaning: {
+                                      ...f.extraData!.cleaning,
+                                      [key]: v ? status : null,
+                                    },
+                                  },
+                                }))
+                              }
+                            />
+                            <span className={status === "conforme" ? "text-emerald-600" : "text-destructive"}>
+                              {status === "conforme" ? "Conforme" : "Non conforme"}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -404,28 +421,40 @@ export function AutocontrolManager() {
               {/* Contrôle manager */}
               <div className="bg-primary/5 rounded-lg p-3">
                 <h4 className="text-sm font-semibold mb-2">Contrôle manager</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="space-y-2">
                   {([
                     ["etiquettes", "Étiquettes"],
                     ["cuisson", "Cuisson"],
                     ["forme", "Forme"],
                     ["nettoyage", "Nettoyage"],
                   ] as const).map(([key, label]) => (
-                    <label key={key} className="flex items-center gap-2 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={form.extraData!.managerControl[key]}
-                        onCheckedChange={(v) =>
-                          setForm((f) => ({
-                            ...f,
-                            extraData: {
-                              ...f.extraData!,
-                              managerControl: { ...f.extraData!.managerControl, [key]: !!v },
-                            },
-                          }))
-                        }
-                      />
-                      {label}
-                    </label>
+                    <div key={key} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                      <span className="font-medium">{label}</span>
+                      <div className="flex items-center gap-3">
+                        {(["conforme", "non_conforme"] as const).map((status) => (
+                          <label key={status} className="flex items-center gap-1 cursor-pointer">
+                            <Checkbox
+                              checked={form.extraData!.managerControl[key] === status}
+                              onCheckedChange={(v) =>
+                                setForm((f) => ({
+                                  ...f,
+                                  extraData: {
+                                    ...f.extraData!,
+                                    managerControl: {
+                                      ...f.extraData!.managerControl,
+                                      [key]: v ? status : null,
+                                    },
+                                  },
+                                }))
+                              }
+                            />
+                            <span className={status === "conforme" ? "text-emerald-600" : "text-destructive"}>
+                              {status === "conforme" ? "Conforme" : "Non conforme"}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -528,16 +557,16 @@ export function AutocontrolManager() {
                             <div>
                               <strong>Nettoyage :</strong>{" "}
                               {Object.entries(e.extraData.cleaning)
-                                .filter(([k, v]) => k !== "notes" && v === true)
-                                .map(([k]) => k)
-                                .join(", ") || "—"}
+                                .filter(([k]) => k !== "notes")
+                                .map(([k, v]) => `${k}: ${v === "conforme" || v === true ? "✓ Conforme" : v === "non_conforme" ? "✗ Non conforme" : "—"}`)
+                                .join(" • ") || "—"}
                             </div>
                             <div>
                               <strong>Contrôle :</strong>{" "}
                               {Object.entries(e.extraData.managerControl)
-                                .filter(([k, v]) => k !== "notes" && v === true)
-                                .map(([k]) => k)
-                                .join(", ") || "—"}
+                                .filter(([k]) => k !== "notes")
+                                .map(([k, v]) => `${k}: ${v === "conforme" || v === true ? "✓ Conforme" : v === "non_conforme" ? "✗ Non conforme" : "—"}`)
+                                .join(" • ") || "—"}
                             </div>
                             {e.notes && <div><strong>Obs :</strong> {e.notes}</div>}
                           </div>

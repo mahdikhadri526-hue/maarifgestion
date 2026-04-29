@@ -21,20 +21,22 @@ export interface IngredientLine {
   quantity: string;
 }
 
+export type ConformityStatus = "conforme" | "non_conforme" | null;
+
 export interface CtgExtraData {
   ingredients: IngredientLine[];
   cleaning: {
-    lavageMachine: boolean;
-    lavageTorchons: boolean;
-    desinfection: boolean;
-    rangementUstensiles: boolean;
+    lavageMachine: ConformityStatus | boolean;
+    lavageTorchons: ConformityStatus | boolean;
+    desinfection: ConformityStatus | boolean;
+    rangementUstensiles: ConformityStatus | boolean;
     notes?: string;
   };
   managerControl: {
-    etiquettes: boolean;
-    cuisson: boolean;
-    forme: boolean;
-    nettoyage: boolean;
+    etiquettes: ConformityStatus | boolean;
+    cuisson: ConformityStatus | boolean;
+    forme: ConformityStatus | boolean;
+    nettoyage: ConformityStatus | boolean;
     notes?: string;
   };
 }
