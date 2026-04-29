@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AutocontrolEntry,
   CtgExtraData,
-  IngredientLine,
   FICHE_TYPES,
   FicheType,
   addAutocontrol,
@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ClipboardCheck, Trash2, Plus, X } from "lucide-react";
+import { ClipboardCheck, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { PinPromptDialog } from "./PinPromptDialog";
 
@@ -37,8 +37,6 @@ const ARTICLE_OPTIONS_BY_FICHE: Partial<Record<FicheType, string[]>> = {
   "Cornet/Tulipe/Gaufrette": ["Cornet", "Tulipe", "Gaufrette"],
   "Oranges/Bigarreaux confits": ["Orange confit", "Bigarreaux confits"],
 };
-
-const emptyIngredient = (): IngredientLine => ({ name: "", lot: "", quantity: "" });
 
 const DEFAULT_CTG_INGREDIENTS = [
   "Farine",
@@ -81,6 +79,42 @@ const initialForm = {
   extraData: null as CtgExtraData | null,
 };
 
+const requiredText = (label: string, max = 120) =>
+  z.string().trim().min(1, `${label} obligatoire`).max(max, `${label} trop long`);
+
+const ctgExtraSchema = z.object({
+  ingredients: z.array(z.object({
+    name: requiredText("Ingrédient", 80),
+    quantity: requiredText("Quantité ingrédient", 80),
+    lot: requiredText("N° lot ingrédient", 120),
+  })).length(DEFAULT_CTG_INGREDIENTS.length, "Tous les ingrédients doivent être remplis"),
+  cleaning: z.object({
+    lavageMachine: z.literal(true, { errorMap: () => ({ message: "Lavage machine à cocher" }) }),
+    lavageTorchons: z.literal(true, { errorMap: () => ({ message: "Lavage torchons à cocher" }) }),
+    desinfection: z.literal(true, { errorMap: () => ({ message: "Désinfection à cocher" }) }),
+    rangementUstensiles: z.literal(true, { errorMap: () => ({ message: "Rangement ustensiles à cocher" }) }),
+    notes: z.string().optional(),
+  }),
+  managerControl: z.object({
+    etiquettes: z.literal(true, { errorMap: () => ({ message: "Étiquettes à cocher" }) }),
+    cuisson: z.literal(true, { errorMap: () => ({ message: "Cuisson à cocher" }) }),
+    forme: z.literal(true, { errorMap: () => ({ message: "Forme à cocher" }) }),
+    nettoyage: z.literal(true, { errorMap: () => ({ message: "Nettoyage manager à cocher" }) }),
+    notes: z.string().optional(),
+  }),
+});
+
+const baseAutocontrolSchema = z.object({
+  controlDate: requiredText("Date", 20),
+  collaborateur: requiredText("Collaborateur", 100),
+  article: requiredText("Désignation", 120),
+  lotNumber: requiredText("N° de lot", 120),
+  quantity: z.coerce.number({ invalid_type_error: "Quantité obligatoire" }).positive("Quantité obligatoire"),
+  dlc: requiredText("DLC", 20),
+  notes: requiredText("Observations", 1000),
+  visaManager: requiredText("Visa manager", 100),
+});
+
 export function AutocontrolManager() {
   const [entries, setEntries] = useState<AutocontrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,32 +153,43 @@ export function AutocontrolManager() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.collaborateur.trim() || !form.article.trim()) {
-      toast.error("Collaborateur et Article sont obligatoires");
+
+    const baseResult = baseAutocontrolSchema.safeParse(form);
+    if (!baseResult.success) {
+      toast.error("Fiche incomplète", { description: baseResult.error.issues[0]?.message });
       return;
     }
+
+    const extraData = isCtg ? form.extraData : null;
+    if (isCtg) {
+      const extraResult = ctgExtraSchema.safeParse(extraData);
+      if (!extraResult.success) {
+        toast.error("Fiche incomplète", { description: extraResult.error.issues[0]?.message });
+        return;
+      }
+    }
+
+    if (!Number.isFinite(baseResult.data.quantity)) {
+      toast.error("Fiche incomplète", { description: "Quantité obligatoire" });
+      return;
+    }
+
     setSubmitting(true);
     try {
       await addAutocontrol({
         ficheType: form.ficheType,
-        controlDate: form.controlDate,
-        collaborateur: form.collaborateur.trim(),
-        article: form.article.trim(),
-        lotNumber: form.lotNumber.trim() || null,
-        quantity: form.quantity === "" ? null : Number(form.quantity),
-        dlc: form.dlc || null,
-        visaManager: form.visaManager.trim() || null,
-        notes: form.notes.trim() || null,
-        extraData: isCtg
-          ? {
-              ...form.extraData!,
-              ingredients: (form.extraData?.ingredients ?? []).filter(
-                (i) => i.name.trim() || i.lot.trim() || i.quantity.trim()
-              ),
-            }
-          : null,
+        controlDate: baseResult.data.controlDate,
+        collaborateur: baseResult.data.collaborateur,
+        article: baseResult.data.article,
+        lotNumber: baseResult.data.lotNumber,
+        quantity: baseResult.data.quantity,
+        dlc: baseResult.data.dlc,
+        visaManager: baseResult.data.visaManager,
+        notes: baseResult.data.notes,
+        extraData,
       });
       toast.success("Fiche ajoutée");
+      await refresh();
       setForm({
         ...initialForm,
         ficheType: form.ficheType,
@@ -224,6 +269,7 @@ export function AutocontrolManager() {
               value={form.collaborateur}
               onChange={(e) => setForm((f) => ({ ...f, collaborateur: e.target.value }))}
               placeholder="Prénom"
+              maxLength={100}
               required
             />
           </div>
@@ -245,6 +291,7 @@ export function AutocontrolManager() {
               <Input
                 value={form.article}
                 onChange={(e) => setForm((f) => ({ ...f, article: e.target.value }))}
+                maxLength={120}
                 required
               />
             )}
@@ -263,6 +310,8 @@ export function AutocontrolManager() {
                       className="col-span-3"
                       placeholder="Quantité"
                       value={ing.quantity}
+                      maxLength={80}
+                      required
                       onChange={(e) =>
                         setForm((f) => {
                           const arr = [...f.extraData!.ingredients];
@@ -275,6 +324,8 @@ export function AutocontrolManager() {
                       className="col-span-4"
                       placeholder="N° lot"
                       value={ing.lot}
+                      maxLength={120}
+                      required
                       onChange={(e) =>
                         setForm((f) => {
                           const arr = [...f.extraData!.ingredients];
@@ -294,8 +345,10 @@ export function AutocontrolManager() {
             <Input
               type="number"
               step="any"
+              min="0.01"
               value={form.quantity}
               onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+              required
             />
           </div>
           <div>
@@ -303,6 +356,8 @@ export function AutocontrolManager() {
             <Input
               value={form.lotNumber}
               onChange={(e) => setForm((f) => ({ ...f, lotNumber: e.target.value }))}
+              maxLength={120}
+              required
             />
           </div>
           <div>
@@ -311,6 +366,7 @@ export function AutocontrolManager() {
               type="date"
               value={form.dlc}
               onChange={(e) => setForm((f) => ({ ...f, dlc: e.target.value }))}
+              required
             />
           </div>
 
@@ -382,6 +438,8 @@ export function AutocontrolManager() {
               rows={2}
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              maxLength={1000}
+              required
             />
           </div>
           <div className="sm:col-span-2">
@@ -389,6 +447,8 @@ export function AutocontrolManager() {
             <Input
               value={form.visaManager}
               onChange={(e) => setForm((f) => ({ ...f, visaManager: e.target.value }))}
+              maxLength={100}
+              required
             />
           </div>
 
