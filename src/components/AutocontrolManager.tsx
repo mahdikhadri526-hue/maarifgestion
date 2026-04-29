@@ -159,21 +159,29 @@ export function AutocontrolManager() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const errors: string[] = [];
     const baseResult = baseAutocontrolSchema.safeParse(form);
     if (!baseResult.success) {
-      toast.error("Fiche incomplète", { description: baseResult.error.issues[0]?.message });
-      return;
+      baseResult.error.issues.forEach((i) => errors.push(i.message));
     }
 
     const extraData = isCtg ? form.extraData : null;
     if (isCtg) {
       const extraResult = ctgExtraSchema.safeParse(extraData);
       if (!extraResult.success) {
-        toast.error("Fiche incomplète", { description: extraResult.error.issues[0]?.message });
-        return;
+        extraResult.error.issues.forEach((i) => errors.push(i.message));
       }
     }
 
+    if (errors.length > 0) {
+      const unique = Array.from(new Set(errors));
+      toast.error("Fiche incomplète — remplissez tous les champs", {
+        description: unique.slice(0, 6).join(" • ") + (unique.length > 6 ? "…" : ""),
+      });
+      return;
+    }
+
+    if (!baseResult.success || (isCtg && !extraData)) return;
     if (!Number.isFinite(baseResult.data.quantity)) {
       toast.error("Fiche incomplète", { description: "Quantité obligatoire" });
       return;
@@ -265,7 +273,7 @@ export function AutocontrolManager() {
               type="date"
               value={form.controlDate}
               onChange={(e) => setForm((f) => ({ ...f, controlDate: e.target.value }))}
-              required
+              // validated by Zod
             />
           </div>
           <div>
@@ -275,7 +283,7 @@ export function AutocontrolManager() {
               onChange={(e) => setForm((f) => ({ ...f, collaborateur: e.target.value }))}
               placeholder="Prénom"
               maxLength={100}
-              required
+              // validated by Zod
             />
           </div>
           <div className="sm:col-span-2">
@@ -297,7 +305,7 @@ export function AutocontrolManager() {
                 value={form.article}
                 onChange={(e) => setForm((f) => ({ ...f, article: e.target.value }))}
                 maxLength={120}
-                required
+                // validated by Zod
               />
             )}
           </div>
@@ -316,7 +324,7 @@ export function AutocontrolManager() {
                       placeholder="Quantité"
                       value={ing.quantity}
                       maxLength={80}
-                      required
+                      // validated by Zod
                       onChange={(e) =>
                         setForm((f) => {
                           const arr = [...f.extraData!.ingredients];
@@ -330,7 +338,7 @@ export function AutocontrolManager() {
                       placeholder="N° lot"
                       value={ing.lot}
                       maxLength={120}
-                      required
+                      // validated by Zod
                       onChange={(e) =>
                         setForm((f) => {
                           const arr = [...f.extraData!.ingredients];
@@ -353,7 +361,7 @@ export function AutocontrolManager() {
               min="0.01"
               value={form.quantity}
               onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
-              required
+              // validated by Zod
             />
           </div>
           <div>
@@ -362,7 +370,7 @@ export function AutocontrolManager() {
               value={form.lotNumber}
               onChange={(e) => setForm((f) => ({ ...f, lotNumber: e.target.value }))}
               maxLength={120}
-              required
+              // validated by Zod
             />
           </div>
           <div>
@@ -371,7 +379,7 @@ export function AutocontrolManager() {
               type="date"
               value={form.dlc}
               onChange={(e) => setForm((f) => ({ ...f, dlc: e.target.value }))}
-              required
+              // validated by Zod
             />
           </div>
 
@@ -462,7 +470,7 @@ export function AutocontrolManager() {
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               maxLength={1000}
-              required
+              // validated by Zod
             />
           </div>
           <div className="sm:col-span-2">
@@ -471,7 +479,7 @@ export function AutocontrolManager() {
               value={form.visaManager}
               onChange={(e) => setForm((f) => ({ ...f, visaManager: e.target.value }))}
               maxLength={100}
-              required
+              // validated by Zod
             />
           </div>
 
