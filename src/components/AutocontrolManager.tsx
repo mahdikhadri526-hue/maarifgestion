@@ -749,6 +749,16 @@ export function AutocontrolManager() {
                                 </ul>
                               </div>
                             )}
+                            {e.extraData.matieresPremieres && e.extraData.matieresPremieres.length > 0 && (
+                              <div>
+                                <strong>Matières premières :</strong>
+                                <ul className="ml-3 list-disc">
+                                  {e.extraData.matieresPremieres.filter((m) => m.selected).map((m, k) => (
+                                    <li key={k}>{m.name} — lot {m.lot || "—"}</li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
                             {e.extraData.cleaning && (
                               <div>
                                 <strong>Nettoyage :</strong>{" "}
