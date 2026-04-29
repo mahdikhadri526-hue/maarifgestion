@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AutocontrolEntry,
+  CtgExtraData,
+  IngredientLine,
   FICHE_TYPES,
   FicheType,
   addAutocontrol,
@@ -11,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -18,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ClipboardCheck, Trash2, Plus } from "lucide-react";
+import { ClipboardCheck, Trash2, Plus, X } from "lucide-react";
 import { toast } from "sonner";
 import { PinPromptDialog } from "./PinPromptDialog";
 
@@ -35,6 +38,26 @@ const ARTICLE_OPTIONS_BY_FICHE: Partial<Record<FicheType, string[]>> = {
   "Oranges/Bigarreaux confits": ["Orange confit", "Bigarreaux confits"],
 };
 
+const emptyIngredient = (): IngredientLine => ({ name: "", lot: "", quantity: "" });
+
+const initialCtgExtra = (): CtgExtraData => ({
+  ingredients: [emptyIngredient()],
+  cleaning: {
+    lavageMachine: false,
+    lavageTorchons: false,
+    desinfection: false,
+    rangementUstensiles: false,
+    notes: "",
+  },
+  managerControl: {
+    etiquettes: false,
+    cuisson: false,
+    forme: false,
+    nettoyage: false,
+    notes: "",
+  },
+});
+
 const initialForm = {
   ficheType: "Oranges/Bigarreaux confits" as FicheType,
   controlDate: new Date().toISOString().slice(0, 10),
@@ -45,6 +68,7 @@ const initialForm = {
   dlc: "",
   visaManager: "",
   notes: "",
+  extraData: null as CtgExtraData | null,
 };
 
 export function AutocontrolManager() {
@@ -54,6 +78,8 @@ export function AutocontrolManager() {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
 
   const refresh = useCallback(async () => {
     try {
@@ -99,12 +125,21 @@ export function AutocontrolManager() {
         dlc: form.dlc || null,
         visaManager: form.visaManager.trim() || null,
         notes: form.notes.trim() || null,
+        extraData: isCtg
+          ? {
+              ...form.extraData!,
+              ingredients: (form.extraData?.ingredients ?? []).filter(
+                (i) => i.name.trim() || i.lot.trim() || i.quantity.trim()
+              ),
+            }
+          : null,
       });
       toast.success("Fiche ajoutée");
       setForm({
         ...initialForm,
         ficheType: form.ficheType,
         article: DEFAULT_ARTICLE_BY_FICHE[form.ficheType] ?? "",
+        extraData: isCtg ? initialCtgExtra() : null,
       });
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
@@ -149,6 +184,10 @@ export function AutocontrolManager() {
                   ...f,
                   ficheType: newType,
                   article: DEFAULT_ARTICLE_BY_FICHE[newType] ?? f.article,
+                  extraData:
+                    newType === "Cornet/Tulipe/Gaufrette"
+                      ? f.extraData ?? initialCtgExtra()
+                      : null,
                 }));
               }}
             >
