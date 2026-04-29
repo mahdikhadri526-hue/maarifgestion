@@ -130,10 +130,27 @@ const baseAutocontrolSchema = z.object({
   article: requiredText("Désignation", 120),
   lotNumber: requiredText("N° de lot", 120),
   quantity: z.coerce.number({ invalid_type_error: "Quantité obligatoire" }).positive("Quantité obligatoire"),
-  dlc: requiredText("DLC", 20),
+  dlc: z.string().max(20, "DLC trop long").optional().or(z.literal("")),
   notes: requiredText("Observations", 1000),
   visaManager: requiredText("Visa manager", 100),
 });
+
+const decorationExtraSchema = z.object({
+  managerControl: z.object({
+    etiquettesInterneExterne: conformity("Étiquette interne et externe"),
+    conformiteDecoration: conformity("Conformité de décoration"),
+    etatEmballage: conformity("État de l'emballage"),
+  }),
+});
+
+const initialDecorationExtra = (): CtgExtraData => ({
+  ingredients: [],
+  managerControl: {
+    etiquettesInterneExterne: null,
+    conformiteDecoration: null,
+    etatEmballage: null,
+  },
+}) as any;
 
 export function AutocontrolManager() {
   const [entries, setEntries] = useState<AutocontrolEntry[]>([]);
@@ -145,6 +162,7 @@ export function AutocontrolManager() {
 
   const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
   const isConfit = form.article === "Orange confit" || form.article === "Bigarreaux confits";
+  const isDecoration = form.ficheType === "Décoration";
 
   const refresh = useCallback(async () => {
     try {
@@ -189,6 +207,14 @@ export function AutocontrolManager() {
       }
     }
 
+    const decorationExtra = isDecoration ? form.extraData : null;
+    if (isDecoration) {
+      const dRes = decorationExtraSchema.safeParse(decorationExtra);
+      if (!dRes.success) {
+        dRes.error.issues.forEach((i) => errors.push(i.message));
+      }
+    }
+
     if (errors.length > 0) {
       const unique = Array.from(new Set(errors));
       toast.error("Fiche incomplète — remplissez tous les champs", {
@@ -197,7 +223,7 @@ export function AutocontrolManager() {
       return;
     }
 
-    if (!baseResult.success || (isCtg && !extraData)) return;
+    if (!baseResult.success || (isCtg && !extraData) || (isDecoration && !decorationExtra)) return;
     if (!Number.isFinite(baseResult.data.quantity)) {
       toast.error("Fiche incomplète", { description: "Quantité obligatoire" });
       return;
@@ -212,10 +238,10 @@ export function AutocontrolManager() {
         article: baseResult.data.article,
         lotNumber: baseResult.data.lotNumber,
         quantity: baseResult.data.quantity,
-        dlc: baseResult.data.dlc,
+        dlc: isDecoration ? null : (baseResult.data.dlc || null),
         visaManager: baseResult.data.visaManager,
         notes: baseResult.data.notes,
-        extraData,
+        extraData: isCtg ? extraData : isDecoration ? decorationExtra : null,
       });
       toast.success("Fiche ajoutée");
       await refresh();
@@ -223,7 +249,7 @@ export function AutocontrolManager() {
         ...initialForm,
         ficheType: form.ficheType,
         article: DEFAULT_ARTICLE_BY_FICHE[form.ficheType] ?? "",
-        extraData: isCtg ? initialCtgExtra() : null,
+        extraData: isCtg ? initialCtgExtra() : isDecoration ? initialDecorationExtra() : null,
       });
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
@@ -271,6 +297,8 @@ export function AutocontrolManager() {
                   extraData:
                     newType === "Cornet/Tulipe/Gaufrette"
                       ? f.extraData ?? initialCtgExtra()
+                      : newType === "Décoration"
+                      ? initialDecorationExtra()
                       : null,
                 }));
               }}
@@ -381,17 +409,6 @@ export function AutocontrolManager() {
             </div>
           )}
 
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">Quantité</label>
-            <Input
-              type="number"
-              step="any"
-              min="0.01"
-              value={form.quantity}
-              onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
-              // validated by Zod
-            />
-          </div>
           {!isConfit && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
@@ -403,14 +420,68 @@ export function AutocontrolManager() {
             </div>
           )}
           <div>
-            <label className="text-xs font-medium text-muted-foreground">DLC</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              {isDecoration ? "Quantité décorée" : "Quantité"}
+            </label>
             <Input
-              type="date"
-              value={form.dlc}
-              onChange={(e) => setForm((f) => ({ ...f, dlc: e.target.value }))}
-              // validated by Zod
+              type="number"
+              step="any"
+              min="0.01"
+              value={form.quantity}
+              onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
             />
           </div>
+          {!isDecoration && (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">DLC</label>
+              <Input
+                type="date"
+                value={form.dlc}
+                onChange={(e) => setForm((f) => ({ ...f, dlc: e.target.value }))}
+              />
+            </div>
+          )}
+
+          {isDecoration && form.extraData && (
+            <div className="sm:col-span-2 bg-primary/5 rounded-lg p-3 mt-2">
+              <h4 className="text-sm font-semibold mb-2">Contrôle manager</h4>
+              <div className="space-y-2">
+                {([
+                  ["etiquettesInterneExterne", "Étiquette interne et externe"],
+                  ["conformiteDecoration", "Conformité de décoration"],
+                  ["etatEmballage", "État de l'emballage"],
+                ] as const).map(([key, label]) => (
+                  <div key={key} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="font-medium">{label}</span>
+                    <div className="flex items-center gap-3">
+                      {(["conforme", "non_conforme"] as const).map((status) => (
+                        <label key={status} className="flex items-center gap-1 cursor-pointer">
+                          <Checkbox
+                            checked={(form.extraData!.managerControl as any)?.[key] === status}
+                            onCheckedChange={(v) =>
+                              setForm((f) => ({
+                                ...f,
+                                extraData: {
+                                  ...(f.extraData as any),
+                                  managerControl: {
+                                    ...((f.extraData as any)?.managerControl ?? {}),
+                                    [key]: v ? status : null,
+                                  },
+                                },
+                              }))
+                            }
+                          />
+                          <span className={status === "conforme" ? "text-emerald-600" : "text-destructive"}>
+                            {status === "conforme" ? "Conforme" : "Non conforme"}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {isCtg && form.extraData && (
             <div className="sm:col-span-2 space-y-4 mt-2 border-t pt-4">
@@ -573,7 +644,7 @@ export function AutocontrolManager() {
                         <details className="text-xs">
                           <summary className="cursor-pointer text-primary">Détails</summary>
                           <div className="mt-1 space-y-1">
-                            {e.extraData.ingredients?.length > 0 && (
+                            {e.extraData.ingredients && e.extraData.ingredients.length > 0 && (
                               <div>
                                 <strong>Ingrédients :</strong>
                                 <ul className="ml-3 list-disc">
@@ -585,20 +656,24 @@ export function AutocontrolManager() {
                                 </ul>
                               </div>
                             )}
-                            <div>
-                              <strong>Nettoyage :</strong>{" "}
-                              {Object.entries(e.extraData.cleaning)
-                                .filter(([k]) => k !== "notes")
-                                .map(([k, v]) => `${k}: ${v === true || v === "conforme" ? "✓ Fait" : "—"}`)
-                                .join(" • ") || "—"}
-                            </div>
-                            <div>
-                              <strong>Contrôle :</strong>{" "}
-                              {Object.entries(e.extraData.managerControl)
-                                .filter(([k]) => k !== "notes")
-                                .map(([k, v]) => `${k}: ${v === "conforme" || v === true ? "✓ Conforme" : v === "non_conforme" ? "✗ Non conforme" : "—"}`)
-                                .join(" • ") || "—"}
-                            </div>
+                            {e.extraData.cleaning && (
+                              <div>
+                                <strong>Nettoyage :</strong>{" "}
+                                {Object.entries(e.extraData.cleaning)
+                                  .filter(([k]) => k !== "notes")
+                                  .map(([k, v]) => `${k}: ${v === true || v === "conforme" ? "✓ Fait" : "—"}`)
+                                  .join(" • ") || "—"}
+                              </div>
+                            )}
+                            {e.extraData.managerControl && (
+                              <div>
+                                <strong>Contrôle :</strong>{" "}
+                                {Object.entries(e.extraData.managerControl)
+                                  .filter(([k]) => k !== "notes")
+                                  .map(([k, v]) => `${k}: ${v === "conforme" || v === true ? "✓ Conforme" : v === "non_conforme" ? "✗ Non conforme" : "—"}`)
+                                  .join(" • ") || "—"}
+                              </div>
+                            )}
                             {e.notes && <div><strong>Obs :</strong> {e.notes}</div>}
                           </div>
                         </details>
