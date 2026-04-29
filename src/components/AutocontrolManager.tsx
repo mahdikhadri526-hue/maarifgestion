@@ -159,21 +159,29 @@ export function AutocontrolManager() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    const errors: string[] = [];
     const baseResult = baseAutocontrolSchema.safeParse(form);
     if (!baseResult.success) {
-      toast.error("Fiche incomplète", { description: baseResult.error.issues[0]?.message });
-      return;
+      baseResult.error.issues.forEach((i) => errors.push(i.message));
     }
 
     const extraData = isCtg ? form.extraData : null;
     if (isCtg) {
       const extraResult = ctgExtraSchema.safeParse(extraData);
       if (!extraResult.success) {
-        toast.error("Fiche incomplète", { description: extraResult.error.issues[0]?.message });
-        return;
+        extraResult.error.issues.forEach((i) => errors.push(i.message));
       }
     }
 
+    if (errors.length > 0) {
+      const unique = Array.from(new Set(errors));
+      toast.error("Fiche incomplète — remplissez tous les champs", {
+        description: unique.slice(0, 6).join(" • ") + (unique.length > 6 ? "…" : ""),
+      });
+      return;
+    }
+
+    if (!baseResult.success || (isCtg && !extraData)) return;
     if (!Number.isFinite(baseResult.data.quantity)) {
       toast.error("Fiche incomplète", { description: "Quantité obligatoire" });
       return;
