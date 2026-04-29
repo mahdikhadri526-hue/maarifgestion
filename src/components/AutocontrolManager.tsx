@@ -40,8 +40,18 @@ const ARTICLE_OPTIONS_BY_FICHE: Partial<Record<FicheType, string[]>> = {
 
 const emptyIngredient = (): IngredientLine => ({ name: "", lot: "", quantity: "" });
 
+const DEFAULT_CTG_INGREDIENTS = [
+  "Farine",
+  "Huile",
+  "Eau",
+  "Sucre semoule",
+  "Poudre vanille",
+  "Sel",
+  "Beurre",
+];
+
 const initialCtgExtra = (): CtgExtraData => ({
-  ingredients: [emptyIngredient()],
+  ingredients: DEFAULT_CTG_INGREDIENTS.map((name) => ({ name, lot: "", quantity: "" })),
   cleaning: {
     lavageMachine: false,
     lavageTorchons: false,
