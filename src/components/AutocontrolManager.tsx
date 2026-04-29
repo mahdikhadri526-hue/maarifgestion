@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import {
   AutocontrolEntry,
   CtgExtraData,
-  IngredientLine,
   FICHE_TYPES,
   FicheType,
   addAutocontrol,
@@ -21,7 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ClipboardCheck, Trash2, Plus, X } from "lucide-react";
+import { ClipboardCheck, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { PinPromptDialog } from "./PinPromptDialog";
 
@@ -37,8 +37,6 @@ const ARTICLE_OPTIONS_BY_FICHE: Partial<Record<FicheType, string[]>> = {
   "Cornet/Tulipe/Gaufrette": ["Cornet", "Tulipe", "Gaufrette"],
   "Oranges/Bigarreaux confits": ["Orange confit", "Bigarreaux confits"],
 };
-
-const emptyIngredient = (): IngredientLine => ({ name: "", lot: "", quantity: "" });
 
 const DEFAULT_CTG_INGREDIENTS = [
   "Farine",
@@ -80,6 +78,42 @@ const initialForm = {
   notes: "",
   extraData: null as CtgExtraData | null,
 };
+
+const requiredText = (label: string, max = 120) =>
+  z.string().trim().min(1, `${label} obligatoire`).max(max, `${label} trop long`);
+
+const ctgExtraSchema = z.object({
+  ingredients: z.array(z.object({
+    name: requiredText("Ingrédient", 80),
+    quantity: requiredText("Quantité ingrédient", 80),
+    lot: requiredText("N° lot ingrédient", 120),
+  })).length(DEFAULT_CTG_INGREDIENTS.length, "Tous les ingrédients doivent être remplis"),
+  cleaning: z.object({
+    lavageMachine: z.literal(true, { errorMap: () => ({ message: "Lavage machine à cocher" }) }),
+    lavageTorchons: z.literal(true, { errorMap: () => ({ message: "Lavage torchons à cocher" }) }),
+    desinfection: z.literal(true, { errorMap: () => ({ message: "Désinfection à cocher" }) }),
+    rangementUstensiles: z.literal(true, { errorMap: () => ({ message: "Rangement ustensiles à cocher" }) }),
+    notes: z.string().optional(),
+  }),
+  managerControl: z.object({
+    etiquettes: z.literal(true, { errorMap: () => ({ message: "Étiquettes à cocher" }) }),
+    cuisson: z.literal(true, { errorMap: () => ({ message: "Cuisson à cocher" }) }),
+    forme: z.literal(true, { errorMap: () => ({ message: "Forme à cocher" }) }),
+    nettoyage: z.literal(true, { errorMap: () => ({ message: "Nettoyage manager à cocher" }) }),
+    notes: z.string().optional(),
+  }),
+});
+
+const baseAutocontrolSchema = z.object({
+  controlDate: requiredText("Date", 20),
+  collaborateur: requiredText("Collaborateur", 100),
+  article: requiredText("Désignation", 120),
+  lotNumber: requiredText("N° de lot", 120),
+  quantity: z.coerce.number({ invalid_type_error: "Quantité obligatoire" }).positive("Quantité obligatoire"),
+  dlc: requiredText("DLC", 20),
+  notes: requiredText("Observations", 1000),
+  visaManager: requiredText("Visa manager", 100),
+});
 
 export function AutocontrolManager() {
   const [entries, setEntries] = useState<AutocontrolEntry[]>([]);
