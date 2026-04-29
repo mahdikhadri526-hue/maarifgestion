@@ -552,7 +552,7 @@ export function AutocontrolManager() {
                               <strong>Nettoyage :</strong>{" "}
                               {Object.entries(e.extraData.cleaning)
                                 .filter(([k]) => k !== "notes")
-                                .map(([k, v]) => `${k}: ${v === "conforme" || v === true ? "✓ Conforme" : v === "non_conforme" ? "✗ Non conforme" : "—"}`)
+                                .map(([k, v]) => `${k}: ${v === true || v === "conforme" ? "✓ Fait" : "—"}`)
                                 .join(" • ") || "—"}
                             </div>
                             <div>
