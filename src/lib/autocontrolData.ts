@@ -15,6 +15,30 @@ export const FICHE_TYPES: FicheType[] = [
   "Autre",
 ];
 
+export interface IngredientLine {
+  name: string;
+  lot: string;
+  quantity: string;
+}
+
+export interface CtgExtraData {
+  ingredients: IngredientLine[];
+  cleaning: {
+    lavageMachine: boolean;
+    lavageTorchons: boolean;
+    desinfection: boolean;
+    rangementUstensiles: boolean;
+    notes?: string;
+  };
+  managerControl: {
+    etiquettes: boolean;
+    cuisson: boolean;
+    forme: boolean;
+    nettoyage: boolean;
+    notes?: string;
+  };
+}
+
 export interface AutocontrolEntry {
   id: string;
   ficheType: FicheType;
@@ -27,6 +51,7 @@ export interface AutocontrolEntry {
   visaManager: string | null;
   notes: string | null;
   createdAt: string;
+  extraData: CtgExtraData | null;
 }
 
 function mapRow(row: any): AutocontrolEntry {
@@ -42,6 +67,7 @@ function mapRow(row: any): AutocontrolEntry {
     visaManager: row.visa_manager,
     notes: row.notes,
     createdAt: row.created_at,
+    extraData: (row.extra_data as CtgExtraData) ?? null,
   };
 }
 
@@ -66,6 +92,7 @@ export async function addAutocontrol(entry: Omit<AutocontrolEntry, "id" | "creat
     dlc: entry.dlc,
     visa_manager: entry.visaManager,
     notes: entry.notes,
+    extra_data: entry.extraData as any,
   });
   if (error) throw error;
 }
