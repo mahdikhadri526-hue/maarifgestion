@@ -409,17 +409,6 @@ export function AutocontrolManager() {
             </div>
           )}
 
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">Quantité</label>
-            <Input
-              type="number"
-              step="any"
-              min="0.01"
-              value={form.quantity}
-              onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
-              // validated by Zod
-            />
-          </div>
           {!isConfit && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
@@ -431,14 +420,68 @@ export function AutocontrolManager() {
             </div>
           )}
           <div>
-            <label className="text-xs font-medium text-muted-foreground">DLC</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              {isDecoration ? "Quantité décorée" : "Quantité"}
+            </label>
             <Input
-              type="date"
-              value={form.dlc}
-              onChange={(e) => setForm((f) => ({ ...f, dlc: e.target.value }))}
-              // validated by Zod
+              type="number"
+              step="any"
+              min="0.01"
+              value={form.quantity}
+              onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
             />
           </div>
+          {!isDecoration && (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">DLC</label>
+              <Input
+                type="date"
+                value={form.dlc}
+                onChange={(e) => setForm((f) => ({ ...f, dlc: e.target.value }))}
+              />
+            </div>
+          )}
+
+          {isDecoration && form.extraData && (
+            <div className="sm:col-span-2 bg-primary/5 rounded-lg p-3 mt-2">
+              <h4 className="text-sm font-semibold mb-2">Contrôle manager</h4>
+              <div className="space-y-2">
+                {([
+                  ["etiquettesInterneExterne", "Étiquette interne et externe"],
+                  ["conformiteDecoration", "Conformité de décoration"],
+                  ["etatEmballage", "État de l'emballage"],
+                ] as const).map(([key, label]) => (
+                  <div key={key} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="font-medium">{label}</span>
+                    <div className="flex items-center gap-3">
+                      {(["conforme", "non_conforme"] as const).map((status) => (
+                        <label key={status} className="flex items-center gap-1 cursor-pointer">
+                          <Checkbox
+                            checked={(form.extraData!.managerControl as any)?.[key] === status}
+                            onCheckedChange={(v) =>
+                              setForm((f) => ({
+                                ...f,
+                                extraData: {
+                                  ...(f.extraData as any),
+                                  managerControl: {
+                                    ...((f.extraData as any)?.managerControl ?? {}),
+                                    [key]: v ? status : null,
+                                  },
+                                },
+                              }))
+                            }
+                          />
+                          <span className={status === "conforme" ? "text-emerald-600" : "text-destructive"}>
+                            {status === "conforme" ? "Conforme" : "Non conforme"}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {isCtg && form.extraData && (
             <div className="sm:col-span-2 space-y-4 mt-2 border-t pt-4">
