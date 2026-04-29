@@ -207,6 +207,14 @@ export function AutocontrolManager() {
       }
     }
 
+    const decorationExtra = isDecoration ? form.extraData : null;
+    if (isDecoration) {
+      const dRes = decorationExtraSchema.safeParse(decorationExtra);
+      if (!dRes.success) {
+        dRes.error.issues.forEach((i) => errors.push(i.message));
+      }
+    }
+
     if (errors.length > 0) {
       const unique = Array.from(new Set(errors));
       toast.error("Fiche incomplète — remplissez tous les champs", {
@@ -215,7 +223,7 @@ export function AutocontrolManager() {
       return;
     }
 
-    if (!baseResult.success || (isCtg && !extraData)) return;
+    if (!baseResult.success || (isCtg && !extraData) || (isDecoration && !decorationExtra)) return;
     if (!Number.isFinite(baseResult.data.quantity)) {
       toast.error("Fiche incomplète", { description: "Quantité obligatoire" });
       return;
@@ -230,10 +238,10 @@ export function AutocontrolManager() {
         article: baseResult.data.article,
         lotNumber: baseResult.data.lotNumber,
         quantity: baseResult.data.quantity,
-        dlc: baseResult.data.dlc,
+        dlc: isDecoration ? null : (baseResult.data.dlc || null),
         visaManager: baseResult.data.visaManager,
         notes: baseResult.data.notes,
-        extraData,
+        extraData: isCtg ? extraData : isDecoration ? decorationExtra : null,
       });
       toast.success("Fiche ajoutée");
       await refresh();
@@ -241,7 +249,7 @@ export function AutocontrolManager() {
         ...initialForm,
         ficheType: form.ficheType,
         article: DEFAULT_ARTICLE_BY_FICHE[form.ficheType] ?? "",
-        extraData: isCtg ? initialCtgExtra() : null,
+        extraData: isCtg ? initialCtgExtra() : isDecoration ? initialDecorationExtra() : null,
       });
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
@@ -289,6 +297,8 @@ export function AutocontrolManager() {
                   extraData:
                     newType === "Cornet/Tulipe/Gaufrette"
                       ? f.extraData ?? initialCtgExtra()
+                      : newType === "Décoration"
+                      ? initialDecorationExtra()
                       : null,
                 }));
               }}
