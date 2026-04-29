@@ -273,7 +273,7 @@ export function AutocontrolManager() {
               type="date"
               value={form.controlDate}
               onChange={(e) => setForm((f) => ({ ...f, controlDate: e.target.value }))}
-              required
+              // validated by Zod
             />
           </div>
           <div>
@@ -283,7 +283,7 @@ export function AutocontrolManager() {
               onChange={(e) => setForm((f) => ({ ...f, collaborateur: e.target.value }))}
               placeholder="Prénom"
               maxLength={100}
-              required
+              // validated by Zod
             />
           </div>
           <div className="sm:col-span-2">
@@ -305,7 +305,7 @@ export function AutocontrolManager() {
                 value={form.article}
                 onChange={(e) => setForm((f) => ({ ...f, article: e.target.value }))}
                 maxLength={120}
-                required
+                // validated by Zod
               />
             )}
           </div>
@@ -324,7 +324,7 @@ export function AutocontrolManager() {
                       placeholder="Quantité"
                       value={ing.quantity}
                       maxLength={80}
-                      required
+                      // validated by Zod
                       onChange={(e) =>
                         setForm((f) => {
                           const arr = [...f.extraData!.ingredients];
@@ -338,7 +338,7 @@ export function AutocontrolManager() {
                       placeholder="N° lot"
                       value={ing.lot}
                       maxLength={120}
-                      required
+                      // validated by Zod
                       onChange={(e) =>
                         setForm((f) => {
                           const arr = [...f.extraData!.ingredients];
@@ -361,7 +361,7 @@ export function AutocontrolManager() {
               min="0.01"
               value={form.quantity}
               onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
-              required
+              // validated by Zod
             />
           </div>
           <div>
@@ -370,7 +370,7 @@ export function AutocontrolManager() {
               value={form.lotNumber}
               onChange={(e) => setForm((f) => ({ ...f, lotNumber: e.target.value }))}
               maxLength={120}
-              required
+              // validated by Zod
             />
           </div>
           <div>
@@ -379,7 +379,7 @@ export function AutocontrolManager() {
               type="date"
               value={form.dlc}
               onChange={(e) => setForm((f) => ({ ...f, dlc: e.target.value }))}
-              required
+              // validated by Zod
             />
           </div>
 
@@ -470,7 +470,7 @@ export function AutocontrolManager() {
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
               maxLength={1000}
-              required
+              // validated by Zod
             />
           </div>
           <div className="sm:col-span-2">
@@ -479,7 +479,7 @@ export function AutocontrolManager() {
               value={form.visaManager}
               onChange={(e) => setForm((f) => ({ ...f, visaManager: e.target.value }))}
               maxLength={100}
-              required
+              // validated by Zod
             />
           </div>
 
