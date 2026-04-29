@@ -313,7 +313,7 @@ export function AutocontrolManager() {
               onChange={(e) => setForm((f) => ({ ...f, dlc: e.target.value }))}
             />
           </div>
-          <div>
+          <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Observations</label>
             <Textarea
               rows={2}
@@ -331,9 +331,9 @@ export function AutocontrolManager() {
 
           {isCtg && form.extraData && (
             <div className="sm:col-span-2 space-y-4 mt-2 border-t pt-4">
-              {/* Nettoyage machine */}
+              {/* Nettoyage */}
               <div className="bg-muted/30 rounded-lg p-3">
-                <h4 className="text-sm font-semibold mb-2">Nettoyage machine</h4>
+                <h4 className="text-sm font-semibold mb-2">Nettoyage</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {([
                     ["lavageMachine", "Lavage machine"],
