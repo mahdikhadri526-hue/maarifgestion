@@ -129,6 +129,7 @@ export function AutocontrolManager() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
+  const isOrange = form.article === "Orange confit";
 
   const refresh = useCallback(async () => {
     try {
@@ -310,6 +311,18 @@ export function AutocontrolManager() {
             )}
           </div>
 
+          {isOrange && (
+            <div className="sm:col-span-2">
+              <label className="text-xs font-medium text-muted-foreground">N° de lot avant découpe *</label>
+              <Input
+                value={form.lotNumber}
+                onChange={(e) => setForm((f) => ({ ...f, lotNumber: e.target.value }))}
+                maxLength={120}
+                placeholder="N° de lot avant découpe"
+              />
+            </div>
+          )}
+
           {isCtg && form.extraData && (
             <div className="sm:col-span-2">
               <h4 className="text-sm font-semibold mb-2">Ingrédients (recette)</h4>
@@ -364,15 +377,16 @@ export function AutocontrolManager() {
               // validated by Zod
             />
           </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
-            <Input
-              value={form.lotNumber}
-              onChange={(e) => setForm((f) => ({ ...f, lotNumber: e.target.value }))}
-              maxLength={120}
-              // validated by Zod
-            />
-          </div>
+          {!isOrange && (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
+              <Input
+                value={form.lotNumber}
+                onChange={(e) => setForm((f) => ({ ...f, lotNumber: e.target.value }))}
+                maxLength={120}
+              />
+            </div>
+          )}
           <div>
             <label className="text-xs font-medium text-muted-foreground">DLC</label>
             <Input
