@@ -269,6 +269,7 @@ export function AutocontrolManager() {
               value={form.collaborateur}
               onChange={(e) => setForm((f) => ({ ...f, collaborateur: e.target.value }))}
               placeholder="Prénom"
+              maxLength={100}
               required
             />
           </div>
@@ -290,6 +291,7 @@ export function AutocontrolManager() {
               <Input
                 value={form.article}
                 onChange={(e) => setForm((f) => ({ ...f, article: e.target.value }))}
+                maxLength={120}
                 required
               />
             )}
@@ -308,6 +310,8 @@ export function AutocontrolManager() {
                       className="col-span-3"
                       placeholder="Quantité"
                       value={ing.quantity}
+                      maxLength={80}
+                      required
                       onChange={(e) =>
                         setForm((f) => {
                           const arr = [...f.extraData!.ingredients];
@@ -320,6 +324,8 @@ export function AutocontrolManager() {
                       className="col-span-4"
                       placeholder="N° lot"
                       value={ing.lot}
+                      maxLength={120}
+                      required
                       onChange={(e) =>
                         setForm((f) => {
                           const arr = [...f.extraData!.ingredients];
@@ -339,8 +345,10 @@ export function AutocontrolManager() {
             <Input
               type="number"
               step="any"
+              min="0.01"
               value={form.quantity}
               onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
+              required
             />
           </div>
           <div>
@@ -348,6 +356,8 @@ export function AutocontrolManager() {
             <Input
               value={form.lotNumber}
               onChange={(e) => setForm((f) => ({ ...f, lotNumber: e.target.value }))}
+              maxLength={120}
+              required
             />
           </div>
           <div>
@@ -356,6 +366,7 @@ export function AutocontrolManager() {
               type="date"
               value={form.dlc}
               onChange={(e) => setForm((f) => ({ ...f, dlc: e.target.value }))}
+              required
             />
           </div>
 
@@ -427,6 +438,8 @@ export function AutocontrolManager() {
               rows={2}
               value={form.notes}
               onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+              maxLength={1000}
+              required
             />
           </div>
           <div className="sm:col-span-2">
@@ -434,6 +447,8 @@ export function AutocontrolManager() {
             <Input
               value={form.visaManager}
               onChange={(e) => setForm((f) => ({ ...f, visaManager: e.target.value }))}
+              maxLength={100}
+              required
             />
           </div>
 
