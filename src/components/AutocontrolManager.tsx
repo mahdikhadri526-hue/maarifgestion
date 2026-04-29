@@ -346,6 +346,8 @@ export function AutocontrolManager() {
                       ? f.extraData ?? initialCtgExtra()
                       : newType === "Décoration"
                       ? initialDecorationExtra()
+                      : newType === "Panaché"
+                      ? initialPanacheExtra()
                       : null,
                 }));
               }}
@@ -377,6 +379,7 @@ export function AutocontrolManager() {
               // validated by Zod
             />
           </div>
+          {!isPanache && (
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Article / Désignation *</label>
             {ARTICLE_OPTIONS_BY_FICHE[form.ficheType] ? (
@@ -400,6 +403,49 @@ export function AutocontrolManager() {
               />
             )}
           </div>
+          )}
+
+          {isPanache && form.extraData?.matieresPremieres && (
+            <div className="sm:col-span-2 bg-muted/30 rounded-lg p-3">
+              <h4 className="text-sm font-semibold mb-2">Matières premières *</h4>
+              <p className="text-xs text-muted-foreground mb-2">
+                Cochez chaque matière utilisée et saisissez son N° de lot.
+              </p>
+              <div className="space-y-2">
+                {form.extraData.matieresPremieres.map((mat, idx) => (
+                  <div key={mat.name} className="grid grid-cols-12 gap-2 items-center">
+                    <label className="col-span-6 flex items-center gap-2 text-sm cursor-pointer">
+                      <Checkbox
+                        checked={mat.selected}
+                        onCheckedChange={(v) =>
+                          setForm((f) => {
+                            const arr = [...(f.extraData!.matieresPremieres ?? [])];
+                            arr[idx] = { ...arr[idx], selected: !!v };
+                            return { ...f, extraData: { ...f.extraData!, matieresPremieres: arr } };
+                          })
+                        }
+                      />
+                      <span className="font-medium">{mat.name}</span>
+                    </label>
+                    <Input
+                      className="col-span-6"
+                      placeholder="N° de lot"
+                      value={mat.lot}
+                      maxLength={120}
+                      disabled={!mat.selected}
+                      onChange={(e) =>
+                        setForm((f) => {
+                          const arr = [...(f.extraData!.matieresPremieres ?? [])];
+                          arr[idx] = { ...arr[idx], lot: e.target.value };
+                          return { ...f, extraData: { ...f.extraData!, matieresPremieres: arr } };
+                        })
+                      }
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {isConfit && (
             <div className="sm:col-span-2">
@@ -456,7 +502,7 @@ export function AutocontrolManager() {
             </div>
           )}
 
-          {!isConfit && (
+          {!isConfit && !isPanache && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
               <Input
@@ -478,7 +524,7 @@ export function AutocontrolManager() {
               onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
             />
           </div>
-          {!isDecoration && (
+          {!isDecoration && !isPanache && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">DLC</label>
               <Input
