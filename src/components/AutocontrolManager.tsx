@@ -349,7 +349,7 @@ export function AutocontrolManager() {
                   article: DEFAULT_ARTICLE_BY_FICHE[newType] ?? f.article,
                   extraData:
                     newType === "Cornet/Tulipe/Gaufrette"
-                      ? f.extraData ?? initialCtgExtra()
+                      ? initialCtgExtra()
                       : newType === "Décoration"
                       ? initialDecorationExtra()
                       : newType === "Panaché"
@@ -388,14 +388,14 @@ export function AutocontrolManager() {
           {!isPanache && (
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Article / Désignation *</label>
-            {ARTICLE_OPTIONS_BY_FICHE[form.ficheType] ? (
+            {ARTICLE_OPTIONS_BY_FICHE[form.ficheType] && ARTICLE_OPTIONS_BY_FICHE[form.ficheType]!.length > 0 ? (
               <Select
                 value={form.article}
                 onValueChange={(v) => setForm((f) => ({ ...f, article: v }))}
               >
                 <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
                 <SelectContent>
-                  {ARTICLE_OPTIONS_BY_FICHE[form.ficheType]!.map((opt) => (
+                  {(ARTICLE_OPTIONS_BY_FICHE[form.ficheType] ?? []).map((opt) => (
                     <SelectItem key={opt} value={opt}>{opt}</SelectItem>
                   ))}
                 </SelectContent>
