@@ -571,6 +571,47 @@ export function AutocontrolManager() {
             </div>
           )}
 
+          {isPanache && form.extraData && (
+            <div className="sm:col-span-2 bg-primary/5 rounded-lg p-3 mt-2">
+              <h4 className="text-sm font-semibold mb-2">Contrôle manager</h4>
+              <div className="space-y-2">
+                {([
+                  ["etiquettes", "Étiquettes"],
+                  ["poids", "Poids"],
+                  ["remplissage", "Remplissage"],
+                ] as const).map(([key, label]) => (
+                  <div key={key} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="font-medium">{label}</span>
+                    <div className="flex items-center gap-3">
+                      {(["conforme", "non_conforme"] as const).map((status) => (
+                        <label key={status} className="flex items-center gap-1 cursor-pointer">
+                          <Checkbox
+                            checked={(form.extraData!.managerControl as any)?.[key] === status}
+                            onCheckedChange={(v) =>
+                              setForm((f) => ({
+                                ...f,
+                                extraData: {
+                                  ...(f.extraData as any),
+                                  managerControl: {
+                                    ...((f.extraData as any)?.managerControl ?? {}),
+                                    [key]: v ? status : null,
+                                  },
+                                },
+                              }))
+                            }
+                          />
+                          <span className={status === "conforme" ? "text-emerald-600" : "text-destructive"}>
+                            {status === "conforme" ? "Conforme" : "Non conforme"}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {isCtg && form.extraData && (
             <div className="sm:col-span-2 space-y-4 mt-2 border-t pt-4">
               {/* Nettoyage */}
