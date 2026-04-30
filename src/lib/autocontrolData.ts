@@ -25,7 +25,6 @@ export type ConformityStatus = "conforme" | "non_conforme" | null;
 
 export interface PanacheMatiere {
   name: string;
-  selected: boolean;
   lot: string;
 }
 
@@ -47,6 +46,8 @@ export interface CtgExtraData {
     etiquettesInterneExterne?: ConformityStatus;
     conformiteDecoration?: ConformityStatus;
     etatEmballage?: ConformityStatus;
+    poids?: ConformityStatus;
+    remplissage?: ConformityStatus;
     notes?: string;
   };
 }

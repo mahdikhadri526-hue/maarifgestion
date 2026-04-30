@@ -73,7 +73,12 @@ const PANACHE_MATIERES = [
 ];
 
 const initialPanacheExtra = (): CtgExtraData => ({
-  matieresPremieres: PANACHE_MATIERES.map((name) => ({ name, selected: false, lot: "" })),
+  matieresPremieres: PANACHE_MATIERES.map((name) => ({ name, lot: "" })),
+  managerControl: {
+    etiquettes: null,
+    poids: null,
+    remplissage: null,
+  },
 }) as any;
 
 const initialCtgExtra = (): CtgExtraData => ({
@@ -159,14 +164,17 @@ const decorationExtraSchema = z.object({
 const panacheExtraSchema = z.object({
   matieresPremieres: z.array(z.object({
     name: z.string(),
-    selected: z.boolean(),
     lot: z.string(),
   }))
-    .refine((arr) => arr.some((m) => m.selected), { message: "Sélectionnez au moins une matière première" })
     .refine(
-      (arr) => arr.filter((m) => m.selected).every((m) => m.lot.trim().length > 0),
-      { message: "Saisir le N° de lot pour chaque matière sélectionnée" },
+      (arr) => arr.length > 0 && arr.every((m) => m.lot.trim().length > 0),
+      { message: "Saisir le N° de lot pour chaque matière première" },
     ),
+  managerControl: z.object({
+    etiquettes: conformity("Étiquettes"),
+    poids: conformity("Poids"),
+    remplissage: conformity("Remplissage"),
+  }),
 });
 
 const initialDecorationExtra = (): CtgExtraData => ({
@@ -221,9 +229,9 @@ export function AutocontrolManager() {
     e.preventDefault();
 
     const errors: string[] = [];
-    // Pour Panaché on relâche l'exigence article/lot dans la validation client
-    const formForBase = isPanache
-      ? { ...form, article: form.article || "Panaché", lotNumber: form.lotNumber || "—" }
+      // Pour Panaché on relâche l'exigence article (remplacé par matières premières)
+      const formForBase = isPanache
+      ? { ...form, article: form.article || "Panaché" }
       : form;
     const baseResult = baseAutocontrolSchema.safeParse(formForBase);
     if (!baseResult.success) {
@@ -270,13 +278,11 @@ export function AutocontrolManager() {
 
     setSubmitting(true);
     try {
-      // Pour Panaché : article = liste des matières sélectionnées, lot = liste lots
+      // Pour Panaché : article = liste des matières
       let articleToSave = baseResult.data.article;
-      let lotToSave: string | null = baseResult.data.lotNumber;
+      const lotToSave: string | null = baseResult.data.lotNumber;
       if (isPanache && panacheExtra?.matieresPremieres) {
-        const sel = panacheExtra.matieresPremieres.filter((m) => m.selected);
-        articleToSave = sel.map((m) => m.name).join(", ");
-        lotToSave = sel.map((m) => `${m.name}: ${m.lot}`).join(" | ");
+        articleToSave = panacheExtra.matieresPremieres.map((m) => m.name).join(", ");
       }
       await addAutocontrol({
         ficheType: form.ficheType,
@@ -285,7 +291,7 @@ export function AutocontrolManager() {
         article: articleToSave,
         lotNumber: lotToSave,
         quantity: baseResult.data.quantity,
-        dlc: (isDecoration || isPanache) ? null : (baseResult.data.dlc || null),
+          dlc: isDecoration ? null : (baseResult.data.dlc || null),
         visaManager: baseResult.data.visaManager,
         notes: baseResult.data.notes,
         extraData: isCtg ? extraData : isDecoration ? decorationExtra : isPanache ? panacheExtra : null,
@@ -409,30 +415,19 @@ export function AutocontrolManager() {
             <div className="sm:col-span-2 bg-muted/30 rounded-lg p-3">
               <h4 className="text-sm font-semibold mb-2">Matières premières *</h4>
               <p className="text-xs text-muted-foreground mb-2">
-                Cochez chaque matière utilisée et saisissez son N° de lot.
+                Saisissez le N° de lot pour chaque matière première.
               </p>
               <div className="space-y-2">
                 {form.extraData.matieresPremieres.map((mat, idx) => (
                   <div key={mat.name} className="grid grid-cols-12 gap-2 items-center">
-                    <label className="col-span-6 flex items-center gap-2 text-sm cursor-pointer">
-                      <Checkbox
-                        checked={mat.selected}
-                        onCheckedChange={(v) =>
-                          setForm((f) => {
-                            const arr = [...(f.extraData!.matieresPremieres ?? [])];
-                            arr[idx] = { ...arr[idx], selected: !!v };
-                            return { ...f, extraData: { ...f.extraData!, matieresPremieres: arr } };
-                          })
-                        }
-                      />
-                      <span className="font-medium">{mat.name}</span>
-                    </label>
+                    <div className="col-span-6 text-sm font-medium px-2 py-2 bg-muted/40 rounded">
+                      {mat.name}
+                    </div>
                     <Input
                       className="col-span-6"
                       placeholder="N° de lot"
                       value={mat.lot}
                       maxLength={120}
-                      disabled={!mat.selected}
                       onChange={(e) =>
                         setForm((f) => {
                           const arr = [...(f.extraData!.matieresPremieres ?? [])];
@@ -502,7 +497,7 @@ export function AutocontrolManager() {
             </div>
           )}
 
-          {!isConfit && !isPanache && (
+          {!isConfit && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
               <Input
@@ -524,7 +519,7 @@ export function AutocontrolManager() {
               onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
             />
           </div>
-          {!isDecoration && !isPanache && (
+          {!isDecoration && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">DLC</label>
               <Input
@@ -543,6 +538,47 @@ export function AutocontrolManager() {
                   ["etiquettesInterneExterne", "Étiquette interne et externe"],
                   ["conformiteDecoration", "Conformité de décoration"],
                   ["etatEmballage", "État de l'emballage"],
+                ] as const).map(([key, label]) => (
+                  <div key={key} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                    <span className="font-medium">{label}</span>
+                    <div className="flex items-center gap-3">
+                      {(["conforme", "non_conforme"] as const).map((status) => (
+                        <label key={status} className="flex items-center gap-1 cursor-pointer">
+                          <Checkbox
+                            checked={(form.extraData!.managerControl as any)?.[key] === status}
+                            onCheckedChange={(v) =>
+                              setForm((f) => ({
+                                ...f,
+                                extraData: {
+                                  ...(f.extraData as any),
+                                  managerControl: {
+                                    ...((f.extraData as any)?.managerControl ?? {}),
+                                    [key]: v ? status : null,
+                                  },
+                                },
+                              }))
+                            }
+                          />
+                          <span className={status === "conforme" ? "text-emerald-600" : "text-destructive"}>
+                            {status === "conforme" ? "Conforme" : "Non conforme"}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {isPanache && form.extraData && (
+            <div className="sm:col-span-2 bg-primary/5 rounded-lg p-3 mt-2">
+              <h4 className="text-sm font-semibold mb-2">Contrôle manager</h4>
+              <div className="space-y-2">
+                {([
+                  ["etiquettes", "Étiquettes"],
+                  ["poids", "Poids"],
+                  ["remplissage", "Remplissage"],
                 ] as const).map(([key, label]) => (
                   <div key={key} className="flex flex-wrap items-center justify-between gap-2 text-sm">
                     <span className="font-medium">{label}</span>
@@ -753,7 +789,7 @@ export function AutocontrolManager() {
                               <div>
                                 <strong>Matières premières :</strong>
                                 <ul className="ml-3 list-disc">
-                                  {e.extraData.matieresPremieres.filter((m) => m.selected).map((m, k) => (
+                                  {e.extraData.matieresPremieres.map((m, k) => (
                                     <li key={k}>{m.name} — lot {m.lot || "—"}</li>
                                   ))}
                                 </ul>
