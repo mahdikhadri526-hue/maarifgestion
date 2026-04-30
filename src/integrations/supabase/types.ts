@@ -212,6 +212,66 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_tracking: {
+        Row: {
+          article: string | null
+          couleur: string | null
+          created_at: string
+          day_of_week: string
+          entrees: number | null
+          fiche_type: string
+          id: string
+          lot_number: string | null
+          odeur: string | null
+          row_index: number
+          sorties: number | null
+          stock_initial: number | null
+          texture: string | null
+          updated_at: string
+          visa_manager: string | null
+          visa_operateur: string | null
+          week_start: string
+        }
+        Insert: {
+          article?: string | null
+          couleur?: string | null
+          created_at?: string
+          day_of_week: string
+          entrees?: number | null
+          fiche_type: string
+          id?: string
+          lot_number?: string | null
+          odeur?: string | null
+          row_index?: number
+          sorties?: number | null
+          stock_initial?: number | null
+          texture?: string | null
+          updated_at?: string
+          visa_manager?: string | null
+          visa_operateur?: string | null
+          week_start: string
+        }
+        Update: {
+          article?: string | null
+          couleur?: string | null
+          created_at?: string
+          day_of_week?: string
+          entrees?: number | null
+          fiche_type?: string
+          id?: string
+          lot_number?: string | null
+          odeur?: string | null
+          row_index?: number
+          sorties?: number | null
+          stock_initial?: number | null
+          texture?: string | null
+          updated_at?: string
+          visa_manager?: string | null
+          visa_operateur?: string | null
+          week_start?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
