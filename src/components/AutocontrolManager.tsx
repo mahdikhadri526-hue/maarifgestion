@@ -349,7 +349,7 @@ export function AutocontrolManager() {
                   article: DEFAULT_ARTICLE_BY_FICHE[newType] ?? f.article,
                   extraData:
                     newType === "Cornet/Tulipe/Gaufrette"
-                      ? f.extraData ?? initialCtgExtra()
+                      ? initialCtgExtra()
                       : newType === "Décoration"
                       ? initialDecorationExtra()
                       : newType === "Panaché"
