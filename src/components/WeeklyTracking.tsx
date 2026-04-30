@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Save } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, Check, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
@@ -38,6 +39,45 @@ function addDays(iso: string, n: number) {
 }
 
 type Row = Record<string, any>;
+
+function ConformityToggle({
+  value,
+  onChange,
+}: {
+  value?: string | null;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex gap-1 justify-center">
+      <button
+        type="button"
+        onClick={() => onChange(value === "C" ? "" : "C")}
+        className={cn(
+          "h-8 w-8 rounded border flex items-center justify-center transition-colors",
+          value === "C"
+            ? "bg-success text-success-foreground border-success"
+            : "bg-background hover:bg-muted",
+        )}
+        aria-label="Conforme"
+      >
+        <Check className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange(value === "NC" ? "" : "NC")}
+        className={cn(
+          "h-8 w-8 rounded border flex items-center justify-center transition-colors",
+          value === "NC"
+            ? "bg-destructive text-destructive-foreground border-destructive"
+            : "bg-background hover:bg-muted",
+        )}
+        aria-label="Non conforme"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
 
 export function WeeklyTracking() {
   const [weekStart, setWeekStart] = useState<string>(fmt(getMonday(new Date())));
@@ -223,24 +263,21 @@ export function WeeklyTracking() {
                           />
                         </td>
                         <td className="p-1">
-                          <Input
-                            value={c.couleur ?? ""}
-                            onChange={(e) => updateCell(day, rowIdx, null, { couleur: e.target.value })}
-                            className="h-8"
+                          <ConformityToggle
+                            value={c.couleur}
+                            onChange={(v) => updateCell(day, rowIdx, null, { couleur: v })}
                           />
                         </td>
                         <td className="p-1">
-                          <Input
-                            value={c.odeur ?? ""}
-                            onChange={(e) => updateCell(day, rowIdx, null, { odeur: e.target.value })}
-                            className="h-8"
+                          <ConformityToggle
+                            value={c.odeur}
+                            onChange={(v) => updateCell(day, rowIdx, null, { odeur: v })}
                           />
                         </td>
                         <td className="p-1">
-                          <Input
-                            value={c.texture ?? ""}
-                            onChange={(e) => updateCell(day, rowIdx, null, { texture: e.target.value })}
-                            className="h-8"
+                          <ConformityToggle
+                            value={c.texture}
+                            onChange={(v) => updateCell(day, rowIdx, null, { texture: v })}
                           />
                         </td>
                         {isFirst && (
