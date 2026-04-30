@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -285,12 +285,12 @@ export function WeeklyTracking() {
                 <tr>
                   <th className="p-1 sticky left-0 bg-muted z-10 border-r"></th>
                   {DAYS.map((day) => (
-                    <>
-                      <th key={`${day}-si`} className="p-1 border-l text-center font-normal">SI</th>
-                      <th key={`${day}-e`} className="p-1 text-center font-normal">E</th>
-                      <th key={`${day}-s`} className="p-1 text-center font-normal">S</th>
-                      <th key={`${day}-l`} className="p-1 text-center font-normal">N° lot</th>
-                    </>
+                    <Fragment key={day}>
+                      <th className="p-1 border-l text-center font-normal">SI</th>
+                      <th className="p-1 text-center font-normal">E</th>
+                      <th className="p-1 text-center font-normal">S</th>
+                      <th className="p-1 text-center font-normal">N° lot</th>
+                    </Fragment>
                   ))}
                 </tr>
               </thead>
@@ -303,8 +303,8 @@ export function WeeklyTracking() {
                     {DAYS.map((day) => {
                       const c = cell(day, 0, article);
                       return (
-                        <>
-                          <td key={`${day}-${article}-si`} className="p-0.5 border-l">
+                        <Fragment key={day}>
+                          <td className="p-0.5 border-l">
                             <Input
                               type="number"
                               value={c.stock_initial ?? ""}
@@ -314,7 +314,7 @@ export function WeeklyTracking() {
                               className="h-7 w-14 text-xs px-1"
                             />
                           </td>
-                          <td key={`${day}-${article}-e`} className="p-0.5">
+                          <td className="p-0.5">
                             <Input
                               type="number"
                               value={c.entrees ?? ""}
@@ -322,7 +322,7 @@ export function WeeklyTracking() {
                               className="h-7 w-14 text-xs px-1"
                             />
                           </td>
-                          <td key={`${day}-${article}-s`} className="p-0.5">
+                          <td className="p-0.5">
                             <Input
                               type="number"
                               value={c.sorties ?? ""}
@@ -330,7 +330,7 @@ export function WeeklyTracking() {
                               className="h-7 w-14 text-xs px-1"
                             />
                           </td>
-                          <td key={`${day}-${article}-l`} className="p-0.5">
+                          <td className="p-0.5">
                             <Input
                               value={c.lot_number ?? ""}
                               onChange={(e) =>
@@ -339,7 +339,7 @@ export function WeeklyTracking() {
                               className="h-7 w-20 text-xs px-1"
                             />
                           </td>
-                        </>
+                        </Fragment>
                       );
                     })}
                   </tr>
