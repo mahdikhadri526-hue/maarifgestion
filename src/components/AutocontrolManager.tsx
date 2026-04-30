@@ -789,7 +789,7 @@ export function AutocontrolManager() {
                               <div>
                                 <strong>Matières premières :</strong>
                                 <ul className="ml-3 list-disc">
-                                  {e.extraData.matieresPremieres.filter((m) => m.selected).map((m, k) => (
+                                  {e.extraData.matieresPremieres.map((m, k) => (
                                     <li key={k}>{m.name} — lot {m.lot || "—"}</li>
                                   ))}
                                 </ul>
