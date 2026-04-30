@@ -497,7 +497,7 @@ export function AutocontrolManager() {
             </div>
           )}
 
-          {!isConfit && !isPanache && (
+          {!isConfit && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
               <Input
@@ -519,7 +519,7 @@ export function AutocontrolManager() {
               onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
             />
           </div>
-          {!isDecoration && !isPanache && (
+          {!isDecoration && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">DLC</label>
               <Input
