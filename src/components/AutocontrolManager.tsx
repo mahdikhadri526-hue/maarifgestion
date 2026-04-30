@@ -73,7 +73,12 @@ const PANACHE_MATIERES = [
 ];
 
 const initialPanacheExtra = (): CtgExtraData => ({
-  matieresPremieres: PANACHE_MATIERES.map((name) => ({ name, selected: false, lot: "" })),
+  matieresPremieres: PANACHE_MATIERES.map((name) => ({ name, lot: "" })),
+  managerControl: {
+    etiquettes: null,
+    poids: null,
+    remplissage: null,
+  },
 }) as any;
 
 const initialCtgExtra = (): CtgExtraData => ({
@@ -159,14 +164,17 @@ const decorationExtraSchema = z.object({
 const panacheExtraSchema = z.object({
   matieresPremieres: z.array(z.object({
     name: z.string(),
-    selected: z.boolean(),
     lot: z.string(),
   }))
-    .refine((arr) => arr.some((m) => m.selected), { message: "Sélectionnez au moins une matière première" })
     .refine(
-      (arr) => arr.filter((m) => m.selected).every((m) => m.lot.trim().length > 0),
-      { message: "Saisir le N° de lot pour chaque matière sélectionnée" },
+      (arr) => arr.length > 0 && arr.every((m) => m.lot.trim().length > 0),
+      { message: "Saisir le N° de lot pour chaque matière première" },
     ),
+  managerControl: z.object({
+    etiquettes: conformity("Étiquettes"),
+    poids: conformity("Poids"),
+    remplissage: conformity("Remplissage"),
+  }),
 });
 
 const initialDecorationExtra = (): CtgExtraData => ({
@@ -221,9 +229,9 @@ export function AutocontrolManager() {
     e.preventDefault();
 
     const errors: string[] = [];
-    // Pour Panaché on relâche l'exigence article/lot dans la validation client
-    const formForBase = isPanache
-      ? { ...form, article: form.article || "Panaché", lotNumber: form.lotNumber || "—" }
+      // Pour Panaché on relâche l'exigence article (remplacé par matières premières)
+      const formForBase = isPanache
+      ? { ...form, article: form.article || "Panaché" }
       : form;
     const baseResult = baseAutocontrolSchema.safeParse(formForBase);
     if (!baseResult.success) {
@@ -270,13 +278,11 @@ export function AutocontrolManager() {
 
     setSubmitting(true);
     try {
-      // Pour Panaché : article = liste des matières sélectionnées, lot = liste lots
+      // Pour Panaché : article = liste des matières
       let articleToSave = baseResult.data.article;
-      let lotToSave: string | null = baseResult.data.lotNumber;
+      const lotToSave: string | null = baseResult.data.lotNumber;
       if (isPanache && panacheExtra?.matieresPremieres) {
-        const sel = panacheExtra.matieresPremieres.filter((m) => m.selected);
-        articleToSave = sel.map((m) => m.name).join(", ");
-        lotToSave = sel.map((m) => `${m.name}: ${m.lot}`).join(" | ");
+        articleToSave = panacheExtra.matieresPremieres.map((m) => m.name).join(", ");
       }
       await addAutocontrol({
         ficheType: form.ficheType,
@@ -285,7 +291,7 @@ export function AutocontrolManager() {
         article: articleToSave,
         lotNumber: lotToSave,
         quantity: baseResult.data.quantity,
-        dlc: (isDecoration || isPanache) ? null : (baseResult.data.dlc || null),
+          dlc: isDecoration ? null : (baseResult.data.dlc || null),
         visaManager: baseResult.data.visaManager,
         notes: baseResult.data.notes,
         extraData: isCtg ? extraData : isDecoration ? decorationExtra : isPanache ? panacheExtra : null,
