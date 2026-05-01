@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Save, Check, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, Check, X, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
@@ -36,6 +36,12 @@ function addDays(iso: string, n: number) {
   const d = new Date(iso);
   d.setDate(d.getDate() + n);
   return d.toLocaleDateString("fr-FR");
+}
+
+function dayShort(iso: string, n: number) {
+  const d = new Date(iso);
+  d.setDate(d.getDate() + n);
+  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
 }
 
 type Row = Record<string, any>;
@@ -147,6 +153,129 @@ export function WeeklyTracking() {
 
   const cell = (day: string, rowIndex: number, article: string | null) =>
     cellMap.get(`${day}|${rowIndex}|${article ?? ""}`) ?? {};
+
+  // For mouvement tab: get all entry rows for an article on a given day (row_index 0..n)
+  const entriesFor = (day: string, article: string) => {
+    const list: { rowIndex: number; entree: any; lot: any }[] = [];
+    for (const r of rows) {
+      if (r.day_of_week === day && r.article === article && (r.entrees != null || r.lot_number)) {
+        list.push({ rowIndex: r.row_index ?? 0, entree: r.entrees, lot: r.lot_number });
+      }
+    }
+    return list.sort((a, b) => a.rowIndex - b.rowIndex);
+  };
+
+  // Number helpers
+  const num = (v: any) => {
+    if (v === "" || v == null) return 0;
+    const n = Number(v);
+    return isNaN(n) ? 0 : n;
+  };
+
+  // Compute SI for a given day for an article (J>0 => SI(J-1)+sum(E(J-1))-S(J-1) auto; J=0 => saisi manuellement)
+  const getSI = (dayIdx: number, article: string): number | "" => {
+    if (dayIdx === 0) {
+      const v = cell(DAYS[0], 0, article).stock_initial;
+      return v === "" || v == null ? "" : Number(v);
+    }
+    const prevDay = DAYS[dayIdx - 1];
+    const prevSI = getSI(dayIdx - 1, article);
+    if (prevSI === "") return "";
+    const prevE = entriesFor(prevDay, article).reduce((s, e) => s + num(e.entree), 0);
+    const prevS = num(cell(prevDay, 0, article).sorties);
+    return Number(prevSI) + prevE - prevS;
+  };
+
+  // Compute Sortie for a day = SI(J) + sum(E(J)) - SI(J+1) (only if SI(J+1) is set)
+  const getSortie = (dayIdx: number, article: string): number | "" => {
+    if (dayIdx >= DAYS.length - 1) {
+      const v = cell(DAYS[dayIdx], 0, article).sorties;
+      return v === "" || v == null ? "" : Number(v);
+    }
+    const siNext = getSI(dayIdx + 1, article);
+    const siCur = getSI(dayIdx, article);
+    if (siNext === "" || siCur === "") return "";
+    const eCur = entriesFor(DAYS[dayIdx], article).reduce((s, e) => s + num(e.entree), 0);
+    return Number(siCur) + eCur - Number(siNext);
+  };
+
+  // FIFO lot computation: returns lot string for sortie of dayIdx for article
+  const getSortieLotFIFO = (dayIdx: number, article: string): string => {
+    // Build list of entry batches in order (day asc, rowIndex asc) with remaining qty
+    type Batch = { lot: string; remaining: number };
+    const batches: Batch[] = [];
+    for (let d = 0; d <= dayIdx; d++) {
+      const day = DAYS[d];
+      // Initial stock of Monday counts as a starting batch with no lot
+      if (d === 0) {
+        const si = num(cell(day, 0, article).stock_initial);
+        if (si > 0) batches.push({ lot: "", remaining: si });
+      }
+      for (const e of entriesFor(day, article)) {
+        const q = num(e.entree);
+        if (q > 0) batches.push({ lot: (e.lot ?? "").toString(), remaining: q });
+      }
+      // Consume sorties of days strictly before dayIdx
+      if (d < dayIdx) {
+        let sortie = num(cell(day, 0, article).sorties);
+        // if sortie not set, try computed
+        if (!sortie) {
+          const computed = getSortie(d, article);
+          if (typeof computed === "number") sortie = computed;
+        }
+        let need = sortie;
+        for (const b of batches) {
+          if (need <= 0) break;
+          const take = Math.min(b.remaining, need);
+          b.remaining -= take;
+          need -= take;
+        }
+      }
+    }
+    // Now consume sortie of dayIdx and collect lots used
+    let sortie = num(cell(DAYS[dayIdx], 0, article).sorties);
+    if (!sortie) {
+      const computed = getSortie(dayIdx, article);
+      if (typeof computed === "number") sortie = computed;
+    }
+    if (!sortie) return "";
+    const used: string[] = [];
+    let need = sortie;
+    for (const b of batches) {
+      if (need <= 0) break;
+      if (b.remaining <= 0) continue;
+      const take = Math.min(b.remaining, need);
+      if (b.lot) {
+        if (!used.includes(b.lot)) used.push(b.lot);
+      }
+      b.remaining -= take;
+      need -= take;
+    }
+    return used.join(" / ");
+  };
+
+  const addEntryRow = (day: string, article: string) => {
+    const existing = entriesFor(day, article);
+    const nextIdx = existing.length > 0 ? Math.max(...existing.map((e) => e.rowIndex)) + 1 : 1;
+    updateCell(day, nextIdx, article, { entrees: "", lot_number: "" });
+  };
+
+  const removeEntryRow = (day: string, rowIndex: number, article: string) => {
+    const key = `${day}|${rowIndex}|${article}`;
+    setRows((prev) => prev.filter((r) => `${r.day_of_week}|${r.row_index}|${r.article ?? ""}` !== key));
+  };
+
+  // Keyboard: Enter on SI Lundi -> next article's SI Lundi
+  const focusNextSI = (currentArticleIdx: number) => {
+    const next = currentArticleIdx + 1;
+    if (next < ARTICLES.length) {
+      const el = document.querySelector<HTMLInputElement>(
+        `input[data-si="${next}"]`,
+      );
+      el?.focus();
+      el?.select();
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
