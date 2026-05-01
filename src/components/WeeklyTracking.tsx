@@ -257,12 +257,12 @@ export function WeeklyTracking() {
     setRows((prev) => prev.filter((r) => `${r.day_of_week}|${r.row_index}|${r.article ?? ""}` !== key));
   };
 
-  // Keyboard: Enter on SI -> next article's SI in the same day column
-  const focusNextSI = (currentArticleIdx: number, dayIdx: number) => {
+  // Keyboard: Enter on SI -> next article's SI on Monday (column 0)
+  const focusNextSI = (currentArticleIdx: number) => {
     const next = currentArticleIdx + 1;
     if (next < ARTICLES.length) {
       const el = document.querySelector<HTMLInputElement>(
-        `input[data-si="${dayIdx}-${next}"]`,
+        `input[data-si="0-${next}"]`,
       );
       el?.focus();
       el?.select();
@@ -484,7 +484,7 @@ export function WeeklyTracking() {
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault();
-                                  focusNextSI(aIdx, dIdx);
+                                  focusNextSI(aIdx);
                                 }
                               }}
                               className="h-7 w-14 text-xs px-1"
