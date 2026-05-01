@@ -172,18 +172,10 @@ export function WeeklyTracking() {
     return isNaN(n) ? 0 : n;
   };
 
-  // Compute SI for a given day for an article (J>0 => SI(J-1)+sum(E(J-1))-S(J-1) auto; J=0 => saisi manuellement)
+  // SI is manually entered for each day
   const getSI = (dayIdx: number, article: string): number | "" => {
-    if (dayIdx === 0) {
-      const v = cell(DAYS[0], 0, article).stock_initial;
-      return v === "" || v == null ? "" : Number(v);
-    }
-    const prevDay = DAYS[dayIdx - 1];
-    const prevSI = getSI(dayIdx - 1, article);
-    if (prevSI === "") return "";
-    const prevE = entriesFor(prevDay, article).reduce((s, e) => s + num(e.entree), 0);
-    const prevS = num(cell(prevDay, 0, article).sorties);
-    return Number(prevSI) + prevE - prevS;
+    const v = cell(DAYS[dayIdx], 0, article).stock_initial;
+    return v === "" || v == null ? "" : Number(v);
   };
 
   // Compute Sortie for a day = SI(J) + sum(E(J)) - SI(J+1) (only if SI(J+1) is set)
@@ -265,12 +257,12 @@ export function WeeklyTracking() {
     setRows((prev) => prev.filter((r) => `${r.day_of_week}|${r.row_index}|${r.article ?? ""}` !== key));
   };
 
-  // Keyboard: Enter on SI Lundi -> next article's SI Lundi
-  const focusNextSI = (currentArticleIdx: number) => {
+  // Keyboard: Enter on SI -> next article's SI in the same day column
+  const focusNextSI = (currentArticleIdx: number, dayIdx: number) => {
     const next = currentArticleIdx + 1;
     if (next < ARTICLES.length) {
       const el = document.querySelector<HTMLInputElement>(
-        `input[data-si="${next}"]`,
+        `input[data-si="${dayIdx}-${next}"]`,
       );
       el?.focus();
       el?.select();
@@ -474,7 +466,6 @@ export function WeeklyTracking() {
                       const entries = entriesFor(day, article);
                       // Always show at least the row 0 entry input
                       const entryRows = entries.length > 0 ? entries : [{ rowIndex: 0, entree: "", lot: "" }];
-                      const siAuto = dIdx === 0 ? null : getSI(dIdx, article);
                       const sortieAuto = getSortie(dIdx, article);
                       const sortieLotFifo = getSortieLotFIFO(dIdx, article);
                       const totalE = entries.reduce((s, e) => s + num(e.entree), 0);
@@ -482,28 +473,22 @@ export function WeeklyTracking() {
                         <Fragment key={day}>
                           {/* SI */}
                           <td className="p-0.5 border-l align-top">
-                            {dIdx === 0 ? (
-                              <Input
-                                type="number"
-                                inputMode="numeric"
-                                data-si={aIdx}
-                                value={c.stock_initial ?? ""}
-                                onChange={(e) =>
-                                  updateCell(day, 0, article, { stock_initial: e.target.value })
+                            <Input
+                              type="number"
+                              inputMode="numeric"
+                              data-si={`${dIdx}-${aIdx}`}
+                              value={c.stock_initial ?? ""}
+                              onChange={(e) =>
+                                updateCell(day, 0, article, { stock_initial: e.target.value })
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault();
+                                  focusNextSI(aIdx, dIdx);
                                 }
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    focusNextSI(aIdx);
-                                  }
-                                }}
-                                className="h-7 w-14 text-xs px-1"
-                              />
-                            ) : (
-                              <div className="h-7 w-14 text-xs px-1 flex items-center justify-center bg-muted/40 rounded text-muted-foreground">
-                                {siAuto === "" || siAuto == null ? "—" : siAuto}
-                              </div>
-                            )}
+                              }}
+                              className="h-7 w-14 text-xs px-1"
+                            />
                           </td>
                           {/* Entries (multi-row) */}
                           <td className="p-0.5 align-top">
@@ -580,10 +565,9 @@ export function WeeklyTracking() {
             </table>
           </div>
           <div className="text-xs text-muted-foreground mt-2 px-1">
-            <strong>SI</strong> du Lundi à saisir, les jours suivants se calculent automatiquement (SI + Entrées − Sorties).
-            <strong> Sorties</strong> calculées dès que le SI du lendemain est saisi.
+            <strong>SI</strong> à saisir chaque jour. <strong>Sorties</strong> calculées automatiquement (SI + Entrées − SI du lendemain).
             <strong> Lots</strong> à saisir uniquement sur les Entrées ; les sorties affichent les lots utilisés en FIFO.
-            Cliquez sur <kbd>+</kbd> pour ajouter un 2ᵉ lot d'entrée. Touche <kbd>Entrée</kbd> sur le SI Lundi pour passer à l'article suivant.
+            Cliquez sur <kbd>+</kbd> pour ajouter un 2ᵉ lot d'entrée. Touche <kbd>Entrée</kbd> sur le SI pour passer à l'article suivant (même jour).
           </div>
         </TabsContent>
       </Tabs>
