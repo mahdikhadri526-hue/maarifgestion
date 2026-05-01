@@ -442,9 +442,12 @@ export function WeeklyTracking() {
               <thead className="bg-muted sticky top-0">
                 <tr>
                   <th className="p-2 text-left sticky left-0 bg-muted z-10 border-r">Article</th>
-                  {DAYS.map((day) => (
+                  {DAYS.map((day, dIdx) => (
                     <th key={day} colSpan={4} className="p-2 text-center border-l">
-                      {day}
+                      <div>{day}</div>
+                      <div className="text-[10px] font-normal text-muted-foreground">
+                        {dayShort(weekStart, dIdx)}
+                      </div>
                     </th>
                   ))}
                 </tr>
@@ -461,49 +464,112 @@ export function WeeklyTracking() {
                 </tr>
               </thead>
               <tbody>
-                {ARTICLES.map((article) => (
+                {ARTICLES.map((article, aIdx) => (
                   <tr key={article} className="border-t">
                     <td className="p-2 font-medium sticky left-0 bg-card border-r whitespace-nowrap">
                       {article}
                     </td>
-                    {DAYS.map((day) => {
+                    {DAYS.map((day, dIdx) => {
                       const c = cell(day, 0, article);
+                      const entries = entriesFor(day, article);
+                      // Always show at least the row 0 entry input
+                      const entryRows = entries.length > 0 ? entries : [{ rowIndex: 0, entree: "", lot: "" }];
+                      const siAuto = dIdx === 0 ? null : getSI(dIdx, article);
+                      const sortieAuto = getSortie(dIdx, article);
+                      const sortieLotFifo = getSortieLotFIFO(dIdx, article);
+                      const totalE = entries.reduce((s, e) => s + num(e.entree), 0);
                       return (
                         <Fragment key={day}>
-                          <td className="p-0.5 border-l">
-                            <Input
-                              type="number"
-                              value={c.stock_initial ?? ""}
-                              onChange={(e) =>
-                                updateCell(day, 0, article, { stock_initial: e.target.value })
-                              }
-                              className="h-7 w-14 text-xs px-1"
-                            />
+                          {/* SI */}
+                          <td className="p-0.5 border-l align-top">
+                            {dIdx === 0 ? (
+                              <Input
+                                type="number"
+                                inputMode="numeric"
+                                data-si={aIdx}
+                                value={c.stock_initial ?? ""}
+                                onChange={(e) =>
+                                  updateCell(day, 0, article, { stock_initial: e.target.value })
+                                }
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    focusNextSI(aIdx);
+                                  }
+                                }}
+                                className="h-7 w-14 text-xs px-1"
+                              />
+                            ) : (
+                              <div className="h-7 w-14 text-xs px-1 flex items-center justify-center bg-muted/40 rounded text-muted-foreground">
+                                {siAuto === "" || siAuto == null ? "—" : siAuto}
+                              </div>
+                            )}
                           </td>
-                          <td className="p-0.5">
-                            <Input
-                              type="number"
-                              value={c.entrees ?? ""}
-                              onChange={(e) => updateCell(day, 0, article, { entrees: e.target.value })}
-                              className="h-7 w-14 text-xs px-1"
-                            />
+                          {/* Entries (multi-row) */}
+                          <td className="p-0.5 align-top">
+                            <div className="flex flex-col gap-0.5">
+                              {entryRows.map((er, i) => (
+                                <Input
+                                  key={`e-${er.rowIndex}-${i}`}
+                                  type="number"
+                                  inputMode="numeric"
+                                  value={er.entree ?? ""}
+                                  onChange={(ev) =>
+                                    updateCell(day, er.rowIndex, article, { entrees: ev.target.value })
+                                  }
+                                  className="h-7 w-14 text-xs px-1"
+                                />
+                              ))}
+                              <button
+                                type="button"
+                                onClick={() => addEntryRow(day, article)}
+                                className="h-5 w-14 rounded border border-dashed text-[10px] text-muted-foreground hover:bg-muted flex items-center justify-center gap-1"
+                                title="Ajouter une 2e entrée (lot différent)"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </button>
+                              {entries.length > 1 && totalE > 0 && (
+                                <div className="text-[9px] text-muted-foreground text-center">Σ {totalE}</div>
+                              )}
+                            </div>
                           </td>
-                          <td className="p-0.5">
-                            <Input
-                              type="number"
-                              value={c.sorties ?? ""}
-                              onChange={(e) => updateCell(day, 0, article, { sorties: e.target.value })}
-                              className="h-7 w-14 text-xs px-1"
-                            />
+                          {/* Sortie auto */}
+                          <td className="p-0.5 align-top">
+                            <div className="h-7 w-14 text-xs px-1 flex items-center justify-center bg-muted/40 rounded text-muted-foreground">
+                              {sortieAuto === "" || sortieAuto == null ? "—" : sortieAuto}
+                            </div>
                           </td>
-                          <td className="p-0.5">
-                            <Input
-                              value={c.lot_number ?? ""}
-                              onChange={(e) =>
-                                updateCell(day, 0, article, { lot_number: e.target.value })
-                              }
-                              className="h-7 w-20 text-xs px-1"
-                            />
+                          {/* Lot column: editable per entry row, sortie shows FIFO lot read-only */}
+                          <td className="p-0.5 align-top">
+                            <div className="flex flex-col gap-0.5">
+                              {entryRows.map((er, i) => (
+                                <div key={`l-${er.rowIndex}-${i}`} className="flex items-center gap-0.5">
+                                  <Input
+                                    value={er.lot ?? ""}
+                                    onChange={(ev) =>
+                                      updateCell(day, er.rowIndex, article, { lot_number: ev.target.value })
+                                    }
+                                    placeholder="lot entrée"
+                                    className="h-7 w-20 text-xs px-1"
+                                  />
+                                  {er.rowIndex > 0 && (
+                                    <button
+                                      type="button"
+                                      onClick={() => removeEntryRow(day, er.rowIndex, article)}
+                                      className="text-destructive hover:bg-destructive/10 rounded p-0.5"
+                                      title="Supprimer cette entrée"
+                                    >
+                                      <Trash2 className="h-3 w-3" />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+                              {sortieLotFifo && (
+                                <div className="text-[10px] text-primary text-center px-1 truncate" title={`Lot sortie (FIFO): ${sortieLotFifo}`}>
+                                  ↳ {sortieLotFifo}
+                                </div>
+                              )}
+                            </div>
                           </td>
                         </Fragment>
                       );
@@ -512,6 +578,12 @@ export function WeeklyTracking() {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="text-xs text-muted-foreground mt-2 px-1">
+            <strong>SI</strong> du Lundi à saisir, les jours suivants se calculent automatiquement (SI + Entrées − Sorties).
+            <strong> Sorties</strong> calculées dès que le SI du lendemain est saisi.
+            <strong> Lots</strong> à saisir uniquement sur les Entrées ; les sorties affichent les lots utilisés en FIFO.
+            Cliquez sur <kbd>+</kbd> pour ajouter un 2ᵉ lot d'entrée. Touche <kbd>Entrée</kbd> sur le SI Lundi pour passer à l'article suivant.
           </div>
         </TabsContent>
       </Tabs>
