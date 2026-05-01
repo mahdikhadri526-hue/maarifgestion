@@ -565,10 +565,9 @@ export function WeeklyTracking() {
             </table>
           </div>
           <div className="text-xs text-muted-foreground mt-2 px-1">
-            <strong>SI</strong> du Lundi à saisir, les jours suivants se calculent automatiquement (SI + Entrées − Sorties).
-            <strong> Sorties</strong> calculées dès que le SI du lendemain est saisi.
+            <strong>SI</strong> à saisir chaque jour. <strong>Sorties</strong> calculées automatiquement (SI + Entrées − SI du lendemain).
             <strong> Lots</strong> à saisir uniquement sur les Entrées ; les sorties affichent les lots utilisés en FIFO.
-            Cliquez sur <kbd>+</kbd> pour ajouter un 2ᵉ lot d'entrée. Touche <kbd>Entrée</kbd> sur le SI Lundi pour passer à l'article suivant.
+            Cliquez sur <kbd>+</kbd> pour ajouter un 2ᵉ lot d'entrée. Touche <kbd>Entrée</kbd> sur le SI pour passer à l'article suivant (même jour).
           </div>
         </TabsContent>
       </Tabs>
