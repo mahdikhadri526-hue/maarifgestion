@@ -77,6 +77,51 @@ function ConformityToggle({
 type FilterType = "all" | "si" | "entree" | "sortie" | "sans_lot";
 type FilterTypeExt = FilterType | "sans_lot_existant";
 
+function LotExistantCell({
+  dayIdx,
+  article,
+  getBalances,
+}: {
+  dayIdx: number;
+  article: string;
+  getBalances: (d: number, a: string) => { lot: string; remaining: number }[];
+}) {
+  const batches = getBalances(dayIdx, article).filter((b) => b.remaining > 0);
+  // Conserver l'ordre FIFO d'apparition, mais fusionner les lots identiques
+  const merged: { lot: string; remaining: number }[] = [];
+  for (const b of batches) {
+    const label = b.lot && b.lot.trim() ? b.lot : "(sans lot)";
+    const existing = merged.find((m) => m.lot === label);
+    if (existing) existing.remaining += b.remaining;
+    else merged.push({ lot: label, remaining: b.remaining });
+  }
+  return (
+    <div className="min-h-7 w-36 text-[10px] px-1 py-1 bg-muted/40 rounded leading-tight space-y-0.5">
+      {merged.length === 0 ? (
+        <span className="text-muted-foreground">—</span>
+      ) : (
+        merged.map((m, i) => (
+          <div
+            key={`${m.lot}-${i}`}
+            className="flex items-center justify-between gap-1 px-1 rounded bg-background/60 border"
+          >
+            <span
+              className={cn(
+                "truncate font-medium",
+                m.lot === "(sans lot)" ? "text-destructive" : "text-foreground/80",
+              )}
+              title={m.lot}
+            >
+              {m.lot}
+            </span>
+            <span className="font-semibold tabular-nums">×{m.remaining}</span>
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
 export function WeeklyTracking() {
   const [weekStart, setWeekStart] = useState<string>(fmt(getMonday(new Date())));
   const [tab, setTab] = useState<"creme" | "mouvement">("creme");
