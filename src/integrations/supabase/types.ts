@@ -223,6 +223,7 @@ export type Database = {
           id: string
           lot_number: string | null
           odeur: string | null
+          quantity: number | null
           row_index: number
           sorties: number | null
           stock_initial: number | null
@@ -242,6 +243,7 @@ export type Database = {
           id?: string
           lot_number?: string | null
           odeur?: string | null
+          quantity?: number | null
           row_index?: number
           sorties?: number | null
           stock_initial?: number | null
@@ -261,6 +263,7 @@ export type Database = {
           id?: string
           lot_number?: string | null
           odeur?: string | null
+          quantity?: number | null
           row_index?: number
           sorties?: number | null
           stock_initial?: number | null

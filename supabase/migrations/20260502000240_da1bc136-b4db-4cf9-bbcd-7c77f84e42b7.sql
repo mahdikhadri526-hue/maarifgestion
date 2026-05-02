@@ -1,0 +1,1 @@
+ALTER TABLE public.weekly_tracking ADD COLUMN IF NOT EXISTS quantity numeric;
