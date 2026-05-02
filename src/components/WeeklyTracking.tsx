@@ -75,6 +75,7 @@ function ConformityToggle({
 }
 
 type FilterType = "all" | "si" | "entree" | "sortie" | "sans_lot";
+type FilterTypeExt = FilterType | "sans_lot_existant";
 
 export function WeeklyTracking() {
   const [weekStart, setWeekStart] = useState<string>(fmt(getMonday(new Date())));
@@ -85,7 +86,9 @@ export function WeeklyTracking() {
   // Filters for Mouvement tab
   const [filterArticle, setFilterArticle] = useState<string>("all");
   const [filterDay, setFilterDay] = useState<string>("all"); // index 0..6 or "all"
-  const [filterType, setFilterType] = useState<FilterType>("all");
+  const [filterType, setFilterType] = useState<FilterTypeExt>("all");
+  const [filterFrom, setFilterFrom] = useState<string>(""); // YYYY-MM-DD
+  const [filterTo, setFilterTo] = useState<string>(""); // YYYY-MM-DD
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
 
@@ -308,10 +311,23 @@ export function WeeklyTracking() {
 
   // Filtered days
   const visibleDays = useMemo(() => {
-    if (filterDay === "all") return DAYS.map((d, i) => ({ day: d, dIdx: i }));
-    const idx = Number(filterDay);
-    return [{ day: DAYS[idx], dIdx: idx }];
-  }, [filterDay]);
+    let list = DAYS.map((d, i) => ({ day: d, dIdx: i }));
+    if (filterDay !== "all") {
+      const idx = Number(filterDay);
+      list = [{ day: DAYS[idx], dIdx: idx }];
+    }
+    if (filterFrom || filterTo) {
+      list = list.filter(({ dIdx }) => {
+        const d = new Date(weekStart);
+        d.setDate(d.getDate() + dIdx);
+        const iso = fmt(d);
+        if (filterFrom && iso < filterFrom) return false;
+        if (filterTo && iso > filterTo) return false;
+        return true;
+      });
+    }
+    return list;
+  }, [filterDay, filterFrom, filterTo, weekStart]);
 
   // For "type" filter: determine if a (day,article) cell matches
   const cellMatchesTypeFilter = (dIdx: number, article: string): boolean => {
@@ -323,6 +339,13 @@ export function WeeklyTracking() {
     if (filterType === "si") return c.stock_initial != null && c.stock_initial !== "";
     if (filterType === "entree") return entries.some((e) => num(e.entree) > 0);
     if (filterType === "sortie") return typeof sortie === "number" && sortie !== 0;
+    if (filterType === "sans_lot_existant") {
+      // Pas de lot identifié dans le stock existant (vide OU uniquement "(sans lot)")
+      const balances = getLotBalancesEndOfDay(dIdx, article);
+      const hasNamedLot = balances.some((b) => b.remaining > 0 && (b.lot ?? "").toString().trim());
+      const hasAnyStock = balances.some((b) => b.remaining > 0);
+      return hasAnyStock && !hasNamedLot;
+    }
     if (filterType === "sans_lot") {
       // Show only if there is an entry without a lot, or sortie with no lot info
       const entreeSansLot = entries.some((e) => num(e.entree) > 0 && !(e.lot ?? "").toString().trim());
@@ -369,9 +392,12 @@ export function WeeklyTracking() {
     setFilterArticle("all");
     setFilterDay("all");
     setFilterType("all");
+    setFilterFrom("");
+    setFilterTo("");
   };
 
-  const filtersActive = filterArticle !== "all" || filterDay !== "all" || filterType !== "all";
+  const filtersActive =
+    filterArticle !== "all" || filterDay !== "all" || filterType !== "all" || !!filterFrom || !!filterTo;
 
   return (
     <div className="space-y-4">
@@ -524,18 +550,25 @@ export function WeeklyTracking() {
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">Période (mois)</Label>
+              <Label className="text-xs">Période — Du</Label>
               <Input
-                type="month"
-                className="h-8 w-40 text-xs"
-                value={weekStart.slice(0, 7)}
+                type="date"
+                className="h-8 w-36 text-xs"
+                value={filterFrom}
                 onChange={(e) => {
-                  const v = e.target.value; // YYYY-MM
-                  if (!v) return;
-                  const [y, m] = v.split("-").map(Number);
-                  const first = new Date(y, m - 1, 1);
-                  setWeekStart(fmt(getMonday(first)));
+                  const v = e.target.value;
+                  setFilterFrom(v);
+                  if (v) setWeekStart(fmt(getMonday(new Date(v))));
                 }}
+              />
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Au</Label>
+              <Input
+                type="date"
+                className="h-8 w-36 text-xs"
+                value={filterTo}
+                onChange={(e) => setFilterTo(e.target.value)}
               />
             </div>
             <div className="flex flex-col gap-1">
@@ -549,7 +582,8 @@ export function WeeklyTracking() {
                   <SelectItem value="si">Stock Initial</SelectItem>
                   <SelectItem value="entree">Entrées</SelectItem>
                   <SelectItem value="sortie">Sorties</SelectItem>
-                  <SelectItem value="sans_lot">Sans lot</SelectItem>
+                  <SelectItem value="sans_lot">Sans lot (entrée)</SelectItem>
+                  <SelectItem value="sans_lot_existant">Sans lot existant</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -686,12 +720,7 @@ export function WeeklyTracking() {
                           </td>
                           {/* Lot existant (FIFO restant par lot) */}
                           <td className={cn("p-0.5 align-top", dim && "opacity-30")}>
-                            <div
-                              className="min-h-7 w-32 text-[10px] px-1 py-1 bg-muted/40 rounded text-foreground/80 leading-tight whitespace-normal break-words"
-                              title={lotsExistant || "Aucun stock"}
-                            >
-                              {lotsExistant || <span className="text-muted-foreground">—</span>}
-                            </div>
+                            <LotExistantCell dayIdx={dIdx} article={article} getBalances={getLotBalancesEndOfDay} />
                           </td>
                         </Fragment>
                       );
