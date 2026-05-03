@@ -397,39 +397,39 @@ export function WeeklyTracking() {
     return ARTICLES.map((a, i) => ({ article: a, aIdx: i })).filter((x) => x.article === filterArticle);
   }, [filterArticle]);
 
-  // Filtered days
-  const visibleDays = useMemo(() => {
-    let list = DAYS.map((d, i) => ({ day: d, dIdx: i }));
-    if (filterDay !== "all") {
-      const idx = Number(filterDay);
-      list = [{ day: DAYS[idx], dIdx: idx }];
-    }
-    if (filterFrom || filterTo) {
-      list = list.filter(({ dIdx }) => {
-        const d = new Date(weekStart);
-        d.setDate(d.getDate() + dIdx);
-        const iso = fmt(d);
-        if (filterFrom && iso < filterFrom) return false;
-        if (filterTo && iso > filterTo) return false;
-        return true;
+  // Filtered days — supports period spanning multiple weeks
+  type VisDay = { wkStart: string; day: string; dIdx: number; iso: string };
+  const visibleDays: VisDay[] = useMemo(() => {
+    const out: VisDay[] = [];
+    const weeks = filterFrom || filterTo ? weeksToLoad.slice().sort() : [weekStart];
+    for (const wk of weeks) {
+      DAYS.forEach((d, i) => {
+        const dt = new Date(wk);
+        dt.setDate(dt.getDate() + i);
+        const iso = fmt(dt);
+        if (filterDay !== "all" && weeks.length === 1 && Number(filterDay) !== i) return;
+        if (filterFrom && iso < filterFrom) return;
+        if (filterTo && iso > filterTo) return;
+        out.push({ wkStart: wk, day: d, dIdx: i, iso });
       });
     }
-    return list;
-  }, [filterDay, filterFrom, filterTo, weekStart]);
+    return out;
+  }, [filterDay, filterFrom, filterTo, weekStart, weeksToLoad]);
 
   // For "type" filter: determine if a (day,article) cell matches
-  const cellMatchesTypeFilter = (dIdx: number, article: string): boolean => {
+  const cellMatchesTypeFilter = (dIdx: number, article: string, wkStart: string = weekStart): boolean => {
     if (filterType === "all") return true;
-    const c = cell(DAYS[dIdx], 0, article);
-    const entries = entriesFor(DAYS[dIdx], article);
-    const sortie = getSortie(dIdx, article);
+    if (filterType === "masquer_lots") return true;
+    const c = cellAt(wkStart, DAYS[dIdx], 0, article);
+    const entries = entriesForAt(wkStart, DAYS[dIdx], article);
+    const sortie = getSortie(dIdx, article, wkStart);
 
     if (filterType === "si") return c.stock_initial != null && c.stock_initial !== "";
     if (filterType === "entree") return entries.some((e) => num(e.entree) > 0);
     if (filterType === "sortie") return typeof sortie === "number" && sortie !== 0;
     if (filterType === "sans_lot_existant") {
       // Pas de lot identifié dans le stock existant (vide OU uniquement "(sans lot)")
-      const balances = getLotBalancesEndOfDay(dIdx, article);
+      const balances = getLotBalancesEndOfDay(dIdx, article, wkStart);
       const hasNamedLot = balances.some((b) => b.remaining > 0 && (b.lot ?? "").toString().trim());
       const hasAnyStock = balances.some((b) => b.remaining > 0);
       return hasAnyStock && !hasNamedLot;
@@ -441,7 +441,7 @@ export function WeeklyTracking() {
         if (typeof sortie !== "number" || sortie === 0) return false;
         // a sortie is "sans lot" if FIFO consumes from the "" (stock initial) batch
         // Recompute consumption tracking the lots used today
-        const balancesBefore = dIdx === 0 ? [] : getLotBalancesEndOfDay(dIdx - 1, article);
+        const balancesBefore = dIdx === 0 ? [] : getLotBalancesEndOfDay(dIdx - 1, article, wkStart);
         const todayBatches = [...balancesBefore.map((b) => ({ ...b }))];
         if (dIdx === 0) {
           const si = num(c.stock_initial);
@@ -469,9 +469,9 @@ export function WeeklyTracking() {
 
   // For Mouvement: filter rows (articles) — only keep articles having at least one matching cell across visible days
   const filteredArticles = useMemo(() => {
-    if (filterType === "all") return visibleArticles;
+    if (filterType === "all" || filterType === "masquer_lots") return visibleArticles;
     return visibleArticles.filter((row) =>
-      visibleDays.some((d) => cellMatchesTypeFilter(d.dIdx, row.article)),
+      visibleDays.some((d) => cellMatchesTypeFilter(d.dIdx, row.article, d.wkStart)),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleArticles, visibleDays, filterType, rows]);
