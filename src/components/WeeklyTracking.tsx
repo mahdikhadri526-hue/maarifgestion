@@ -242,41 +242,45 @@ export function WeeklyTracking() {
     return isNaN(n) ? 0 : n;
   };
 
-  const getSI = (dayIdx: number, article: string): number | "" => {
-    const v = cell(DAYS[dayIdx], 0, article).stock_initial;
+  const getSI = (dayIdx: number, article: string, wkStart: string = weekStart): number | "" => {
+    const v = cellAt(wkStart, DAYS[dayIdx], 0, article).stock_initial;
     return v === "" || v == null ? "" : Number(v);
   };
 
-  const getSortie = (dayIdx: number, article: string): number | "" => {
+  const getSortie = (dayIdx: number, article: string, wkStart: string = weekStart): number | "" => {
     if (dayIdx >= DAYS.length - 1) {
-      const v = cell(DAYS[dayIdx], 0, article).sorties;
+      const v = cellAt(wkStart, DAYS[dayIdx], 0, article).sorties;
       return v === "" || v == null ? "" : Number(v);
     }
-    const siNext = getSI(dayIdx + 1, article);
-    const siCur = getSI(dayIdx, article);
+    const siNext = getSI(dayIdx + 1, article, wkStart);
+    const siCur = getSI(dayIdx, article, wkStart);
     if (siNext === "" || siCur === "") return "";
-    const eCur = entriesFor(DAYS[dayIdx], article).reduce((s, e) => s + num(e.entree), 0);
+    const eCur = entriesForAt(wkStart, DAYS[dayIdx], article).reduce((s, e) => s + num(e.entree), 0);
     return Number(siCur) + eCur - Number(siNext);
   };
 
   // Returns the running per-lot remaining stock at END of dayIdx, in FIFO order.
   // Lot "" = stock initial sans lot (du lundi).
-  const getLotBalancesEndOfDay = (dayIdx: number, article: string): { lot: string; remaining: number }[] => {
+  const getLotBalancesEndOfDay = (
+    dayIdx: number,
+    article: string,
+    wkStart: string = weekStart,
+  ): { lot: string; remaining: number }[] => {
     type Batch = { lot: string; remaining: number };
     const batches: Batch[] = [];
     for (let d = 0; d <= dayIdx; d++) {
       const day = DAYS[d];
       if (d === 0) {
-        const si = num(cell(day, 0, article).stock_initial);
+        const si = num(cellAt(wkStart, day, 0, article).stock_initial);
         if (si > 0) batches.push({ lot: "", remaining: si });
       }
-      for (const e of entriesFor(day, article)) {
+      for (const e of entriesForAt(wkStart, day, article)) {
         const q = num(e.entree);
         if (q > 0) batches.push({ lot: (e.lot ?? "").toString(), remaining: q });
       }
-      let sortie = num(cell(day, 0, article).sorties);
+      let sortie = num(cellAt(wkStart, day, 0, article).sorties);
       if (!sortie) {
-        const computed = getSortie(d, article);
+        const computed = getSortie(d, article, wkStart);
         if (typeof computed === "number") sortie = computed;
       }
       let need = sortie;
