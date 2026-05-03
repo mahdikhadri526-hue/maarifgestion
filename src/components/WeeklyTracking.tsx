@@ -315,9 +315,13 @@ export function WeeklyTracking() {
     updateCell(day, nextIdx, article, { entrees: "", lot_number: "" });
   };
 
-  const removeEntryRow = (day: string, rowIndex: number, article: string) => {
-    const key = `${day}|${rowIndex}|${article}`;
-    setRows((prev) => prev.filter((r) => `${r.day_of_week}|${r.row_index}|${r.article ?? ""}` !== key));
+  const removeEntryRow = (day: string, rowIndex: number, article: string, wkStart: string = weekStart) => {
+    const key = `${wkStart}|${day}|${rowIndex}|${article}`;
+    setRows((prev) =>
+      prev.filter(
+        (r) => `${r.week_start}|${r.day_of_week}|${r.row_index}|${r.article ?? ""}` !== key,
+      ),
+    );
   };
 
   const focusNextSI = (currentArticleIdx: number) => {
@@ -344,17 +348,18 @@ export function WeeklyTracking() {
         );
       });
 
+      const wkStarts = Array.from(new Set(meaningful.map((r) => r.week_start).concat([weekStart])));
       const { error: delErr } = await supabase
         .from("weekly_tracking")
         .delete()
-        .eq("week_start", weekStart)
+        .in("week_start", wkStarts)
         .eq("fiche_type", ficheType);
       if (delErr) throw delErr;
 
       if (meaningful.length > 0) {
         const payload = meaningful.map((r) => ({
           fiche_type: ficheType,
-          week_start: weekStart,
+          week_start: r.week_start ?? weekStart,
           day_of_week: r.day_of_week,
           row_index: r.row_index ?? 0,
           article: r.article ?? null,
