@@ -672,6 +672,7 @@ export function WeeklyTracking() {
                   <SelectItem value="sortie">Sorties</SelectItem>
                   <SelectItem value="sans_lot">Sans lot (entrée)</SelectItem>
                   <SelectItem value="sans_lot_existant">Sans lot existant</SelectItem>
+                  <SelectItem value="masquer_lots">Masquer lots (entrée + existant)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
