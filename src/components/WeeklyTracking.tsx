@@ -520,7 +520,7 @@ export function WeeklyTracking() {
                 <tr>
                   <th className="p-2 text-left">Jour</th>
                   <th className="p-2 text-left">Quantité</th>
-                  <th className="p-2 text-left">N° lot crème fraîche</th>
+                  <th className="p-2 text-left min-w-[260px]">N° lot crème fraîche</th>
                   <th className="p-2 text-left">Couleur</th>
                   <th className="p-2 text-left">Odeur</th>
                   <th className="p-2 text-left">Texture</th>
@@ -529,7 +529,7 @@ export function WeeklyTracking() {
                 </tr>
               </thead>
               <tbody>
-                {DAYS.map((day) =>
+                {DAYS.map((day, dIdx) =>
                   [0, 1].map((rowIdx) => {
                     const c = cell(day, rowIdx, null);
                     const isFirst = rowIdx === 0;
@@ -537,7 +537,10 @@ export function WeeklyTracking() {
                       <tr key={`${day}-${rowIdx}`} className="border-t">
                         {isFirst && (
                           <td rowSpan={2} className="p-2 font-medium border-r align-middle">
-                            {day}
+                            <div>{day}</div>
+                            <div className="text-[10px] font-normal text-muted-foreground">
+                              {dayShort(weekStart, dIdx)}
+                            </div>
                           </td>
                         )}
                         <td className="p-1">
@@ -553,7 +556,7 @@ export function WeeklyTracking() {
                           <Input
                             value={c.lot_number ?? ""}
                             onChange={(e) => updateCell(day, rowIdx, null, { lot_number: e.target.value })}
-                            className="h-8"
+                            className="h-8 min-w-[240px]"
                           />
                         </td>
                         <td className="p-1">
