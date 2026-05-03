@@ -137,12 +137,27 @@ export function WeeklyTracking() {
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
 
+  // Compute the list of week-starts to load (covers period filter)
+  const weeksToLoad = useMemo(() => {
+    const set = new Set<string>([weekStart]);
+    if (filterFrom) set.add(fmt(getMonday(new Date(filterFrom))));
+    if (filterTo) set.add(fmt(getMonday(new Date(filterTo))));
+    if (filterFrom && filterTo) {
+      const start = getMonday(new Date(filterFrom));
+      const end = getMonday(new Date(filterTo));
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 7)) {
+        set.add(fmt(d));
+      }
+    }
+    return Array.from(set);
+  }, [weekStart, filterFrom, filterTo]);
+
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
         .from("weekly_tracking")
         .select("*")
-        .eq("week_start", weekStart)
+        .in("week_start", weeksToLoad)
         .eq("fiche_type", ficheType);
       if (error) {
         toast.error("Erreur de chargement");
@@ -150,26 +165,29 @@ export function WeeklyTracking() {
       }
       setRows(data || []);
     })();
-  }, [weekStart, ficheType]);
+  }, [weeksToLoad, ficheType]);
 
   const cellMap = useMemo(() => {
     const m = new Map<string, Row>();
     for (const r of rows) {
-      const key = `${r.day_of_week}|${r.row_index}|${r.article ?? ""}`;
+      const key = `${r.week_start}|${r.day_of_week}|${r.row_index}|${r.article ?? ""}`;
       m.set(key, r);
     }
     return m;
   }, [rows]);
 
-  const updateCell = (
+  const updateCellAt = (
+    wkStart: string,
     day: string,
     rowIndex: number,
     article: string | null,
     patch: Partial<Row>,
   ) => {
-    const key = `${day}|${rowIndex}|${article ?? ""}`;
+    const key = `${wkStart}|${day}|${rowIndex}|${article ?? ""}`;
     setRows((prev) => {
-      const idx = prev.findIndex((r) => `${r.day_of_week}|${r.row_index}|${r.article ?? ""}` === key);
+      const idx = prev.findIndex(
+        (r) => `${r.week_start}|${r.day_of_week}|${r.row_index}|${r.article ?? ""}` === key,
+      );
       if (idx >= 0) {
         const next = [...prev];
         next[idx] = { ...next[idx], ...patch };
@@ -179,7 +197,7 @@ export function WeeklyTracking() {
         ...prev,
         {
           fiche_type: ficheType,
-          week_start: weekStart,
+          week_start: wkStart,
           day_of_week: day,
           row_index: rowIndex,
           article,
@@ -189,18 +207,34 @@ export function WeeklyTracking() {
     });
   };
 
-  const cell = (day: string, rowIndex: number, article: string | null) =>
-    cellMap.get(`${day}|${rowIndex}|${article ?? ""}`) ?? {};
+  const updateCell = (
+    day: string,
+    rowIndex: number,
+    article: string | null,
+    patch: Partial<Row>,
+  ) => updateCellAt(weekStart, day, rowIndex, article, patch);
 
-  const entriesFor = (day: string, article: string) => {
+  const cellAt = (wkStart: string, day: string, rowIndex: number, article: string | null) =>
+    cellMap.get(`${wkStart}|${day}|${rowIndex}|${article ?? ""}`) ?? {};
+
+  const cell = (day: string, rowIndex: number, article: string | null) =>
+    cellAt(weekStart, day, rowIndex, article);
+
+  const entriesForAt = (wkStart: string, day: string, article: string) => {
     const list: { rowIndex: number; entree: any; lot: any }[] = [];
     for (const r of rows) {
-      if (r.day_of_week === day && r.article === article && (r.entrees != null || r.lot_number)) {
+      if (
+        r.week_start === wkStart &&
+        r.day_of_week === day &&
+        r.article === article &&
+        (r.entrees != null || r.lot_number)
+      ) {
         list.push({ rowIndex: r.row_index ?? 0, entree: r.entrees, lot: r.lot_number });
       }
     }
     return list.sort((a, b) => a.rowIndex - b.rowIndex);
   };
+  const entriesFor = (day: string, article: string) => entriesForAt(weekStart, day, article);
 
   const num = (v: any) => {
     if (v === "" || v == null) return 0;
