@@ -75,7 +75,7 @@ function ConformityToggle({
 }
 
 type FilterType = "all" | "si" | "entree" | "sortie" | "sans_lot";
-type FilterTypeExt = FilterType | "sans_lot_existant";
+type FilterTypeExt = FilterType | "sans_lot_existant" | "masquer_lots";
 
 function LotExistantCell({
   dayIdx,
@@ -96,25 +96,25 @@ function LotExistantCell({
     else merged.push({ lot: label, remaining: b.remaining });
   }
   return (
-    <div className="min-h-7 w-36 text-[10px] px-1 py-1 bg-muted/40 rounded leading-tight space-y-0.5">
+    <div className="min-h-7 w-44 text-[11px] px-1 py-1 bg-primary/5 border border-primary/20 rounded leading-tight space-y-0.5">
       {merged.length === 0 ? (
         <span className="text-muted-foreground">—</span>
       ) : (
         merged.map((m, i) => (
           <div
             key={`${m.lot}-${i}`}
-            className="flex items-center justify-between gap-1 px-1 rounded bg-background/60 border"
+            className="flex items-center justify-between gap-1 px-1.5 py-0.5 rounded bg-background border border-primary/30 shadow-sm"
           >
             <span
               className={cn(
                 "truncate font-medium",
-                m.lot === "(sans lot)" ? "text-destructive" : "text-foreground/80",
+                m.lot === "(sans lot)" ? "text-destructive" : "text-primary",
               )}
               title={m.lot}
             >
               {m.lot}
             </span>
-            <span className="font-semibold tabular-nums">×{m.remaining}</span>
+            <span className="font-bold tabular-nums text-foreground">×{m.remaining}</span>
           </div>
         ))
       )}
@@ -137,12 +137,27 @@ export function WeeklyTracking() {
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
 
+  // Compute the list of week-starts to load (covers period filter)
+  const weeksToLoad = useMemo(() => {
+    const set = new Set<string>([weekStart]);
+    if (filterFrom) set.add(fmt(getMonday(new Date(filterFrom))));
+    if (filterTo) set.add(fmt(getMonday(new Date(filterTo))));
+    if (filterFrom && filterTo) {
+      const start = getMonday(new Date(filterFrom));
+      const end = getMonday(new Date(filterTo));
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 7)) {
+        set.add(fmt(d));
+      }
+    }
+    return Array.from(set);
+  }, [weekStart, filterFrom, filterTo]);
+
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
         .from("weekly_tracking")
         .select("*")
-        .eq("week_start", weekStart)
+        .in("week_start", weeksToLoad)
         .eq("fiche_type", ficheType);
       if (error) {
         toast.error("Erreur de chargement");
@@ -150,26 +165,29 @@ export function WeeklyTracking() {
       }
       setRows(data || []);
     })();
-  }, [weekStart, ficheType]);
+  }, [weeksToLoad, ficheType]);
 
   const cellMap = useMemo(() => {
     const m = new Map<string, Row>();
     for (const r of rows) {
-      const key = `${r.day_of_week}|${r.row_index}|${r.article ?? ""}`;
+      const key = `${r.week_start}|${r.day_of_week}|${r.row_index}|${r.article ?? ""}`;
       m.set(key, r);
     }
     return m;
   }, [rows]);
 
-  const updateCell = (
+  const updateCellAt = (
+    wkStart: string,
     day: string,
     rowIndex: number,
     article: string | null,
     patch: Partial<Row>,
   ) => {
-    const key = `${day}|${rowIndex}|${article ?? ""}`;
+    const key = `${wkStart}|${day}|${rowIndex}|${article ?? ""}`;
     setRows((prev) => {
-      const idx = prev.findIndex((r) => `${r.day_of_week}|${r.row_index}|${r.article ?? ""}` === key);
+      const idx = prev.findIndex(
+        (r) => `${r.week_start}|${r.day_of_week}|${r.row_index}|${r.article ?? ""}` === key,
+      );
       if (idx >= 0) {
         const next = [...prev];
         next[idx] = { ...next[idx], ...patch };
@@ -179,7 +197,7 @@ export function WeeklyTracking() {
         ...prev,
         {
           fiche_type: ficheType,
-          week_start: weekStart,
+          week_start: wkStart,
           day_of_week: day,
           row_index: rowIndex,
           article,
@@ -189,18 +207,34 @@ export function WeeklyTracking() {
     });
   };
 
-  const cell = (day: string, rowIndex: number, article: string | null) =>
-    cellMap.get(`${day}|${rowIndex}|${article ?? ""}`) ?? {};
+  const updateCell = (
+    day: string,
+    rowIndex: number,
+    article: string | null,
+    patch: Partial<Row>,
+  ) => updateCellAt(weekStart, day, rowIndex, article, patch);
 
-  const entriesFor = (day: string, article: string) => {
+  const cellAt = (wkStart: string, day: string, rowIndex: number, article: string | null) =>
+    cellMap.get(`${wkStart}|${day}|${rowIndex}|${article ?? ""}`) ?? {};
+
+  const cell = (day: string, rowIndex: number, article: string | null) =>
+    cellAt(weekStart, day, rowIndex, article);
+
+  const entriesForAt = (wkStart: string, day: string, article: string) => {
     const list: { rowIndex: number; entree: any; lot: any }[] = [];
     for (const r of rows) {
-      if (r.day_of_week === day && r.article === article && (r.entrees != null || r.lot_number)) {
+      if (
+        r.week_start === wkStart &&
+        r.day_of_week === day &&
+        r.article === article &&
+        (r.entrees != null || r.lot_number)
+      ) {
         list.push({ rowIndex: r.row_index ?? 0, entree: r.entrees, lot: r.lot_number });
       }
     }
     return list.sort((a, b) => a.rowIndex - b.rowIndex);
   };
+  const entriesFor = (day: string, article: string) => entriesForAt(weekStart, day, article);
 
   const num = (v: any) => {
     if (v === "" || v == null) return 0;
@@ -208,41 +242,45 @@ export function WeeklyTracking() {
     return isNaN(n) ? 0 : n;
   };
 
-  const getSI = (dayIdx: number, article: string): number | "" => {
-    const v = cell(DAYS[dayIdx], 0, article).stock_initial;
+  const getSI = (dayIdx: number, article: string, wkStart: string = weekStart): number | "" => {
+    const v = cellAt(wkStart, DAYS[dayIdx], 0, article).stock_initial;
     return v === "" || v == null ? "" : Number(v);
   };
 
-  const getSortie = (dayIdx: number, article: string): number | "" => {
+  const getSortie = (dayIdx: number, article: string, wkStart: string = weekStart): number | "" => {
     if (dayIdx >= DAYS.length - 1) {
-      const v = cell(DAYS[dayIdx], 0, article).sorties;
+      const v = cellAt(wkStart, DAYS[dayIdx], 0, article).sorties;
       return v === "" || v == null ? "" : Number(v);
     }
-    const siNext = getSI(dayIdx + 1, article);
-    const siCur = getSI(dayIdx, article);
+    const siNext = getSI(dayIdx + 1, article, wkStart);
+    const siCur = getSI(dayIdx, article, wkStart);
     if (siNext === "" || siCur === "") return "";
-    const eCur = entriesFor(DAYS[dayIdx], article).reduce((s, e) => s + num(e.entree), 0);
+    const eCur = entriesForAt(wkStart, DAYS[dayIdx], article).reduce((s, e) => s + num(e.entree), 0);
     return Number(siCur) + eCur - Number(siNext);
   };
 
   // Returns the running per-lot remaining stock at END of dayIdx, in FIFO order.
   // Lot "" = stock initial sans lot (du lundi).
-  const getLotBalancesEndOfDay = (dayIdx: number, article: string): { lot: string; remaining: number }[] => {
+  const getLotBalancesEndOfDay = (
+    dayIdx: number,
+    article: string,
+    wkStart: string = weekStart,
+  ): { lot: string; remaining: number }[] => {
     type Batch = { lot: string; remaining: number };
     const batches: Batch[] = [];
     for (let d = 0; d <= dayIdx; d++) {
       const day = DAYS[d];
       if (d === 0) {
-        const si = num(cell(day, 0, article).stock_initial);
+        const si = num(cellAt(wkStart, day, 0, article).stock_initial);
         if (si > 0) batches.push({ lot: "", remaining: si });
       }
-      for (const e of entriesFor(day, article)) {
+      for (const e of entriesForAt(wkStart, day, article)) {
         const q = num(e.entree);
         if (q > 0) batches.push({ lot: (e.lot ?? "").toString(), remaining: q });
       }
-      let sortie = num(cell(day, 0, article).sorties);
+      let sortie = num(cellAt(wkStart, day, 0, article).sorties);
       if (!sortie) {
-        const computed = getSortie(d, article);
+        const computed = getSortie(d, article, wkStart);
         if (typeof computed === "number") sortie = computed;
       }
       let need = sortie;
@@ -277,9 +315,13 @@ export function WeeklyTracking() {
     updateCell(day, nextIdx, article, { entrees: "", lot_number: "" });
   };
 
-  const removeEntryRow = (day: string, rowIndex: number, article: string) => {
-    const key = `${day}|${rowIndex}|${article}`;
-    setRows((prev) => prev.filter((r) => `${r.day_of_week}|${r.row_index}|${r.article ?? ""}` !== key));
+  const removeEntryRow = (day: string, rowIndex: number, article: string, wkStart: string = weekStart) => {
+    const key = `${wkStart}|${day}|${rowIndex}|${article}`;
+    setRows((prev) =>
+      prev.filter(
+        (r) => `${r.week_start}|${r.day_of_week}|${r.row_index}|${r.article ?? ""}` !== key,
+      ),
+    );
   };
 
   const focusNextSI = (currentArticleIdx: number) => {
@@ -306,17 +348,18 @@ export function WeeklyTracking() {
         );
       });
 
+      const wkStarts = Array.from(new Set(meaningful.map((r) => r.week_start).concat([weekStart])));
       const { error: delErr } = await supabase
         .from("weekly_tracking")
         .delete()
-        .eq("week_start", weekStart)
+        .in("week_start", wkStarts)
         .eq("fiche_type", ficheType);
       if (delErr) throw delErr;
 
       if (meaningful.length > 0) {
         const payload = meaningful.map((r) => ({
           fiche_type: ficheType,
-          week_start: weekStart,
+          week_start: r.week_start ?? weekStart,
           day_of_week: r.day_of_week,
           row_index: r.row_index ?? 0,
           article: r.article ?? null,
@@ -354,39 +397,39 @@ export function WeeklyTracking() {
     return ARTICLES.map((a, i) => ({ article: a, aIdx: i })).filter((x) => x.article === filterArticle);
   }, [filterArticle]);
 
-  // Filtered days
-  const visibleDays = useMemo(() => {
-    let list = DAYS.map((d, i) => ({ day: d, dIdx: i }));
-    if (filterDay !== "all") {
-      const idx = Number(filterDay);
-      list = [{ day: DAYS[idx], dIdx: idx }];
-    }
-    if (filterFrom || filterTo) {
-      list = list.filter(({ dIdx }) => {
-        const d = new Date(weekStart);
-        d.setDate(d.getDate() + dIdx);
-        const iso = fmt(d);
-        if (filterFrom && iso < filterFrom) return false;
-        if (filterTo && iso > filterTo) return false;
-        return true;
+  // Filtered days — supports period spanning multiple weeks
+  type VisDay = { wkStart: string; day: string; dIdx: number; iso: string };
+  const visibleDays: VisDay[] = useMemo(() => {
+    const out: VisDay[] = [];
+    const weeks = filterFrom || filterTo ? weeksToLoad.slice().sort() : [weekStart];
+    for (const wk of weeks) {
+      DAYS.forEach((d, i) => {
+        const dt = new Date(wk);
+        dt.setDate(dt.getDate() + i);
+        const iso = fmt(dt);
+        if (filterDay !== "all" && weeks.length === 1 && Number(filterDay) !== i) return;
+        if (filterFrom && iso < filterFrom) return;
+        if (filterTo && iso > filterTo) return;
+        out.push({ wkStart: wk, day: d, dIdx: i, iso });
       });
     }
-    return list;
-  }, [filterDay, filterFrom, filterTo, weekStart]);
+    return out;
+  }, [filterDay, filterFrom, filterTo, weekStart, weeksToLoad]);
 
   // For "type" filter: determine if a (day,article) cell matches
-  const cellMatchesTypeFilter = (dIdx: number, article: string): boolean => {
+  const cellMatchesTypeFilter = (dIdx: number, article: string, wkStart: string = weekStart): boolean => {
     if (filterType === "all") return true;
-    const c = cell(DAYS[dIdx], 0, article);
-    const entries = entriesFor(DAYS[dIdx], article);
-    const sortie = getSortie(dIdx, article);
+    if (filterType === "masquer_lots") return true;
+    const c = cellAt(wkStart, DAYS[dIdx], 0, article);
+    const entries = entriesForAt(wkStart, DAYS[dIdx], article);
+    const sortie = getSortie(dIdx, article, wkStart);
 
     if (filterType === "si") return c.stock_initial != null && c.stock_initial !== "";
     if (filterType === "entree") return entries.some((e) => num(e.entree) > 0);
     if (filterType === "sortie") return typeof sortie === "number" && sortie !== 0;
     if (filterType === "sans_lot_existant") {
       // Pas de lot identifié dans le stock existant (vide OU uniquement "(sans lot)")
-      const balances = getLotBalancesEndOfDay(dIdx, article);
+      const balances = getLotBalancesEndOfDay(dIdx, article, wkStart);
       const hasNamedLot = balances.some((b) => b.remaining > 0 && (b.lot ?? "").toString().trim());
       const hasAnyStock = balances.some((b) => b.remaining > 0);
       return hasAnyStock && !hasNamedLot;
@@ -398,7 +441,7 @@ export function WeeklyTracking() {
         if (typeof sortie !== "number" || sortie === 0) return false;
         // a sortie is "sans lot" if FIFO consumes from the "" (stock initial) batch
         // Recompute consumption tracking the lots used today
-        const balancesBefore = dIdx === 0 ? [] : getLotBalancesEndOfDay(dIdx - 1, article);
+        const balancesBefore = dIdx === 0 ? [] : getLotBalancesEndOfDay(dIdx - 1, article, wkStart);
         const todayBatches = [...balancesBefore.map((b) => ({ ...b }))];
         if (dIdx === 0) {
           const si = num(c.stock_initial);
@@ -426,9 +469,9 @@ export function WeeklyTracking() {
 
   // For Mouvement: filter rows (articles) — only keep articles having at least one matching cell across visible days
   const filteredArticles = useMemo(() => {
-    if (filterType === "all") return visibleArticles;
+    if (filterType === "all" || filterType === "masquer_lots") return visibleArticles;
     return visibleArticles.filter((row) =>
-      visibleDays.some((d) => cellMatchesTypeFilter(d.dIdx, row.article)),
+      visibleDays.some((d) => cellMatchesTypeFilter(d.dIdx, row.article, d.wkStart)),
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visibleArticles, visibleDays, filterType, rows]);
@@ -477,7 +520,7 @@ export function WeeklyTracking() {
                 <tr>
                   <th className="p-2 text-left">Jour</th>
                   <th className="p-2 text-left">Quantité</th>
-                  <th className="p-2 text-left">N° lot crème fraîche</th>
+                  <th className="p-2 text-left min-w-[260px]">N° lot crème fraîche</th>
                   <th className="p-2 text-left">Couleur</th>
                   <th className="p-2 text-left">Odeur</th>
                   <th className="p-2 text-left">Texture</th>
@@ -486,7 +529,7 @@ export function WeeklyTracking() {
                 </tr>
               </thead>
               <tbody>
-                {DAYS.map((day) =>
+                {DAYS.map((day, dIdx) =>
                   [0, 1].map((rowIdx) => {
                     const c = cell(day, rowIdx, null);
                     const isFirst = rowIdx === 0;
@@ -494,7 +537,10 @@ export function WeeklyTracking() {
                       <tr key={`${day}-${rowIdx}`} className="border-t">
                         {isFirst && (
                           <td rowSpan={2} className="p-2 font-medium border-r align-middle">
-                            {day}
+                            <div>{day}</div>
+                            <div className="text-[10px] font-normal text-muted-foreground">
+                              {dayShort(weekStart, dIdx)}
+                            </div>
                           </td>
                         )}
                         <td className="p-1">
@@ -510,7 +556,7 @@ export function WeeklyTracking() {
                           <Input
                             value={c.lot_number ?? ""}
                             onChange={(e) => updateCell(day, rowIdx, null, { lot_number: e.target.value })}
-                            className="h-8"
+                            className="h-8 min-w-[240px]"
                           />
                         </td>
                         <td className="p-1">
@@ -629,6 +675,7 @@ export function WeeklyTracking() {
                   <SelectItem value="sortie">Sorties</SelectItem>
                   <SelectItem value="sans_lot">Sans lot (entrée)</SelectItem>
                   <SelectItem value="sans_lot_existant">Sans lot existant</SelectItem>
+                  <SelectItem value="masquer_lots">Masquer lots (entrée + existant)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -644,54 +691,68 @@ export function WeeklyTracking() {
               <thead className="bg-muted sticky top-0">
                 <tr>
                   <th className="p-2 text-left sticky left-0 bg-muted z-10 border-r">Article</th>
-                  {visibleDays.map(({ day, dIdx }) => (
-                    <th key={day} colSpan={5} className="p-2 text-center border-l">
+                  {visibleDays.map(({ day, dIdx, wkStart, iso }) => (
+                    <th
+                      key={`${wkStart}-${day}`}
+                      colSpan={filterType === "masquer_lots" ? 3 : 5}
+                      className="p-2 text-center border-l"
+                    >
                       <div>{day}</div>
                       <div className="text-[10px] font-normal text-muted-foreground">
-                        {dayShort(weekStart, dIdx)}
+                        {dayShort(wkStart, dIdx)}
                       </div>
                     </th>
                   ))}
                 </tr>
                 <tr>
                   <th className="p-1 sticky left-0 bg-muted z-10 border-r"></th>
-                  {visibleDays.map(({ day }) => (
-                    <Fragment key={day}>
+                  {visibleDays.map(({ day, wkStart }) => (
+                    <Fragment key={`${wkStart}-${day}-h`}>
                       <th className="p-1 border-l text-center font-normal">SI</th>
                       <th className="p-1 text-center font-normal text-success">E</th>
-                      <th className="p-1 text-center font-normal">N° lot</th>
+                      {filterType !== "masquer_lots" && (
+                        <th className="p-1 text-center font-normal">N° lot</th>
+                      )}
                       <th className="p-1 text-center font-normal text-destructive">S</th>
-                      <th className="p-1 text-center font-normal">Lot existant</th>
+                      {filterType !== "masquer_lots" && (
+                        <th className="p-1 text-center font-normal">Lot existant</th>
+                      )}
                     </Fragment>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {filteredArticles.map(({ article, aIdx }) => (
-                  <tr key={article} className="border-t">
-                    <td className="p-2 font-medium sticky left-0 bg-card border-r whitespace-nowrap">
+                {filteredArticles.map(({ article, aIdx }, rowI) => (
+                  <tr
+                    key={article}
+                    className={cn(
+                      "border-t",
+                      rowI % 2 === 1 && "bg-muted/30",
+                      "hover:bg-accent/20",
+                    )}
+                  >
+                    <td className="p-2 font-medium sticky left-0 bg-inherit border-r whitespace-nowrap border-b-2 border-b-primary/10">
                       {article}
                     </td>
-                    {visibleDays.map(({ day, dIdx }) => {
-                      const c = cell(day, 0, article);
-                      const entries = entriesFor(day, article);
+                    {visibleDays.map(({ day, dIdx, wkStart }) => {
+                      const c = cellAt(wkStart, day, 0, article);
+                      const entries = entriesForAt(wkStart, day, article);
                       const entryRows = entries.length > 0 ? entries : [{ rowIndex: 0, entree: "", lot: "" }];
-                      const sortieAuto = getSortie(dIdx, article);
-                      const lotsExistant = getLotsExistantString(dIdx, article);
+                      const sortieAuto = getSortie(dIdx, article, wkStart);
                       const totalE = entries.reduce((s, e) => s + num(e.entree), 0);
-                      const matchType = cellMatchesTypeFilter(dIdx, article);
-                      const dim = filterType !== "all" && !matchType;
+                      const matchType = cellMatchesTypeFilter(dIdx, article, wkStart);
+                      const dim = filterType !== "all" && filterType !== "masquer_lots" && !matchType;
                       return (
-                        <Fragment key={day}>
+                        <Fragment key={`${wkStart}-${day}`}>
                           {/* SI */}
-                          <td className={cn("p-0.5 border-l align-top", dim && "opacity-30")}>
+                          <td className={cn("p-0.5 border-l-2 border-l-border align-top", dim && "opacity-30")}>
                             <Input
                               type="number"
                               inputMode="numeric"
                               data-si={`${dIdx}-${aIdx}`}
                               value={c.stock_initial ?? ""}
                               onChange={(e) =>
-                                updateCell(day, 0, article, { stock_initial: e.target.value })
+                                updateCellAt(wkStart, day, 0, article, { stock_initial: e.target.value })
                               }
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
@@ -712,14 +773,18 @@ export function WeeklyTracking() {
                                   inputMode="numeric"
                                   value={er.entree ?? ""}
                                   onChange={(ev) =>
-                                    updateCell(day, er.rowIndex, article, { entrees: ev.target.value })
+                                    updateCellAt(wkStart, day, er.rowIndex, article, { entrees: ev.target.value })
                                   }
                                   className="h-7 w-14 text-xs px-1 bg-success/10 text-success border-success/40 font-medium"
                                 />
                               ))}
                               <button
                                 type="button"
-                                onClick={() => addEntryRow(day, article)}
+                                onClick={() => {
+                                  const existing = entriesForAt(wkStart, day, article);
+                                  const nextIdx = existing.length > 0 ? Math.max(...existing.map((e) => e.rowIndex)) + 1 : 1;
+                                  updateCellAt(wkStart, day, nextIdx, article, { entrees: "", lot_number: "" });
+                                }}
                                 className="h-5 w-14 rounded border border-dashed text-[10px] text-muted-foreground hover:bg-muted flex items-center justify-center gap-1"
                                 title="Ajouter une 2e entrée (lot différent)"
                               >
@@ -731,6 +796,7 @@ export function WeeklyTracking() {
                             </div>
                           </td>
                           {/* N° lot d'entrée (juste après E) */}
+                          {filterType !== "masquer_lots" && (
                           <td className={cn("p-0.5 align-top", dim && "opacity-30")}>
                             <div className="flex flex-col gap-0.5">
                               {entryRows.map((er, i) => (
@@ -738,7 +804,7 @@ export function WeeklyTracking() {
                                   <Input
                                     value={er.lot ?? ""}
                                     onChange={(ev) =>
-                                      updateCell(day, er.rowIndex, article, { lot_number: ev.target.value })
+                                      updateCellAt(wkStart, day, er.rowIndex, article, { lot_number: ev.target.value })
                                     }
                                     placeholder="lot"
                                     className="h-7 w-20 text-xs px-1"
@@ -746,7 +812,7 @@ export function WeeklyTracking() {
                                   {er.rowIndex > 0 && (
                                     <button
                                       type="button"
-                                      onClick={() => removeEntryRow(day, er.rowIndex, article)}
+                                      onClick={() => removeEntryRow(day, er.rowIndex, article, wkStart)}
                                       className="text-destructive hover:bg-destructive/10 rounded p-0.5"
                                       title="Supprimer cette entrée"
                                     >
@@ -757,6 +823,7 @@ export function WeeklyTracking() {
                               ))}
                             </div>
                           </td>
+                          )}
                           {/* Sortie auto — ROUGE */}
                           <td className={cn("p-0.5 align-top", dim && "opacity-30")}>
                             <div className="h-7 w-14 text-xs px-1 flex items-center justify-center bg-destructive/10 text-destructive border border-destructive/40 rounded font-medium">
@@ -764,9 +831,15 @@ export function WeeklyTracking() {
                             </div>
                           </td>
                           {/* Lot existant (FIFO restant par lot) */}
-                          <td className={cn("p-0.5 align-top", dim && "opacity-30")}>
-                            <LotExistantCell dayIdx={dIdx} article={article} getBalances={getLotBalancesEndOfDay} />
-                          </td>
+                          {filterType !== "masquer_lots" && (
+                            <td className={cn("p-0.5 align-top", dim && "opacity-30")}>
+                              <LotExistantCell
+                                dayIdx={dIdx}
+                                article={article}
+                                getBalances={(d, a) => getLotBalancesEndOfDay(d, a, wkStart)}
+                              />
+                            </td>
+                          )}
                         </Fragment>
                       );
                     })}
@@ -774,7 +847,10 @@ export function WeeklyTracking() {
                 ))}
                 {filteredArticles.length === 0 && (
                   <tr>
-                    <td colSpan={1 + visibleDays.length * 5} className="p-6 text-center text-muted-foreground">
+                    <td
+                      colSpan={1 + visibleDays.length * (filterType === "masquer_lots" ? 3 : 5)}
+                      className="p-6 text-center text-muted-foreground"
+                    >
                       Aucune ligne ne correspond aux filtres.
                     </td>
                   </tr>
