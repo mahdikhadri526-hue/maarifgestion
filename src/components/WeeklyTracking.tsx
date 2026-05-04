@@ -11,15 +11,17 @@ import { cn } from "@/lib/utils";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
-const ARTICLES = [
+const TARTE_ARTICLES = [
   "Tarte 6", "Tarte 8", "Tarte 10", "Tte Sp.", "Tte.Sp 8", "Tte Mac.", "Tte Sor.",
   "Tche Sor.", "Tche Mac.", "Tche Nap.", "Bûche", "Bûche Sp.", "N.F", "Demis",
   "M.L", "M B M", "M B F", "M.Loulou", "Chanty.Fruit confits", "Panachés",
+];
+const GLACE_ARTICLES = [
   "Sicilienne vanille", "Sicilienne chocolat", "Sicilienne fraise", "Sicilienne mangue",
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
   "Parfait", "Fraise", "Framboise", "Orange", "Mangue", "Citron", "Pêche",
-  "CREME FRAICHE",
 ];
+const ARTICLES = [...TARTE_ARTICLES, ...GLACE_ARTICLES, "CREME FRAICHE"];
 
 function getMonday(d: Date) {
   const date = new Date(d);
@@ -124,7 +126,7 @@ function LotExistantCell({
 
 export function WeeklyTracking() {
   const [weekStart, setWeekStart] = useState<string>(fmt(getMonday(new Date())));
-  const [tab, setTab] = useState<"creme" | "mouvement">("creme");
+  const [tab, setTab] = useState<"creme" | "glace" | "tarte">("creme");
   const [rows, setRows] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -136,6 +138,7 @@ export function WeeklyTracking() {
   const [filterTo, setFilterTo] = useState<string>(""); // YYYY-MM-DD
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
+  const activeArticles = tab === "glace" ? GLACE_ARTICLES : tab === "tarte" ? TARTE_ARTICLES : ARTICLES;
 
   // Compute the list of week-starts to load (covers period filter)
   const weeksToLoad = useMemo(() => {
@@ -393,9 +396,10 @@ export function WeeklyTracking() {
 
   // Filtered articles list (article filter)
   const visibleArticles = useMemo(() => {
-    if (filterArticle === "all") return ARTICLES.map((a, i) => ({ article: a, aIdx: i }));
-    return ARTICLES.map((a, i) => ({ article: a, aIdx: i })).filter((x) => x.article === filterArticle);
-  }, [filterArticle]);
+    const list = activeArticles.map((a, i) => ({ article: a, aIdx: i }));
+    if (filterArticle === "all") return list;
+    return list.filter((x) => x.article === filterArticle);
+  }, [filterArticle, activeArticles]);
 
   // Filtered days — supports period spanning multiple weeks
   type VisDay = { wkStart: string; day: string; dIdx: number; iso: string };
@@ -510,7 +514,8 @@ export function WeeklyTracking() {
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
         <TabsList>
           <TabsTrigger value="creme">Crème fraîche</TabsTrigger>
-          <TabsTrigger value="mouvement">Mouvement glaces & tartes</TabsTrigger>
+          <TabsTrigger value="glace">Mouvement glaces</TabsTrigger>
+          <TabsTrigger value="tarte">Mouvement tartes</TabsTrigger>
         </TabsList>
 
         <TabsContent value="creme" className="mt-4">
@@ -604,7 +609,8 @@ export function WeeklyTracking() {
           </div>
         </TabsContent>
 
-        <TabsContent value="mouvement" className="mt-4 space-y-3">
+        {(["glace", "tarte"] as const).map((t) => (
+        <TabsContent key={t} value={t} className="mt-4 space-y-3">
           {/* FILTERS BAR */}
           <div className="bg-card rounded-lg border p-3 flex flex-wrap items-end gap-3">
             <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
@@ -844,6 +850,7 @@ export function WeeklyTracking() {
             <strong>Lot existant</strong> affiche les stocks restants par lot en FIFO (ex: <code>L240501 ×5</code>).
           </div>
         </TabsContent>
+        ))}
       </Tabs>
     </div>
   );
