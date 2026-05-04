@@ -704,13 +704,14 @@ export function WeeklyTracking() {
                 {filteredArticles.map(({ article, aIdx }, rowI) => (
                   <tr
                     key={article}
-                    className={cn(
-                      "border-t",
-                      rowI % 2 === 1 && "bg-muted/30",
-                      "hover:bg-accent/20",
-                    )}
+                    className={cn("border-t", "hover:bg-accent/20")}
                   >
-                    <td className="p-2 font-medium sticky left-0 bg-inherit border-r whitespace-nowrap border-b-2 border-b-primary/10">
+                    <td
+                      className={cn(
+                        "p-2 font-medium sticky left-0 z-10 border-r whitespace-nowrap border-b-2 border-b-primary/10 shadow-[2px_0_4px_-2px_hsl(var(--border))]",
+                        rowI % 2 === 1 ? "bg-muted" : "bg-card",
+                      )}
+                    >
                       {article}
                     </td>
                     {visibleDays.map(({ day, dIdx, wkStart }) => {
