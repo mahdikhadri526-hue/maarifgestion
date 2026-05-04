@@ -609,7 +609,8 @@ export function WeeklyTracking() {
           </div>
         </TabsContent>
 
-        <TabsContent value="glace" className="mt-4 space-y-3" forceMount hidden={tab !== "glace"}>
+        {(["glace", "tarte"] as const).map((t) => (
+        <TabsContent key={t} value={t} className="mt-4 space-y-3">
           {/* FILTERS BAR */}
           <div className="bg-card rounded-lg border p-3 flex flex-wrap items-end gap-3">
             <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
@@ -849,6 +850,7 @@ export function WeeklyTracking() {
             <strong>Lot existant</strong> affiche les stocks restants par lot en FIFO (ex: <code>L240501 ×5</code>).
           </div>
         </TabsContent>
+        ))}
       </Tabs>
     </div>
   );
