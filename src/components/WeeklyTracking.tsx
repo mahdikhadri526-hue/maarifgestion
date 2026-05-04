@@ -625,22 +625,6 @@ export function WeeklyTracking() {
               </Select>
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">Jour</Label>
-              <Select value={filterDay} onValueChange={setFilterDay}>
-                <SelectTrigger className="h-8 w-40 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Toute la semaine</SelectItem>
-                  {DAYS.map((d, i) => (
-                    <SelectItem key={d} value={String(i)}>
-                      {d} ({dayShort(weekStart, i)})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-col gap-1">
               <Label className="text-xs">Période — Du</Label>
               <Input
                 type="date"
@@ -663,21 +647,16 @@ export function WeeklyTracking() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <Label className="text-xs">Type</Label>
-              <Select value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
-                <SelectTrigger className="h-8 w-44 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tout afficher</SelectItem>
-                  <SelectItem value="si">Stock Initial</SelectItem>
-                  <SelectItem value="entree">Entrées</SelectItem>
-                  <SelectItem value="sortie">Sorties</SelectItem>
-                  <SelectItem value="sans_lot">Sans lot (entrée)</SelectItem>
-                  <SelectItem value="sans_lot_existant">Sans lot existant</SelectItem>
-                  <SelectItem value="masquer_lots">Masquer lots (entrée + existant)</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label className="text-xs">Affichage</Label>
+              <label className="h-8 flex items-center gap-2 text-xs px-2 rounded border bg-background cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={filterType === "masquer_lots"}
+                  onChange={(e) => setFilterType(e.target.checked ? "masquer_lots" : "all")}
+                  className="h-3.5 w-3.5"
+                />
+                Masquer lots (entrée + existant)
+              </label>
             </div>
             {filtersActive && (
               <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8">
