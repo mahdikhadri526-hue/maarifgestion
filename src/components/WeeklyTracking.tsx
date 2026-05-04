@@ -704,7 +704,7 @@ export function WeeklyTracking() {
                 {filteredArticles.map(({ article, aIdx }, rowI) => (
                   <tr
                     key={article}
-                    className={cn("border-t", "hover:bg-accent/20")}
+                    className={cn("border-t", rowI % 2 === 1 && "bg-muted/30", "hover:bg-accent/20")}
                   >
                     <td
                       className={cn(
