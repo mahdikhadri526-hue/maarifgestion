@@ -609,7 +609,7 @@ export function WeeklyTracking() {
           </div>
         </TabsContent>
 
-        <TabsContent value="mouvement" className="mt-4 space-y-3">
+        <TabsContent value={tab === "glace" ? "glace" : "tarte"} className="mt-4 space-y-3" forceMount hidden={tab === "creme"}>
           {/* FILTERS BAR */}
           <div className="bg-card rounded-lg border p-3 flex flex-wrap items-end gap-3">
             <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
