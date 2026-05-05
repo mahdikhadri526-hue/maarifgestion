@@ -195,12 +195,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               />
             </div>
             <div className="flex rounded-md border overflow-hidden">
-              {((variant === "order"
-                ? ["alimentaire", "emballage", "tarte", "glace"]
-                : ["all", "alimentaire", "emballage"]) as const).map((cat) => (
+              {(variant === "order"
+                ? (["alimentaire", "emballage", "tarte", "glace"] as const)
+                : (["all", "alimentaire", "emballage"] as const)
+              ).map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setCategory(cat)}
+                  onClick={() => setCategory(cat as any)}
                   className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                     category === cat
                       ? "bg-primary text-primary-foreground"
