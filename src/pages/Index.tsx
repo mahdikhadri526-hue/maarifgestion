@@ -8,7 +8,7 @@ import { RequisitionForm } from "@/components/RequisitionForm";
 import { ExpiryAlerts, LotManager, StockOutAlerts } from "@/components/LotManagement";
 import { AutocontrolManager } from "@/components/AutocontrolManager";
 import { WeeklyTracking } from "@/components/WeeklyTracking";
-import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays } from "lucide-react";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 
@@ -94,6 +94,47 @@ const Index = () => {
             {/* Expiry Alerts */}
             <ExpiryAlerts />
 
+            {ENABLE_DASHBOARD_ORDER_TABLE && (
+            <div className="bg-card rounded-xl border shadow-sm p-4 mt-4">
+              <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
+                    <img src={logo} alt="Logo" className="w-full h-full object-cover" />
+                  </div>
+                  Commande
+                </h2>
+                <button
+                  onClick={() => setShowStock(!showStock)}
+                  className="text-sm font-medium text-primary hover:underline"
+                >
+                  {showStock ? "Masquer" : "Consulter"}
+                </button>
+              </div>
+              {/* Pro navigation buttons */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+                {[
+                  { label: "Stock Initial", tab: "stock-initial" as Tab, icon: Database },
+                  { label: "Mouvements", tab: "mouvements" as Tab, icon: PlusCircle },
+                  { label: "Stock Restant", tab: "produit" as Tab, icon: FileText },
+                  { label: "Suivi hebdo.", tab: "hebdo" as Tab, icon: CalendarDays },
+                ].map((b) => (
+                  <button
+                    key={b.tab}
+                    onClick={() => setTab(b.tab)}
+                    className="group flex items-center justify-between gap-2 px-3 py-2 rounded-lg border bg-background hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all text-xs font-medium shadow-sm"
+                  >
+                    <span className="flex items-center gap-2">
+                      <b.icon className="h-3.5 w-3.5" />
+                      {b.label}
+                    </span>
+                    <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                ))}
+              </div>
+              {showStock && <StockTable variant="order" />}
+            </div>
+            )}
+
             {/* Quick Actions */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
@@ -113,25 +154,6 @@ const Index = () => {
               ))}
             </div>
 
-            {ENABLE_DASHBOARD_ORDER_TABLE && (
-            <div className="bg-card rounded-lg border p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <div className="w-5 h-5 rounded-full overflow-hidden flex-shrink-0">
-                    <img src={logo} alt="Logo" className="w-full h-full object-cover" />
-                  </div>
-                  Qté à commander
-                </h2>
-                <button
-                  onClick={() => setShowStock(!showStock)}
-                  className="text-sm font-medium text-primary hover:underline flex items-center gap-1"
-                >
-                  {showStock ? "Masquer" : "Consulter"}
-                </button>
-              </div>
-              {showStock && <StockTable variant="order" />}
-            </div>
-            )}
           </></div>
         )}
 

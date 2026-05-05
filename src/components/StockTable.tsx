@@ -9,6 +9,18 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
 import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
+import { supabase } from "@/integrations/supabase/client";
+
+const TARTE_ARTICLES = [
+  "Tarte 6", "Tarte 8", "Tarte 10", "Tte Sp.", "Tte.Sp 8", "Tte Mac.", "Tte Sor.",
+  "Tche Sor.", "Tche Mac.", "Tche Nap.", "Bûche", "Bûche Sp.", "N.F", "Demis",
+  "M.L", "M B M", "M B F", "M.Loulou", "Chanty.Fruit confits", "Panachés",
+];
+const GLACE_ARTICLES = [
+  "Sicilienne vanille", "Sicilienne chocolat", "Sicilienne fraise", "Sicilienne mangue",
+  "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
+  "Parfait", "Fraise", "Framboise", "Orange", "Mangue", "Citron", "Pêche",
+];
 
 const UNITS: UnitType[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU"];
 const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre", PAQUET: "Paquet", COLIS: "Colis", ROULEAU: "Rouleau" };
@@ -18,25 +30,68 @@ const todayISO = () => new Date().toISOString().split("T")[0];
 const currentMonthISO = () => new Date().toISOString().slice(0, 7);
 
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
-  const [category, setCategory] = useState<Category | "all">("all");
+  const [category, setCategory] = useState<Category | "all" | "tarte" | "glace">("all");
   const [search, setSearch] = useState("");
   const [pendingUnit, setPendingUnit] = useState<{ productId: string; currentUnit: UnitType } | null>(null);
-  const [mode, setMode] = useState<FilterMode>("all");
+  const [mode, setMode] = useState<FilterMode>(variant === "order" ? "month" : "all");
   const [day, setDay] = useState<string>(todayISO());
   const [month, setMonth] = useState<string>(currentMonthISO());
   const [start, setStart] = useState<string>("");
   const [end, setEnd] = useState<string>(todayISO());
   const [periodTotals, setPeriodTotals] = useState<Record<string, { stockInitial: number; entrees: number; sorties: number; stockRestant: number }>>({});
   const [periodLoading, setPeriodLoading] = useState(false);
+  const [weeklyRows, setWeeklyRows] = useState<Array<{ article: string; sorties: number }>>([]);
+  const [weeklyLoading, setWeeklyLoading] = useState(false);
 
-  const { data: levels, loading, refresh } = useStockLevels(category === "all" ? undefined : category);
-  const filtered = (levels || []).filter((l) =>
+  const isWeeklyCat = category === "tarte" || category === "glace";
+  const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
+  const { data: levels, loading, refresh } = useStockLevels(stockCategory);
+  const filtered = (isWeeklyCat ? [] : (levels || [])).filter((l) =>
     l.productName.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Load weekly_tracking data for Tarte/Glace categories
+  useEffect(() => {
+    if (variant !== "order" || !isWeeklyCat) {
+      setWeeklyRows([]);
+      return;
+    }
+    let cancelled = false;
+    setWeeklyLoading(true);
+    (async () => {
+      let q = supabase.from("weekly_tracking").select("article, sorties, day_of_week, week_start, fiche_type");
+      // Date range matching
+      if (mode === "day") {
+        // Filter by week containing the day, then post-filter exact day
+        q = q.lte("week_start", day);
+      } else if (mode === "month") {
+        const start = `${month}-01`;
+        const endD = new Date(start);
+        endD.setMonth(endD.getMonth() + 1);
+        q = q.gte("week_start", start).lt("week_start", endD.toISOString().slice(0, 10));
+      } else if (mode === "period" && start && end) {
+        q = q.gte("week_start", start).lte("week_start", end);
+      }
+      const { data, error } = await q;
+      if (cancelled) return;
+      const list = category === "tarte" ? TARTE_ARTICLES : GLACE_ARTICLES;
+      const totals: Record<string, number> = {};
+      list.forEach((a) => (totals[a] = 0));
+      (data || []).forEach((r: any) => {
+        const a = r.article;
+        if (totals[a] === undefined) return;
+        const s = Number(r.sorties || 0);
+        if (!isNaN(s)) totals[a] += s;
+      });
+      setWeeklyRows(list.map((article) => ({ article, sorties: totals[article] })));
+      setWeeklyLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [variant, category, isWeeklyCat, mode, day, month, start, end]);
+
   // Recalcule les totaux par produit selon le filtre période
   useEffect(() => {
-    if (variant !== "order" || mode === "all" || !levels) {
+    if (variant !== "order" || mode === "all" || !levels || isWeeklyCat) {
       setPeriodTotals({});
       return;
     }
@@ -93,7 +148,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     return () => {
       cancelled = true;
     };
-  }, [mode, day, month, start, end, levels, variant]);
+  }, [mode, day, month, start, end, levels, variant, isWeeklyCat]);
 
   const cycleUnit = async (productId: string, currentUnit: UnitType) => {
     const nextIndex = (UNITS.indexOf(currentUnit) + 1) % UNITS.length;
@@ -127,7 +182,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
               <img src={logo} alt="Logo" className="w-full h-full object-cover" />
             </div>
-            {variant === "order" ? "Qté à commander" : "Stock Restant"}
+            {variant === "order" ? "Commande" : "Stock Restant"}
           </h2>
           <div className="flex gap-2 items-center flex-wrap">
             <div className="relative">
@@ -140,17 +195,20 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               />
             </div>
             <div className="flex rounded-md border overflow-hidden">
-              {(["all", "alimentaire", "emballage"] as const).map((cat) => (
+              {(variant === "order"
+                ? (["alimentaire", "emballage", "tarte", "glace"] as const)
+                : (["all", "alimentaire", "emballage"] as const)
+              ).map((cat) => (
                 <button
                   key={cat}
-                  onClick={() => setCategory(cat)}
+                  onClick={() => setCategory(cat as any)}
                   className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                     category === cat
                       ? "bg-primary text-primary-foreground"
                       : "bg-card text-muted-foreground hover:bg-muted"
                   }`}
                 >
-                  {cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : "Emballage"}
+                  {cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : cat === "emballage" ? "Emballage" : cat === "tarte" ? "Tartes" : "Glaces"}
                 </button>
               ))}
             </div>
@@ -161,14 +219,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         {variant === "order" && (
         <div className="mt-3 flex flex-col gap-2">
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant={mode === "all" ? "default" : "outline"} onClick={() => setMode("all")}>Tout</Button>
-            <Button size="sm" variant={mode === "day" ? "default" : "outline"} onClick={() => setMode("day")}>Jour</Button>
             <Button size="sm" variant={mode === "month" ? "default" : "outline"} onClick={() => setMode("month")}>Mois</Button>
-            <Button size="sm" variant={mode === "period" ? "default" : "outline"} onClick={() => setMode("period")}>Période</Button>
+            <Button size="sm" variant={mode === "period" ? "default" : "outline"} onClick={() => setMode("period")}>Commande</Button>
           </div>
-          {mode === "day" && (
-            <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="w-full sm:w-48" />
-          )}
           {mode === "month" && (
             <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-48" />
           )}
@@ -187,8 +240,34 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         </div>
         )}
       </div>
-      {loading || periodLoading ? (
+      {(loading || periodLoading || weeklyLoading) ? (
         <p className="text-center text-muted-foreground py-8">Chargement...</p>
+      ) : isWeeklyCat ? (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Article</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties période</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté à commander</th>
+              </tr>
+            </thead>
+            <tbody>
+              {weeklyRows
+                .filter((r) => r.article.toLowerCase().includes(search.toLowerCase()))
+                .map((r) => (
+                  <tr key={r.article} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="p-3 text-sm font-medium">{r.article}</td>
+                    <td className="p-3 text-right font-mono text-sm text-accent-foreground">{r.sorties}</td>
+                    <td className="p-3 text-right font-mono text-sm font-semibold text-warning">{r.sorties}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+          {weeklyRows.length === 0 && (
+            <p className="text-center text-muted-foreground py-8">Aucune donnée</p>
+          )}
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full">

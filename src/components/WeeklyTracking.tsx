@@ -6,7 +6,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Save, Check, Plus, Trash2, Filter, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, Check, Plus, Trash2, Filter, X, CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
@@ -493,18 +495,44 @@ export function WeeklyTracking() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-card rounded-lg border p-4 flex flex-wrap items-center gap-3">
-        <Button variant="outline" size="sm" onClick={() => shiftWeek(-1)}>
+      <div className="bg-card rounded-xl border shadow-sm p-4 flex flex-wrap items-center gap-3">
+        <Button variant="outline" size="icon" className="rounded-full h-9 w-9" onClick={() => shiftWeek(-1)}>
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <div className="font-medium">
-          Semaine du {new Date(weekStart).toLocaleDateString("fr-FR")} au {addDays(weekStart, 6)}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2 font-normal">
+              <CalendarIcon className="h-4 w-4 text-primary" />
+              <span className="font-medium">Choisir une semaine</span>
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="single"
+              selected={new Date(weekStart)}
+              onSelect={(d) => d && setWeekStart(fmt(getMonday(d)))}
+              initialFocus
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
+          <CalendarIcon className="h-3.5 w-3.5" />
+          Semaine du {new Date(weekStart).toLocaleDateString("fr-FR")} → {addDays(weekStart, 6)}
         </div>
-        <Button variant="outline" size="sm" onClick={() => shiftWeek(1)}>
+        <Button variant="outline" size="icon" className="rounded-full h-9 w-9" onClick={() => shiftWeek(1)}>
           <ChevronRight className="h-4 w-4" />
         </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setWeekStart(fmt(getMonday(new Date())))}
+          className="text-xs"
+        >
+          Aujourd'hui
+        </Button>
         <div className="ml-auto">
-          <Button onClick={handleSave} disabled={saving} size="sm">
+          <Button onClick={handleSave} disabled={saving} size="sm" className="shadow-sm">
             <Save className="h-4 w-4 mr-2" />
             {saving ? "Enregistrement..." : "Enregistrer"}
           </Button>
