@@ -517,7 +517,7 @@ export function WeeklyTracking() {
           </PopoverContent>
         </Popover>
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
-          <CalendarDaysBadgeIcon />
+          <CalendarIcon className="h-3.5 w-3.5" />
           Semaine du {new Date(weekStart).toLocaleDateString("fr-FR")} → {addDays(weekStart, 6)}
         </div>
         <Button variant="outline" size="icon" className="rounded-full h-9 w-9" onClick={() => shiftWeek(1)}>
