@@ -350,6 +350,38 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             <p className="text-center text-muted-foreground py-8">Aucune donnée</p>
           )}
         </div>
+      ) : variant === "order" ? (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b bg-muted/50">
+                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties période</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté à commander</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((level) => {
+                const v = getRowValues(level);
+                return (
+                  <tr key={level.productId} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
+                    isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
+                  }`}>
+                    <td className="p-3 text-sm font-medium flex items-center gap-1.5">
+                      {isRequisitionProduct(level.productId) && <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />}
+                      {level.productName}
+                    </td>
+                    <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
+                    <td className="p-3 text-right font-mono text-sm font-semibold text-warning">{v.sorties}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {filtered.length === 0 && (
+            <p className="text-center text-muted-foreground py-8">Aucun produit trouvé</p>
+          )}
+        </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full">
