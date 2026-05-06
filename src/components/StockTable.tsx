@@ -1,5 +1,15 @@
 import { useState, useEffect } from "react";
-import { Category, UnitType, setProductUnit, getProductDailyHistory } from "@/lib/stockData";
+import {
+  Category,
+  UnitType,
+  setProductUnit,
+  getMovements,
+  getInitialStocks,
+  getProductUnits,
+  getProductUnitConfigs,
+  movementPiecesToDisplay,
+  roundStockQuantity,
+} from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { useStockLevels } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
