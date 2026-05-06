@@ -95,7 +95,7 @@ export interface StockLevel {
   stockRestant: number;
 }
 
-function roundStockQuantity(value: number): number {
+export function roundStockQuantity(value: number): number {
   return Number.isInteger(value) ? value : Number(value.toFixed(2));
 }
 
@@ -106,7 +106,7 @@ function getDisplayFactor(unit: UnitType, config?: ProductUnitConfig): number {
   return 1;
 }
 
-function movementPiecesToDisplay(quantity: number, unit: UnitType, config?: ProductUnitConfig): number {
+export function movementPiecesToDisplay(quantity: number, unit: UnitType, config?: ProductUnitConfig): number {
   return roundStockQuantity(quantity / getDisplayFactor(unit, config));
 }
 
