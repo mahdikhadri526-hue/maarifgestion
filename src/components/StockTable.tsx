@@ -59,29 +59,67 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     let cancelled = false;
     setWeeklyLoading(true);
     (async () => {
-      let q = supabase.from("weekly_tracking").select("article, sorties, day_of_week, week_start, fiche_type");
-      // Date range matching
-      if (mode === "day") {
-        // Filter by week containing the day, then post-filter exact day
-        q = q.lte("week_start", day);
-      } else if (mode === "month") {
-        const start = `${month}-01`;
-        const endD = new Date(start);
+      let q = supabase
+        .from("weekly_tracking")
+        .select("article, sorties, entrees, stock_initial, day_of_week, week_start, fiche_type, row_index")
+        .eq("fiche_type", "Mouvement glaces & tartes");
+      if (mode === "month") {
+        const s = `${month}-01`;
+        const endD = new Date(s);
         endD.setMonth(endD.getMonth() + 1);
-        q = q.gte("week_start", start).lt("week_start", endD.toISOString().slice(0, 10));
+        q = q.gte("week_start", s).lt("week_start", endD.toISOString().slice(0, 10));
       } else if (mode === "period" && start && end) {
         q = q.gte("week_start", start).lte("week_start", end);
       }
-      const { data, error } = await q;
+      const { data } = await q;
       if (cancelled) return;
       const list = category === "tarte" ? TARTE_ARTICLES : GLACE_ARTICLES;
+      const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+      const num = (v: any) => {
+        if (v === "" || v == null) return 0;
+        const n = Number(v);
+        return isNaN(n) ? 0 : n;
+      };
+      // Group rows by week + article
+      type Cell = { stock_initial: number | null; entrees: number; sorties: number | null };
+      const map = new Map<string, Map<string, Map<number, Cell>>>(); // week -> article -> dayIdx -> cell
+      (data || []).forEach((r: any) => {
+        const article = r.article;
+        if (!article || !list.includes(article)) return;
+        const dayIdx = DAYS.indexOf(r.day_of_week);
+        if (dayIdx < 0) return;
+        if (!map.has(r.week_start)) map.set(r.week_start, new Map());
+        const wm = map.get(r.week_start)!;
+        if (!wm.has(article)) wm.set(article, new Map());
+        const am = wm.get(article)!;
+        const cur = am.get(dayIdx) ?? { stock_initial: null, entrees: 0, sorties: null };
+        if (r.stock_initial != null) cur.stock_initial = num(r.stock_initial);
+        cur.entrees += num(r.entrees);
+        if (r.sorties != null) cur.sorties = (cur.sorties ?? 0) + num(r.sorties);
+        am.set(dayIdx, cur);
+      });
       const totals: Record<string, number> = {};
       list.forEach((a) => (totals[a] = 0));
-      (data || []).forEach((r: any) => {
-        const a = r.article;
-        if (totals[a] === undefined) return;
-        const s = Number(r.sorties || 0);
-        if (!isNaN(s)) totals[a] += s;
+      map.forEach((wm) => {
+        wm.forEach((am, article) => {
+          for (let d = 0; d < DAYS.length; d++) {
+            const cell = am.get(d);
+            if (!cell) continue;
+            let sortie = cell.sorties;
+            if (sortie == null) {
+              // compute = SI_d + entrees_d - SI_(d+1)
+              if (d < DAYS.length - 1) {
+                const next = am.get(d + 1);
+                if (cell.stock_initial != null && next?.stock_initial != null) {
+                  sortie = cell.stock_initial + cell.entrees - next.stock_initial;
+                }
+              }
+            }
+            if (sortie != null && !isNaN(sortie) && sortie > 0) {
+              totals[article] += sortie;
+            }
+          }
+        });
       });
       setWeeklyRows(list.map((article) => ({ article, sorties: totals[article] })));
       setWeeklyLoading(false);
