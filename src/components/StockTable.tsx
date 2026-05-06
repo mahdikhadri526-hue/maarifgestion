@@ -164,30 +164,64 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         if (mode === "period") return start ? dd < start : false;
         return false;
       };
+      // Fetch global data ONCE instead of per-product (avoids N+1 round-trips)
+      const [allMovements, initialStocks, units, configs] = await Promise.all([
+        getMovements(),
+        getInitialStocks(),
+        getProductUnits(),
+        getProductUnitConfigs(),
+      ]);
+      // Group movements by productId -> date -> { entrees, sorties }
+      const byProduct: Record<string, Record<string, { entrees: number; sorties: number }>> = {};
+      const productIds = new Set<string>();
+      levels.forEach((l) => productIds.add(l.productId));
+      allMovements.forEach((m) => {
+        if (!productIds.has(m.productId)) return;
+        const unit = units[m.productId] || "PIECE";
+        const cfg = configs[m.productId];
+        const dq = movementPiecesToDisplay(m.quantity, unit, cfg);
+        const d = m.date.split("T")[0];
+        if (!byProduct[m.productId]) byProduct[m.productId] = {};
+        const bd = byProduct[m.productId];
+        if (!bd[d]) bd[d] = { entrees: 0, sorties: 0 };
+        if (m.type === "entree") bd[d].entrees += dq;
+        else bd[d].sorties += dq;
+      });
       const results: Record<string, { stockInitial: number; entrees: number; sorties: number; stockRestant: number }> = {};
-      await Promise.all(
-        levels.map(async (lvl) => {
-          const h = await getProductDailyHistory(lvl.productId);
-          const inPeriod = h.filter((r) => matchDate(r.date));
-          let stockInitial = 0;
-          let stockRestant = 0;
-          if (inPeriod.length > 0) {
-            stockInitial = inPeriod[0].stockInitial;
-            stockRestant = inPeriod[inPeriod.length - 1].stockRestant;
-          } else {
-            const before = h.filter((r) => isBefore(r.date));
-            const last = before[before.length - 1];
-            stockInitial = last ? last.stockRestant : (h[0]?.stockInitial ?? 0);
-            stockRestant = stockInitial;
+      levels.forEach((lvl) => {
+        const initial = initialStocks[lvl.productId] || 0;
+        const byDate = byProduct[lvl.productId] || {};
+        const dates = Object.keys(byDate).sort();
+        let cumul = initial;
+        let stockInitialPeriod: number | null = null;
+        let stockRestantPeriod = initial;
+        let entreesPeriod = 0;
+        let sortiesPeriod = 0;
+        let lastBeforeRestant = initial;
+        for (const date of dates) {
+          const stockInitialDay = cumul;
+          const { entrees, sorties } = byDate[date];
+          cumul = stockInitialDay + entrees - sorties;
+          if (matchDate(date)) {
+            if (stockInitialPeriod === null) stockInitialPeriod = stockInitialDay;
+            entreesPeriod += entrees;
+            sortiesPeriod += sorties;
+            stockRestantPeriod = cumul;
+          } else if (isBefore(date)) {
+            lastBeforeRestant = cumul;
           }
-          results[lvl.productId] = {
-            stockInitial,
-            entrees: inPeriod.reduce((s, r) => s + r.entrees, 0),
-            sorties: inPeriod.reduce((s, r) => s + r.sorties, 0),
-            stockRestant,
-          };
-        })
-      );
+        }
+        if (stockInitialPeriod === null) {
+          stockInitialPeriod = lastBeforeRestant;
+          stockRestantPeriod = lastBeforeRestant;
+        }
+        results[lvl.productId] = {
+          stockInitial: roundStockQuantity(stockInitialPeriod),
+          entrees: roundStockQuantity(entreesPeriod),
+          sorties: roundStockQuantity(sortiesPeriod),
+          stockRestant: roundStockQuantity(stockRestantPeriod),
+        };
+      });
       if (!cancelled) {
         setPeriodTotals(results);
         setPeriodLoading(false);
