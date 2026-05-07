@@ -35,17 +35,25 @@ function getMonday(d: Date) {
 }
 
 function fmt(d: Date) {
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function parseISO(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
 }
 
 function addDays(iso: string, n: number) {
-  const d = new Date(iso);
+  const d = parseISO(iso);
   d.setDate(d.getDate() + n);
   return d.toLocaleDateString("fr-FR");
 }
 
 function dayShort(iso: string, n: number) {
-  const d = new Date(iso);
+  const d = parseISO(iso);
   d.setDate(d.getDate() + n);
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
 }
