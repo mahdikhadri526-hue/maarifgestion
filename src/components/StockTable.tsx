@@ -50,7 +50,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [end, setEnd] = useState<string>(todayISO());
   const [periodTotals, setPeriodTotals] = useState<Record<string, { stockInitial: number; entrees: number; sorties: number; stockRestant: number }>>({});
   const [periodLoading, setPeriodLoading] = useState(false);
-  const [weeklyRows, setWeeklyRows] = useState<Array<{ article: string; sorties: number }>>([]);
+  const [weeklyRows, setWeeklyRows] = useState<Array<{ article: string; sorties: number; stockActuel: number }>>([]);
   const [weeklyLoading, setWeeklyLoading] = useState(false);
 
   const isWeeklyCat = category === "tarte" || category === "glace";
@@ -110,7 +110,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       });
       const totals: Record<string, number> = {};
       list.forEach((a) => (totals[a] = 0));
-      map.forEach((wm) => {
+      // Track latest stock per article: pick max(week_start) and max dayIdx with data
+      const latestStock: Record<string, { week: string; dayIdx: number; value: number }> = {};
+      map.forEach((wm, week) => {
         wm.forEach((am, article) => {
           for (let d = 0; d < DAYS.length; d++) {
             const cell = am.get(d);
@@ -128,10 +130,22 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             if (sortie != null && !isNaN(sortie) && sortie > 0) {
               totals[article] += sortie;
             }
+            // Update latest stock value (SI + entrees - sorties of that day)
+            if (cell.stock_initial != null) {
+              const dayStock = cell.stock_initial + cell.entrees - (sortie ?? 0);
+              const cur = latestStock[article];
+              if (!cur || week > cur.week || (week === cur.week && d > cur.dayIdx)) {
+                latestStock[article] = { week, dayIdx: d, value: dayStock };
+              }
+            }
           }
         });
       });
-      setWeeklyRows(list.map((article) => ({ article, sorties: totals[article] })));
+      setWeeklyRows(list.map((article) => ({
+        article,
+        sorties: totals[article],
+        stockActuel: latestStock[article]?.value ?? 0,
+      })));
       setWeeklyLoading(false);
     })();
     return () => { cancelled = true; };
@@ -331,6 +345,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Article</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties période</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock actuel</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté à commander</th>
               </tr>
             </thead>
@@ -341,7 +356,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   <tr key={r.article} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3 text-sm font-medium">{r.article}</td>
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{r.sorties}</td>
-                    <td className="p-3 text-right font-mono text-sm font-semibold text-warning">{r.sorties}</td>
+                    <td className="p-3 text-right font-mono text-sm">{r.stockActuel}</td>
+                    <td className="p-3 text-right font-mono text-sm font-semibold text-warning">{Math.max(0, r.sorties - r.stockActuel)}</td>
                   </tr>
                 ))}
             </tbody>
@@ -357,12 +373,15 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties période</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock actuel</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté à commander</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((level) => {
                 const v = getRowValues(level);
+                const stockActuel = level.stockRestant;
+                const aCommander = Math.max(0, v.sorties - stockActuel);
                 return (
                   <tr key={level.productId} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                     isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
@@ -372,7 +391,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       {level.productName}
                     </td>
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
-                    <td className="p-3 text-right font-mono text-sm font-semibold text-warning">{v.sorties}</td>
+                    <td className="p-3 text-right font-mono text-sm">{stockActuel}</td>
+                    <td className="p-3 text-right font-mono text-sm font-semibold text-warning">{aCommander}</td>
                   </tr>
                 );
               })}
