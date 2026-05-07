@@ -94,6 +94,26 @@ const Index = () => {
             {/* Expiry Alerts */}
             <ExpiryAlerts />
 
+            {/* Pro navigation buttons - access to all tables */}
+            <div className="bg-card rounded-xl border shadow-sm p-4 mt-4">
+              <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-3">Accès rapide</h2>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                {tabs.filter((t) => t.id !== "dashboard").map((b) => (
+                  <button
+                    key={b.id}
+                    onClick={() => setTab(b.id)}
+                    className="group flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border bg-background hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all text-xs font-medium shadow-sm"
+                  >
+                    <span className="flex items-center gap-2">
+                      <b.icon className="h-3.5 w-3.5" />
+                      {b.label}
+                    </span>
+                    <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
             {ENABLE_DASHBOARD_ORDER_TABLE && (
             <div className="bg-card rounded-xl border shadow-sm p-4 mt-4">
               <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
@@ -109,27 +129,6 @@ const Index = () => {
                 >
                   {showStock ? "Masquer" : "Consulter"}
                 </button>
-              </div>
-              {/* Pro navigation buttons */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-                {[
-                  { label: "Stock Initial", tab: "stock-initial" as Tab, icon: Database },
-                  { label: "Mouvements", tab: "mouvements" as Tab, icon: PlusCircle },
-                  { label: "Stock Restant", tab: "produit" as Tab, icon: FileText },
-                  { label: "Suivi hebdo.", tab: "hebdo" as Tab, icon: CalendarDays },
-                ].map((b) => (
-                  <button
-                    key={b.tab}
-                    onClick={() => setTab(b.tab)}
-                    className="group flex items-center justify-between gap-2 px-3 py-2 rounded-lg border bg-background hover:bg-primary hover:text-primary-foreground hover:border-primary transition-all text-xs font-medium shadow-sm"
-                  >
-                    <span className="flex items-center gap-2">
-                      <b.icon className="h-3.5 w-3.5" />
-                      {b.label}
-                    </span>
-                    <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
-                ))}
               </div>
               {showStock && <StockTable variant="order" />}
             </div>
