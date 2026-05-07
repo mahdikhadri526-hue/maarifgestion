@@ -316,7 +316,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         <div className="mt-3 flex flex-col gap-2">
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant={mode === "month" ? "default" : "outline"} onClick={() => setMode("month")}>Mois</Button>
-            <Button size="sm" variant={mode === "period" ? "default" : "outline"} onClick={() => setMode("period")}>Commande</Button>
+            <Button size="sm" variant={mode === "period" ? "default" : "outline"} onClick={() => setMode("period")}>Période</Button>
           </div>
           {mode === "month" && (
             <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-48" />
