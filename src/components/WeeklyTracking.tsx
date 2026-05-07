@@ -675,7 +675,7 @@ export function WeeklyTracking() {
                 onChange={(e) => {
                   const v = e.target.value;
                   setFilterFrom(v);
-                  if (v) setWeekStart(fmt(getMonday(new Date(v))));
+                  if (v) setWeekStart(fmt(getMonday(parseISO(v))));
                 }}
               />
             </div>
