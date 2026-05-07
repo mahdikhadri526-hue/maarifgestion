@@ -153,11 +153,11 @@ export function WeeklyTracking() {
   // Compute the list of week-starts to load (covers period filter)
   const weeksToLoad = useMemo(() => {
     const set = new Set<string>([weekStart]);
-    if (filterFrom) set.add(fmt(getMonday(new Date(filterFrom))));
-    if (filterTo) set.add(fmt(getMonday(new Date(filterTo))));
+    if (filterFrom) set.add(fmt(getMonday(parseISO(filterFrom))));
+    if (filterTo) set.add(fmt(getMonday(parseISO(filterTo))));
     if (filterFrom && filterTo) {
-      const start = getMonday(new Date(filterFrom));
-      const end = getMonday(new Date(filterTo));
+      const start = getMonday(parseISO(filterFrom));
+      const end = getMonday(parseISO(filterTo));
       for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 7)) {
         set.add(fmt(d));
       }
@@ -399,7 +399,7 @@ export function WeeklyTracking() {
   };
 
   const shiftWeek = (n: number) => {
-    const d = new Date(weekStart);
+    const d = parseISO(weekStart);
     d.setDate(d.getDate() + n * 7);
     setWeekStart(fmt(d));
   };
@@ -418,7 +418,7 @@ export function WeeklyTracking() {
     const weeks = filterFrom || filterTo ? weeksToLoad.slice().sort() : [weekStart];
     for (const wk of weeks) {
       DAYS.forEach((d, i) => {
-        const dt = new Date(wk);
+        const dt = parseISO(wk);
         dt.setDate(dt.getDate() + i);
         const iso = fmt(dt);
         if (filterDay !== "all" && weeks.length === 1 && Number(filterDay) !== i) return;
@@ -517,7 +517,7 @@ export function WeeklyTracking() {
           <PopoverContent className="w-auto p-0" align="start">
             <Calendar
               mode="single"
-              selected={new Date(weekStart)}
+              selected={parseISO(weekStart)}
               onSelect={(d) => d && setWeekStart(fmt(getMonday(d)))}
               initialFocus
               className="p-3 pointer-events-auto"
@@ -526,7 +526,7 @@ export function WeeklyTracking() {
         </Popover>
         <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
           <CalendarIcon className="h-3.5 w-3.5" />
-          Semaine du {new Date(weekStart).toLocaleDateString("fr-FR")} → {addDays(weekStart, 6)}
+          Semaine du {parseISO(weekStart).toLocaleDateString("fr-FR")} → {addDays(weekStart, 6)}
         </div>
         <Button variant="outline" size="icon" className="rounded-full h-9 w-9" onClick={() => shiftWeek(1)}>
           <ChevronRight className="h-4 w-4" />
