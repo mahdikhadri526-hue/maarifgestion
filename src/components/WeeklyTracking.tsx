@@ -547,43 +547,64 @@ export function WeeklyTracking() {
 
   return (
     <div className="space-y-4">
+      {/* TOP BAR: week selector + toggle */}
       <div className="bg-card rounded-xl border shadow-sm p-4 flex flex-wrap items-center gap-3">
-        <Button variant="outline" size="icon" className="rounded-full h-9 w-9" onClick={() => shiftWeek(-1)}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 font-normal">
-              <CalendarIcon className="h-4 w-4 text-primary" />
-              <span className="font-medium">Choisir une semaine</span>
+        {showControls && (
+          <>
+            <Button variant="outline" size="icon" className="rounded-full h-9 w-9" onClick={() => shiftWeek(-1)}>
+              <ChevronLeft className="h-4 w-4" />
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={parseISO(weekStart)}
-              onSelect={(d) => d && setWeekStart(fmt(getMonday(d)))}
-              initialFocus
-              className="p-3 pointer-events-auto"
-            />
-          </PopoverContent>
-        </Popover>
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
-          <CalendarIcon className="h-3.5 w-3.5" />
-          Semaine du {parseISO(weekStart).toLocaleDateString("fr-FR")} → {addDays(weekStart, 6)}
-        </div>
-        <Button variant="outline" size="icon" className="rounded-full h-9 w-9" onClick={() => shiftWeek(1)}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 font-normal">
+                  <CalendarIcon className="h-4 w-4 text-primary" />
+                  <span className="font-medium">Choisir une semaine</span>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={parseISO(weekStart)}
+                  onSelect={(d) => d && setWeekStart(fmt(getMonday(d)))}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
+              <CalendarIcon className="h-3.5 w-3.5" />
+              Semaine du {parseISO(weekStart).toLocaleDateString("fr-FR")} → {addDays(weekStart, 6)}
+            </div>
+            <Button variant="outline" size="icon" className="rounded-full h-9 w-9" onClick={() => shiftWeek(1)}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setWeekStart(fmt(getMonday(new Date())))}
+              className="text-xs"
+            >
+              Aujourd'hui
+            </Button>
+          </>
+        )}
+        {!showControls && (
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
+            <CalendarIcon className="h-3.5 w-3.5" />
+            Semaine du {parseISO(weekStart).toLocaleDateString("fr-FR")} → {addDays(weekStart, 6)}
+          </div>
+        )}
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setWeekStart(fmt(getMonday(new Date())))}
-          className="text-xs"
+          onClick={() => setShowControls((v) => !v)}
+          className="text-xs ml-auto"
+          title={showControls ? "Masquer filtres et semaine" : "Afficher filtres et semaine"}
         >
-          Aujourd'hui
+          {showControls ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
+          {showControls ? "Masquer" : "Afficher"}
         </Button>
-        <div className="ml-auto">
+        <div className={showControls ? "" : "ml-auto"}>
           <Button onClick={handleSave} disabled={saving} size="sm" className="shadow-sm">
             <Save className="h-4 w-4 mr-2" />
             {saving ? "Enregistrement..." : "Enregistrer"}
