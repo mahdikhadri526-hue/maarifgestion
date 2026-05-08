@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight, Save, Check, Plus, Trash2, Filter, X, Calend
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
