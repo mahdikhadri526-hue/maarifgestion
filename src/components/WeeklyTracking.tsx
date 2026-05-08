@@ -147,6 +147,7 @@ export function WeeklyTracking() {
   const [filterType, setFilterType] = useState<FilterTypeExt>("all");
   const [filterFrom, setFilterFrom] = useState<string>(""); // YYYY-MM-DD
   const [filterTo, setFilterTo] = useState<string>(""); // YYYY-MM-DD
+  const [showControls, setShowControls] = useState(true);
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
   const activeArticles = tab === "glace" ? GLACE_ARTICLES : tab === "tarte" ? TARTE_ARTICLES : ARTICLES;
