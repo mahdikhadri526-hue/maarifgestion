@@ -713,6 +713,7 @@ export function WeeklyTracking() {
         {(["glace", "tarte"] as const).map((t) => (
         <TabsContent key={t} value={t} className="mt-4 space-y-3">
           {/* FILTERS BAR */}
+          {showControls && (
           <div className="bg-card rounded-lg border p-3 flex flex-wrap items-end gap-3">
             <div className="flex items-center gap-1 text-sm font-medium text-muted-foreground">
               <Filter className="h-4 w-4" /> Filtres
@@ -778,6 +779,7 @@ export function WeeklyTracking() {
               />
             </div>
           </div>
+          )}
 
           <div className="bg-card rounded-lg border overflow-x-auto">
             <table className="text-xs border-collapse">
