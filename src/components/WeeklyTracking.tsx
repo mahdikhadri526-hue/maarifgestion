@@ -748,6 +748,13 @@ export function WeeklyTracking() {
                 <X className="h-3 w-3 mr-1" /> Réinitialiser
               </Button>
             )}
+            <div className="ml-auto">
+              <PhotoScanEntry
+                articles={t === "glace" ? GLACE_ARTICLES : TARTE_ARTICLES}
+                onConfirm={handleScanResults}
+                buttonLabel="📷 Scanner entrée"
+              />
+            </div>
           </div>
 
           <div className="bg-card rounded-lg border overflow-x-auto">
