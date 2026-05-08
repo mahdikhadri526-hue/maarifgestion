@@ -10,6 +10,7 @@ import { ChevronLeft, ChevronRight, Save, Check, Plus, Trash2, Filter, X, Calend
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
@@ -501,6 +502,48 @@ export function WeeklyTracking() {
   const filtersActive =
     filterArticle !== "all" || filterDay !== "all" || filterType !== "all" || !!filterFrom || !!filterTo;
 
+  const handleScanResults = (scanned: ScannedEntry[]) => {
+    const today = new Date();
+    const monday = getMonday(today);
+    const targetWeek = fmt(monday);
+    const dayDiff = Math.floor(
+      (new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime() -
+        monday.getTime()) /
+        86400000,
+    );
+    const dayName = DAYS[Math.max(0, Math.min(6, dayDiff))];
+
+    setRows((prev) => {
+      let next = [...prev];
+      for (const e of scanned) {
+        const existingForArticle = next.filter(
+          (r) =>
+            r.week_start === targetWeek &&
+            r.day_of_week === dayName &&
+            r.article === e.article &&
+            (r.entrees != null || r.lot_number),
+        );
+        const nextIdx =
+          existingForArticle.length > 0
+            ? Math.max(...existingForArticle.map((r) => r.row_index ?? 0)) + 1
+            : 1;
+        next.push({
+          fiche_type: ficheType,
+          week_start: targetWeek,
+          day_of_week: dayName,
+          row_index: nextIdx,
+          article: e.article,
+          entrees: e.quantity,
+          lot_number: e.lotNumber,
+        });
+      }
+      return next;
+    });
+
+    if (targetWeek !== weekStart) setWeekStart(targetWeek);
+    toast.info("N'oubliez pas d'enregistrer pour sauvegarder.");
+  };
+
   return (
     <div className="space-y-4">
       <div className="bg-card rounded-xl border shadow-sm p-4 flex flex-wrap items-center gap-3">
@@ -705,6 +748,13 @@ export function WeeklyTracking() {
                 <X className="h-3 w-3 mr-1" /> Réinitialiser
               </Button>
             )}
+            <div className="ml-auto">
+              <PhotoScanEntry
+                articles={t === "glace" ? GLACE_ARTICLES : TARTE_ARTICLES}
+                onConfirm={handleScanResults}
+                buttonLabel="📷 Scanner entrée"
+              />
+            </div>
           </div>
 
           <div className="bg-card rounded-lg border overflow-x-auto">
