@@ -794,7 +794,7 @@ export function WeeklyTracking() {
             <table className="text-xs border-collapse">
               <thead className="bg-muted sticky top-0">
                 <tr>
-                  <th className="p-2 text-left sticky left-0 bg-muted z-10 border-r">Article</th>
+                  <th className="p-1 text-left sticky left-0 bg-muted z-10 border-r w-[110px] text-[11px]">Article</th>
                   {visibleDays.map(({ day, dIdx, wkStart, iso }) => (
                     <th
                       key={`${wkStart}-${day}`}
@@ -832,8 +832,9 @@ export function WeeklyTracking() {
                     className={cn("border-t", rowI % 2 === 1 && "bg-muted/30", "hover:bg-accent/20")}
                   >
                     <td
+                      title={article}
                       className={cn(
-                        "p-2 font-medium sticky left-0 z-10 border-r whitespace-nowrap border-b-2 border-b-primary/10 shadow-[2px_0_4px_-2px_hsl(var(--border))]",
+                        "p-1 font-medium sticky left-0 z-10 border-r whitespace-nowrap border-b-2 border-b-primary/10 shadow-[2px_0_4px_-2px_hsl(var(--border))] max-w-[110px] truncate text-[11px]",
                         rowI % 2 === 1 ? "bg-muted" : "bg-card",
                       )}
                     >
