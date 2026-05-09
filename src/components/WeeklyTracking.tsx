@@ -31,8 +31,9 @@ const GLACE_ARTICLES = [
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
   "Parfait", "Fraise", "Framboise", "Orange", "Mangue", "Citron", "Pêche",
   "Banane", "Citron menthe", "Orange cannelle", "Réglisse",
+  "Crème fraîche (mousse fouettée)",
 ];
-const ARTICLES = [...TARTE_ARTICLES, ...GLACE_ARTICLES, "CREME FRAICHE"];
+const ARTICLES = [...TARTE_ARTICLES, ...GLACE_ARTICLES];
 
 function getMonday(d: Date) {
   const date = new Date(d);
