@@ -38,6 +38,7 @@ const GLACE_ARTICLES = [
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
   "Parfait", "Fraise", "Framboise", "Orange", "Mangue", "Citron", "Pêche",
   "Banane", "Citron menthe", "Orange cannelle", "Réglisse",
+  "Crème fraîche (mousse fouettée)",
 ];
 
 const UNITS: UnitType[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU"];
