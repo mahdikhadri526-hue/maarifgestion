@@ -119,43 +119,31 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       });
       const totals: Record<string, number> = {};
       list.forEach((a) => (totals[a] = 0));
-      // Track latest stock per article via running balance across the week.
-      // Algorithm: walk Mon→Sun. If SI given for the day, any positive drop
-      // versus the previous evening counts as an implicit sortie. Days with
-      // entries but no SI are treated as morning = previous evening (or 0
-      // when nothing is known yet), so orphan entries still flow into stock.
+      // Match the visible weekly tracking calculation exactly: sorties are
+      // only inferred between two consecutive Stock Initial values. Entries
+      // before the first Stock Initial must not be counted as sorties.
       const latestStock: Record<string, { week: string; value: number }> = {};
-      // Iterate weeks chronologically so latestStock keeps the most recent
       const weekKeys = Array.from(map.keys()).sort();
       for (const week of weekKeys) {
         const wm = map.get(week)!;
         wm.forEach((am, article) => {
-          let running: number | null = null; // evening stock
           for (let d = 0; d < DAYS.length; d++) {
             const cell = am.get(d);
             if (!cell) continue;
-            const hasSI = cell.stock_initial != null;
-            const hasE = cell.entrees > 0;
-            const hasS = cell.sorties != null;
-            if (!hasSI && !hasE && !hasS) continue;
-            // Determine morning stock
-            let morning: number;
-            if (hasSI) {
-              if (running != null && (cell.stock_initial as number) < running) {
-                totals[article] += running - (cell.stock_initial as number);
+            let currentStock: number | null = cell.stock_initial != null ? cell.stock_initial : null;
+            if (d < DAYS.length - 1) {
+              const next = am.get(d + 1);
+              if (cell.stock_initial != null && next?.stock_initial != null) {
+                totals[article] += Math.max(0, cell.stock_initial + cell.entrees - next.stock_initial);
+                currentStock = next.stock_initial;
               }
-              morning = cell.stock_initial as number;
-            } else {
-              morning = running ?? 0;
+            } else if (cell.sorties != null) {
+              totals[article] += Math.max(0, cell.sorties);
+              if (cell.stock_initial != null) currentStock = cell.stock_initial + cell.entrees - Math.max(0, cell.sorties);
             }
-            const explicitSortie = hasS ? Math.max(0, cell.sorties as number) : 0;
-            if (hasS) totals[article] += explicitSortie;
-            running = morning + cell.entrees - explicitSortie;
-          }
-          if (running != null) {
-            const cur = latestStock[article];
-            if (!cur || week >= cur.week) {
-              latestStock[article] = { week, value: running };
+            if (currentStock != null) {
+              const cur = latestStock[article];
+              if (!cur || week >= cur.week) latestStock[article] = { week, value: currentStock };
             }
           }
         });
