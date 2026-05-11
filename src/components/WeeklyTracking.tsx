@@ -164,6 +164,9 @@ export function WeeklyTracking() {
   // Compute the list of week-starts to load (covers period filter)
   const weeksToLoad = useMemo(() => {
     const set = new Set<string>([weekStart]);
+    // Always load adjacent weeks so lots & sorties can flow between Sunday and next Monday
+    const prev = parseISO(weekStart); prev.setDate(prev.getDate() - 7); set.add(fmt(prev));
+    const next = parseISO(weekStart); next.setDate(next.getDate() + 7); set.add(fmt(next));
     if (filterFrom) set.add(fmt(getMonday(parseISO(filterFrom))));
     if (filterTo) set.add(fmt(getMonday(parseISO(filterTo))));
     if (filterFrom && filterTo) {
@@ -273,6 +276,14 @@ export function WeeklyTracking() {
 
   const getSortie = (dayIdx: number, article: string, wkStart: string = weekStart): number | "" => {
     if (dayIdx >= DAYS.length - 1) {
+      // Dimanche : si la semaine suivante a un Stock Initial Lundi, en déduire la sortie implicite
+      const nextWk = (() => { const d = parseISO(wkStart); d.setDate(d.getDate() + 7); return fmt(d); })();
+      const siNextMon = getSI(0, article, nextWk);
+      const siCur = getSI(6, article, wkStart);
+      if (siNextMon !== "" && siCur !== "") {
+        const eCur = entriesForAt(wkStart, DAYS[6], article).reduce((s, e) => s + num(e.entree), 0);
+        return Number(siCur) + eCur - Number(siNextMon);
+      }
       const v = cellAt(wkStart, DAYS[dayIdx], 0, article).sorties;
       return v === "" || v == null ? "" : Number(v);
     }
@@ -291,12 +302,22 @@ export function WeeklyTracking() {
     wkStart: string = weekStart,
   ): { lot: string; remaining: number }[] => {
     type Batch = { lot: string; remaining: number };
-    const batches: Batch[] = [];
+    // Seed avec les lots restants à la fin du dimanche de la semaine précédente (report)
+    const prevWk = (() => { const d = parseISO(wkStart); d.setDate(d.getDate() - 7); return fmt(d); })();
+    const hasPrev = rows.some(
+      (r) => r.week_start === prevWk && r.fiche_type === ficheType && r.article === article,
+    );
+    let batches: Batch[] = hasPrev
+      ? getLotBalancesEndOfDay(6, article, prevWk)
+          .filter((b) => b.remaining > 0)
+          .map((b) => ({ ...b }))
+      : [];
     for (let d = 0; d <= dayIdx; d++) {
       const day = DAYS[d];
       if (d === 0) {
         const si = num(cellAt(wkStart, day, 0, article).stock_initial);
-        if (si > 0) batches.push({ lot: "", remaining: si });
+        // Si un report existe déjà depuis la semaine précédente, ne pas dupliquer avec le SI Lundi
+        if (si > 0 && batches.length === 0) batches.push({ lot: "", remaining: si });
       }
       for (const e of entriesForAt(wkStart, day, article)) {
         const q = num(e.entree);
