@@ -49,7 +49,7 @@ const todayISO = () => new Date().toISOString().split("T")[0];
 const currentMonthISO = () => new Date().toISOString().slice(0, 7);
 
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
-  const [category, setCategory] = useState<Category | "all" | "tarte" | "glace">("all");
+  const [category, setCategory] = useState<Category | "all" | "tarte" | "glace">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
   const [pendingUnit, setPendingUnit] = useState<{ productId: string; currentUnit: UnitType } | null>(null);
   const [mode, setMode] = useState<FilterMode>(variant === "order" ? "month" : "all");
@@ -81,19 +81,28 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       let q = supabase
         .from("weekly_tracking")
         .select("article, sorties, entrees, stock_initial, day_of_week, week_start, fiche_type, row_index")
-        .eq("fiche_type", "Mouvement glaces & tartes");
-      if (mode === "month") {
-        const s = `${month}-01`;
-        const endD = new Date(s);
-        endD.setMonth(endD.getMonth() + 1);
-        q = q.gte("week_start", s).lt("week_start", endD.toISOString().slice(0, 10));
-      } else if (mode === "period" && start && end) {
-        q = q.gte("week_start", start).lte("week_start", end);
-      }
+        .eq("fiche_type", "Mouvement glaces & tartes")
+        .range(0, 5000);
       const { data } = await q;
       if (cancelled) return;
       const list = category === "tarte" ? TARTE_ARTICLES : GLACE_ARTICLES;
       const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+      const isoDate = (base: string, offset: number) => {
+        const [y, m, d] = base.split("-").map(Number);
+        const date = new Date(y, (m || 1) - 1, d || 1);
+        date.setDate(date.getDate() + offset);
+        return date.toISOString().slice(0, 10);
+      };
+      const isInSelectedPeriod = (date: string) => {
+        if (mode === "day") return day ? date === day : true;
+        if (mode === "month") return month ? date.startsWith(month) : true;
+        if (mode === "period") {
+          if (start && date < start) return false;
+          if (end && date > end) return false;
+          return true;
+        }
+        return true;
+      };
       const num = (v: any) => {
         if (v === "" || v == null) return 0;
         const n = Number(v);
@@ -119,31 +128,42 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       });
       const totals: Record<string, number> = {};
       list.forEach((a) => (totals[a] = 0));
-      // Match the visible weekly tracking calculation exactly: sorties are
-      // only inferred between two consecutive Stock Initial values. Entries
-      // before the first Stock Initial must not be counted as sorties.
-      const latestStock: Record<string, { week: string; value: number }> = {};
+      // Même calcul que le Suivi hebdo, y compris Dimanche -> Lundi suivant.
+      const getCell = (week: string, article: string, d: number) => map.get(week)?.get(article)?.get(d);
+      const getSortie = (week: string, article: string, d: number) => {
+        const cell = getCell(week, article, d);
+        if (!cell) return 0;
+        if (d >= DAYS.length - 1) {
+          const nextMonday = getCell(isoDate(week, 7), article, 0);
+          if (cell.stock_initial != null && nextMonday?.stock_initial != null) {
+            return Math.max(0, cell.stock_initial + cell.entrees - nextMonday.stock_initial);
+          }
+          return cell.sorties != null ? Math.max(0, cell.sorties) : 0;
+        }
+        const next = getCell(week, article, d + 1);
+        if (cell.stock_initial != null && next?.stock_initial != null) {
+          return Math.max(0, cell.stock_initial + cell.entrees - next.stock_initial);
+        }
+        return 0;
+      };
+      const latestStock: Record<string, { date: string; value: number }> = {};
       const weekKeys = Array.from(map.keys()).sort();
       for (const week of weekKeys) {
         const wm = map.get(week)!;
         wm.forEach((am, article) => {
+          let runningStock: number | null = null;
           for (let d = 0; d < DAYS.length; d++) {
             const cell = am.get(d);
             if (!cell) continue;
-            let currentStock: number | null = cell.stock_initial != null ? cell.stock_initial : null;
-            if (d < DAYS.length - 1) {
-              const next = am.get(d + 1);
-              if (cell.stock_initial != null && next?.stock_initial != null) {
-                totals[article] += Math.max(0, cell.stock_initial + cell.entrees - next.stock_initial);
-                currentStock = next.stock_initial;
-              }
-            } else if (cell.sorties != null) {
-              totals[article] += Math.max(0, cell.sorties);
-              if (cell.stock_initial != null) currentStock = cell.stock_initial + cell.entrees - Math.max(0, cell.sorties);
-            }
+            const date = isoDate(week, d);
+            const sortie = getSortie(week, article, d);
+            if (isInSelectedPeriod(date)) totals[article] += sortie;
+            if (cell.stock_initial != null) runningStock = cell.stock_initial;
+            if (runningStock != null) runningStock = Math.max(0, runningStock + cell.entrees - sortie);
+            const currentStock = runningStock ?? cell.stock_initial;
             if (currentStock != null) {
               const cur = latestStock[article];
-              if (!cur || week >= cur.week) latestStock[article] = { week, value: currentStock };
+              if (!cur || date >= cur.date) latestStock[article] = { date, value: currentStock };
             }
           }
         });
