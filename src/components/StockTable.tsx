@@ -91,7 +91,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         const [y, m, d] = base.split("-").map(Number);
         const date = new Date(y, (m || 1) - 1, d || 1);
         date.setDate(date.getDate() + offset);
-        return date.toISOString().slice(0, 10);
+        const yy = date.getFullYear();
+        const mm = String(date.getMonth() + 1).padStart(2, "0");
+        const dd = String(date.getDate()).padStart(2, "0");
+        return `${yy}-${mm}-${dd}`;
       };
       const isInSelectedPeriod = (date: string) => {
         if (mode === "day") return day ? date === day : true;
