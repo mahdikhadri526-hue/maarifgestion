@@ -364,14 +364,27 @@ export function WeeklyTracking() {
     // SI du lundi (sans lot)
     const si = num(cellAt(wkStart, DAYS[0], 0, article).stock_initial);
     if (si > 0) out.push({ lot: "", remaining: si });
-    // Entrées cumulées du lundi jusqu'au jour courant (sans soustraire les sorties)
+    // Entrées cumulées + déduction FIFO des sorties jour par jour
     for (let d = 0; d <= dayIdx; d++) {
       for (const e of entriesForAt(wkStart, DAYS[d], article)) {
         const q = num(e.entree);
         if (q > 0) out.push({ lot: (e.lot ?? "").toString(), remaining: q });
       }
+      let sortie = num(cellAt(wkStart, DAYS[d], 0, article).sorties);
+      if (!sortie) {
+        const computed = getSortie(d, article, wkStart);
+        if (typeof computed === "number") sortie = computed;
+      }
+      let need = sortie;
+      for (const b of out) {
+        if (need <= 0) break;
+        if (b.remaining <= 0) continue;
+        const take = Math.min(b.remaining, need);
+        b.remaining -= take;
+        need -= take;
+      }
     }
-    return out;
+    return out.filter((b) => b.remaining > 0);
   };
 
   const addEntryRow = (day: string, article: string) => {
@@ -1004,7 +1017,7 @@ export function WeeklyTracking() {
           <div className="text-xs text-muted-foreground px-1">
             <span className="text-success font-medium">Entrées en vert</span> ·{" "}
             <span className="text-destructive font-medium">Sorties en rouge</span> · La colonne{" "}
-            <strong>Lot existant</strong> cumule automatiquement le SI du lundi et toutes les entrées de la semaine (sans déduire les sorties).
+            <strong>Lot existant</strong> cumule le SI du lundi et les entrées, puis déduit les sorties en FIFO.
           </div>
         </TabsContent>
         ))}
