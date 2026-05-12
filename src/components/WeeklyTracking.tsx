@@ -354,6 +354,25 @@ export function WeeklyTracking() {
     return parts.join(" / ");
   };
 
+  // Lots du jour uniquement (SI le lundi + entrées du jour) — pour tarte/glace
+  const getLotsOfDay = (
+    dayIdx: number,
+    article: string,
+    wkStart: string = weekStart,
+  ): { lot: string; remaining: number }[] => {
+    const out: { lot: string; remaining: number }[] = [];
+    const day = DAYS[dayIdx];
+    if (dayIdx === 0) {
+      const si = num(cellAt(wkStart, day, 0, article).stock_initial);
+      if (si > 0) out.push({ lot: "", remaining: si });
+    }
+    for (const e of entriesForAt(wkStart, day, article)) {
+      const q = num(e.entree);
+      if (q > 0) out.push({ lot: (e.lot ?? "").toString(), remaining: q });
+    }
+    return out;
+  };
+
   const addEntryRow = (day: string, article: string) => {
     const existing = entriesFor(day, article);
     const nextIdx = existing.length > 0 ? Math.max(...existing.map((e) => e.rowIndex)) + 1 : 1;
@@ -713,24 +732,20 @@ export function WeeklyTracking() {
                             onChange={(v) => updateCell(day, rowIdx, null, { texture: v })}
                           />
                         </td>
-                        {isFirst && (
-                          <>
-                            <td rowSpan={2} className="p-1 align-middle">
-                              <Input
-                                value={cell(day, 0, null).visa_operateur ?? ""}
-                                onChange={(e) => updateCell(day, 0, null, { visa_operateur: e.target.value })}
-                                className="h-8"
-                              />
-                            </td>
-                            <td rowSpan={2} className="p-1 align-middle">
-                              <Input
-                                value={cell(day, 0, null).visa_manager ?? ""}
-                                onChange={(e) => updateCell(day, 0, null, { visa_manager: e.target.value })}
-                                className="h-8"
-                              />
-                            </td>
-                          </>
-                        )}
+                        <td className="p-1 align-middle">
+                          <Input
+                            value={c.visa_operateur ?? ""}
+                            onChange={(e) => updateCell(day, rowIdx, null, { visa_operateur: e.target.value })}
+                            className="h-8"
+                          />
+                        </td>
+                        <td className="p-1 align-middle">
+                          <Input
+                            value={c.visa_manager ?? ""}
+                            onChange={(e) => updateCell(day, rowIdx, null, { visa_manager: e.target.value })}
+                            className="h-8"
+                          />
+                        </td>
                       </tr>
                     );
                   })
@@ -963,7 +978,7 @@ export function WeeklyTracking() {
                               <LotExistantCell
                                 dayIdx={dIdx}
                                 article={article}
-                                getBalances={(d, a) => getLotBalancesEndOfDay(d, a, wkStart)}
+                                getBalances={(d, a) => getLotsOfDay(d, a, wkStart)}
                               />
                             </td>
                           )}
@@ -988,7 +1003,7 @@ export function WeeklyTracking() {
           <div className="text-xs text-muted-foreground px-1">
             <span className="text-success font-medium">Entrées en vert</span> ·{" "}
             <span className="text-destructive font-medium">Sorties en rouge</span> · La colonne{" "}
-            <strong>Lot existant</strong> affiche les stocks restants par lot en FIFO (ex: <code>L240501 ×5</code>).
+            <strong>Lot existant</strong> affiche les lots et quantités du jour (SI + entrées).
           </div>
         </TabsContent>
         ))}
