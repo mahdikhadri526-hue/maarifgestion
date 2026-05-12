@@ -978,7 +978,7 @@ export function WeeklyTracking() {
                               <LotExistantCell
                                 dayIdx={dIdx}
                                 article={article}
-                                getBalances={(d, a) => getLotsOfDay(d, a, wkStart)}
+                                getBalances={(d, a) => getLotBalancesEndOfDay(d, a, wkStart)}
                               />
                             </td>
                           )}
@@ -1003,7 +1003,7 @@ export function WeeklyTracking() {
           <div className="text-xs text-muted-foreground px-1">
             <span className="text-success font-medium">Entrées en vert</span> ·{" "}
             <span className="text-destructive font-medium">Sorties en rouge</span> · La colonne{" "}
-            <strong>Lot existant</strong> affiche les lots et quantités du jour (SI + entrées).
+            <strong>Lot existant</strong> affiche les lots restants en FIFO après entrées et sorties du jour.
           </div>
         </TabsContent>
         ))}
