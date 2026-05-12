@@ -732,24 +732,20 @@ export function WeeklyTracking() {
                             onChange={(v) => updateCell(day, rowIdx, null, { texture: v })}
                           />
                         </td>
-                        {isFirst && (
-                          <>
-                            <td rowSpan={2} className="p-1 align-middle">
-                              <Input
-                                value={cell(day, 0, null).visa_operateur ?? ""}
-                                onChange={(e) => updateCell(day, 0, null, { visa_operateur: e.target.value })}
-                                className="h-8"
-                              />
-                            </td>
-                            <td rowSpan={2} className="p-1 align-middle">
-                              <Input
-                                value={cell(day, 0, null).visa_manager ?? ""}
-                                onChange={(e) => updateCell(day, 0, null, { visa_manager: e.target.value })}
-                                className="h-8"
-                              />
-                            </td>
-                          </>
-                        )}
+                        <td className="p-1 align-middle">
+                          <Input
+                            value={c.visa_operateur ?? ""}
+                            onChange={(e) => updateCell(day, rowIdx, null, { visa_operateur: e.target.value })}
+                            className="h-8"
+                          />
+                        </td>
+                        <td className="p-1 align-middle">
+                          <Input
+                            value={c.visa_manager ?? ""}
+                            onChange={(e) => updateCell(day, rowIdx, null, { visa_manager: e.target.value })}
+                            className="h-8"
+                          />
+                        </td>
                       </tr>
                     );
                   })
