@@ -354,6 +354,25 @@ export function WeeklyTracking() {
     return parts.join(" / ");
   };
 
+  // Lots du jour uniquement (SI le lundi + entrées du jour) — pour tarte/glace
+  const getLotsOfDay = (
+    dayIdx: number,
+    article: string,
+    wkStart: string = weekStart,
+  ): { lot: string; remaining: number }[] => {
+    const out: { lot: string; remaining: number }[] = [];
+    const day = DAYS[dayIdx];
+    if (dayIdx === 0) {
+      const si = num(cellAt(wkStart, day, 0, article).stock_initial);
+      if (si > 0) out.push({ lot: "", remaining: si });
+    }
+    for (const e of entriesForAt(wkStart, day, article)) {
+      const q = num(e.entree);
+      if (q > 0) out.push({ lot: (e.lot ?? "").toString(), remaining: q });
+    }
+    return out;
+  };
+
   const addEntryRow = (day: string, article: string) => {
     const existing = entriesFor(day, article);
     const nextIdx = existing.length > 0 ? Math.max(...existing.map((e) => e.rowIndex)) + 1 : 1;
