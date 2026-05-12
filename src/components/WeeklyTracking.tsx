@@ -361,14 +361,15 @@ export function WeeklyTracking() {
     wkStart: string = weekStart,
   ): { lot: string; remaining: number }[] => {
     const out: { lot: string; remaining: number }[] = [];
-    const day = DAYS[dayIdx];
-    if (dayIdx === 0) {
-      const si = num(cellAt(wkStart, day, 0, article).stock_initial);
-      if (si > 0) out.push({ lot: "", remaining: si });
-    }
-    for (const e of entriesForAt(wkStart, day, article)) {
-      const q = num(e.entree);
-      if (q > 0) out.push({ lot: (e.lot ?? "").toString(), remaining: q });
+    // SI du lundi (sans lot)
+    const si = num(cellAt(wkStart, DAYS[0], 0, article).stock_initial);
+    if (si > 0) out.push({ lot: "", remaining: si });
+    // Entrées cumulées du lundi jusqu'au jour courant (sans soustraire les sorties)
+    for (let d = 0; d <= dayIdx; d++) {
+      for (const e of entriesForAt(wkStart, DAYS[d], article)) {
+        const q = num(e.entree);
+        if (q > 0) out.push({ lot: (e.lot ?? "").toString(), remaining: q });
+      }
     }
     return out;
   };
@@ -978,7 +979,7 @@ export function WeeklyTracking() {
                               <LotExistantCell
                                 dayIdx={dIdx}
                                 article={article}
-                                getBalances={(d, a) => getLotBalancesEndOfDay(d, a, wkStart)}
+                                getBalances={(d, a) => getLotsOfDay(d, a, wkStart)}
                               />
                             </td>
                           )}
@@ -1003,7 +1004,7 @@ export function WeeklyTracking() {
           <div className="text-xs text-muted-foreground px-1">
             <span className="text-success font-medium">Entrées en vert</span> ·{" "}
             <span className="text-destructive font-medium">Sorties en rouge</span> · La colonne{" "}
-            <strong>Lot existant</strong> affiche les lots restants en FIFO après entrées et sorties du jour.
+            <strong>Lot existant</strong> cumule automatiquement le SI du lundi et toutes les entrées de la semaine (sans déduire les sorties).
           </div>
         </TabsContent>
         ))}
