@@ -926,22 +926,38 @@ export function WeeklyTracking() {
                         <Fragment key={`${wkStart}-${day}`}>
                           {/* SI */}
                           <td className={cn("p-0.5 border-l-2 border-l-border align-top", dim && "opacity-30")}>
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              data-si={`${dIdx}-${aIdx}`}
-                              value={c.stock_initial ?? ""}
-                              onChange={(e) =>
-                                updateCellAt(wkStart, day, 0, article, { stock_initial: e.target.value })
+                            {(() => {
+                              const carried = dIdx === 0 ? getCarriedFromPrevWeek(article, wkStart) : [];
+                              if (dIdx === 0 && carried.length > 0) {
+                                const total = carried.reduce((s, b) => s + b.remaining, 0);
+                                return (
+                                  <div
+                                    title="Reporté du dimanche précédent"
+                                    className="h-7 w-14 text-xs px-1 flex items-center justify-center bg-primary/10 text-primary border border-primary/30 rounded font-medium"
+                                  >
+                                    {total}
+                                  </div>
+                                );
                               }
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  focusNextSI(aIdx);
-                                }
-                              }}
-                              className="h-7 w-14 text-xs px-1"
-                            />
+                              return (
+                                <Input
+                                  type="number"
+                                  inputMode="numeric"
+                                  data-si={`${dIdx}-${aIdx}`}
+                                  value={c.stock_initial ?? ""}
+                                  onChange={(e) =>
+                                    updateCellAt(wkStart, day, 0, article, { stock_initial: e.target.value })
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      focusNextSI(aIdx);
+                                    }
+                                  }}
+                                  className="h-7 w-14 text-xs px-1"
+                                />
+                              );
+                            })()}
                           </td>
                           {/* Entries (multi-row) — VERT */}
                           <td className={cn("p-0.5 align-top", dim && "opacity-30")}>
