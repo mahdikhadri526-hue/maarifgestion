@@ -270,6 +270,12 @@ export function WeeklyTracking() {
   };
 
   const getSI = (dayIdx: number, article: string, wkStart: string = weekStart): number | "" => {
+    // Lundi : si la semaine précédente existe pour cet article, le SI est calculé
+    // automatiquement comme la somme des lots restants au dimanche précédent.
+    if (dayIdx === 0) {
+      const carried = getCarriedFromPrevWeek(article, wkStart);
+      if (carried.length > 0) return carried.reduce((s, b) => s + b.remaining, 0);
+    }
     const v = cellAt(wkStart, DAYS[dayIdx], 0, article).stock_initial;
     return v === "" || v == null ? "" : Number(v);
   };
@@ -354,16 +360,34 @@ export function WeeklyTracking() {
     return parts.join(" / ");
   };
 
-  // Lots du jour uniquement (SI le lundi + entrées du jour) — pour tarte/glace
+  // Lots reportés depuis le dimanche de la semaine précédente
+  const getCarriedFromPrevWeek = (
+    article: string,
+    wkStart: string,
+  ): { lot: string; remaining: number }[] => {
+    const prevWk = (() => { const d = parseISO(wkStart); d.setDate(d.getDate() - 7); return fmt(d); })();
+    const hasPrev = rows.some(
+      (r) => r.week_start === prevWk && r.fiche_type === ficheType && r.article === article,
+    );
+    if (!hasPrev) return [];
+    return getLotBalancesEndOfDay(6, article, prevWk).filter((b) => b.remaining > 0);
+  };
+
+  // Lots du jour uniquement (lots reportés OU SI lundi + entrées) — pour tarte/glace
   const getLotsOfDay = (
     dayIdx: number,
     article: string,
     wkStart: string = weekStart,
   ): { lot: string; remaining: number }[] => {
     const out: { lot: string; remaining: number }[] = [];
-    // SI du lundi (sans lot)
-    const si = num(cellAt(wkStart, DAYS[0], 0, article).stock_initial);
-    if (si > 0) out.push({ lot: "", remaining: si });
+    // Seed Lundi : lots reportés de la semaine précédente, sinon SI manuel
+    const carried = getCarriedFromPrevWeek(article, wkStart);
+    if (carried.length > 0) {
+      for (const b of carried) out.push({ lot: b.lot, remaining: b.remaining });
+    } else {
+      const si = num(cellAt(wkStart, DAYS[0], 0, article).stock_initial);
+      if (si > 0) out.push({ lot: "", remaining: si });
+    }
     // Entrées cumulées + déduction FIFO des sorties jour par jour
     for (let d = 0; d <= dayIdx; d++) {
       for (const e of entriesForAt(wkStart, DAYS[d], article)) {
@@ -902,22 +926,38 @@ export function WeeklyTracking() {
                         <Fragment key={`${wkStart}-${day}`}>
                           {/* SI */}
                           <td className={cn("p-0.5 border-l-2 border-l-border align-top", dim && "opacity-30")}>
-                            <Input
-                              type="number"
-                              inputMode="numeric"
-                              data-si={`${dIdx}-${aIdx}`}
-                              value={c.stock_initial ?? ""}
-                              onChange={(e) =>
-                                updateCellAt(wkStart, day, 0, article, { stock_initial: e.target.value })
+                            {(() => {
+                              const carried = dIdx === 0 ? getCarriedFromPrevWeek(article, wkStart) : [];
+                              if (dIdx === 0 && carried.length > 0) {
+                                const total = carried.reduce((s, b) => s + b.remaining, 0);
+                                return (
+                                  <div
+                                    title="Reporté du dimanche précédent"
+                                    className="h-7 w-14 text-xs px-1 flex items-center justify-center bg-primary/10 text-primary border border-primary/30 rounded font-medium"
+                                  >
+                                    {total}
+                                  </div>
+                                );
                               }
-                              onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                  e.preventDefault();
-                                  focusNextSI(aIdx);
-                                }
-                              }}
-                              className="h-7 w-14 text-xs px-1"
-                            />
+                              return (
+                                <Input
+                                  type="number"
+                                  inputMode="numeric"
+                                  data-si={`${dIdx}-${aIdx}`}
+                                  value={c.stock_initial ?? ""}
+                                  onChange={(e) =>
+                                    updateCellAt(wkStart, day, 0, article, { stock_initial: e.target.value })
+                                  }
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                      e.preventDefault();
+                                      focusNextSI(aIdx);
+                                    }
+                                  }}
+                                  className="h-7 w-14 text-xs px-1"
+                                />
+                              );
+                            })()}
                           </td>
                           {/* Entries (multi-row) — VERT */}
                           <td className={cn("p-0.5 align-top", dim && "opacity-30")}>
