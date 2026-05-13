@@ -270,12 +270,6 @@ export function WeeklyTracking() {
   };
 
   const getSI = (dayIdx: number, article: string, wkStart: string = weekStart): number | "" => {
-    // Lundi : si la semaine précédente existe pour cet article, le SI est calculé
-    // automatiquement comme la somme des lots restants au dimanche précédent.
-    if (dayIdx === 0) {
-      const carried = getCarriedFromPrevWeek(article, wkStart);
-      if (carried.length > 0) return carried.reduce((s, b) => s + b.remaining, 0);
-    }
     const v = cellAt(wkStart, DAYS[dayIdx], 0, article).stock_initial;
     return v === "" || v == null ? "" : Number(v);
   };
