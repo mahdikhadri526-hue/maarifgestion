@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { formatDateFR } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -760,13 +761,13 @@ export function AutocontrolManager() {
               <tbody>
                 {filtered.map((e) => (
                   <tr key={e.id} className="border-b hover:bg-muted/30">
-                    <td className="py-2 pr-2 whitespace-nowrap">{e.controlDate}</td>
+                    <td className="py-2 pr-2 whitespace-nowrap">{formatDateFR(e.controlDate)}</td>
                     <td className="py-2 pr-2">{e.ficheType}</td>
                     <td className="py-2 pr-2">{e.collaborateur}</td>
                     <td className="py-2 pr-2">{e.article}</td>
                     <td className="py-2 pr-2">{e.lotNumber || "—"}</td>
                     <td className="py-2 pr-2">{e.quantity ?? "—"}</td>
-                    <td className="py-2 pr-2">{e.dlc || "—"}</td>
+                    <td className="py-2 pr-2">{e.dlc ? formatDateFR(e.dlc) : "—"}</td>
                     <td className="py-2 pr-2">{e.visaManager || "—"}</td>
                     <td className="py-2 pr-2 max-w-[260px]">
                       {e.extraData ? (
