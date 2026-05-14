@@ -274,6 +274,7 @@ export function LotManager() {
                           {isEditing ? (
                             <Input type="date" value={editExpiryDate} onChange={(e) => setEditExpiryDate(e.target.value)} className="h-8 text-xs" />
                           ) : lot.expiryDate}
+
                         </td>
                         <td className="p-3 text-right font-mono text-sm">{initialQuantity}</td>
                         <td className="p-3 text-right font-mono text-sm text-accent-foreground">{consumedQuantity}</td>
