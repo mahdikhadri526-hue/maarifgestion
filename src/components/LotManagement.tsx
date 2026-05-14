@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
 import { ENABLE_FIFO_INDICATOR } from "@/lib/featureFlags";
+import { formatDateFR } from "@/lib/utils";
 
 export function StockOutAlerts() {
   const { data: levels, loading } = useStockLevels();
