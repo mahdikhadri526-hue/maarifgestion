@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
 import { ENABLE_FIFO_INDICATOR } from "@/lib/featureFlags";
+import { formatDateFR } from "@/lib/utils";
 
 export function StockOutAlerts() {
   const { data: levels, loading } = useStockLevels();
@@ -272,7 +273,7 @@ export function LotManager() {
                         <td className="p-3 text-sm">
                           {isEditing ? (
                             <Input type="date" value={editExpiryDate} onChange={(e) => setEditExpiryDate(e.target.value)} className="h-8 text-xs" />
-                          ) : lot.expiryDate}
+                          ) : formatDateFR(lot.expiryDate)}
                         </td>
                         <td className="p-3 text-right font-mono text-sm">{initialQuantity}</td>
                         <td className="p-3 text-right font-mono text-sm text-accent-foreground">{consumedQuantity}</td>
