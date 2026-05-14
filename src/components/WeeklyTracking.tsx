@@ -360,10 +360,17 @@ export function WeeklyTracking() {
     article: string,
     wkStart: string = weekStart,
   ): { lot: string; remaining: number }[] => {
-    const out: { lot: string; remaining: number }[] = [];
-    // SI du lundi (sans lot)
+    // Report : lots restants à la fin du dimanche de la semaine précédente
+    const prevWk = (() => { const d = parseISO(wkStart); d.setDate(d.getDate() - 7); return fmt(d); })();
+    const hasPrev = rows.some(
+      (r) => r.week_start === prevWk && r.fiche_type === ficheType && r.article === article,
+    );
+    const out: { lot: string; remaining: number }[] = hasPrev
+      ? getLotsOfDay(6, article, prevWk).map((b) => ({ ...b }))
+      : [];
+    // SI du lundi (sans lot) — ajouté seulement si pas de report
     const si = num(cellAt(wkStart, DAYS[0], 0, article).stock_initial);
-    if (si > 0) out.push({ lot: "", remaining: si });
+    if (si > 0 && out.length === 0) out.push({ lot: "", remaining: si });
     // Entrées cumulées + déduction FIFO des sorties jour par jour
     for (let d = 0; d <= dayIdx; d++) {
       for (const e of entriesForAt(wkStart, DAYS[d], article)) {
