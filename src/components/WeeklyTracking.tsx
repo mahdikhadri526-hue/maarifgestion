@@ -368,10 +368,28 @@ export function WeeklyTracking() {
     const out: { lot: string; remaining: number }[] = hasPrev
       ? getLotsOfDay(6, article, prevWk).map((b) => ({ ...b }))
       : [];
-    // SI du lundi : ajouté seulement si aucun report (sinon on garde chaque lot
-    // reporté avec sa quantité d'origine, sans les fusionner ni les ajuster).
+    // SI du lundi : ajuste les lots reportés (FIFO) pour que le total
+    // corresponde exactement au SI saisi — chaque lot conserve son numéro
+    // et sa quantité, on ne fait que compléter ou réduire si besoin.
     const siMon = num(cellAt(wkStart, DAYS[0], 0, article).stock_initial);
-    if (siMon > 0 && out.length === 0) out.push({ lot: "", remaining: siMon });
+    if (siMon > 0) {
+      if (out.length === 0) {
+        out.push({ lot: "", remaining: siMon });
+      } else {
+        const total = out.reduce((s, b) => s + b.remaining, 0);
+        if (total > siMon) {
+          let excess = total - siMon;
+          for (const b of out) {
+            if (excess <= 0) break;
+            const take = Math.min(b.remaining, excess);
+            b.remaining -= take;
+            excess -= take;
+          }
+        } else if (total < siMon) {
+          out.push({ lot: "", remaining: siMon - total });
+        }
+      }
+    }
     // Entrées cumulées + déduction FIFO des sorties jour par jour
     for (let d = 0; d <= dayIdx; d++) {
       for (const e of entriesForAt(wkStart, DAYS[d], article)) {
