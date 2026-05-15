@@ -210,6 +210,7 @@ export function AutocontrolManager() {
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [ctgProducts, setCtgProducts] = useState<Record<CtgProductKey, CtgProductRow>>(initialCtgProducts());
+  const [decoProducts, setDecoProducts] = useState<Record<string, DecoProductRow>>(initialDecoProducts());
 
   const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
   const isConfit = form.article === "Orange confit" || form.article === "Bigarreaux confits";
@@ -251,6 +252,8 @@ export function AutocontrolManager() {
       ? { ...form, article: form.article || "Panaché" }
       : isCtg
       ? { ...form, article: form.article || "Cornet", lotNumber: form.lotNumber || "_", quantity: form.quantity || "1", dlc: form.dlc || "" }
+      : isDecoration
+      ? { ...form, article: form.article || "Décoration", lotNumber: form.lotNumber || "_", quantity: form.quantity || "1", dlc: "" }
       : form;
     const baseResult = baseAutocontrolSchema.safeParse(formForBase);
     if (!baseResult.success) {
@@ -281,6 +284,15 @@ export function AutocontrolManager() {
       if (!dRes.success) {
         dRes.error.issues.forEach((i) => errors.push(i.message));
       }
+      const selectedDeco = Object.entries(decoProducts).filter(([, r]) => r.selected);
+      if (selectedDeco.length === 0) {
+        errors.push("Sélectionner au moins un article décoré");
+      }
+      selectedDeco.forEach(([name, row]) => {
+        const qty = Number(row.quantity);
+        if (!Number.isFinite(qty) || qty <= 0) errors.push(`${name} : quantité obligatoire`);
+        if (!row.lotNumber.trim()) errors.push(`${name} : N° de lot obligatoire`);
+      });
     }
 
     const panacheExtra = isPanache ? form.extraData : null;
@@ -330,6 +342,22 @@ export function AutocontrolManager() {
             extraData,
           });
         }
+      } else if (isDecoration) {
+        const selectedDeco = Object.entries(decoProducts).filter(([, r]) => r.selected);
+        for (const [name, row] of selectedDeco) {
+          await addAutocontrol({
+            ficheType: form.ficheType,
+            controlDate: baseResult.data.controlDate,
+            collaborateur: baseResult.data.collaborateur,
+            article: name,
+            lotNumber: row.lotNumber.trim(),
+            quantity: Number(row.quantity),
+            dlc: null,
+            visaManager: baseResult.data.visaManager,
+            notes: baseResult.data.notes,
+            extraData: decorationExtra,
+          });
+        }
       } else {
       await addAutocontrol({
         ficheType: form.ficheType,
@@ -353,6 +381,7 @@ export function AutocontrolManager() {
         extraData: isCtg ? initialCtgExtra() : isDecoration ? initialDecorationExtra() : isPanache ? initialPanacheExtra() : null,
       });
       if (isCtg) setCtgProducts(initialCtgProducts());
+      if (isDecoration) setDecoProducts(initialDecoProducts());
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
     } finally {
