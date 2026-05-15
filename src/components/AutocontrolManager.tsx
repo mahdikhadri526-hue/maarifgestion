@@ -428,7 +428,7 @@ export function AutocontrolManager() {
               // validated by Zod
             />
           </div>
-          {!isPanache && (
+          {!isPanache && !isCtg && (
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Article / Désignation *</label>
             {ARTICLE_OPTIONS_BY_FICHE[form.ficheType] && ARTICLE_OPTIONS_BY_FICHE[form.ficheType]!.length > 0 ? (
@@ -452,6 +452,69 @@ export function AutocontrolManager() {
               />
             )}
           </div>
+          )}
+
+          {isCtg && (
+            <div className="sm:col-span-2 bg-muted/30 rounded-lg p-3">
+              <h4 className="text-sm font-semibold mb-1">Produits fabriqués *</h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                Cochez chaque produit fabriqué avec ces ingrédients et renseignez sa quantité, son N° de lot et sa DLC.
+              </p>
+              <div className="space-y-3">
+                {CTG_PRODUCTS.map((p) => {
+                  const row = ctgProducts[p];
+                  return (
+                    <div key={p} className="border rounded-md p-2 bg-background">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          checked={row.selected}
+                          onCheckedChange={(v) =>
+                            setCtgProducts((s) => ({ ...s, [p]: { ...s[p], selected: !!v } }))
+                          }
+                        />
+                        <span className="font-medium text-sm">{p}</span>
+                      </label>
+                      {row.selected && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                          <div>
+                            <label className="text-xs text-muted-foreground">Quantité *</label>
+                            <Input
+                              type="number"
+                              step="any"
+                              min="0.01"
+                              value={row.quantity}
+                              onChange={(e) =>
+                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], quantity: e.target.value } }))
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground">N° de lot *</label>
+                            <Input
+                              value={row.lotNumber}
+                              maxLength={120}
+                              onChange={(e) =>
+                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], lotNumber: e.target.value } }))
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground">DLC</label>
+                            <Input
+                              type="date"
+                              value={row.dlc}
+                              onChange={(e) =>
+                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], dlc: e.target.value } }))
+                              }
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
           {isPanache && form.extraData?.matieresPremieres && (
@@ -540,7 +603,7 @@ export function AutocontrolManager() {
             </div>
           )}
 
-          {!isConfit && (
+          {!isConfit && !isCtg && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
               <Input
@@ -550,6 +613,7 @@ export function AutocontrolManager() {
               />
             </div>
           )}
+          {!isCtg && (
           <div>
             <label className="text-xs font-medium text-muted-foreground">
               {isDecoration ? "Quantité décorée" : "Quantité"}
@@ -562,7 +626,8 @@ export function AutocontrolManager() {
               onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
             />
           </div>
-          {!isDecoration && (
+          )}
+          {!isDecoration && !isCtg && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">DLC</label>
               <Input
