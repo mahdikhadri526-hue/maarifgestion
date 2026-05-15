@@ -463,7 +463,7 @@ export function AutocontrolManager() {
               // validated by Zod
             />
           </div>
-          {!isPanache && !isCtg && (
+          {!isPanache && !isCtg && !isDecoration && (
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Article / Désignation *</label>
             {ARTICLE_OPTIONS_BY_FICHE[form.ficheType] && ARTICLE_OPTIONS_BY_FICHE[form.ficheType]!.length > 0 ? (
@@ -487,6 +487,59 @@ export function AutocontrolManager() {
               />
             )}
           </div>
+          )}
+
+          {isDecoration && (
+            <div className="sm:col-span-2 bg-muted/30 rounded-lg p-3">
+              <h4 className="text-sm font-semibold mb-1">Articles décorés *</h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                Cochez chaque article décoré et renseignez sa quantité et son N° de lot.
+              </p>
+              <div className="space-y-2">
+                {(ARTICLE_OPTIONS_BY_FICHE["Décoration"] ?? []).map((name) => {
+                  const row = decoProducts[name] ?? { selected: false, quantity: "", lotNumber: "" };
+                  return (
+                    <div key={name} className="border rounded-md p-2 bg-background">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          checked={row.selected}
+                          onCheckedChange={(v) =>
+                            setDecoProducts((s) => ({ ...s, [name]: { ...row, selected: !!v } }))
+                          }
+                        />
+                        <span className="font-medium text-sm">{name}</span>
+                      </label>
+                      {row.selected && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                          <div>
+                            <label className="text-xs text-muted-foreground">Quantité décorée *</label>
+                            <Input
+                              type="number"
+                              step="any"
+                              min="0.01"
+                              value={row.quantity}
+                              onChange={(e) =>
+                                setDecoProducts((s) => ({ ...s, [name]: { ...row, quantity: e.target.value } }))
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground">N° de lot *</label>
+                            <Input
+                              value={row.lotNumber}
+                              maxLength={120}
+                              onChange={(e) =>
+                                setDecoProducts((s) => ({ ...s, [name]: { ...row, lotNumber: e.target.value } }))
+                              }
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
           {isCtg && (
@@ -638,7 +691,7 @@ export function AutocontrolManager() {
             </div>
           )}
 
-          {!isConfit && !isCtg && (
+          {!isConfit && !isCtg && !isDecoration && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
               <Input
@@ -648,7 +701,7 @@ export function AutocontrolManager() {
               />
             </div>
           )}
-          {!isCtg && (
+          {!isCtg && !isDecoration && (
           <div>
             <label className="text-xs font-medium text-muted-foreground">
               {isDecoration ? "Quantité décorée" : "Quantité"}
