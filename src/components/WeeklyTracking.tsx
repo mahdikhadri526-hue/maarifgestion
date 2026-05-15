@@ -232,92 +232,30 @@ export function WeeklyTracking() {
     return isNaN(n) ? 0 : n;
   };
 
-  // Construit l'attribution FIFO des lots de crème fraîche aux entrées
-  // "Crème fraîche (mousse fouettée)" du mouvement glaces.
-  // Clé: `${wkStart}|${day}|${rowIndex}` → lot (ou "" si rupture)
-  const cremeLotMap = useMemo(() => {
-    const map = new Map<string, string>();
-    // Supply FIFO à partir de la fiche Crème fraîche, ordre semaine→jour→shift
-    type Batch = { lot: string; remaining: number };
-    const supply: Batch[] = [];
-    const sortedWeeks = Array.from(new Set(cremeRows.map((r) => r.week_start))).sort();
-    for (const wk of sortedWeeks) {
-      for (const day of DAYS) {
-        const slots = cremeRows
-          .filter((r) => r.week_start === wk && r.day_of_week === day)
-          .sort((a, b) => (a.row_index ?? 0) - (b.row_index ?? 0));
-        for (const s of slots) {
-          const q = numLocal(s.quantity);
-          const lot = (s.lot_number ?? "").toString().trim();
-          if (q > 0 && lot) supply.push({ lot, remaining: q });
-        }
-      }
-    }
-    // Consommation FIFO par TOUTES les entrées glaces de crème fraîche
-    // (on fusionne le store global avec les éventuelles modifications locales en cours).
-    const localCreme = rows.filter(
-      (r) => r.fiche_type === "Mouvement glaces & tartes" && r.article === CREME_ARTICLE,
-    );
+  // Lots saisis dans le mouvement glaces pour "Crème fraîche (mousse fouettée)".
+  // Affichés automatiquement dans la fiche Suivi crème fraîche.
+  // Clé: `${week_start}|${day_of_week}` → liste de lots distincts.
+  const glaceCremeLotsByDay = useMemo(() => {
+    const map = new Map<string, string[]>();
     const merged = new Map<string, Row>();
     for (const r of cremeGlaceRows) {
       merged.set(`${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`, r);
     }
-    for (const r of localCreme) {
-      merged.set(`${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`, r);
-    }
-    const allCremeGlace = Array.from(merged.values());
-    const glaceWeeks = Array.from(new Set(allCremeGlace.map((r) => r.week_start))).sort();
-    for (const wk of glaceWeeks) {
-      for (const day of DAYS) {
-        const entries = allCremeGlace
-          .filter(
-            (r) =>
-              r.week_start === wk &&
-              r.day_of_week === day &&
-              numLocal(r.entrees) > 0,
-          )
-          .sort((a, b) => (a.row_index ?? 0) - (b.row_index ?? 0));
-        for (const e of entries) {
-          let need = numLocal(e.entrees);
-          let assigned = "";
-          for (const b of supply) {
-            if (need <= 0) break;
-            if (b.remaining <= 0) continue;
-            if (!assigned) assigned = b.lot;
-            const take = Math.min(b.remaining, need);
-            b.remaining -= take;
-            need -= take;
-          }
-          map.set(`${wk}|${day}|${e.row_index ?? 0}`, assigned);
-        }
+    for (const r of rows) {
+      if (r.fiche_type === "Mouvement glaces & tartes" && r.article === CREME_ARTICLE) {
+        merged.set(`${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`, r);
       }
     }
+    for (const r of merged.values()) {
+      const lot = (r.lot_number ?? "").toString().trim();
+      if (!lot) continue;
+      const k = `${r.week_start}|${r.day_of_week}`;
+      const arr = map.get(k) ?? [];
+      if (!arr.includes(lot)) arr.push(lot);
+      map.set(k, arr);
+    }
     return map;
-  }, [cremeRows, cremeGlaceRows, rows]);
-
-  // Synchronise le lot_number persisté avec l'attribution FIFO crème.
-  useEffect(() => {
-    if (cremeLotMap.size === 0) return;
-    setRows((prev) => {
-      let changed = false;
-      const next = prev.map((r) => {
-        if (
-          r.fiche_type === "Mouvement glaces & tartes" &&
-          r.article === CREME_ARTICLE &&
-          numLocal(r.entrees) > 0
-        ) {
-          const k = `${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`;
-          const auto = cremeLotMap.get(k);
-          if (auto != null && auto !== (r.lot_number ?? "")) {
-            changed = true;
-            return { ...r, lot_number: auto };
-          }
-        }
-        return r;
-      });
-      return changed ? next : prev;
-    });
-  }, [cremeLotMap]);
+  }, [cremeGlaceRows, rows]);
 
   const cellMap = useMemo(() => {
     const m = new Map<string, Row>();
