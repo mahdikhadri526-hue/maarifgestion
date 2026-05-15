@@ -714,6 +714,7 @@ export function WeeklyTracking() {
               <thead className="bg-muted">
                 <tr>
                   <th className="p-2 text-left">Jour</th>
+                  <th className="p-2 text-left">Shift</th>
                   <th className="p-2 text-left">Quantité</th>
                   <th className="p-2 text-left min-w-[260px]">N° lot crème fraîche</th>
                   <th className="p-2 text-left">Couleur</th>
@@ -725,17 +726,38 @@ export function WeeklyTracking() {
               </thead>
               <tbody>
                 {DAYS.map((day, dIdx) =>
-                  [0, 1].map((rowIdx) => {
+                  [0, 1, 2, 3].map((rowIdx) => {
                     const c = cell(day, rowIdx, null);
-                    const isFirst = rowIdx === 0;
+                    const isFirstOfDay = rowIdx === 0;
+                    const isFirstOfShift = rowIdx === 0 || rowIdx === 2;
+                    const shiftLabel = rowIdx < 2 ? "Matin" : "Soir";
                     return (
-                      <tr key={`${day}-${rowIdx}`} className="border-t">
-                        {isFirst && (
-                          <td rowSpan={2} className="p-2 font-medium border-r align-middle">
+                      <tr
+                        key={`${day}-${rowIdx}`}
+                        className={cn(
+                          "border-t",
+                          rowIdx === 2 && "border-t-2 border-t-primary/30",
+                        )}
+                      >
+                        {isFirstOfDay && (
+                          <td rowSpan={4} className="p-2 font-medium border-r align-middle">
                             <div>{day}</div>
                             <div className="text-[10px] font-normal text-muted-foreground">
                               {dayShort(weekStart, dIdx)}
                             </div>
+                          </td>
+                        )}
+                        {isFirstOfShift && (
+                          <td
+                            rowSpan={2}
+                            className={cn(
+                              "p-2 text-xs font-semibold border-r align-middle text-center",
+                              shiftLabel === "Matin"
+                                ? "bg-amber-50 text-amber-800"
+                                : "bg-indigo-50 text-indigo-800",
+                            )}
+                          >
+                            {shiftLabel}
                           </td>
                         )}
                         <td className="p-1">
