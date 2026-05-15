@@ -109,6 +109,12 @@ const initialCtgProducts = (): Record<CtgProductKey, CtgProductRow> => ({
   Gaufrette: { selected: false, quantity: "", lotNumber: "", dlc: "" },
 });
 
+type DecoProductRow = { selected: boolean; quantity: string; lotNumber: string };
+const initialDecoProducts = (): Record<string, DecoProductRow> => {
+  const arr = ARTICLE_OPTIONS_BY_FICHE["Décoration"] ?? [];
+  return Object.fromEntries(arr.map((a) => [a, { selected: false, quantity: "", lotNumber: "" }]));
+};
+
 const initialForm = {
   ficheType: "Oranges/Bigarreaux confits" as FicheType,
   controlDate: new Date().toISOString().slice(0, 10),
@@ -204,6 +210,7 @@ export function AutocontrolManager() {
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [ctgProducts, setCtgProducts] = useState<Record<CtgProductKey, CtgProductRow>>(initialCtgProducts());
+  const [decoProducts, setDecoProducts] = useState<Record<string, DecoProductRow>>(initialDecoProducts());
 
   const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
   const isConfit = form.article === "Orange confit" || form.article === "Bigarreaux confits";
@@ -245,6 +252,8 @@ export function AutocontrolManager() {
       ? { ...form, article: form.article || "Panaché" }
       : isCtg
       ? { ...form, article: form.article || "Cornet", lotNumber: form.lotNumber || "_", quantity: form.quantity || "1", dlc: form.dlc || "" }
+      : isDecoration
+      ? { ...form, article: form.article || "Décoration", lotNumber: form.lotNumber || "_", quantity: form.quantity || "1", dlc: "" }
       : form;
     const baseResult = baseAutocontrolSchema.safeParse(formForBase);
     if (!baseResult.success) {
@@ -275,6 +284,15 @@ export function AutocontrolManager() {
       if (!dRes.success) {
         dRes.error.issues.forEach((i) => errors.push(i.message));
       }
+      const selectedDeco = Object.entries(decoProducts).filter(([, r]) => r.selected);
+      if (selectedDeco.length === 0) {
+        errors.push("Sélectionner au moins un article décoré");
+      }
+      selectedDeco.forEach(([name, row]) => {
+        const qty = Number(row.quantity);
+        if (!Number.isFinite(qty) || qty <= 0) errors.push(`${name} : quantité obligatoire`);
+        if (!row.lotNumber.trim()) errors.push(`${name} : N° de lot obligatoire`);
+      });
     }
 
     const panacheExtra = isPanache ? form.extraData : null;
@@ -324,6 +342,22 @@ export function AutocontrolManager() {
             extraData,
           });
         }
+      } else if (isDecoration) {
+        const selectedDeco = Object.entries(decoProducts).filter(([, r]) => r.selected);
+        for (const [name, row] of selectedDeco) {
+          await addAutocontrol({
+            ficheType: form.ficheType,
+            controlDate: baseResult.data.controlDate,
+            collaborateur: baseResult.data.collaborateur,
+            article: name,
+            lotNumber: row.lotNumber.trim(),
+            quantity: Number(row.quantity),
+            dlc: null,
+            visaManager: baseResult.data.visaManager,
+            notes: baseResult.data.notes,
+            extraData: decorationExtra,
+          });
+        }
       } else {
       await addAutocontrol({
         ficheType: form.ficheType,
@@ -347,6 +381,7 @@ export function AutocontrolManager() {
         extraData: isCtg ? initialCtgExtra() : isDecoration ? initialDecorationExtra() : isPanache ? initialPanacheExtra() : null,
       });
       if (isCtg) setCtgProducts(initialCtgProducts());
+      if (isDecoration) setDecoProducts(initialDecoProducts());
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
     } finally {
@@ -428,7 +463,7 @@ export function AutocontrolManager() {
               // validated by Zod
             />
           </div>
-          {!isPanache && !isCtg && (
+          {!isPanache && !isCtg && !isDecoration && (
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Article / Désignation *</label>
             {ARTICLE_OPTIONS_BY_FICHE[form.ficheType] && ARTICLE_OPTIONS_BY_FICHE[form.ficheType]!.length > 0 ? (
@@ -452,6 +487,59 @@ export function AutocontrolManager() {
               />
             )}
           </div>
+          )}
+
+          {isDecoration && (
+            <div className="sm:col-span-2 bg-muted/30 rounded-lg p-3">
+              <h4 className="text-sm font-semibold mb-1">Articles décorés *</h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                Cochez chaque article décoré et renseignez sa quantité et son N° de lot.
+              </p>
+              <div className="space-y-2">
+                {(ARTICLE_OPTIONS_BY_FICHE["Décoration"] ?? []).map((name) => {
+                  const row = decoProducts[name] ?? { selected: false, quantity: "", lotNumber: "" };
+                  return (
+                    <div key={name} className="border rounded-md p-2 bg-background">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          checked={row.selected}
+                          onCheckedChange={(v) =>
+                            setDecoProducts((s) => ({ ...s, [name]: { ...row, selected: !!v } }))
+                          }
+                        />
+                        <span className="font-medium text-sm">{name}</span>
+                      </label>
+                      {row.selected && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                          <div>
+                            <label className="text-xs text-muted-foreground">Quantité décorée *</label>
+                            <Input
+                              type="number"
+                              step="any"
+                              min="0.01"
+                              value={row.quantity}
+                              onChange={(e) =>
+                                setDecoProducts((s) => ({ ...s, [name]: { ...row, quantity: e.target.value } }))
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground">N° de lot *</label>
+                            <Input
+                              value={row.lotNumber}
+                              maxLength={120}
+                              onChange={(e) =>
+                                setDecoProducts((s) => ({ ...s, [name]: { ...row, lotNumber: e.target.value } }))
+                              }
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
           {isCtg && (
@@ -603,7 +691,7 @@ export function AutocontrolManager() {
             </div>
           )}
 
-          {!isConfit && !isCtg && (
+          {!isConfit && !isCtg && !isDecoration && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
               <Input
@@ -613,7 +701,7 @@ export function AutocontrolManager() {
               />
             </div>
           )}
-          {!isCtg && (
+          {!isCtg && !isDecoration && (
           <div>
             <label className="text-xs font-medium text-muted-foreground">
               {isDecoration ? "Quantité décorée" : "Quantité"}
