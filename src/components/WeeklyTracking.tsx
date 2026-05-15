@@ -242,31 +242,6 @@ export function WeeklyTracking() {
     return map;
   }, [cremeGlaceRows, rows]);
 
-  // Pour la fiche Suivi crème fraîche : attribue automatiquement à chaque
-  // ligne (où une quantité est saisie) le prochain lot disponible côté
-  // mouvement glaces, dans l'ordre des shifts (row_index 0..3).
-  // Clé: `${week_start}|${day}|${rowIdx}` → lot (ou "")
-  const cremeAutoLotMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const wk of new Set([weekStart, ...rows.map((r) => r.week_start)])) {
-      for (const day of DAYS) {
-        const lots = glaceCremeLotsByDay.get(`${wk}|${day}`) ?? [];
-        if (lots.length === 0) continue;
-        const cremeSlots = [0, 1, 2, 3]
-          .map((rowIdx) => {
-            const key = `${wk}|${day}|${rowIdx}|`;
-            const r = cellMap.get(key);
-            return { rowIdx, qty: numLocal(r?.quantity) };
-          })
-          .filter((s) => s.qty > 0);
-        cremeSlots.forEach((s, i) => {
-          const lot = lots[i] ?? lots[lots.length - 1];
-          map.set(`${wk}|${day}|${s.rowIdx}`, lot);
-        });
-      }
-    }
-    return map;
-  }, [glaceCremeLotsByDay, cellMap, weekStart, rows]);
 
   const cellMap = useMemo(() => {
     const m = new Map<string, Row>();
