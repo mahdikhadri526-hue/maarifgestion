@@ -109,6 +109,12 @@ const initialCtgProducts = (): Record<CtgProductKey, CtgProductRow> => ({
   Gaufrette: { selected: false, quantity: "", lotNumber: "", dlc: "" },
 });
 
+type DecoProductRow = { selected: boolean; quantity: string; lotNumber: string };
+const initialDecoProducts = (): Record<string, DecoProductRow> => {
+  const arr = ARTICLE_OPTIONS_BY_FICHE["Décoration"] ?? [];
+  return Object.fromEntries(arr.map((a) => [a, { selected: false, quantity: "", lotNumber: "" }]));
+};
+
 const initialForm = {
   ficheType: "Oranges/Bigarreaux confits" as FicheType,
   controlDate: new Date().toISOString().slice(0, 10),
