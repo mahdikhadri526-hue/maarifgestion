@@ -100,6 +100,15 @@ const initialCtgExtra = (): CtgExtraData => ({
   },
 });
 
+type CtgProductKey = "Cornet" | "Tulipe" | "Gaufrette";
+const CTG_PRODUCTS: CtgProductKey[] = ["Cornet", "Tulipe", "Gaufrette"];
+type CtgProductRow = { selected: boolean; quantity: string; lotNumber: string; dlc: string };
+const initialCtgProducts = (): Record<CtgProductKey, CtgProductRow> => ({
+  Cornet: { selected: true, quantity: "", lotNumber: "", dlc: "" },
+  Tulipe: { selected: false, quantity: "", lotNumber: "", dlc: "" },
+  Gaufrette: { selected: false, quantity: "", lotNumber: "", dlc: "" },
+});
+
 const initialForm = {
   ficheType: "Oranges/Bigarreaux confits" as FicheType,
   controlDate: new Date().toISOString().slice(0, 10),
