@@ -149,6 +149,10 @@ export function WeeklyTracking() {
   const [tab, setTab] = useState<"creme" | "glace" | "tarte">("creme");
   const [rows, setRows] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
+  // Lignes de la fiche Crème fraîche, toujours chargées pour alimenter
+  // automatiquement les lots de l'article "Crème fraîche (mousse fouettée)"
+  // dans le mouvement glaces (FIFO).
+  const [cremeRows, setCremeRows] = useState<Row[]>([]);
 
   // Filters for Mouvement tab
   const [filterArticle, setFilterArticle] = useState<string>("all");
@@ -193,6 +197,74 @@ export function WeeklyTracking() {
       setRows(data || []);
     })();
   }, [weeksToLoad, ficheType]);
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("weekly_tracking")
+        .select("*")
+        .in("week_start", weeksToLoad)
+        .eq("fiche_type", "Crème fraîche");
+      if (error) return;
+      setCremeRows(data || []);
+    })();
+  }, [weeksToLoad]);
+
+  const CREME_ARTICLE = "Crème fraîche (mousse fouettée)";
+
+  // Construit l'attribution FIFO des lots de crème fraîche aux entrées
+  // "Crème fraîche (mousse fouettée)" du mouvement glaces.
+  // Clé: `${wkStart}|${day}|${rowIndex}` → lot (ou "" si rupture)
+  const cremeLotMap = useMemo(() => {
+    const map = new Map<string, string>();
+    // Supply FIFO à partir de la fiche Crème fraîche, ordre semaine→jour→shift
+    type Batch = { lot: string; remaining: number };
+    const supply: Batch[] = [];
+    const sortedWeeks = Array.from(new Set(cremeRows.map((r) => r.week_start))).sort();
+    for (const wk of sortedWeeks) {
+      for (const day of DAYS) {
+        const slots = cremeRows
+          .filter((r) => r.week_start === wk && r.day_of_week === day)
+          .sort((a, b) => (a.row_index ?? 0) - (b.row_index ?? 0));
+        for (const s of slots) {
+          const q = num(s.quantity);
+          const lot = (s.lot_number ?? "").toString().trim();
+          if (q > 0 && lot) supply.push({ lot, remaining: q });
+        }
+      }
+    }
+    // Consommation FIFO par les entrées glaces de crème fraîche
+    const glaceWeeks = Array.from(
+      new Set(rows.filter((r) => r.fiche_type === "Mouvement glaces & tartes").map((r) => r.week_start)),
+    ).sort();
+    for (const wk of glaceWeeks) {
+      for (const day of DAYS) {
+        const entries = rows
+          .filter(
+            (r) =>
+              r.week_start === wk &&
+              r.day_of_week === day &&
+              r.article === CREME_ARTICLE &&
+              num(r.entrees) > 0,
+          )
+          .sort((a, b) => (a.row_index ?? 0) - (b.row_index ?? 0));
+        for (const e of entries) {
+          let need = num(e.entrees);
+          let assigned = "";
+          for (const b of supply) {
+            if (need <= 0) break;
+            if (b.remaining <= 0) continue;
+            if (!assigned) assigned = b.lot;
+            const take = Math.min(b.remaining, need);
+            b.remaining -= take;
+            need -= take;
+          }
+          map.set(`${wk}|${day}|${e.row_index ?? 0}`, assigned);
+        }
+      }
+    }
+    return map;
+  }, [cremeRows, rows]);
 
   const cellMap = useMemo(() => {
     const m = new Map<string, Row>();
@@ -1005,28 +1077,48 @@ export function WeeklyTracking() {
                           {filterType !== "masquer_lots" && (
                           <td className={cn("p-0.5 align-top", dim && "opacity-30")}>
                             <div className="flex flex-col gap-0.5">
-                              {entryRows.map((er, i) => (
-                                <div key={`l-${er.rowIndex}-${i}`} className="flex items-center gap-0.5">
-                                  <Input
-                                    value={er.lot ?? ""}
-                                    onChange={(ev) =>
-                                      updateCellAt(wkStart, day, er.rowIndex, article, { lot_number: ev.target.value })
-                                    }
-                                    placeholder="lot"
-                                    className="h-7 w-20 text-xs px-1"
-                                  />
-                                  {er.rowIndex > 0 && (
-                                    <button
-                                      type="button"
-                                      onClick={() => removeEntryRow(day, er.rowIndex, article, wkStart)}
-                                      className="text-destructive hover:bg-destructive/10 rounded p-0.5"
-                                      title="Supprimer cette entrée"
-                                    >
-                                      <Trash2 className="h-3 w-3" />
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
+                              {entryRows.map((er, i) => {
+                                const isCreme = article === CREME_ARTICLE;
+                                const autoLot = isCreme
+                                  ? cremeLotMap.get(`${wkStart}|${day}|${er.rowIndex}`) ?? ""
+                                  : "";
+                                return (
+                                  <div key={`l-${er.rowIndex}-${i}`} className="flex items-center gap-0.5">
+                                    {isCreme ? (
+                                      <div
+                                        className={cn(
+                                          "h-7 w-20 text-xs px-1 flex items-center rounded border font-medium truncate",
+                                          autoLot
+                                            ? "bg-primary/10 text-primary border-primary/40"
+                                            : "bg-muted text-muted-foreground border-dashed",
+                                        )}
+                                        title={autoLot ? `Lot FIFO crème : ${autoLot}` : "Aucun lot crème disponible"}
+                                      >
+                                        {autoLot || "—"}
+                                      </div>
+                                    ) : (
+                                      <Input
+                                        value={er.lot ?? ""}
+                                        onChange={(ev) =>
+                                          updateCellAt(wkStart, day, er.rowIndex, article, { lot_number: ev.target.value })
+                                        }
+                                        placeholder="lot"
+                                        className="h-7 w-20 text-xs px-1"
+                                      />
+                                    )}
+                                    {er.rowIndex > 0 && (
+                                      <button
+                                        type="button"
+                                        onClick={() => removeEntryRow(day, er.rowIndex, article, wkStart)}
+                                        className="text-destructive hover:bg-destructive/10 rounded p-0.5"
+                                        title="Supprimer cette entrée"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </button>
+                                    )}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </td>
                           )}
