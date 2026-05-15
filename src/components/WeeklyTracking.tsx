@@ -1068,35 +1068,16 @@ export function WeeklyTracking() {
                           {filterType !== "masquer_lots" && (
                           <td className={cn("p-0.5 align-top", dim && "opacity-30")}>
                             <div className="flex flex-col gap-0.5">
-                              {entryRows.map((er, i) => {
-                                const isCreme = article === CREME_ARTICLE;
-                                const autoLot = isCreme
-                                  ? cremeLotMap.get(`${wkStart}|${day}|${er.rowIndex}`) ?? ""
-                                  : "";
-                                return (
+                              {entryRows.map((er, i) => (
                                   <div key={`l-${er.rowIndex}-${i}`} className="flex items-center gap-0.5">
-                                    {isCreme ? (
-                                      <div
-                                        className={cn(
-                                          "h-7 w-20 text-xs px-1 flex items-center rounded border font-medium truncate",
-                                          autoLot
-                                            ? "bg-primary/10 text-primary border-primary/40"
-                                            : "bg-muted text-muted-foreground border-dashed",
-                                        )}
-                                        title={autoLot ? `Lot FIFO crème : ${autoLot}` : "Aucun lot crème disponible"}
-                                      >
-                                        {autoLot || "—"}
-                                      </div>
-                                    ) : (
-                                      <Input
-                                        value={er.lot ?? ""}
-                                        onChange={(ev) =>
-                                          updateCellAt(wkStart, day, er.rowIndex, article, { lot_number: ev.target.value })
-                                        }
-                                        placeholder="lot"
-                                        className="h-7 w-20 text-xs px-1"
-                                      />
-                                    )}
+                                    <Input
+                                      value={er.lot ?? ""}
+                                      onChange={(ev) =>
+                                        updateCellAt(wkStart, day, er.rowIndex, article, { lot_number: ev.target.value })
+                                      }
+                                      placeholder="lot"
+                                      className="h-7 w-20 text-xs px-1"
+                                    />
                                     {er.rowIndex > 0 && (
                                       <button
                                         type="button"
@@ -1108,8 +1089,7 @@ export function WeeklyTracking() {
                                       </button>
                                     )}
                                   </div>
-                                );
-                              })}
+                              ))}
                             </div>
                           </td>
                           )}
