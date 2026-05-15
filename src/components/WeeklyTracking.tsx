@@ -242,6 +242,7 @@ export function WeeklyTracking() {
     return map;
   }, [cremeGlaceRows, rows]);
 
+
   const cellMap = useMemo(() => {
     const m = new Map<string, Row>();
     for (const r of rows) {
@@ -250,6 +251,31 @@ export function WeeklyTracking() {
     }
     return m;
   }, [rows]);
+
+  // Pour la fiche Suivi crème fraîche : attribue automatiquement à chaque
+  // ligne (où une quantité est saisie) le prochain lot disponible côté
+  // mouvement glaces, dans l'ordre des shifts (row_index 0..3).
+  const cremeAutoLotMap = useMemo(() => {
+    const map = new Map<string, string>();
+    const weeks = new Set<string>([weekStart, ...rows.map((r) => r.week_start)]);
+    for (const wk of weeks) {
+      for (const day of DAYS) {
+        const lots = glaceCremeLotsByDay.get(`${wk}|${day}`) ?? [];
+        if (lots.length === 0) continue;
+        const cremeSlots = [0, 1, 2, 3]
+          .map((rowIdx) => {
+            const r = cellMap.get(`${wk}|${day}|${rowIdx}|`);
+            return { rowIdx, qty: numLocal(r?.quantity) };
+          })
+          .filter((s) => s.qty > 0);
+        cremeSlots.forEach((s, i) => {
+          const lot = lots[i] ?? lots[lots.length - 1];
+          map.set(`${wk}|${day}|${s.rowIdx}`, lot);
+        });
+      }
+    }
+    return map;
+  }, [glaceCremeLotsByDay, cellMap, weekStart, rows]);
 
   const updateCellAt = (
     wkStart: string,
@@ -819,15 +845,17 @@ export function WeeklyTracking() {
                         </td>
                         <td className="p-1">
                           {(() => {
-                            const autoLots = glaceCremeLotsByDay.get(`${weekStart}|${day}`) ?? [];
-                            const autoText = autoLots.join(", ");
-                            if (autoText) {
+                            const hasQty = numLocal(c.quantity) > 0;
+                            const autoLot = hasQty
+                              ? cremeAutoLotMap.get(`${weekStart}|${day}|${rowIdx}`) ?? ""
+                              : "";
+                            if (hasQty && autoLot) {
                               return (
                                 <div
                                   className="h-8 min-w-[240px] px-2 flex items-center rounded border bg-primary/10 text-primary border-primary/40 text-sm font-medium"
-                                  title={`Lots utilisés en mouvement glaces : ${autoText}`}
+                                  title={`Lot transféré depuis le mouvement glaces : ${autoLot}`}
                                 >
-                                  {autoText}
+                                  {autoLot}
                                 </div>
                               );
                             }
@@ -836,7 +864,8 @@ export function WeeklyTracking() {
                                 value={c.lot_number ?? ""}
                                 onChange={(e) => updateCell(day, rowIdx, null, { lot_number: e.target.value })}
                                 className="h-8 min-w-[240px]"
-                                placeholder="Auto depuis mouvement glaces"
+                                placeholder={hasQty ? "Aucun lot dispo en mouvement glaces" : "Saisir la quantité…"}
+                                disabled={!hasQty}
                               />
                             );
                           })()}
