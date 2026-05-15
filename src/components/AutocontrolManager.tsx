@@ -100,6 +100,15 @@ const initialCtgExtra = (): CtgExtraData => ({
   },
 });
 
+type CtgProductKey = "Cornet" | "Tulipe" | "Gaufrette";
+const CTG_PRODUCTS: CtgProductKey[] = ["Cornet", "Tulipe", "Gaufrette"];
+type CtgProductRow = { selected: boolean; quantity: string; lotNumber: string; dlc: string };
+const initialCtgProducts = (): Record<CtgProductKey, CtgProductRow> => ({
+  Cornet: { selected: true, quantity: "", lotNumber: "", dlc: "" },
+  Tulipe: { selected: false, quantity: "", lotNumber: "", dlc: "" },
+  Gaufrette: { selected: false, quantity: "", lotNumber: "", dlc: "" },
+});
+
 const initialForm = {
   ficheType: "Oranges/Bigarreaux confits" as FicheType,
   controlDate: new Date().toISOString().slice(0, 10),
@@ -194,6 +203,7 @@ export function AutocontrolManager() {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [ctgProducts, setCtgProducts] = useState<Record<CtgProductKey, CtgProductRow>>(initialCtgProducts());
 
   const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
   const isConfit = form.article === "Orange confit" || form.article === "Bigarreaux confits";
@@ -233,6 +243,8 @@ export function AutocontrolManager() {
       // Pour Panaché on relâche l'exigence article (remplacé par matières premières)
       const formForBase = isPanache
       ? { ...form, article: form.article || "Panaché" }
+      : isCtg
+      ? { ...form, article: form.article || "Cornet", lotNumber: form.lotNumber || "_", quantity: form.quantity || "1", dlc: form.dlc || "" }
       : form;
     const baseResult = baseAutocontrolSchema.safeParse(formForBase);
     if (!baseResult.success) {
@@ -245,6 +257,16 @@ export function AutocontrolManager() {
       if (!extraResult.success) {
         extraResult.error.issues.forEach((i) => errors.push(i.message));
       }
+      const selected = CTG_PRODUCTS.filter((p) => ctgProducts[p].selected);
+      if (selected.length === 0) {
+        errors.push("Sélectionner au moins un produit (Cornet / Tulipe / Gaufrette)");
+      }
+      selected.forEach((p) => {
+        const row = ctgProducts[p];
+        const qty = Number(row.quantity);
+        if (!Number.isFinite(qty) || qty <= 0) errors.push(`${p} : quantité obligatoire`);
+        if (!row.lotNumber.trim()) errors.push(`${p} : N° de lot obligatoire`);
+      });
     }
 
     const decorationExtra = isDecoration ? form.extraData : null;
@@ -285,6 +307,24 @@ export function AutocontrolManager() {
       if (isPanache && panacheExtra?.matieresPremieres) {
         articleToSave = panacheExtra.matieresPremieres.map((m) => m.name).join(", ");
       }
+      if (isCtg) {
+        const selected = CTG_PRODUCTS.filter((p) => ctgProducts[p].selected);
+        for (const p of selected) {
+          const row = ctgProducts[p];
+          await addAutocontrol({
+            ficheType: form.ficheType,
+            controlDate: baseResult.data.controlDate,
+            collaborateur: baseResult.data.collaborateur,
+            article: p,
+            lotNumber: row.lotNumber.trim(),
+            quantity: Number(row.quantity),
+            dlc: row.dlc || null,
+            visaManager: baseResult.data.visaManager,
+            notes: baseResult.data.notes,
+            extraData,
+          });
+        }
+      } else {
       await addAutocontrol({
         ficheType: form.ficheType,
         controlDate: baseResult.data.controlDate,
@@ -297,6 +337,7 @@ export function AutocontrolManager() {
         notes: baseResult.data.notes,
         extraData: isCtg ? extraData : isDecoration ? decorationExtra : isPanache ? panacheExtra : null,
       });
+      }
       toast.success("Fiche ajoutée");
       await refresh();
       setForm({
@@ -305,6 +346,7 @@ export function AutocontrolManager() {
         article: DEFAULT_ARTICLE_BY_FICHE[form.ficheType] ?? "",
         extraData: isCtg ? initialCtgExtra() : isDecoration ? initialDecorationExtra() : isPanache ? initialPanacheExtra() : null,
       });
+      if (isCtg) setCtgProducts(initialCtgProducts());
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
     } finally {
@@ -386,7 +428,7 @@ export function AutocontrolManager() {
               // validated by Zod
             />
           </div>
-          {!isPanache && (
+          {!isPanache && !isCtg && (
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Article / Désignation *</label>
             {ARTICLE_OPTIONS_BY_FICHE[form.ficheType] && ARTICLE_OPTIONS_BY_FICHE[form.ficheType]!.length > 0 ? (
@@ -410,6 +452,69 @@ export function AutocontrolManager() {
               />
             )}
           </div>
+          )}
+
+          {isCtg && (
+            <div className="sm:col-span-2 bg-muted/30 rounded-lg p-3">
+              <h4 className="text-sm font-semibold mb-1">Produits fabriqués *</h4>
+              <p className="text-xs text-muted-foreground mb-3">
+                Cochez chaque produit fabriqué avec ces ingrédients et renseignez sa quantité, son N° de lot et sa DLC.
+              </p>
+              <div className="space-y-3">
+                {CTG_PRODUCTS.map((p) => {
+                  const row = ctgProducts[p];
+                  return (
+                    <div key={p} className="border rounded-md p-2 bg-background">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <Checkbox
+                          checked={row.selected}
+                          onCheckedChange={(v) =>
+                            setCtgProducts((s) => ({ ...s, [p]: { ...s[p], selected: !!v } }))
+                          }
+                        />
+                        <span className="font-medium text-sm">{p}</span>
+                      </label>
+                      {row.selected && (
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                          <div>
+                            <label className="text-xs text-muted-foreground">Quantité *</label>
+                            <Input
+                              type="number"
+                              step="any"
+                              min="0.01"
+                              value={row.quantity}
+                              onChange={(e) =>
+                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], quantity: e.target.value } }))
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground">N° de lot *</label>
+                            <Input
+                              value={row.lotNumber}
+                              maxLength={120}
+                              onChange={(e) =>
+                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], lotNumber: e.target.value } }))
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground">DLC</label>
+                            <Input
+                              type="date"
+                              value={row.dlc}
+                              onChange={(e) =>
+                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], dlc: e.target.value } }))
+                              }
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
           {isPanache && form.extraData?.matieresPremieres && (
@@ -498,7 +603,7 @@ export function AutocontrolManager() {
             </div>
           )}
 
-          {!isConfit && (
+          {!isConfit && !isCtg && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
               <Input
@@ -508,6 +613,7 @@ export function AutocontrolManager() {
               />
             </div>
           )}
+          {!isCtg && (
           <div>
             <label className="text-xs font-medium text-muted-foreground">
               {isDecoration ? "Quantité décorée" : "Quantité"}
@@ -520,7 +626,8 @@ export function AutocontrolManager() {
               onChange={(e) => setForm((f) => ({ ...f, quantity: e.target.value }))}
             />
           </div>
-          {!isDecoration && (
+          )}
+          {!isDecoration && !isCtg && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">DLC</label>
               <Input
