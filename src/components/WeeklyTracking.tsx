@@ -153,6 +153,9 @@ export function WeeklyTracking() {
   // automatiquement les lots de l'article "Crème fraîche (mousse fouettée)"
   // dans le mouvement glaces (FIFO).
   const [cremeRows, setCremeRows] = useState<Row[]>([]);
+  // Toutes les entrées "Crème fraîche (mousse fouettée)" du mouvement glaces,
+  // chargées globalement pour calculer correctement la consommation FIFO.
+  const [cremeGlaceRows, setCremeGlaceRows] = useState<Row[]>([]);
 
   // Filters for Mouvement tab
   const [filterArticle, setFilterArticle] = useState<string>("all");
@@ -203,12 +206,23 @@ export function WeeklyTracking() {
       const { data, error } = await supabase
         .from("weekly_tracking")
         .select("*")
-        .in("week_start", weeksToLoad)
         .eq("fiche_type", "Crème fraîche");
       if (error) return;
       setCremeRows(data || []);
     })();
-  }, [weeksToLoad]);
+  }, [rows]);
+
+  useEffect(() => {
+    (async () => {
+      const { data, error } = await supabase
+        .from("weekly_tracking")
+        .select("*")
+        .eq("fiche_type", "Mouvement glaces & tartes")
+        .eq("article", "Crème fraîche (mousse fouettée)");
+      if (error) return;
+      setCremeGlaceRows(data || []);
+    })();
+  }, [rows]);
 
   const CREME_ARTICLE = "Crème fraîche (mousse fouettée)";
 
@@ -239,18 +253,27 @@ export function WeeklyTracking() {
         }
       }
     }
-    // Consommation FIFO par les entrées glaces de crème fraîche
-    const glaceWeeks = Array.from(
-      new Set(rows.filter((r) => r.fiche_type === "Mouvement glaces & tartes").map((r) => r.week_start)),
-    ).sort();
+    // Consommation FIFO par TOUTES les entrées glaces de crème fraîche
+    // (on fusionne le store global avec les éventuelles modifications locales en cours).
+    const localCreme = rows.filter(
+      (r) => r.fiche_type === "Mouvement glaces & tartes" && r.article === CREME_ARTICLE,
+    );
+    const merged = new Map<string, Row>();
+    for (const r of cremeGlaceRows) {
+      merged.set(`${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`, r);
+    }
+    for (const r of localCreme) {
+      merged.set(`${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`, r);
+    }
+    const allCremeGlace = Array.from(merged.values());
+    const glaceWeeks = Array.from(new Set(allCremeGlace.map((r) => r.week_start))).sort();
     for (const wk of glaceWeeks) {
       for (const day of DAYS) {
-        const entries = rows
+        const entries = allCremeGlace
           .filter(
             (r) =>
               r.week_start === wk &&
               r.day_of_week === day &&
-              r.article === CREME_ARTICLE &&
               numLocal(r.entrees) > 0,
           )
           .sort((a, b) => (a.row_index ?? 0) - (b.row_index ?? 0));
@@ -270,7 +293,7 @@ export function WeeklyTracking() {
       }
     }
     return map;
-  }, [cremeRows, rows]);
+  }, [cremeRows, cremeGlaceRows, rows]);
 
   // Synchronise le lot_number persisté avec l'attribution FIFO crème.
   useEffect(() => {
