@@ -149,12 +149,8 @@ export function WeeklyTracking() {
   const [tab, setTab] = useState<"creme" | "glace" | "tarte">("creme");
   const [rows, setRows] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
-  // Lignes de la fiche Crème fraîche, toujours chargées pour alimenter
-  // automatiquement les lots de l'article "Crème fraîche (mousse fouettée)"
-  // dans le mouvement glaces (FIFO).
-  const [cremeRows, setCremeRows] = useState<Row[]>([]);
   // Toutes les entrées "Crème fraîche (mousse fouettée)" du mouvement glaces,
-  // chargées globalement pour calculer correctement la consommation FIFO.
+  // chargées globalement pour afficher leurs lots dans la fiche Suivi crème fraîche.
   const [cremeGlaceRows, setCremeGlaceRows] = useState<Row[]>([]);
 
   // Filters for Mouvement tab
@@ -200,17 +196,6 @@ export function WeeklyTracking() {
       setRows(data || []);
     })();
   }, [weeksToLoad, ficheType]);
-
-  useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase
-        .from("weekly_tracking")
-        .select("*")
-        .eq("fiche_type", "Crème fraîche");
-      if (error) return;
-      setCremeRows(data || []);
-    })();
-  }, [rows]);
 
   useEffect(() => {
     (async () => {
