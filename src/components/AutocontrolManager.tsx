@@ -243,6 +243,8 @@ export function AutocontrolManager() {
       // Pour Panaché on relâche l'exigence article (remplacé par matières premières)
       const formForBase = isPanache
       ? { ...form, article: form.article || "Panaché" }
+      : isCtg
+      ? { ...form, article: form.article || "Cornet", lotNumber: form.lotNumber || "_", quantity: form.quantity || "1", dlc: form.dlc || "" }
       : form;
     const baseResult = baseAutocontrolSchema.safeParse(formForBase);
     if (!baseResult.success) {
@@ -255,6 +257,16 @@ export function AutocontrolManager() {
       if (!extraResult.success) {
         extraResult.error.issues.forEach((i) => errors.push(i.message));
       }
+      const selected = CTG_PRODUCTS.filter((p) => ctgProducts[p].selected);
+      if (selected.length === 0) {
+        errors.push("Sélectionner au moins un produit (Cornet / Tulipe / Gaufrette)");
+      }
+      selected.forEach((p) => {
+        const row = ctgProducts[p];
+        const qty = Number(row.quantity);
+        if (!Number.isFinite(qty) || qty <= 0) errors.push(`${p} : quantité obligatoire`);
+        if (!row.lotNumber.trim()) errors.push(`${p} : N° de lot obligatoire`);
+      });
     }
 
     const decorationExtra = isDecoration ? form.extraData : null;
@@ -295,6 +307,24 @@ export function AutocontrolManager() {
       if (isPanache && panacheExtra?.matieresPremieres) {
         articleToSave = panacheExtra.matieresPremieres.map((m) => m.name).join(", ");
       }
+      if (isCtg) {
+        const selected = CTG_PRODUCTS.filter((p) => ctgProducts[p].selected);
+        for (const p of selected) {
+          const row = ctgProducts[p];
+          await addAutocontrol({
+            ficheType: form.ficheType,
+            controlDate: baseResult.data.controlDate,
+            collaborateur: baseResult.data.collaborateur,
+            article: p,
+            lotNumber: row.lotNumber.trim(),
+            quantity: Number(row.quantity),
+            dlc: row.dlc || null,
+            visaManager: baseResult.data.visaManager,
+            notes: baseResult.data.notes,
+            extraData,
+          });
+        }
+      } else {
       await addAutocontrol({
         ficheType: form.ficheType,
         controlDate: baseResult.data.controlDate,
@@ -307,6 +337,7 @@ export function AutocontrolManager() {
         notes: baseResult.data.notes,
         extraData: isCtg ? extraData : isDecoration ? decorationExtra : isPanache ? panacheExtra : null,
       });
+      }
       toast.success("Fiche ajoutée");
       await refresh();
       setForm({
@@ -315,6 +346,7 @@ export function AutocontrolManager() {
         article: DEFAULT_ARTICLE_BY_FICHE[form.ficheType] ?? "",
         extraData: isCtg ? initialCtgExtra() : isDecoration ? initialDecorationExtra() : isPanache ? initialPanacheExtra() : null,
       });
+      if (isCtg) setCtgProducts(initialCtgProducts());
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
     } finally {
