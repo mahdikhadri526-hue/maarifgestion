@@ -203,6 +203,7 @@ export function AutocontrolManager() {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [ctgProducts, setCtgProducts] = useState<Record<CtgProductKey, CtgProductRow>>(initialCtgProducts());
 
   const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
   const isConfit = form.article === "Orange confit" || form.article === "Bigarreaux confits";
