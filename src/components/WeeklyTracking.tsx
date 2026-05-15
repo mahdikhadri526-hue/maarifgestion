@@ -149,12 +149,8 @@ export function WeeklyTracking() {
   const [tab, setTab] = useState<"creme" | "glace" | "tarte">("creme");
   const [rows, setRows] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
-  // Lignes de la fiche Crème fraîche, toujours chargées pour alimenter
-  // automatiquement les lots de l'article "Crème fraîche (mousse fouettée)"
-  // dans le mouvement glaces (FIFO).
-  const [cremeRows, setCremeRows] = useState<Row[]>([]);
   // Toutes les entrées "Crème fraîche (mousse fouettée)" du mouvement glaces,
-  // chargées globalement pour calculer correctement la consommation FIFO.
+  // chargées globalement pour afficher leurs lots dans la fiche Suivi crème fraîche.
   const [cremeGlaceRows, setCremeGlaceRows] = useState<Row[]>([]);
 
   // Filters for Mouvement tab
@@ -206,17 +202,6 @@ export function WeeklyTracking() {
       const { data, error } = await supabase
         .from("weekly_tracking")
         .select("*")
-        .eq("fiche_type", "Crème fraîche");
-      if (error) return;
-      setCremeRows(data || []);
-    })();
-  }, [rows]);
-
-  useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase
-        .from("weekly_tracking")
-        .select("*")
         .eq("fiche_type", "Mouvement glaces & tartes")
         .eq("article", "Crème fraîche (mousse fouettée)");
       if (error) return;
@@ -232,92 +217,30 @@ export function WeeklyTracking() {
     return isNaN(n) ? 0 : n;
   };
 
-  // Construit l'attribution FIFO des lots de crème fraîche aux entrées
-  // "Crème fraîche (mousse fouettée)" du mouvement glaces.
-  // Clé: `${wkStart}|${day}|${rowIndex}` → lot (ou "" si rupture)
-  const cremeLotMap = useMemo(() => {
-    const map = new Map<string, string>();
-    // Supply FIFO à partir de la fiche Crème fraîche, ordre semaine→jour→shift
-    type Batch = { lot: string; remaining: number };
-    const supply: Batch[] = [];
-    const sortedWeeks = Array.from(new Set(cremeRows.map((r) => r.week_start))).sort();
-    for (const wk of sortedWeeks) {
-      for (const day of DAYS) {
-        const slots = cremeRows
-          .filter((r) => r.week_start === wk && r.day_of_week === day)
-          .sort((a, b) => (a.row_index ?? 0) - (b.row_index ?? 0));
-        for (const s of slots) {
-          const q = numLocal(s.quantity);
-          const lot = (s.lot_number ?? "").toString().trim();
-          if (q > 0 && lot) supply.push({ lot, remaining: q });
-        }
-      }
-    }
-    // Consommation FIFO par TOUTES les entrées glaces de crème fraîche
-    // (on fusionne le store global avec les éventuelles modifications locales en cours).
-    const localCreme = rows.filter(
-      (r) => r.fiche_type === "Mouvement glaces & tartes" && r.article === CREME_ARTICLE,
-    );
+  // Lots saisis dans le mouvement glaces pour "Crème fraîche (mousse fouettée)".
+  // Affichés automatiquement dans la fiche Suivi crème fraîche.
+  // Clé: `${week_start}|${day_of_week}` → liste de lots distincts.
+  const glaceCremeLotsByDay = useMemo(() => {
+    const map = new Map<string, string[]>();
     const merged = new Map<string, Row>();
     for (const r of cremeGlaceRows) {
       merged.set(`${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`, r);
     }
-    for (const r of localCreme) {
-      merged.set(`${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`, r);
-    }
-    const allCremeGlace = Array.from(merged.values());
-    const glaceWeeks = Array.from(new Set(allCremeGlace.map((r) => r.week_start))).sort();
-    for (const wk of glaceWeeks) {
-      for (const day of DAYS) {
-        const entries = allCremeGlace
-          .filter(
-            (r) =>
-              r.week_start === wk &&
-              r.day_of_week === day &&
-              numLocal(r.entrees) > 0,
-          )
-          .sort((a, b) => (a.row_index ?? 0) - (b.row_index ?? 0));
-        for (const e of entries) {
-          let need = numLocal(e.entrees);
-          let assigned = "";
-          for (const b of supply) {
-            if (need <= 0) break;
-            if (b.remaining <= 0) continue;
-            if (!assigned) assigned = b.lot;
-            const take = Math.min(b.remaining, need);
-            b.remaining -= take;
-            need -= take;
-          }
-          map.set(`${wk}|${day}|${e.row_index ?? 0}`, assigned);
-        }
+    for (const r of rows) {
+      if (r.fiche_type === "Mouvement glaces & tartes" && r.article === CREME_ARTICLE) {
+        merged.set(`${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`, r);
       }
     }
+    for (const r of merged.values()) {
+      const lot = (r.lot_number ?? "").toString().trim();
+      if (!lot) continue;
+      const k = `${r.week_start}|${r.day_of_week}`;
+      const arr = map.get(k) ?? [];
+      if (!arr.includes(lot)) arr.push(lot);
+      map.set(k, arr);
+    }
     return map;
-  }, [cremeRows, cremeGlaceRows, rows]);
-
-  // Synchronise le lot_number persisté avec l'attribution FIFO crème.
-  useEffect(() => {
-    if (cremeLotMap.size === 0) return;
-    setRows((prev) => {
-      let changed = false;
-      const next = prev.map((r) => {
-        if (
-          r.fiche_type === "Mouvement glaces & tartes" &&
-          r.article === CREME_ARTICLE &&
-          numLocal(r.entrees) > 0
-        ) {
-          const k = `${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`;
-          const auto = cremeLotMap.get(k);
-          if (auto != null && auto !== (r.lot_number ?? "")) {
-            changed = true;
-            return { ...r, lot_number: auto };
-          }
-        }
-        return r;
-      });
-      return changed ? next : prev;
-    });
-  }, [cremeLotMap]);
+  }, [cremeGlaceRows, rows]);
 
   const cellMap = useMemo(() => {
     const m = new Map<string, Row>();
@@ -895,11 +818,28 @@ export function WeeklyTracking() {
                           />
                         </td>
                         <td className="p-1">
-                          <Input
-                            value={c.lot_number ?? ""}
-                            onChange={(e) => updateCell(day, rowIdx, null, { lot_number: e.target.value })}
-                            className="h-8 min-w-[240px]"
-                          />
+                          {(() => {
+                            const autoLots = glaceCremeLotsByDay.get(`${weekStart}|${day}`) ?? [];
+                            const autoText = autoLots.join(", ");
+                            if (autoText) {
+                              return (
+                                <div
+                                  className="h-8 min-w-[240px] px-2 flex items-center rounded border bg-primary/10 text-primary border-primary/40 text-sm font-medium"
+                                  title={`Lots utilisés en mouvement glaces : ${autoText}`}
+                                >
+                                  {autoText}
+                                </div>
+                              );
+                            }
+                            return (
+                              <Input
+                                value={c.lot_number ?? ""}
+                                onChange={(e) => updateCell(day, rowIdx, null, { lot_number: e.target.value })}
+                                className="h-8 min-w-[240px]"
+                                placeholder="Auto depuis mouvement glaces"
+                              />
+                            );
+                          })()}
                         </td>
                         <td className="p-1">
                           <ConformityToggle
@@ -1130,35 +1070,16 @@ export function WeeklyTracking() {
                           {filterType !== "masquer_lots" && (
                           <td className={cn("p-0.5 align-top", dim && "opacity-30")}>
                             <div className="flex flex-col gap-0.5">
-                              {entryRows.map((er, i) => {
-                                const isCreme = article === CREME_ARTICLE;
-                                const autoLot = isCreme
-                                  ? cremeLotMap.get(`${wkStart}|${day}|${er.rowIndex}`) ?? ""
-                                  : "";
-                                return (
+                              {entryRows.map((er, i) => (
                                   <div key={`l-${er.rowIndex}-${i}`} className="flex items-center gap-0.5">
-                                    {isCreme ? (
-                                      <div
-                                        className={cn(
-                                          "h-7 w-20 text-xs px-1 flex items-center rounded border font-medium truncate",
-                                          autoLot
-                                            ? "bg-primary/10 text-primary border-primary/40"
-                                            : "bg-muted text-muted-foreground border-dashed",
-                                        )}
-                                        title={autoLot ? `Lot FIFO crème : ${autoLot}` : "Aucun lot crème disponible"}
-                                      >
-                                        {autoLot || "—"}
-                                      </div>
-                                    ) : (
-                                      <Input
-                                        value={er.lot ?? ""}
-                                        onChange={(ev) =>
-                                          updateCellAt(wkStart, day, er.rowIndex, article, { lot_number: ev.target.value })
-                                        }
-                                        placeholder="lot"
-                                        className="h-7 w-20 text-xs px-1"
-                                      />
-                                    )}
+                                    <Input
+                                      value={er.lot ?? ""}
+                                      onChange={(ev) =>
+                                        updateCellAt(wkStart, day, er.rowIndex, article, { lot_number: ev.target.value })
+                                      }
+                                      placeholder="lot"
+                                      className="h-7 w-20 text-xs px-1"
+                                    />
                                     {er.rowIndex > 0 && (
                                       <button
                                         type="button"
@@ -1170,8 +1091,7 @@ export function WeeklyTracking() {
                                       </button>
                                     )}
                                   </div>
-                                );
-                              })}
+                              ))}
                             </div>
                           </td>
                           )}
