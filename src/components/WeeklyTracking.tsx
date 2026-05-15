@@ -833,11 +833,28 @@ export function WeeklyTracking() {
                           />
                         </td>
                         <td className="p-1">
-                          <Input
-                            value={c.lot_number ?? ""}
-                            onChange={(e) => updateCell(day, rowIdx, null, { lot_number: e.target.value })}
-                            className="h-8 min-w-[240px]"
-                          />
+                          {(() => {
+                            const autoLots = glaceCremeLotsByDay.get(`${weekStart}|${day}`) ?? [];
+                            const autoText = autoLots.join(", ");
+                            if (autoText) {
+                              return (
+                                <div
+                                  className="h-8 min-w-[240px] px-2 flex items-center rounded border bg-primary/10 text-primary border-primary/40 text-sm font-medium"
+                                  title={`Lots utilisés en mouvement glaces : ${autoText}`}
+                                >
+                                  {autoText}
+                                </div>
+                              );
+                            }
+                            return (
+                              <Input
+                                value={c.lot_number ?? ""}
+                                onChange={(e) => updateCell(day, rowIdx, null, { lot_number: e.target.value })}
+                                className="h-8 min-w-[240px]"
+                                placeholder="Auto depuis mouvement glaces"
+                              />
+                            );
+                          })()}
                         </td>
                         <td className="p-1">
                           <ConformityToggle
