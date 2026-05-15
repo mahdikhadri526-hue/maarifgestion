@@ -266,6 +266,30 @@ export function WeeklyTracking() {
     return map;
   }, [cremeRows, rows]);
 
+  // Synchronise le lot_number persisté avec l'attribution FIFO crème.
+  useEffect(() => {
+    if (cremeLotMap.size === 0) return;
+    setRows((prev) => {
+      let changed = false;
+      const next = prev.map((r) => {
+        if (
+          r.fiche_type === "Mouvement glaces & tartes" &&
+          r.article === CREME_ARTICLE &&
+          num(r.entrees) > 0
+        ) {
+          const k = `${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`;
+          const auto = cremeLotMap.get(k);
+          if (auto != null && auto !== (r.lot_number ?? "")) {
+            changed = true;
+            return { ...r, lot_number: auto };
+          }
+        }
+        return r;
+      });
+      return changed ? next : prev;
+    });
+  }, [cremeLotMap]);
+
   const cellMap = useMemo(() => {
     const m = new Map<string, Row>();
     for (const r of rows) {
