@@ -212,6 +212,12 @@ export function WeeklyTracking() {
 
   const CREME_ARTICLE = "Crème fraîche (mousse fouettée)";
 
+  const numLocal = (v: any) => {
+    if (v === "" || v == null) return 0;
+    const n = Number(v);
+    return isNaN(n) ? 0 : n;
+  };
+
   // Construit l'attribution FIFO des lots de crème fraîche aux entrées
   // "Crème fraîche (mousse fouettée)" du mouvement glaces.
   // Clé: `${wkStart}|${day}|${rowIndex}` → lot (ou "" si rupture)
@@ -227,7 +233,7 @@ export function WeeklyTracking() {
           .filter((r) => r.week_start === wk && r.day_of_week === day)
           .sort((a, b) => (a.row_index ?? 0) - (b.row_index ?? 0));
         for (const s of slots) {
-          const q = num(s.quantity);
+          const q = numLocal(s.quantity);
           const lot = (s.lot_number ?? "").toString().trim();
           if (q > 0 && lot) supply.push({ lot, remaining: q });
         }
@@ -245,11 +251,11 @@ export function WeeklyTracking() {
               r.week_start === wk &&
               r.day_of_week === day &&
               r.article === CREME_ARTICLE &&
-              num(r.entrees) > 0,
+              numLocal(r.entrees) > 0,
           )
           .sort((a, b) => (a.row_index ?? 0) - (b.row_index ?? 0));
         for (const e of entries) {
-          let need = num(e.entrees);
+          let need = numLocal(e.entrees);
           let assigned = "";
           for (const b of supply) {
             if (need <= 0) break;
@@ -275,7 +281,7 @@ export function WeeklyTracking() {
         if (
           r.fiche_type === "Mouvement glaces & tartes" &&
           r.article === CREME_ARTICLE &&
-          num(r.entrees) > 0
+          numLocal(r.entrees) > 0
         ) {
           const k = `${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`;
           const auto = cremeLotMap.get(k);
