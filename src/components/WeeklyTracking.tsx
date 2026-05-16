@@ -217,30 +217,31 @@ export function WeeklyTracking() {
     return isNaN(n) ? 0 : n;
   };
 
-  // Lots saisis dans le mouvement glaces pour "Crème fraîche (mousse fouettée)".
-  // Affichés automatiquement dans la fiche Suivi crème fraîche.
-  // Clé: `${week_start}|${day_of_week}` → liste de lots distincts.
-  const glaceCremeLotsByDay = useMemo(() => {
-    const map = new Map<string, string[]>();
+  // Données mouvement glaces pour la crème fraîche, utilisées en lecture seule
+  // afin d'alimenter automatiquement les lots dans le suivi Crème fraîche.
+  const movementCremeRows = useMemo(() => {
     const merged = new Map<string, Row>();
     for (const r of cremeGlaceRows) {
-      merged.set(`${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`, r);
+      if (r.fiche_type === "Mouvement glaces & tartes" && r.article === CREME_ARTICLE) {
+        merged.set(`${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`, r);
+      }
     }
     for (const r of rows) {
       if (r.fiche_type === "Mouvement glaces & tartes" && r.article === CREME_ARTICLE) {
         merged.set(`${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`, r);
       }
     }
-    for (const r of merged.values()) {
-      const lot = (r.lot_number ?? "").toString().trim();
-      if (!lot) continue;
-      const k = `${r.week_start}|${r.day_of_week}`;
-      const arr = map.get(k) ?? [];
-      if (!arr.includes(lot)) arr.push(lot);
-      map.set(k, arr);
-    }
-    return map;
+    return Array.from(merged.values());
   }, [cremeGlaceRows, rows]);
+
+  const movementCremeCellMap = useMemo(() => {
+    const m = new Map<string, Row>();
+    for (const r of movementCremeRows) {
+      const key = `${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}|${r.article ?? ""}`;
+      m.set(key, r);
+    }
+    return m;
+  }, [movementCremeRows]);
 
 
   const cellMap = useMemo(() => {
