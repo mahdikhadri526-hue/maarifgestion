@@ -276,7 +276,14 @@ export function WeeklyTracking() {
   const getMovementSortie = (dayIdx: number, wkStart: string): number | "" => {
     const explicit = movementCellAt(wkStart, DAYS[dayIdx], 0).sorties;
     if (explicit !== "" && explicit != null) return Number(explicit);
-    if (dayIdx >= DAYS.length - 1) return "";
+    if (dayIdx >= DAYS.length - 1) {
+      const nextWk = (() => { const d = parseISO(wkStart); d.setDate(d.getDate() + 7); return fmt(d); })();
+      const siCur = getMovementSI(dayIdx, wkStart);
+      const siNextMon = getMovementSI(0, nextWk);
+      if (siCur === "" || siNextMon === "") return "";
+      const entries = movementEntriesForAt(wkStart, DAYS[dayIdx]).reduce((s, e) => s + numLocal(e.entree), 0);
+      return Number(siCur) + entries - Number(siNextMon);
+    }
     const siCur = getMovementSI(dayIdx, wkStart);
     const siNext = getMovementSI(dayIdx + 1, wkStart);
     if (siCur === "" || siNext === "") return "";
@@ -325,33 +332,94 @@ export function WeeklyTracking() {
   };
 
   // Pour la fiche Suivi crème fraîche : attribue automatiquement à chaque
-  // ligne (où une quantité est saisie) le prochain lot disponible côté
-  // mouvement glaces, dans l'ordre des shifts (row_index 0..3).
+  // ligne (où une quantité est saisie) les lots disponibles côté mouvement
+  // glaces, en consommant réellement les quantités en FIFO sur plusieurs jours.
   const cremeAutoLotMap = useMemo(() => {
     const map = new Map<string, string>();
-    const weeks = new Set<string>([weekStart, ...rows.map((r) => r.week_start)]);
+    type Batch = { lot: string; remaining: number };
+    type Allocation = { lot: string; quantity: number };
+    const batches: Batch[] = [];
+
+    const formatQty = (value: number) =>
+      Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.00$/, "").replace(/0$/, "");
+
+    const formatAllocations = (allocations: Allocation[], missing: number) => {
+      const parts = allocations
+        .filter((a) => a.quantity > 0)
+        .map((a) => `${a.lot.trim() || "(sans lot)"} ×${formatQty(a.quantity)}`);
+      if (missing > 0) parts.push(`manque ×${formatQty(missing)}`);
+      return parts.join(" / ");
+    };
+
+    const adjustToStockInitial = (target: number) => {
+      if (target < 0) return;
+      const current = batches.reduce((s, b) => s + Math.max(0, b.remaining), 0);
+      if (current > target) {
+        let excess = current - target;
+        for (const b of batches) {
+          if (excess <= 0) break;
+          if (b.remaining <= 0) continue;
+          const take = Math.min(b.remaining, excess);
+          b.remaining -= take;
+          excess -= take;
+        }
+      } else if (current < target) {
+        batches.push({ lot: "", remaining: target - current });
+      }
+    };
+
+    const consumeFifo = (quantity: number) => {
+      const allocations: Allocation[] = [];
+      let need = Math.max(0, quantity);
+      for (const b of batches) {
+        if (need <= 0) break;
+        if (b.remaining <= 0) continue;
+        const take = Math.min(b.remaining, need);
+        allocations.push({ lot: b.lot, quantity: take });
+        b.remaining -= take;
+        need -= take;
+      }
+      return { allocations, missing: need };
+    };
+
+    const weeks = Array.from(
+      new Set([
+        weekStart,
+        ...weeksToLoad,
+        ...movementCremeRows.map((r) => r.week_start),
+        ...rows.map((r) => r.week_start),
+      ].filter(Boolean)),
+    ).sort();
+
     for (const wk of weeks) {
       for (const day of DAYS) {
         const dIdx = DAYS.indexOf(day);
-        const lots = getMovementLotsOfDay(dIdx, wk)
-          .map((b) => (b.lot ?? "").toString().trim())
-          .filter(Boolean)
-          .filter((lot, i, arr) => arr.indexOf(lot) === i);
-        if (lots.length === 0) continue;
-        const cremeSlots = [0, 1, 2, 3]
-          .map((rowIdx) => {
-            const r = cellMap.get(`${wk}|${day}|${rowIdx}|`);
-            return { rowIdx, qty: numLocal(r?.quantity) };
-          })
-          .filter((s) => s.qty > 0);
-        cremeSlots.forEach((s, i) => {
-          const lot = lots[i] ?? lots[lots.length - 1];
-          map.set(`${wk}|${day}|${s.rowIdx}`, lot);
-        });
+        const si = getMovementSI(dIdx, wk);
+        if (si !== "") adjustToStockInitial(Number(si));
+
+        for (const e of movementEntriesForAt(wk, day)) {
+          const q = numLocal(e.entree);
+          if (q > 0) batches.push({ lot: (e.lot ?? "").toString(), remaining: q });
+        }
+
+        let cremeConsumed = 0;
+        for (const rowIdx of [0, 1, 2, 3]) {
+          const r = cellMap.get(`${wk}|${day}|${rowIdx}|`);
+          const qty = numLocal(r?.quantity);
+          if (qty <= 0) continue;
+          const { allocations, missing } = consumeFifo(qty);
+          const label = formatAllocations(allocations, missing);
+          if (label) map.set(`${wk}|${day}|${rowIdx}`, label);
+          cremeConsumed += qty;
+        }
+
+        const sortie = getMovementSortie(dIdx, wk);
+        const sortieQty = typeof sortie === "number" ? Math.max(0, sortie) : 0;
+        if (sortieQty > cremeConsumed) consumeFifo(sortieQty - cremeConsumed);
       }
     }
     return map;
-  }, [cellMap, movementCremeRows, movementCremeCellMap, weekStart, rows]);
+  }, [cellMap, movementCremeRows, movementCremeCellMap, weekStart, weeksToLoad, rows]);
 
   // Persiste automatiquement le lot transféré dans le champ lot_number
   // des lignes Suivi crème fraîche dès qu'une quantité est saisie.
