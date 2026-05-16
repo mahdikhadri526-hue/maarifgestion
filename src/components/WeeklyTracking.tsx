@@ -277,6 +277,27 @@ export function WeeklyTracking() {
     return map;
   }, [glaceCremeLotsByDay, cellMap, weekStart, rows]);
 
+  // Persiste automatiquement le lot transféré dans le champ lot_number
+  // des lignes Suivi crème fraîche dès qu'une quantité est saisie.
+  useEffect(() => {
+    if (ficheType !== "Crème fraîche") return;
+    if (cremeAutoLotMap.size === 0) return;
+    setRows((prev) => {
+      let changed = false;
+      const next = prev.map((r) => {
+        if (r.fiche_type !== "Crème fraîche") return r;
+        const key = `${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}`;
+        const auto = cremeAutoLotMap.get(key);
+        if (!auto) return r;
+        if (numLocal(r.quantity) <= 0) return r;
+        if ((r.lot_number ?? "") === auto) return r;
+        changed = true;
+        return { ...r, lot_number: auto };
+      });
+      return changed ? next : prev;
+    });
+  }, [cremeAutoLotMap, ficheType]);
+
   const updateCellAt = (
     wkStart: string,
     day: string,
