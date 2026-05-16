@@ -253,6 +253,77 @@ export function WeeklyTracking() {
     return m;
   }, [rows]);
 
+  const movementCellAt = (wkStart: string, day: string, rowIndex: number) =>
+    movementCremeCellMap.get(`${wkStart}|${day}|${rowIndex}|${CREME_ARTICLE}`) ?? {};
+
+  const movementEntriesForAt = (wkStart: string, day: string) =>
+    movementCremeRows
+      .filter(
+        (r) =>
+          r.week_start === wkStart &&
+          r.day_of_week === day &&
+          r.article === CREME_ARTICLE &&
+          (r.entrees != null || r.lot_number),
+      )
+      .map((r) => ({ rowIndex: r.row_index ?? 0, entree: r.entrees, lot: r.lot_number }))
+      .sort((a, b) => a.rowIndex - b.rowIndex);
+
+  const getMovementSI = (dayIdx: number, wkStart: string): number | "" => {
+    const v = movementCellAt(wkStart, DAYS[dayIdx], 0).stock_initial;
+    return v === "" || v == null ? "" : Number(v);
+  };
+
+  const getMovementSortie = (dayIdx: number, wkStart: string): number | "" => {
+    const explicit = movementCellAt(wkStart, DAYS[dayIdx], 0).sorties;
+    if (explicit !== "" && explicit != null) return Number(explicit);
+    if (dayIdx >= DAYS.length - 1) return "";
+    const siCur = getMovementSI(dayIdx, wkStart);
+    const siNext = getMovementSI(dayIdx + 1, wkStart);
+    if (siCur === "" || siNext === "") return "";
+    const entries = movementEntriesForAt(wkStart, DAYS[dayIdx]).reduce((s, e) => s + numLocal(e.entree), 0);
+    return Number(siCur) + entries - Number(siNext);
+  };
+
+  const getMovementLotsOfDay = (dayIdx: number, wkStart: string): { lot: string; remaining: number }[] => {
+    const prevWk = (() => { const d = parseISO(wkStart); d.setDate(d.getDate() - 7); return fmt(d); })();
+    const hasPrev = movementCremeRows.some((r) => r.week_start === prevWk);
+    const batches = hasPrev ? getMovementLotsOfDay(6, prevWk).map((b) => ({ ...b })) : [];
+    const siMon = numLocal(movementCellAt(wkStart, DAYS[0], 0).stock_initial);
+    if (siMon > 0) {
+      if (batches.length === 0) batches.push({ lot: "", remaining: siMon });
+      else {
+        const total = batches.reduce((s, b) => s + b.remaining, 0);
+        if (total > siMon) {
+          let excess = total - siMon;
+          for (const b of batches) {
+            if (excess <= 0) break;
+            const take = Math.min(b.remaining, excess);
+            b.remaining -= take;
+            excess -= take;
+          }
+        } else if (total < siMon) {
+          batches.push({ lot: "", remaining: siMon - total });
+        }
+      }
+    }
+    for (let d = 0; d <= dayIdx; d++) {
+      for (const e of movementEntriesForAt(wkStart, DAYS[d])) {
+        const q = numLocal(e.entree);
+        if (q > 0) batches.push({ lot: (e.lot ?? "").toString(), remaining: q });
+      }
+      const sortie = getMovementSortie(d, wkStart);
+      let need = typeof sortie === "number" ? sortie : 0;
+      for (const b of batches) {
+        if (need <= 0) break;
+        if (b.remaining <= 0) continue;
+        const take = Math.min(b.remaining, need);
+        b.remaining -= take;
+        need -= take;
+      }
+    }
+    return batches.filter((b) => b.remaining > 0);
+  };
+
   // Pour la fiche Suivi crème fraîche : attribue automatiquement à chaque
   // ligne (où une quantité est saisie) le prochain lot disponible côté
   // mouvement glaces, dans l'ordre des shifts (row_index 0..3).
@@ -261,7 +332,11 @@ export function WeeklyTracking() {
     const weeks = new Set<string>([weekStart, ...rows.map((r) => r.week_start)]);
     for (const wk of weeks) {
       for (const day of DAYS) {
-        const lots = glaceCremeLotsByDay.get(`${wk}|${day}`) ?? [];
+        const dIdx = DAYS.indexOf(day);
+        const lots = getMovementLotsOfDay(dIdx, wk)
+          .map((b) => (b.lot ?? "").toString().trim())
+          .filter(Boolean)
+          .filter((lot, i, arr) => arr.indexOf(lot) === i);
         if (lots.length === 0) continue;
         const cremeSlots = [0, 1, 2, 3]
           .map((rowIdx) => {
@@ -276,7 +351,7 @@ export function WeeklyTracking() {
       }
     }
     return map;
-  }, [glaceCremeLotsByDay, cellMap, weekStart, rows]);
+  }, [cellMap, movementCremeRows, movementCremeCellMap, weekStart, rows]);
 
   // Persiste automatiquement le lot transféré dans le champ lot_number
   // des lignes Suivi crème fraîche dès qu'une quantité est saisie.
