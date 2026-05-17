@@ -9,6 +9,7 @@ import {
   addAutocontrol,
   deleteAutocontrol,
   getAutocontrols,
+  updateAutocontrol,
 } from "@/lib/autocontrolData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ClipboardCheck, Trash2, Plus } from "lucide-react";
+import { ClipboardCheck, Trash2, Plus, FileCheck } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { PinPromptDialog } from "./PinPromptDialog";
 
@@ -136,12 +144,15 @@ const conformity = (label: string) =>
     errorMap: () => ({ message: `${label} : cocher Conforme ou Non conforme` }),
   });
 
-const ctgExtraSchema = z.object({
+const ctgIngredientsSchema = z.object({
   ingredients: z.array(z.object({
     name: requiredText("Ingrédient", 80),
     quantity: requiredText("Quantité ingrédient", 80),
     lot: requiredText("N° lot ingrédient", 120),
   })).length(DEFAULT_CTG_INGREDIENTS.length, "Tous les ingrédients doivent être remplis"),
+});
+
+const ctgManagerSchema = z.object({
   cleaning: z.object({
     lavageMachine: z.literal(true, { errorMap: () => ({ message: "Lavage machine : cocher Fait" }) }),
     lavageTorchons: z.literal(true, { errorMap: () => ({ message: "Lavage torchons : cocher Fait" }) }),
@@ -177,7 +188,7 @@ const decorationExtraSchema = z.object({
   }),
 });
 
-const panacheExtraSchema = z.object({
+const panacheMatieresSchema = z.object({
   matieresPremieres: z.array(z.object({
     name: z.string(),
     lot: z.string(),
@@ -186,6 +197,9 @@ const panacheExtraSchema = z.object({
       (arr) => arr.length > 0 && arr.every((m) => m.lot.trim().length > 0),
       { message: "Saisir le N° de lot pour chaque matière première" },
     ),
+});
+
+const panacheManagerSchema = z.object({
   managerControl: z.object({
     etiquettes: conformity("Étiquettes"),
     poids: conformity("Poids"),
@@ -211,6 +225,10 @@ export function AutocontrolManager() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [ctgProducts, setCtgProducts] = useState<Record<CtgProductKey, CtgProductRow>>(initialCtgProducts());
   const [decoProducts, setDecoProducts] = useState<Record<string, DecoProductRow>>(initialDecoProducts());
+  const [editEntry, setEditEntry] = useState<AutocontrolEntry | null>(null);
+  const [editVisa, setEditVisa] = useState("");
+  const [editExtra, setEditExtra] = useState<CtgExtraData | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
   const isConfit = form.article === "Orange confit" || form.article === "Bigarreaux confits";
@@ -262,9 +280,13 @@ export function AutocontrolManager() {
 
     const extraData = isCtg ? form.extraData : null;
     if (isCtg) {
-      const extraResult = ctgExtraSchema.safeParse(extraData);
+      const extraResult = ctgIngredientsSchema.safeParse(extraData);
       if (!extraResult.success) {
         extraResult.error.issues.forEach((i) => errors.push(i.message));
+      }
+      if (form.visaManager && form.visaManager.trim()) {
+        const mgrRes = ctgManagerSchema.safeParse(extraData);
+        if (!mgrRes.success) mgrRes.error.issues.forEach((i) => errors.push(i.message));
       }
       const selected = CTG_PRODUCTS.filter((p) => ctgProducts[p].selected);
       if (selected.length === 0) {
@@ -280,9 +302,11 @@ export function AutocontrolManager() {
 
     const decorationExtra = isDecoration ? form.extraData : null;
     if (isDecoration) {
-      const dRes = decorationExtraSchema.safeParse(decorationExtra);
-      if (!dRes.success) {
-        dRes.error.issues.forEach((i) => errors.push(i.message));
+      if (form.visaManager && form.visaManager.trim()) {
+        const dRes = decorationExtraSchema.safeParse(decorationExtra);
+        if (!dRes.success) {
+          dRes.error.issues.forEach((i) => errors.push(i.message));
+        }
       }
       const selectedDeco = Object.entries(decoProducts).filter(([, r]) => r.selected);
       if (selectedDeco.length === 0) {
@@ -297,9 +321,11 @@ export function AutocontrolManager() {
 
     const panacheExtra = isPanache ? form.extraData : null;
     if (isPanache) {
-      const pRes = panacheExtraSchema.safeParse(panacheExtra);
-      if (!pRes.success) {
-        pRes.error.issues.forEach((i) => errors.push(i.message));
+      const pMatRes = panacheMatieresSchema.safeParse(panacheExtra);
+      if (!pMatRes.success) pMatRes.error.issues.forEach((i) => errors.push(i.message));
+      if (form.visaManager && form.visaManager.trim()) {
+        const pRes = panacheManagerSchema.safeParse(panacheExtra);
+        if (!pRes.success) pRes.error.issues.forEach((i) => errors.push(i.message));
       }
     }
 
@@ -904,14 +930,11 @@ export function AutocontrolManager() {
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              Visa manager <span className="text-muted-foreground/70">(facultatif — laissez vide pour mettre la fiche en attente)</span>
-            </label>
+            <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
             <Input
               value={form.visaManager}
               onChange={(e) => setForm((f) => ({ ...f, visaManager: e.target.value }))}
               maxLength={100}
-              placeholder="Laisser vide = en attente"
             />
           </div>
 
@@ -1041,6 +1064,22 @@ export function AutocontrolManager() {
                       <Button
                         size="sm"
                         variant="ghost"
+                        title="Compléter la fiche (visa + contrôle manager)"
+                        onClick={() => {
+                          setEditEntry(e);
+                          setEditVisa(e.visaManager ?? "");
+                          setEditExtra(
+                            e.extraData
+                              ? JSON.parse(JSON.stringify(e.extraData))
+                              : null,
+                          );
+                        }}
+                      >
+                        <FileCheck className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         onClick={() => setDeleteId(e.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -1061,6 +1100,185 @@ export function AutocontrolManager() {
         title="Confirmer la suppression"
         description="Entrez le code PIN pour supprimer cette fiche."
       />
+
+      <Dialog
+        open={editEntry !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditEntry(null);
+            setEditExtra(null);
+            setEditVisa("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Compléter la fiche</DialogTitle>
+          </DialogHeader>
+          {editEntry && (
+            <div className="space-y-4 text-sm">
+              <div className="bg-muted/40 rounded p-3 space-y-1 text-xs">
+                <div><strong>{editEntry.ficheType}</strong> — {formatDateFR(editEntry.controlDate)}</div>
+                <div>Collaborateur : {editEntry.collaborateur}</div>
+                <div>Article : {editEntry.article} {editEntry.lotNumber ? `(lot ${editEntry.lotNumber})` : ""}</div>
+                <div>Quantité : {editEntry.quantity ?? "—"}{editEntry.dlc ? ` • DLC ${formatDateFR(editEntry.dlc)}` : ""}</div>
+                {editEntry.notes && <div>Observations : {editEntry.notes}</div>}
+              </div>
+
+              {editEntry.ficheType === "Cornet/Tulipe/Gaufrette" && editExtra && (
+                <>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <h4 className="text-sm font-semibold mb-2">Nettoyage</h4>
+                    <div className="space-y-2">
+                      {([
+                        ["lavageMachine", "Lavage machine"],
+                        ["lavageTorchons", "Lavage torchons"],
+                        ["desinfection", "Désinfection"],
+                        ["rangementUstensiles", "Rangement ustensiles"],
+                      ] as const).map(([key, label]) => (
+                        <label key={key} className="flex items-center justify-between gap-2 cursor-pointer">
+                          <span className="font-medium">{label}</span>
+                          <div className="flex items-center gap-1">
+                            <Checkbox
+                              checked={(editExtra.cleaning as any)?.[key] === true}
+                              onCheckedChange={(v) =>
+                                setEditExtra((x) => ({
+                                  ...(x as any),
+                                  cleaning: { ...((x as any)?.cleaning ?? {}), [key]: !!v },
+                                }))
+                              }
+                            />
+                            <span className="text-emerald-600">Fait</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <ManagerControlEditor
+                    extra={editExtra}
+                    onChange={setEditExtra}
+                    fields={[
+                      ["etiquettes", "Étiquettes"],
+                      ["cuisson", "Cuisson"],
+                      ["forme", "Forme"],
+                      ["nettoyage", "Nettoyage"],
+                    ]}
+                  />
+                </>
+              )}
+
+              {editEntry.ficheType === "Décoration" && (
+                <ManagerControlEditor
+                  extra={editExtra ?? initialDecorationExtra()}
+                  onChange={setEditExtra}
+                  fields={[
+                    ["etiquettesInterneExterne", "Étiquette interne et externe"],
+                    ["conformiteDecoration", "Conformité de décoration"],
+                    ["etatEmballage", "État de l'emballage"],
+                  ]}
+                />
+              )}
+
+              {editEntry.ficheType === "Panaché" && (
+                <ManagerControlEditor
+                  extra={editExtra ?? { managerControl: {} } as any}
+                  onChange={setEditExtra}
+                  fields={[
+                    ["etiquettes", "Étiquettes"],
+                    ["poids", "Poids"],
+                    ["remplissage", "Remplissage"],
+                  ]}
+                />
+              )}
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
+                <Input
+                  value={editVisa}
+                  maxLength={100}
+                  onChange={(e) => setEditVisa(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setEditEntry(null)}
+            >
+              Annuler
+            </Button>
+            <Button
+              disabled={savingEdit}
+              onClick={async () => {
+                if (!editEntry) return;
+                setSavingEdit(true);
+                try {
+                  await updateAutocontrol(editEntry.id, {
+                    visaManager: editVisa.trim() || null as any,
+                    extraData: editExtra,
+                  });
+                  toast.success("Fiche mise à jour");
+                  setEditEntry(null);
+                  setEditExtra(null);
+                  setEditVisa("");
+                  await refresh();
+                } catch (err: any) {
+                  toast.error("Erreur", { description: err.message });
+                } finally {
+                  setSavingEdit(false);
+                }
+              }}
+            >
+              {savingEdit ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function ManagerControlEditor({
+  extra,
+  onChange,
+  fields,
+}: {
+  extra: CtgExtraData | null;
+  onChange: (v: CtgExtraData | null) => void;
+  fields: ReadonlyArray<readonly [string, string]>;
+}) {
+  return (
+    <div className="bg-primary/5 rounded-lg p-3">
+      <h4 className="text-sm font-semibold mb-2">Contrôle manager</h4>
+      <div className="space-y-2">
+        {fields.map(([key, label]) => (
+          <div key={key} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span className="font-medium">{label}</span>
+            <div className="flex items-center gap-3">
+              {(["conforme", "non_conforme"] as const).map((status) => (
+                <label key={status} className="flex items-center gap-1 cursor-pointer">
+                  <Checkbox
+                    checked={(extra?.managerControl as any)?.[key] === status}
+                    onCheckedChange={(v) =>
+                      onChange({
+                        ...(extra as any),
+                        managerControl: {
+                          ...((extra as any)?.managerControl ?? {}),
+                          [key]: v ? status : null,
+                        },
+                      })
+                    }
+                  />
+                  <span className={status === "conforme" ? "text-emerald-600" : "text-destructive"}>
+                    {status === "conforme" ? "Conforme" : "Non conforme"}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
