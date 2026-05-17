@@ -1061,6 +1061,7 @@ export function AutocontrolManager() {
                       )}
                     </td>
                     <td className="py-2 pr-2">
+                      {(!e.visaManager || !e.visaManager.trim()) && (
                       <Button
                         size="sm"
                         variant="ghost"
@@ -1077,6 +1078,7 @@ export function AutocontrolManager() {
                       >
                         <FileCheck className="h-4 w-4 text-primary" />
                       </Button>
+                      )}
                       <Button
                         size="sm"
                         variant="ghost"
