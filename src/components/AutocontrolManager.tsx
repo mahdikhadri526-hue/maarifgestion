@@ -225,6 +225,10 @@ export function AutocontrolManager() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [ctgProducts, setCtgProducts] = useState<Record<CtgProductKey, CtgProductRow>>(initialCtgProducts());
   const [decoProducts, setDecoProducts] = useState<Record<string, DecoProductRow>>(initialDecoProducts());
+  const [editEntry, setEditEntry] = useState<AutocontrolEntry | null>(null);
+  const [editVisa, setEditVisa] = useState("");
+  const [editExtra, setEditExtra] = useState<CtgExtraData | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
   const isConfit = form.article === "Orange confit" || form.article === "Bigarreaux confits";
