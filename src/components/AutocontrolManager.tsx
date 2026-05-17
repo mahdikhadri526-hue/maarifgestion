@@ -273,9 +273,13 @@ export function AutocontrolManager() {
 
     const extraData = isCtg ? form.extraData : null;
     if (isCtg) {
-      const extraResult = ctgExtraSchema.safeParse(extraData);
+      const extraResult = ctgIngredientsSchema.safeParse(extraData);
       if (!extraResult.success) {
         extraResult.error.issues.forEach((i) => errors.push(i.message));
+      }
+      if (form.visaManager && form.visaManager.trim()) {
+        const mgrRes = ctgManagerSchema.safeParse(extraData);
+        if (!mgrRes.success) mgrRes.error.issues.forEach((i) => errors.push(i.message));
       }
       const selected = CTG_PRODUCTS.filter((p) => ctgProducts[p].selected);
       if (selected.length === 0) {
@@ -291,9 +295,11 @@ export function AutocontrolManager() {
 
     const decorationExtra = isDecoration ? form.extraData : null;
     if (isDecoration) {
-      const dRes = decorationExtraSchema.safeParse(decorationExtra);
-      if (!dRes.success) {
-        dRes.error.issues.forEach((i) => errors.push(i.message));
+      if (form.visaManager && form.visaManager.trim()) {
+        const dRes = decorationExtraSchema.safeParse(decorationExtra);
+        if (!dRes.success) {
+          dRes.error.issues.forEach((i) => errors.push(i.message));
+        }
       }
       const selectedDeco = Object.entries(decoProducts).filter(([, r]) => r.selected);
       if (selectedDeco.length === 0) {
@@ -308,9 +314,11 @@ export function AutocontrolManager() {
 
     const panacheExtra = isPanache ? form.extraData : null;
     if (isPanache) {
-      const pRes = panacheExtraSchema.safeParse(panacheExtra);
-      if (!pRes.success) {
-        pRes.error.issues.forEach((i) => errors.push(i.message));
+      const pMatRes = panacheMatieresSchema.safeParse(panacheExtra);
+      if (!pMatRes.success) pMatRes.error.issues.forEach((i) => errors.push(i.message));
+      if (form.visaManager && form.visaManager.trim()) {
+        const pRes = panacheManagerSchema.safeParse(panacheExtra);
+        if (!pRes.success) pRes.error.issues.forEach((i) => errors.push(i.message));
       }
     }
 
