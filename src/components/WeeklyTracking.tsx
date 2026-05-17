@@ -106,21 +106,31 @@ function LotExistantCell({
 }: {
   dayIdx: number;
   article: string;
-  getBalances: (d: number, a: string) => { lot: string; remaining: number }[];
+  getBalances: (d: number, a: string) => { lot: string; remaining: number; entryDate?: string }[];
 }) {
   const batches = getBalances(dayIdx, article).filter((b) => b.remaining > 0);
-  // Conserver l'ordre FIFO strict : le lot le plus ancien en haut.
-  // On fusionne les lots identiques en gardant la position de la 1ère
-  // apparition (la plus ancienne) puis on trie explicitement par ordre
-  // d'arrivée pour garantir l'affichage du plus ancien vers le plus récent.
-  const merged: { lot: string; remaining: number; order: number }[] = [];
+  // Tri FIFO strict : le lot avec la date d'entrée la plus ancienne en haut.
+  // On fusionne les lots identiques en conservant la date d'entrée la plus
+  // ancienne, puis on trie par cette date (puis par ordre d'arrivée en
+  // secours pour les dates identiques ou absentes).
+  const merged: { lot: string; remaining: number; entryDate: string; order: number }[] = [];
   batches.forEach((b, idx) => {
     const label = b.lot && b.lot.trim() ? b.lot : "(sans lot)";
+    const ed = b.entryDate ?? "";
     const existing = merged.find((m) => m.lot === label);
-    if (existing) existing.remaining += b.remaining;
-    else merged.push({ lot: label, remaining: b.remaining, order: idx });
+    if (existing) {
+      existing.remaining += b.remaining;
+      if (ed && (!existing.entryDate || ed < existing.entryDate)) existing.entryDate = ed;
+    } else {
+      merged.push({ lot: label, remaining: b.remaining, entryDate: ed, order: idx });
+    }
   });
-  merged.sort((a, b) => a.order - b.order);
+  merged.sort((a, b) => {
+    const ad = a.entryDate || "\uffff";
+    const bd = b.entryDate || "\uffff";
+    if (ad !== bd) return ad < bd ? -1 : 1;
+    return a.order - b.order;
+  });
   return (
     <div className="min-h-7 w-44 text-[11px] px-1 py-1 bg-primary/5 border border-primary/20 rounded leading-tight space-y-0.5">
       {merged.length === 0 ? (
