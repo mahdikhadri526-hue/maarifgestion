@@ -5,7 +5,7 @@ import { MovementHistory } from "@/components/MovementHistory";
 import { InitialStockForm } from "@/components/InitialStockForm";
 import { ProductHistory } from "@/components/ProductHistory";
 import { RequisitionForm } from "@/components/RequisitionForm";
-import { ExpiryAlerts, LotManager, StockOutAlerts } from "@/components/LotManagement";
+import { ExpiryAlerts, LotManager, StockOutAlerts, PendingAutocontrolAlerts } from "@/components/LotManagement";
 import { AutocontrolManager } from "@/components/AutocontrolManager";
 import { WeeklyTracking } from "@/components/WeeklyTracking";
 import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight } from "lucide-react";
@@ -87,6 +87,9 @@ const Index = () => {
                 </div>
               </div>
             </div>
+
+            {/* Pending autocontrol fiches (avant les ruptures) */}
+            <PendingAutocontrolAlerts onOpen={() => setTab("autocontrole")} />
 
             {/* Stock Alerts */}
             <StockOutAlerts />
