@@ -144,12 +144,15 @@ const conformity = (label: string) =>
     errorMap: () => ({ message: `${label} : cocher Conforme ou Non conforme` }),
   });
 
-const ctgExtraSchema = z.object({
+const ctgIngredientsSchema = z.object({
   ingredients: z.array(z.object({
     name: requiredText("Ingrédient", 80),
     quantity: requiredText("Quantité ingrédient", 80),
     lot: requiredText("N° lot ingrédient", 120),
   })).length(DEFAULT_CTG_INGREDIENTS.length, "Tous les ingrédients doivent être remplis"),
+});
+
+const ctgManagerSchema = z.object({
   cleaning: z.object({
     lavageMachine: z.literal(true, { errorMap: () => ({ message: "Lavage machine : cocher Fait" }) }),
     lavageTorchons: z.literal(true, { errorMap: () => ({ message: "Lavage torchons : cocher Fait" }) }),
