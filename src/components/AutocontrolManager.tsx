@@ -401,9 +401,14 @@ export function AutocontrolManager() {
     }
   };
 
+  const pendingEntries = entries.filter((e) => !e.visaManager || !e.visaManager.trim());
   const filtered =
     filterType === "__all__"
       ? entries
+      : filterType === "__pending__"
+      ? pendingEntries
+      : filterType === "__validated__"
+      ? entries.filter((e) => !!e.visaManager && !!e.visaManager.trim())
       : entries.filter((e) => e.ficheType === filterType);
 
   return (
@@ -927,6 +932,10 @@ export function AutocontrolManager() {
             <SelectTrigger className="w-full sm:w-64"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Toutes les fiches</SelectItem>
+              <SelectItem value="__pending__">
+                En attente de visa{pendingEntries.length > 0 ? ` (${pendingEntries.length})` : ""}
+              </SelectItem>
+              <SelectItem value="__validated__">Visées</SelectItem>
               {FICHE_TYPES.map((t) => (
                 <SelectItem key={t} value={t}>{t}</SelectItem>
               ))}
@@ -965,7 +974,15 @@ export function AutocontrolManager() {
                     <td className="py-2 pr-2">{e.lotNumber || "—"}</td>
                     <td className="py-2 pr-2">{e.quantity ?? "—"}</td>
                     <td className="py-2 pr-2">{e.dlc ? formatDateFR(e.dlc) : "—"}</td>
-                    <td className="py-2 pr-2">{e.visaManager || "—"}</td>
+                    <td className="py-2 pr-2">
+                      {e.visaManager && e.visaManager.trim() ? (
+                        e.visaManager
+                      ) : (
+                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-medium whitespace-nowrap">
+                          En attente
+                        </span>
+                      )}
+                    </td>
                     <td className="py-2 pr-2 max-w-[260px]">
                       {e.extraData ? (
                         <details className="text-xs">
