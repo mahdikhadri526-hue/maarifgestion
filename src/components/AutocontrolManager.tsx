@@ -166,7 +166,7 @@ const baseAutocontrolSchema = z.object({
   quantity: z.coerce.number({ invalid_type_error: "Quantité obligatoire" }).positive("Quantité obligatoire"),
   dlc: z.string().max(20, "DLC trop long").optional().or(z.literal("")),
   notes: requiredText("Observations", 1000),
-  visaManager: requiredText("Visa manager", 100),
+  visaManager: z.string().max(100, "Visa manager trop long").optional().or(z.literal("")),
 });
 
 const decorationExtraSchema = z.object({
@@ -899,12 +899,14 @@ export function AutocontrolManager() {
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              Visa manager <span className="text-muted-foreground/70">(facultatif — laissez vide pour mettre la fiche en attente)</span>
+            </label>
             <Input
               value={form.visaManager}
               onChange={(e) => setForm((f) => ({ ...f, visaManager: e.target.value }))}
               maxLength={100}
-              // validated by Zod
+              placeholder="Laisser vide = en attente"
             />
           </div>
 
