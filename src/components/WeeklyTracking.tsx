@@ -68,6 +68,15 @@ function dayShort(iso: string, n: number) {
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
 }
 
+function lotDateKey(lot: string): string | null {
+  const value = lot.trim();
+  const fr = value.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+  if (fr) return `${fr[3]}-${fr[2].padStart(2, "0")}-${fr[1].padStart(2, "0")}`;
+  const iso = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (iso) return `${iso[1]}-${iso[2].padStart(2, "0")}-${iso[3].padStart(2, "0")}`;
+  return null;
+}
+
 type Row = Record<string, any>;
 
 function ConformityToggle({
@@ -113,7 +122,7 @@ function LotExistantCell({
   // On fusionne les lots identiques en conservant la date d'entrée la plus
   // ancienne, puis on trie par cette date (puis par ordre d'arrivée en
   // secours pour les dates identiques ou absentes).
-  const merged: { lot: string; remaining: number; entryDate: string; order: number }[] = [];
+  const merged: { lot: string; remaining: number; entryDate: string; lotDate: string; order: number }[] = [];
   batches.forEach((b, idx) => {
     const label = b.lot && b.lot.trim() ? b.lot : "(sans lot)";
     const ed = b.entryDate ?? "";
@@ -122,12 +131,12 @@ function LotExistantCell({
       existing.remaining += b.remaining;
       if (ed && (!existing.entryDate || ed < existing.entryDate)) existing.entryDate = ed;
     } else {
-      merged.push({ lot: label, remaining: b.remaining, entryDate: ed, order: idx });
+      merged.push({ lot: label, remaining: b.remaining, entryDate: ed, lotDate: lotDateKey(label) ?? "", order: idx });
     }
   });
   merged.sort((a, b) => {
-    const ad = a.entryDate || "\uffff";
-    const bd = b.entryDate || "\uffff";
+    const ad = a.lotDate || a.entryDate || "\uffff";
+    const bd = b.lotDate || b.entryDate || "\uffff";
     if (ad !== bd) return ad < bd ? -1 : 1;
     return a.order - b.order;
   });
