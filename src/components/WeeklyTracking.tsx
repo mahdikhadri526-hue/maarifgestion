@@ -612,13 +612,13 @@ export function WeeklyTracking() {
     dayIdx: number,
     article: string,
     wkStart: string = weekStart,
-  ): { lot: string; remaining: number }[] => {
+  ): { lot: string; remaining: number; entryDate: string }[] => {
     // Report : lots restants à la fin du dimanche de la semaine précédente
     const prevWk = (() => { const d = parseISO(wkStart); d.setDate(d.getDate() - 7); return fmt(d); })();
     const hasPrev = rows.some(
       (r) => r.week_start === prevWk && r.fiche_type === ficheType && r.article === article,
     );
-    const out: { lot: string; remaining: number }[] = hasPrev
+    const out: { lot: string; remaining: number; entryDate: string }[] = hasPrev
       ? getLotsOfDay(6, article, prevWk).map((b) => ({ ...b }))
       : [];
     // SI du lundi : ajuste les lots reportés (FIFO) pour que le total
@@ -627,7 +627,7 @@ export function WeeklyTracking() {
     const siMon = num(cellAt(wkStart, DAYS[0], 0, article).stock_initial);
     if (siMon > 0) {
       if (out.length === 0) {
-        out.push({ lot: "", remaining: siMon });
+        out.push({ lot: "", remaining: siMon, entryDate: wkStart });
       } else {
         const total = out.reduce((s, b) => s + b.remaining, 0);
         if (total > siMon) {
@@ -641,15 +641,16 @@ export function WeeklyTracking() {
         } else if (total < siMon) {
           // Le complément vient de stock existant non tracé : on l'insère
           // EN TÊTE (plus ancien) pour respecter le tri FIFO à l'affichage.
-          out.unshift({ lot: "", remaining: siMon - total });
+          out.unshift({ lot: "", remaining: siMon - total, entryDate: "" });
         }
       }
     }
     // Entrées cumulées + déduction FIFO des sorties jour par jour
     for (let d = 0; d <= dayIdx; d++) {
+      const dayDate = (() => { const dt = parseISO(wkStart); dt.setDate(dt.getDate() + d); return fmt(dt); })();
       for (const e of entriesForAt(wkStart, DAYS[d], article)) {
         const q = num(e.entree);
-        if (q > 0) out.push({ lot: (e.lot ?? "").toString(), remaining: q });
+        if (q > 0) out.push({ lot: (e.lot ?? "").toString(), remaining: q, entryDate: dayDate });
       }
       let sortie = num(cellAt(wkStart, DAYS[d], 0, article).sorties);
       if (!sortie) {
