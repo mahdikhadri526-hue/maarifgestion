@@ -10,13 +10,13 @@ import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
 import { ENABLE_FIFO_INDICATOR } from "@/lib/featureFlags";
 import { formatDateFR } from "@/lib/utils";
-import { useEffect, useState as useReactState } from "react";
+import { useEffect } from "react";
 import { getAutocontrols, AutocontrolEntry } from "@/lib/autocontrolData";
 import { supabase } from "@/integrations/supabase/client";
 
 export function PendingAutocontrolAlerts({ onOpen }: { onOpen?: () => void }) {
-  const [pending, setPending] = useReactState<AutocontrolEntry[]>([]);
-  const [loading, setLoading] = useReactState(true);
+  const [pending, setPending] = useState<AutocontrolEntry[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
