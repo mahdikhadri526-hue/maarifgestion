@@ -1100,6 +1100,185 @@ export function AutocontrolManager() {
         title="Confirmer la suppression"
         description="Entrez le code PIN pour supprimer cette fiche."
       />
+
+      <Dialog
+        open={editEntry !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditEntry(null);
+            setEditExtra(null);
+            setEditVisa("");
+          }
+        }}
+      >
+        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Compléter la fiche</DialogTitle>
+          </DialogHeader>
+          {editEntry && (
+            <div className="space-y-4 text-sm">
+              <div className="bg-muted/40 rounded p-3 space-y-1 text-xs">
+                <div><strong>{editEntry.ficheType}</strong> — {formatDateFR(editEntry.controlDate)}</div>
+                <div>Collaborateur : {editEntry.collaborateur}</div>
+                <div>Article : {editEntry.article} {editEntry.lotNumber ? `(lot ${editEntry.lotNumber})` : ""}</div>
+                <div>Quantité : {editEntry.quantity ?? "—"}{editEntry.dlc ? ` • DLC ${formatDateFR(editEntry.dlc)}` : ""}</div>
+                {editEntry.notes && <div>Observations : {editEntry.notes}</div>}
+              </div>
+
+              {editEntry.ficheType === "Cornet/Tulipe/Gaufrette" && editExtra && (
+                <>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <h4 className="text-sm font-semibold mb-2">Nettoyage</h4>
+                    <div className="space-y-2">
+                      {([
+                        ["lavageMachine", "Lavage machine"],
+                        ["lavageTorchons", "Lavage torchons"],
+                        ["desinfection", "Désinfection"],
+                        ["rangementUstensiles", "Rangement ustensiles"],
+                      ] as const).map(([key, label]) => (
+                        <label key={key} className="flex items-center justify-between gap-2 cursor-pointer">
+                          <span className="font-medium">{label}</span>
+                          <div className="flex items-center gap-1">
+                            <Checkbox
+                              checked={(editExtra.cleaning as any)?.[key] === true}
+                              onCheckedChange={(v) =>
+                                setEditExtra((x) => ({
+                                  ...(x as any),
+                                  cleaning: { ...((x as any)?.cleaning ?? {}), [key]: !!v },
+                                }))
+                              }
+                            />
+                            <span className="text-emerald-600">Fait</span>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <ManagerControlEditor
+                    extra={editExtra}
+                    onChange={setEditExtra}
+                    fields={[
+                      ["etiquettes", "Étiquettes"],
+                      ["cuisson", "Cuisson"],
+                      ["forme", "Forme"],
+                      ["nettoyage", "Nettoyage"],
+                    ]}
+                  />
+                </>
+              )}
+
+              {editEntry.ficheType === "Décoration" && (
+                <ManagerControlEditor
+                  extra={editExtra ?? initialDecorationExtra()}
+                  onChange={setEditExtra}
+                  fields={[
+                    ["etiquettesInterneExterne", "Étiquette interne et externe"],
+                    ["conformiteDecoration", "Conformité de décoration"],
+                    ["etatEmballage", "État de l'emballage"],
+                  ]}
+                />
+              )}
+
+              {editEntry.ficheType === "Panaché" && (
+                <ManagerControlEditor
+                  extra={editExtra ?? { managerControl: {} } as any}
+                  onChange={setEditExtra}
+                  fields={[
+                    ["etiquettes", "Étiquettes"],
+                    ["poids", "Poids"],
+                    ["remplissage", "Remplissage"],
+                  ]}
+                />
+              )}
+
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
+                <Input
+                  value={editVisa}
+                  maxLength={100}
+                  onChange={(e) => setEditVisa(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setEditEntry(null)}
+            >
+              Annuler
+            </Button>
+            <Button
+              disabled={savingEdit}
+              onClick={async () => {
+                if (!editEntry) return;
+                setSavingEdit(true);
+                try {
+                  await updateAutocontrol(editEntry.id, {
+                    visaManager: editVisa.trim() || null as any,
+                    extraData: editExtra,
+                  });
+                  toast.success("Fiche mise à jour");
+                  setEditEntry(null);
+                  setEditExtra(null);
+                  setEditVisa("");
+                  await refresh();
+                } catch (err: any) {
+                  toast.error("Erreur", { description: err.message });
+                } finally {
+                  setSavingEdit(false);
+                }
+              }}
+            >
+              {savingEdit ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function ManagerControlEditor({
+  extra,
+  onChange,
+  fields,
+}: {
+  extra: CtgExtraData | null;
+  onChange: (v: CtgExtraData | null) => void;
+  fields: ReadonlyArray<readonly [string, string]>;
+}) {
+  return (
+    <div className="bg-primary/5 rounded-lg p-3">
+      <h4 className="text-sm font-semibold mb-2">Contrôle manager</h4>
+      <div className="space-y-2">
+        {fields.map(([key, label]) => (
+          <div key={key} className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span className="font-medium">{label}</span>
+            <div className="flex items-center gap-3">
+              {(["conforme", "non_conforme"] as const).map((status) => (
+                <label key={status} className="flex items-center gap-1 cursor-pointer">
+                  <Checkbox
+                    checked={(extra?.managerControl as any)?.[key] === status}
+                    onCheckedChange={(v) =>
+                      onChange({
+                        ...(extra as any),
+                        managerControl: {
+                          ...((extra as any)?.managerControl ?? {}),
+                          [key]: v ? status : null,
+                        },
+                      })
+                    }
+                  />
+                  <span className={status === "conforme" ? "text-emerald-600" : "text-destructive"}>
+                    {status === "conforme" ? "Conforme" : "Non conforme"}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
