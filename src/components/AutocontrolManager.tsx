@@ -926,14 +926,11 @@ export function AutocontrolManager() {
             />
           </div>
           <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              Visa manager <span className="text-muted-foreground/70">(facultatif — laissez vide pour mettre la fiche en attente)</span>
-            </label>
+            <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
             <Input
               value={form.visaManager}
               onChange={(e) => setForm((f) => ({ ...f, visaManager: e.target.value }))}
               maxLength={100}
-              placeholder="Laisser vide = en attente"
             />
           </div>
 
