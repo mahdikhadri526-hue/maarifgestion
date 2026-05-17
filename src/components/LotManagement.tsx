@@ -4,12 +4,89 @@ import { formatQuantityForProduct, getProducts } from "@/lib/stockData";
 import { useExpiringLots, useProductLots, useProductUnitConfigs, useStockLevels } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2, PackageX } from "lucide-react";
+import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2, PackageX, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { PinPromptDialog } from "./PinPromptDialog";
 import { ENABLE_FIFO_INDICATOR } from "@/lib/featureFlags";
 import { formatDateFR } from "@/lib/utils";
+import { useEffect, useState as useReactState } from "react";
+import { getAutocontrols, AutocontrolEntry } from "@/lib/autocontrolData";
+import { supabase } from "@/integrations/supabase/client";
+
+export function PendingAutocontrolAlerts({ onOpen }: { onOpen?: () => void }) {
+  const [pending, setPending] = useReactState<AutocontrolEntry[]>([]);
+  const [loading, setLoading] = useReactState(true);
+
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      try {
+        const data = await getAutocontrols();
+        if (!active) return;
+        setPending(data.filter((e) => !e.visaManager || !e.visaManager.trim()));
+      } finally {
+        if (active) setLoading(false);
+      }
+    };
+    load();
+    const ch = supabase
+      .channel("autocontrols-pending-rt")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "autocontrols" },
+        () => load()
+      )
+      .subscribe();
+    return () => {
+      active = false;
+      supabase.removeChannel(ch);
+    };
+  }, []);
+
+  if (loading || pending.length === 0) return null;
+
+  return (
+    <div className="bg-amber-500/5 border border-amber-500/30 rounded-xl p-4 animate-fade-in">
+      <div className="flex items-center justify-between gap-2 mb-3">
+        <div className="flex items-center gap-2">
+          <ClipboardCheck className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+          <h3 className="font-semibold text-amber-700 dark:text-amber-400">
+            Autocontrôles en attente de visa manager ({pending.length})
+          </h3>
+        </div>
+        {onOpen && (
+          <Button size="sm" variant="outline" onClick={onOpen} className="h-7 text-xs">
+            Voir
+          </Button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {pending.slice(0, 8).map((e) => (
+          <div
+            key={e.id}
+            className="flex items-center justify-between rounded-lg p-2.5 text-sm border bg-background border-amber-500/20"
+          >
+            <div className="flex-1 min-w-0">
+              <p className="font-medium truncate">{e.article || e.ficheType}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                {formatDateFR(e.controlDate)} · {e.ficheType} · {e.collaborateur}
+              </p>
+            </div>
+            <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 whitespace-nowrap">
+              EN ATTENTE
+            </span>
+          </div>
+        ))}
+        {pending.length > 8 && (
+          <p className="text-xs text-muted-foreground sm:col-span-2">
+            … et {pending.length - 8} autre(s).
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function StockOutAlerts() {
   const { data: levels, loading } = useStockLevels();
