@@ -629,7 +629,9 @@ export function WeeklyTracking() {
             excess -= take;
           }
         } else if (total < siMon) {
-          out.push({ lot: "", remaining: siMon - total });
+          // Le complément vient de stock existant non tracé : on l'insère
+          // EN TÊTE (plus ancien) pour respecter le tri FIFO à l'affichage.
+          out.unshift({ lot: "", remaining: siMon - total });
         }
       }
     }
