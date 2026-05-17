@@ -24,7 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 const TARTE_ARTICLES = [
   "Tarte 6", "Tarte 8", "Tarte 10", "Tte Sp.", "Tte.Sp 8", "Tte Mac.", "Tte Sor.",
   "Tche Sor.", "Tche Mac.", "Tche Nap.", "Bûche", "Bûche Sp.", "N.F", "Demis",
-  "M.L", "M B M", "M B F", "M.Loulou", "Chanty.Fruit confits", "Panachés",
+  "Maria Louisa", "Maria mangue", "Maria framboise", "M.Loulou", "Chanty.Fruit confits", "Panachés",
   "Mac.Chocolat P", "Mac.Pistache P", "Mac.Caramel P", "Mac.Cfé P", "Mac.Mng P", "Mac.Cit P",
   "Mac.Chocolat N", "Mac.Pistache N", "Mac.Caramel N", "Mac.Cfé N", "Mac.Mng N", "Mac.Cit N",
   "Chantilly,F,C", "Cho.Logo", "PJA", "Cho.Blnc", "Amd.Crml", "Sirop.Blc", "Sirop.Crml",
