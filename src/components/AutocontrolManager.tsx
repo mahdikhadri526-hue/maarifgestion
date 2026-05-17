@@ -1064,6 +1064,22 @@ export function AutocontrolManager() {
                       <Button
                         size="sm"
                         variant="ghost"
+                        title="Compléter la fiche (visa + contrôle manager)"
+                        onClick={() => {
+                          setEditEntry(e);
+                          setEditVisa(e.visaManager ?? "");
+                          setEditExtra(
+                            e.extraData
+                              ? JSON.parse(JSON.stringify(e.extraData))
+                              : null,
+                          );
+                        }}
+                      >
+                        <FileCheck className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         onClick={() => setDeleteId(e.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
