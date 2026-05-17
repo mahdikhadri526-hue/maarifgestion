@@ -109,14 +109,18 @@ function LotExistantCell({
   getBalances: (d: number, a: string) => { lot: string; remaining: number }[];
 }) {
   const batches = getBalances(dayIdx, article).filter((b) => b.remaining > 0);
-  // Conserver l'ordre FIFO d'apparition, mais fusionner les lots identiques
-  const merged: { lot: string; remaining: number }[] = [];
-  for (const b of batches) {
+  // Conserver l'ordre FIFO strict : le lot le plus ancien en haut.
+  // On fusionne les lots identiques en gardant la position de la 1ère
+  // apparition (la plus ancienne) puis on trie explicitement par ordre
+  // d'arrivée pour garantir l'affichage du plus ancien vers le plus récent.
+  const merged: { lot: string; remaining: number; order: number }[] = [];
+  batches.forEach((b, idx) => {
     const label = b.lot && b.lot.trim() ? b.lot : "(sans lot)";
     const existing = merged.find((m) => m.lot === label);
     if (existing) existing.remaining += b.remaining;
-    else merged.push({ lot: label, remaining: b.remaining });
-  }
+    else merged.push({ lot: label, remaining: b.remaining, order: idx });
+  });
+  merged.sort((a, b) => a.order - b.order);
   return (
     <div className="min-h-7 w-44 text-[11px] px-1 py-1 bg-primary/5 border border-primary/20 rounded leading-tight space-y-0.5">
       {merged.length === 0 ? (
