@@ -9,6 +9,7 @@ import {
   addAutocontrol,
   deleteAutocontrol,
   getAutocontrols,
+  updateAutocontrol,
 } from "@/lib/autocontrolData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -22,7 +23,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ClipboardCheck, Trash2, Plus } from "lucide-react";
+import { ClipboardCheck, Trash2, Plus, FileCheck } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { PinPromptDialog } from "./PinPromptDialog";
 
