@@ -188,7 +188,7 @@ const decorationExtraSchema = z.object({
   }),
 });
 
-const panacheExtraSchema = z.object({
+const panacheMatieresSchema = z.object({
   matieresPremieres: z.array(z.object({
     name: z.string(),
     lot: z.string(),
@@ -197,6 +197,9 @@ const panacheExtraSchema = z.object({
       (arr) => arr.length > 0 && arr.every((m) => m.lot.trim().length > 0),
       { message: "Saisir le N° de lot pour chaque matière première" },
     ),
+});
+
+const panacheManagerSchema = z.object({
   managerControl: z.object({
     etiquettes: conformity("Étiquettes"),
     poids: conformity("Poids"),
