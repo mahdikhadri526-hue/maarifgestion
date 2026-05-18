@@ -189,6 +189,15 @@ export function WeeklyTracking() {
   const [filterFrom, setFilterFrom] = useState<string>(""); // YYYY-MM-DD
   const [filterTo, setFilterTo] = useState<string>(""); // YYYY-MM-DD
   const [showControls, setShowControls] = useState(true);
+  const [unlockedDays, setUnlockedDays] = useState<Set<string>>(new Set());
+  const [pinTarget, setPinTarget] = useState<string | null>(null);
+  const todayIso = fmt(new Date());
+  const dayIso = (wkStart: string, dIdx: number) => {
+    const d = parseISO(wkStart);
+    d.setDate(d.getDate() + dIdx);
+    return fmt(d);
+  };
+  const isDayEditable = (iso: string) => iso === todayIso || unlockedDays.has(iso);
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
   const activeArticles = tab === "glace" ? GLACE_ARTICLES : tab === "tarte" ? TARTE_ARTICLES : ARTICLES;
