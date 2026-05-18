@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ClipboardCheck, Trash2, Plus, FileCheck } from "lucide-react";
+import { OPERATORS } from "@/lib/operators";
 import {
   Dialog,
   DialogContent,
@@ -486,13 +487,17 @@ export function AutocontrolManager() {
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Collaborateur *</label>
-            <Input
+            <Select
               value={form.collaborateur}
-              onChange={(e) => setForm((f) => ({ ...f, collaborateur: e.target.value }))}
-              placeholder="Prénom"
-              maxLength={100}
-              // validated by Zod
-            />
+              onValueChange={(v) => setForm((f) => ({ ...f, collaborateur: v }))}
+            >
+              <SelectTrigger><SelectValue placeholder="Sélectionner un opérateur" /></SelectTrigger>
+              <SelectContent>
+                {OPERATORS.map((o) => (
+                  <SelectItem key={o} value={o}>{o}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           {!isPanache && !isCtg && !isDecoration && (
           <div className="sm:col-span-2">

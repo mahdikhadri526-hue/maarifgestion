@@ -1,27 +1,37 @@
-const KEY = "stockmaarif:operators";
+// Liste fixe des opérateurs autorisés (Effectué par / Collaborateur / Visa opérateur).
+// La saisie libre n'est pas autorisée — seuls ces noms peuvent être sélectionnés.
+export const OPERATORS: string[] = [
+  "AZIZ BELHAM",
+  "ZAKARIA ORBANE",
+  "OMAR NAFAA",
+  "HOUSSINE MADIDI",
+  "SYOUMI MOHEMMED",
+  "MOURAD HANANE",
+  "SOUFIANE LAAROUSY",
+  "RACHID LAAYOUN",
+  "MAAFAR MUSTAPHA",
+  "SAID MECHMACHI",
+  "SOUFIANE EL ISSAOUI",
+  "ABDELHAK RIAHI",
+  "BOUCHAIB TOUMI",
+  "IBRAHIME NAJIH",
+  "YAHYA",
+  "YOUSSEF BOUHANA",
+  "KHALID MACHTAM",
+  "MOHAMMED EL HIYANNI",
+  "MOHAMED AQIQI",
+  "KHALID TAYBI",
+  "JAWAD HADNA",
+  "MED ABID",
+  "MOUNIR KARTOUBI",
+  "ABDEWAHAD BELAAZIZ",
+];
 
 export function getOperators(): string[] {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return [];
-    const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr.filter((s) => typeof s === "string") : [];
-  } catch {
-    return [];
-  }
+  return OPERATORS;
 }
 
-export function rememberOperator(name: string): string[] {
-  const clean = name.trim();
-  if (!clean) return getOperators();
-  const existing = getOperators();
-  // Case-insensitive dedupe, keep most recent first
-  const filtered = existing.filter((o) => o.toLowerCase() !== clean.toLowerCase());
-  const next = [clean, ...filtered].slice(0, 50);
-  try {
-    localStorage.setItem(KEY, JSON.stringify(next));
-  } catch {
-    // ignore quota errors
-  }
-  return next;
+// Compat: l'ajout libre n'est plus permis; cette fonction est un no-op.
+export function rememberOperator(_name: string): string[] {
+  return OPERATORS;
 }

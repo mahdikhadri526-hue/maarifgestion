@@ -189,18 +189,15 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div>
-          <label className="text-xs font-medium text-muted-foreground mb-1 block">Effectué par (prénom)</label>
-          <Input
-            type="text"
-            placeholder="Ex: Karim"
-            value={performedBy}
-            onChange={(e) => setPerformedBy(e.target.value)}
-            list="operators-list"
-            autoComplete="off"
-          />
-          <datalist id="operators-list">
-            {operators.map((o) => <option key={o} value={o} />)}
-          </datalist>
+          <label className="text-xs font-medium text-muted-foreground mb-1 block">Effectué par</label>
+          <Select value={performedBy} onValueChange={setPerformedBy}>
+            <SelectTrigger><SelectValue placeholder="Sélectionner un opérateur" /></SelectTrigger>
+            <SelectContent>
+              {operators.map((o) => (
+                <SelectItem key={o} value={o}>{o}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Catégorie</label>

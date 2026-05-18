@@ -5,6 +5,7 @@ import { useRequisitionsByDate, useProductUnitConfigs } from "@/hooks/useStockDa
 import { getOperators, rememberOperator } from "@/lib/operators";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { ClipboardList, Search, Pencil, Check, X, Eye, EyeOff, Trash2 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
@@ -295,18 +296,16 @@ export function RequisitionForm({ onUpdated }: Props) {
             </button>
           </div>
           <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="w-auto" />
-          <Input
-            type="text"
-            placeholder="Effectué par (prénom)"
-            value={performedBy}
-            onChange={(e) => setPerformedBy(e.target.value)}
-            list="req-operators-list"
-            autoComplete="off"
-            className="w-full sm:w-48"
-          />
-          <datalist id="req-operators-list">
-            {operators.map((o) => <option key={o} value={o} />)}
-          </datalist>
+          <div className="w-full sm:w-56">
+            <Select value={performedBy} onValueChange={setPerformedBy}>
+              <SelectTrigger><SelectValue placeholder="Effectué par" /></SelectTrigger>
+              <SelectContent>
+                {operators.map((o) => (
+                  <SelectItem key={o} value={o}>{o}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Rechercher un produit..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />

@@ -11,6 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
+import { OPERATORS } from "@/lib/operators";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
@@ -1080,11 +1081,17 @@ export function WeeklyTracking() {
                           />
                         </td>
                         <td className="p-1 align-middle">
-                          <Input
+                          <Select
                             value={c.visa_operateur ?? ""}
-                            onChange={(e) => updateCell(day, rowIdx, null, { visa_operateur: e.target.value })}
-                            className="h-8"
-                          />
+                            onValueChange={(v) => updateCell(day, rowIdx, null, { visa_operateur: v })}
+                          >
+                            <SelectTrigger className="h-8 min-w-[140px]"><SelectValue placeholder="—" /></SelectTrigger>
+                            <SelectContent>
+                              {OPERATORS.map((o) => (
+                                <SelectItem key={o} value={o}>{o}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </td>
                         {isFirstOfShift && (
                           <td rowSpan={2} className="p-1 align-middle border-l">
