@@ -6,12 +6,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Save, Check, Plus, Trash2, Filter, X, CalendarIcon, Eye, EyeOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, Check, Plus, Trash2, Filter, X, CalendarIcon, Eye, EyeOff, Lock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
 import { OPERATORS } from "@/lib/operators";
+import { PinPromptDialog } from "./PinPromptDialog";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
@@ -83,20 +84,24 @@ type Row = Record<string, any>;
 function ConformityToggle({
   value,
   onChange,
+  disabled,
 }: {
   value?: string | null;
   onChange: (v: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex justify-center">
       <button
         type="button"
         onClick={() => onChange(value === "C" ? "" : "C")}
+        disabled={disabled}
         className={cn(
           "h-8 w-8 rounded border flex items-center justify-center transition-colors",
           value === "C"
             ? "bg-success text-success-foreground border-success"
             : "bg-background hover:bg-muted",
+          disabled && "opacity-50 cursor-not-allowed",
         )}
         aria-label="Conforme"
       >
