@@ -26,7 +26,7 @@ const TARTE_ARTICLES = [
   "Merg.trt", "Merg.Pt KG", "Merg.Pt SCH", "Merg.Glacé", "Org.Confit", "Biscuit",
   "Bigarreaux", "Cake Chocolat", "Cake.citron", "Pain Savoi", "Brownies.G", "Brownies.Top",
   "Amandes.Top", "Noix.Top", "Tulipes", "Cornet", "Gaufrette",
-  "Orange", "Citron", "POMME", "POIRE", "Ananas",
+  "Orange fruits", "Citron fruits", "POMME fruits", "POIRE fruits", "Ananas fruits",
 ];
 const GLACE_ARTICLES = [
   "Sicilienne vanille", "Sicilienne chocolat", "Sicilienne fraise", "Sicilienne mangue",
