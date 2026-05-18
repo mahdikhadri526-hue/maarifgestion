@@ -1130,6 +1130,7 @@ export function WeeklyTracking() {
                               value={cell(day, rowIdx, null).visa_manager ?? ""}
                               onChange={(e) => updateCell(day, rowIdx, null, { visa_manager: e.target.value })}
                               className="h-8"
+                              disabled={!editable}
                             />
                           </td>
                         )}
