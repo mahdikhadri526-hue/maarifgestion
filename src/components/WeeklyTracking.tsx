@@ -1011,6 +1011,8 @@ export function WeeklyTracking() {
                     const isFirstOfDay = rowIdx === 0;
                     const isFirstOfShift = rowIdx === 0 || rowIdx === 2;
                     const shiftLabel = rowIdx < 2 ? "Matin" : "Soir";
+                    const iso = dayIso(weekStart, dIdx);
+                    const editable = isDayEditable(iso);
                     return (
                       <tr
                         key={`${day}-${rowIdx}`}
@@ -1025,6 +1027,16 @@ export function WeeklyTracking() {
                             <div className="text-[10px] font-normal text-muted-foreground">
                               {dayShort(weekStart, dIdx)}
                             </div>
+                            {!editable && (
+                              <button
+                                type="button"
+                                onClick={() => setPinTarget(iso)}
+                                className="mt-1 inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary"
+                                title="Jour verrouillé — entrer le code"
+                              >
+                                <Lock className="h-3 w-3" /> Déverrouiller
+                              </button>
+                            )}
                           </td>
                         )}
                         {isFirstOfShift && (
@@ -1047,6 +1059,7 @@ export function WeeklyTracking() {
                             value={c.quantity ?? ""}
                             onChange={(e) => updateCell(day, rowIdx, null, { quantity: e.target.value })}
                             className="h-8"
+                            disabled={!editable}
                           />
                         </td>
                         <td className="p-1">
@@ -1071,7 +1084,7 @@ export function WeeklyTracking() {
                                 onChange={(e) => updateCell(day, rowIdx, null, { lot_number: e.target.value })}
                                 className="h-8 min-w-[240px]"
                                 placeholder={hasQty ? "Aucun lot dispo en mouvement glaces" : "Saisir la quantité…"}
-                                disabled={!hasQty}
+                                disabled={!hasQty || !editable}
                               />
                             );
                           })()}
@@ -1080,24 +1093,28 @@ export function WeeklyTracking() {
                           <ConformityToggle
                             value={c.couleur}
                             onChange={(v) => updateCell(day, rowIdx, null, { couleur: v })}
+                            disabled={!editable}
                           />
                         </td>
                         <td className="p-1">
                           <ConformityToggle
                             value={c.odeur}
                             onChange={(v) => updateCell(day, rowIdx, null, { odeur: v })}
+                            disabled={!editable}
                           />
                         </td>
                         <td className="p-1">
                           <ConformityToggle
                             value={c.texture}
                             onChange={(v) => updateCell(day, rowIdx, null, { texture: v })}
+                            disabled={!editable}
                           />
                         </td>
                         <td className="p-1 align-middle">
                           <Select
                             value={c.visa_operateur ?? ""}
                             onValueChange={(v) => updateCell(day, rowIdx, null, { visa_operateur: v })}
+                            disabled={!editable}
                           >
                             <SelectTrigger className="h-8 min-w-[140px]"><SelectValue placeholder="—" /></SelectTrigger>
                             <SelectContent>
