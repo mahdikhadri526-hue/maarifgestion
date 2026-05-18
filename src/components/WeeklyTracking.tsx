@@ -6,12 +6,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Save, Check, Plus, Trash2, Filter, X, CalendarIcon, Eye, EyeOff } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, Check, Plus, Trash2, Filter, X, CalendarIcon, Eye, EyeOff, Lock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
 import { OPERATORS } from "@/lib/operators";
+import { PinPromptDialog } from "./PinPromptDialog";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
@@ -83,20 +84,24 @@ type Row = Record<string, any>;
 function ConformityToggle({
   value,
   onChange,
+  disabled,
 }: {
   value?: string | null;
   onChange: (v: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="flex justify-center">
       <button
         type="button"
         onClick={() => onChange(value === "C" ? "" : "C")}
+        disabled={disabled}
         className={cn(
           "h-8 w-8 rounded border flex items-center justify-center transition-colors",
           value === "C"
             ? "bg-success text-success-foreground border-success"
             : "bg-background hover:bg-muted",
+          disabled && "opacity-50 cursor-not-allowed",
         )}
         aria-label="Conforme"
       >
@@ -184,6 +189,15 @@ export function WeeklyTracking() {
   const [filterFrom, setFilterFrom] = useState<string>(""); // YYYY-MM-DD
   const [filterTo, setFilterTo] = useState<string>(""); // YYYY-MM-DD
   const [showControls, setShowControls] = useState(true);
+  const [unlockedDays, setUnlockedDays] = useState<Set<string>>(new Set());
+  const [pinTarget, setPinTarget] = useState<string | null>(null);
+  const todayIso = fmt(new Date());
+  const dayIso = (wkStart: string, dIdx: number) => {
+    const d = parseISO(wkStart);
+    d.setDate(d.getDate() + dIdx);
+    return fmt(d);
+  };
+  const isDayEditable = (iso: string) => iso === todayIso || unlockedDays.has(iso);
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
   const activeArticles = tab === "glace" ? GLACE_ARTICLES : tab === "tarte" ? TARTE_ARTICLES : ARTICLES;
@@ -997,6 +1011,8 @@ export function WeeklyTracking() {
                     const isFirstOfDay = rowIdx === 0;
                     const isFirstOfShift = rowIdx === 0 || rowIdx === 2;
                     const shiftLabel = rowIdx < 2 ? "Matin" : "Soir";
+                    const iso = dayIso(weekStart, dIdx);
+                    const editable = isDayEditable(iso);
                     return (
                       <tr
                         key={`${day}-${rowIdx}`}
@@ -1011,6 +1027,16 @@ export function WeeklyTracking() {
                             <div className="text-[10px] font-normal text-muted-foreground">
                               {dayShort(weekStart, dIdx)}
                             </div>
+                            {!editable && (
+                              <button
+                                type="button"
+                                onClick={() => setPinTarget(iso)}
+                                className="mt-1 inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary"
+                                title="Jour verrouillé — entrer le code"
+                              >
+                                <Lock className="h-3 w-3" /> Déverrouiller
+                              </button>
+                            )}
                           </td>
                         )}
                         {isFirstOfShift && (
@@ -1033,6 +1059,7 @@ export function WeeklyTracking() {
                             value={c.quantity ?? ""}
                             onChange={(e) => updateCell(day, rowIdx, null, { quantity: e.target.value })}
                             className="h-8"
+                            disabled={!editable}
                           />
                         </td>
                         <td className="p-1">
@@ -1057,7 +1084,7 @@ export function WeeklyTracking() {
                                 onChange={(e) => updateCell(day, rowIdx, null, { lot_number: e.target.value })}
                                 className="h-8 min-w-[240px]"
                                 placeholder={hasQty ? "Aucun lot dispo en mouvement glaces" : "Saisir la quantité…"}
-                                disabled={!hasQty}
+                                disabled={!hasQty || !editable}
                               />
                             );
                           })()}
@@ -1066,24 +1093,28 @@ export function WeeklyTracking() {
                           <ConformityToggle
                             value={c.couleur}
                             onChange={(v) => updateCell(day, rowIdx, null, { couleur: v })}
+                            disabled={!editable}
                           />
                         </td>
                         <td className="p-1">
                           <ConformityToggle
                             value={c.odeur}
                             onChange={(v) => updateCell(day, rowIdx, null, { odeur: v })}
+                            disabled={!editable}
                           />
                         </td>
                         <td className="p-1">
                           <ConformityToggle
                             value={c.texture}
                             onChange={(v) => updateCell(day, rowIdx, null, { texture: v })}
+                            disabled={!editable}
                           />
                         </td>
                         <td className="p-1 align-middle">
                           <Select
                             value={c.visa_operateur ?? ""}
                             onValueChange={(v) => updateCell(day, rowIdx, null, { visa_operateur: v })}
+                            disabled={!editable}
                           >
                             <SelectTrigger className="h-8 min-w-[140px]"><SelectValue placeholder="—" /></SelectTrigger>
                             <SelectContent>
@@ -1099,6 +1130,7 @@ export function WeeklyTracking() {
                               value={cell(day, rowIdx, null).visa_manager ?? ""}
                               onChange={(e) => updateCell(day, rowIdx, null, { visa_manager: e.target.value })}
                               className="h-8"
+                              disabled={!editable}
                             />
                           </td>
                         )}
@@ -1197,6 +1229,16 @@ export function WeeklyTracking() {
                       <div className="text-[10px] font-normal text-muted-foreground">
                         {dayShort(wkStart, dIdx)}
                       </div>
+                      {!isDayEditable(iso) && (
+                        <button
+                          type="button"
+                          onClick={() => setPinTarget(iso)}
+                          className="mt-1 inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary"
+                          title="Jour verrouillé — entrer le code"
+                        >
+                          <Lock className="h-3 w-3" /> Déverrouiller
+                        </button>
+                      )}
                     </th>
                   ))}
                 </tr>
@@ -1240,6 +1282,7 @@ export function WeeklyTracking() {
                       const totalE = entries.reduce((s, e) => s + num(e.entree), 0);
                       const matchType = cellMatchesTypeFilter(dIdx, article, wkStart);
                       const dim = filterType !== "all" && filterType !== "masquer_lots" && !matchType;
+                      const editable = isDayEditable(dayIso(wkStart, dIdx));
                       return (
                         <Fragment key={`${wkStart}-${day}`}>
                           {/* SI */}
@@ -1259,6 +1302,7 @@ export function WeeklyTracking() {
                                 }
                               }}
                               className="h-7 w-14 text-xs px-1"
+                              disabled={!editable}
                             />
                           </td>
                           {/* Entries (multi-row) — VERT */}
@@ -1274,6 +1318,7 @@ export function WeeklyTracking() {
                                     updateCellAt(wkStart, day, er.rowIndex, article, { entrees: ev.target.value })
                                   }
                                   className="h-7 w-14 text-xs px-1 bg-success/10 text-success border-success/40 font-medium"
+                                  disabled={!editable}
                                 />
                               ))}
                               <button
@@ -1283,8 +1328,9 @@ export function WeeklyTracking() {
                                   const nextIdx = existing.length > 0 ? Math.max(...existing.map((e) => e.rowIndex)) + 1 : 1;
                                   updateCellAt(wkStart, day, nextIdx, article, { entrees: "", lot_number: "" });
                                 }}
-                                className="h-5 w-14 rounded border border-dashed text-[10px] text-muted-foreground hover:bg-muted flex items-center justify-center gap-1"
+                                className="h-5 w-14 rounded border border-dashed text-[10px] text-muted-foreground hover:bg-muted flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                                 title="Ajouter une 2e entrée (lot différent)"
+                                disabled={!editable}
                               >
                                 <Plus className="h-3 w-3" />
                               </button>
@@ -1306,13 +1352,15 @@ export function WeeklyTracking() {
                                       }
                                       placeholder="lot"
                                       className="h-7 w-20 text-xs px-1"
+                                      disabled={!editable}
                                     />
                                     {er.rowIndex > 0 && (
                                       <button
                                         type="button"
                                         onClick={() => removeEntryRow(day, er.rowIndex, article, wkStart)}
-                                        className="text-destructive hover:bg-destructive/10 rounded p-0.5"
+                                        className="text-destructive hover:bg-destructive/10 rounded p-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
                                         title="Supprimer cette entrée"
+                                        disabled={!editable}
                                       >
                                         <Trash2 className="h-3 w-3" />
                                       </button>
@@ -1364,6 +1412,22 @@ export function WeeklyTracking() {
         </TabsContent>
         ))}
       </Tabs>
+      <PinPromptDialog
+        open={!!pinTarget}
+        onOpenChange={(o) => { if (!o) setPinTarget(null); }}
+        onConfirm={() => {
+          if (pinTarget) {
+            setUnlockedDays((s) => {
+              const next = new Set(s);
+              next.add(pinTarget);
+              return next;
+            });
+          }
+          setPinTarget(null);
+        }}
+        title="Jour verrouillé"
+        description="Ce jour n'est pas le jour J. Entrez le code à 4 chiffres pour autoriser les modifications."
+      />
     </div>
   );
 }
