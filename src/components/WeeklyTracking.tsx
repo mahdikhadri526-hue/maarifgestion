@@ -1229,6 +1229,16 @@ export function WeeklyTracking() {
                       <div className="text-[10px] font-normal text-muted-foreground">
                         {dayShort(wkStart, dIdx)}
                       </div>
+                      {!isDayEditable(iso) && (
+                        <button
+                          type="button"
+                          onClick={() => setPinTarget(iso)}
+                          className="mt-1 inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary"
+                          title="Jour verrouillé — entrer le code"
+                        >
+                          <Lock className="h-3 w-3" /> Déverrouiller
+                        </button>
+                      )}
                     </th>
                   ))}
                 </tr>
@@ -1272,6 +1282,7 @@ export function WeeklyTracking() {
                       const totalE = entries.reduce((s, e) => s + num(e.entree), 0);
                       const matchType = cellMatchesTypeFilter(dIdx, article, wkStart);
                       const dim = filterType !== "all" && filterType !== "masquer_lots" && !matchType;
+                      const editable = isDayEditable(dayIso(wkStart, dIdx));
                       return (
                         <Fragment key={`${wkStart}-${day}`}>
                           {/* SI */}
@@ -1291,6 +1302,7 @@ export function WeeklyTracking() {
                                 }
                               }}
                               className="h-7 w-14 text-xs px-1"
+                              disabled={!editable}
                             />
                           </td>
                           {/* Entries (multi-row) — VERT */}
@@ -1306,6 +1318,7 @@ export function WeeklyTracking() {
                                     updateCellAt(wkStart, day, er.rowIndex, article, { entrees: ev.target.value })
                                   }
                                   className="h-7 w-14 text-xs px-1 bg-success/10 text-success border-success/40 font-medium"
+                                  disabled={!editable}
                                 />
                               ))}
                               <button
@@ -1315,8 +1328,9 @@ export function WeeklyTracking() {
                                   const nextIdx = existing.length > 0 ? Math.max(...existing.map((e) => e.rowIndex)) + 1 : 1;
                                   updateCellAt(wkStart, day, nextIdx, article, { entrees: "", lot_number: "" });
                                 }}
-                                className="h-5 w-14 rounded border border-dashed text-[10px] text-muted-foreground hover:bg-muted flex items-center justify-center gap-1"
+                                className="h-5 w-14 rounded border border-dashed text-[10px] text-muted-foreground hover:bg-muted flex items-center justify-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed"
                                 title="Ajouter une 2e entrée (lot différent)"
+                                disabled={!editable}
                               >
                                 <Plus className="h-3 w-3" />
                               </button>
@@ -1338,13 +1352,15 @@ export function WeeklyTracking() {
                                       }
                                       placeholder="lot"
                                       className="h-7 w-20 text-xs px-1"
+                                      disabled={!editable}
                                     />
                                     {er.rowIndex > 0 && (
                                       <button
                                         type="button"
                                         onClick={() => removeEntryRow(day, er.rowIndex, article, wkStart)}
-                                        className="text-destructive hover:bg-destructive/10 rounded p-0.5"
+                                        className="text-destructive hover:bg-destructive/10 rounded p-0.5 disabled:opacity-40 disabled:cursor-not-allowed"
                                         title="Supprimer cette entrée"
+                                        disabled={!editable}
                                       >
                                         <Trash2 className="h-3 w-3" />
                                       </button>
