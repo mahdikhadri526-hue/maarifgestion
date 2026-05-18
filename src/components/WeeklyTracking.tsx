@@ -1031,7 +1031,7 @@ export function WeeklyTracking() {
                               <button
                                 type="button"
                                 onClick={() => setPinTarget(iso)}
-                                className="mt-1 inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary"
+                                className="mt-1 inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-primary-foreground"
                                 title="Jour verrouillé — entrer le code"
                               >
                                 <Lock className="h-3 w-3" /> Déverrouiller
@@ -1233,7 +1233,7 @@ export function WeeklyTracking() {
                         <button
                           type="button"
                           onClick={() => setPinTarget(iso)}
-                          className="mt-1 inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary"
+                          className="mt-1 inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-primary-foreground"
                           title="Jour verrouillé — entrer le code"
                         >
                           <Lock className="h-3 w-3" /> Déverrouiller
