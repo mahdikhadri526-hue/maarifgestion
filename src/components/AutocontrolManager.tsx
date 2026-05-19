@@ -900,18 +900,13 @@ export function AutocontrolManager() {
                       }
                     />
                     <Input
-                      className="col-span-4"
                       placeholder="N° lot"
                       value={ing.lot}
                       maxLength={120}
-                      // validated by Zod
-                      onChange={(e) =>
-                        setForm((f) => {
-                          const arr = [...f.extraData!.ingredients];
-                          arr[idx] = { ...arr[idx], lot: e.target.value };
-                          return { ...f, extraData: { ...f.extraData!, ingredients: arr } };
-                        })
-                      }
+                      readOnly
+                      tabIndex={-1}
+                      className="col-span-4 bg-muted/50 cursor-not-allowed"
+                      onChange={() => {}}
                     />
                   </div>
                 ))}
