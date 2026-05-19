@@ -104,6 +104,23 @@ const PANACHE_FLAVOR_ARTICLE: Record<string, string> = {
   "Biscuit": "Biscuit",
 };
 
+// Mapping article Décoration → article du Mouvement tarte (weekly_tracking)
+const DECORATION_TARTE_ARTICLE: Record<string, string> = {
+  "Tarte 10": "Tarte 10",
+  "Tarte 6": "Tarte 6",
+  "Tarte 12": "Tarte 12",
+  "Tarte spéciale": "Tte Sp.",
+  "Tarte spéciale 8": "Tte.Sp 8",
+  "Tarte sorbet": "Tte Sor.",
+  "Tarte macarons": "Tte Mac.",
+  "Tranche napolitaine": "Tche Nap.",
+  "Tranche macarons": "Tche Mac.",
+  "Tranche sorbet": "Tche Sor.",
+  "Bûche normale": "Bûche",
+  "Bûche spéciale": "Bûche Sp.",
+  "Cassate sicilienne": "Sicilienne vanille",
+};
+
 async function fetchFifoLotForProduct(productId: string): Promise<string | null> {
   const { data, error } = await supabase
     .from("lot_entries")
