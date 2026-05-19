@@ -104,6 +104,23 @@ const PANACHE_FLAVOR_ARTICLE: Record<string, string> = {
   "Biscuit": "Biscuit",
 };
 
+// Mapping article Décoration → article du Mouvement tarte (weekly_tracking)
+const DECORATION_TARTE_ARTICLE: Record<string, string> = {
+  "Tarte 10": "Tarte 10",
+  "Tarte 6": "Tarte 6",
+  "Tarte 12": "Tarte 12",
+  "Tarte spéciale": "Tte Sp.",
+  "Tarte spéciale 8": "Tte.Sp 8",
+  "Tarte sorbet": "Tte Sor.",
+  "Tarte macarons": "Tte Mac.",
+  "Tranche napolitaine": "Tche Nap.",
+  "Tranche macarons": "Tche Mac.",
+  "Tranche sorbet": "Tche Sor.",
+  "Bûche normale": "Bûche",
+  "Bûche spéciale": "Bûche Sp.",
+  "Cassate sicilienne": "Sicilienne vanille",
+};
+
 async function fetchFifoLotForProduct(productId: string): Promise<string | null> {
   const { data, error } = await supabase
     .from("lot_entries")
@@ -444,6 +461,47 @@ export function AutocontrolManager() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPanache, form.extraData?.matieresPremieres?.map((m) => m.name).join("|")]);
 
+  // Auto-remplissage des lots Décoration depuis Mouvement tarte (dernière saisie)
+  useEffect(() => {
+    if (!isDecoration) return;
+    const selected = Object.entries(decoProducts).filter(
+      ([, r]) => r.selected && r.lotNumber.trim().length === 0,
+    );
+    if (selected.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const updates: Record<string, string> = {};
+      await Promise.all(
+        selected.map(async ([name]) => {
+          const article = DECORATION_TARTE_ARTICLE[name];
+          if (!article) return;
+          const lot = await fetchLatestGlaceLot(article);
+          if (lot) updates[name] = lot;
+        }),
+      );
+      if (cancelled || Object.keys(updates).length === 0) return;
+      setDecoProducts((s) => {
+        const next = { ...s };
+        for (const [name, lot] of Object.entries(updates)) {
+          if (next[name] && !next[name].lotNumber.trim()) {
+            next[name] = { ...next[name], lotNumber: lot };
+          }
+        }
+        return next;
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isDecoration,
+    Object.entries(decoProducts)
+      .filter(([, r]) => r.selected)
+      .map(([n]) => n)
+      .join("|"),
+  ]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -760,9 +818,11 @@ export function AutocontrolManager() {
                             <Input
                               value={row.lotNumber}
                               maxLength={120}
-                              onChange={(e) =>
-                                setDecoProducts((s) => ({ ...s, [name]: { ...row, lotNumber: e.target.value } }))
-                              }
+                              readOnly
+                              tabIndex={-1}
+                              className="bg-muted/50 cursor-not-allowed"
+                              placeholder="Auto (Mouvement tarte)"
+                              onChange={() => {}}
                             />
                           </div>
                         </div>
