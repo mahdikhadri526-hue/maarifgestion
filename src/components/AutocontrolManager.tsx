@@ -383,6 +383,67 @@ export function AutocontrolManager() {
     };
   }, [refresh]);
 
+  // Auto-remplissage FIFO des lots CTG depuis Gestion des lots
+  useEffect(() => {
+    if (!isCtg) return;
+    const ingredients = form.extraData?.ingredients;
+    if (!ingredients || ingredients.length === 0) return;
+    if (ingredients.every((i) => i.lot.trim().length > 0)) return;
+    let cancelled = false;
+    (async () => {
+      const products = getProducts("alimentaire");
+      const filled = await Promise.all(
+        ingredients.map(async (ing) => {
+          if (ing.lot.trim().length > 0) return ing;
+          const pattern = CTG_INGREDIENT_PRODUCT_PATTERN[ing.name];
+          if (!pattern) return ing;
+          const prod = products.find((p) => pattern.test(p.name));
+          if (!prod) return ing;
+          const lot = await fetchFifoLotForProduct(prod.id);
+          return lot ? { ...ing, lot } : ing;
+        }),
+      );
+      if (cancelled) return;
+      setForm((f) => {
+        if (!f.extraData?.ingredients) return f;
+        return { ...f, extraData: { ...f.extraData, ingredients: filled } };
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isCtg, form.extraData?.ingredients?.map((i) => i.name).join("|")]);
+
+  // Auto-remplissage des lots Panaché depuis Mouvement glaces (dernière saisie)
+  useEffect(() => {
+    if (!isPanache) return;
+    const matieres = form.extraData?.matieresPremieres;
+    if (!matieres || matieres.length === 0) return;
+    if (matieres.every((m) => m.lot.trim().length > 0)) return;
+    let cancelled = false;
+    (async () => {
+      const filled = await Promise.all(
+        matieres.map(async (m) => {
+          if (m.lot.trim().length > 0) return m;
+          const article = PANACHE_FLAVOR_ARTICLE[m.name];
+          if (!article) return m;
+          const lot = await fetchLatestGlaceLot(article);
+          return lot ? { ...m, lot } : m;
+        }),
+      );
+      if (cancelled) return;
+      setForm((f) => {
+        if (!f.extraData?.matieresPremieres) return f;
+        return { ...f, extraData: { ...f.extraData, matieresPremieres: filled } };
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPanache, form.extraData?.matieresPremieres?.map((m) => m.name).join("|")]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
