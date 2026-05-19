@@ -461,6 +461,47 @@ export function AutocontrolManager() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPanache, form.extraData?.matieresPremieres?.map((m) => m.name).join("|")]);
 
+  // Auto-remplissage des lots Décoration depuis Mouvement tarte (dernière saisie)
+  useEffect(() => {
+    if (!isDecoration) return;
+    const selected = Object.entries(decoProducts).filter(
+      ([, r]) => r.selected && r.lotNumber.trim().length === 0,
+    );
+    if (selected.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const updates: Record<string, string> = {};
+      await Promise.all(
+        selected.map(async ([name]) => {
+          const article = DECORATION_TARTE_ARTICLE[name];
+          if (!article) return;
+          const lot = await fetchLatestGlaceLot(article);
+          if (lot) updates[name] = lot;
+        }),
+      );
+      if (cancelled || Object.keys(updates).length === 0) return;
+      setDecoProducts((s) => {
+        const next = { ...s };
+        for (const [name, lot] of Object.entries(updates)) {
+          if (next[name] && !next[name].lotNumber.trim()) {
+            next[name] = { ...next[name], lotNumber: lot };
+          }
+        }
+        return next;
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    isDecoration,
+    Object.entries(decoProducts)
+      .filter(([, r]) => r.selected)
+      .map(([n]) => n)
+      .join("|"),
+  ]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -777,9 +818,11 @@ export function AutocontrolManager() {
                             <Input
                               value={row.lotNumber}
                               maxLength={120}
-                              onChange={(e) =>
-                                setDecoProducts((s) => ({ ...s, [name]: { ...row, lotNumber: e.target.value } }))
-                              }
+                              readOnly
+                              tabIndex={-1}
+                              className="bg-muted/50 cursor-not-allowed"
+                              placeholder="Auto (Mouvement tarte)"
+                              onChange={() => {}}
                             />
                           </div>
                         </div>
