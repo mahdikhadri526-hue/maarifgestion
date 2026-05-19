@@ -854,13 +854,10 @@ export function AutocontrolManager() {
                       placeholder="N° de lot"
                       value={mat.lot}
                       maxLength={120}
-                      onChange={(e) =>
-                        setForm((f) => {
-                          const arr = [...(f.extraData!.matieresPremieres ?? [])];
-                          arr[idx] = { ...arr[idx], lot: e.target.value };
-                          return { ...f, extraData: { ...f.extraData!, matieresPremieres: arr } };
-                        })
-                      }
+                      readOnly
+                      tabIndex={-1}
+                      className="col-span-6 bg-muted/50 cursor-not-allowed"
+                      onChange={() => {}}
                     />
                   </div>
                 ))}
