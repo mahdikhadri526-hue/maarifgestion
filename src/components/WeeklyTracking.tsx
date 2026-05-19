@@ -6,7 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Save, Check, Plus, Trash2, Filter, X, CalendarIcon, Eye, EyeOff, Lock, Milk } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, Check, Plus, Trash2, Filter, X, CalendarIcon, Eye, EyeOff, Lock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
@@ -1272,16 +1272,7 @@ export function WeeklyTracking() {
                         rowI % 2 === 1 ? "bg-muted" : "bg-card",
                       )}
                     >
-                      <span className="inline-flex items-center gap-1">
-                        {(/cr[eè]me\s*fra[iî]che/i.test(article) || /^chantilly/i.test(article)) && (
-                          <Milk
-                            className="h-3.5 w-3.5 shrink-0 text-sky-500 drop-shadow-[0_1px_1px_rgba(14,165,233,0.35)]"
-                            strokeWidth={2.25}
-                            aria-label="Crème fraîche"
-                          />
-                        )}
-                        <span className="truncate">{article}</span>
-                      </span>
+                      {article}
                     </td>
                     {visibleDays.map(({ day, dIdx, wkStart }) => {
                       const c = cellAt(wkStart, day, 0, article);
