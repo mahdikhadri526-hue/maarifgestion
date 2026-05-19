@@ -346,11 +346,11 @@ export function AutocontrolManager() {
 
     setSubmitting(true);
     try {
-      // Pour Panaché : article = liste des matières
+      // Pour Panaché : afficher "Panaché" dans l'historique (les matières sont dans extraData)
       let articleToSave = baseResult.data.article;
       const lotToSave: string | null = baseResult.data.lotNumber;
-      if (isPanache && panacheExtra?.matieresPremieres) {
-        articleToSave = panacheExtra.matieresPremieres.map((m) => m.name).join(", ");
+      if (isPanache) {
+        articleToSave = "Panaché";
       }
       if (isCtg) {
         const selected = CTG_PRODUCTS.filter((p) => ctgProducts[p].selected);
