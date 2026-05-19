@@ -850,7 +850,6 @@ export function AutocontrolManager() {
                       {mat.name}
                     </div>
                     <Input
-                      className="col-span-6"
                       placeholder="N° de lot"
                       value={mat.lot}
                       maxLength={120}
