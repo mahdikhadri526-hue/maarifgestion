@@ -217,6 +217,78 @@ const initialDecorationExtra = (): CtgExtraData => ({
   },
 }) as any;
 
+// Mapping article autocontrôle -> article Mouvement tarte
+const TARTE_MOVEMENT_ARTICLE_MAP: Record<string, string> = {
+  Cornet: "Cornet",
+  Tulipe: "Tulipes",
+  Gaufrette: "Gaufrette",
+  "Panaché": "Panachés",
+};
+
+const DAY_NAMES_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+
+function parseISODateLocal(iso: string): Date {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+}
+
+function fmtISO(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+function getMondayISO(iso: string): string {
+  const d = parseISODateLocal(iso);
+  const day = d.getDay();
+  const diff = (day === 0 ? -6 : 1) - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  return fmtISO(d);
+}
+
+function getDayName(iso: string): string {
+  return DAY_NAMES_FR[parseISODateLocal(iso).getDay()];
+}
+
+async function syncTarteMovementEntry(
+  autocontrolArticle: string,
+  quantity: number,
+  lot: string,
+  controlDate: string,
+) {
+  const tarteArticle = TARTE_MOVEMENT_ARTICLE_MAP[autocontrolArticle];
+  if (!tarteArticle) return;
+  if (!quantity || quantity <= 0) return;
+  const week_start = getMondayISO(controlDate);
+  const day_of_week = getDayName(controlDate);
+  try {
+    const { data: existing } = await supabase
+      .from("weekly_tracking")
+      .select("row_index")
+      .eq("fiche_type", "Mouvement glaces & tartes")
+      .eq("week_start", week_start)
+      .eq("day_of_week", day_of_week)
+      .eq("article", tarteArticle)
+      .order("row_index", { ascending: false })
+      .limit(1);
+    const nextIdx =
+      existing && existing.length > 0 ? Math.max(1, (existing[0].row_index ?? 0) + 1) : 1;
+    await supabase.from("weekly_tracking").insert({
+      fiche_type: "Mouvement glaces & tartes",
+      week_start,
+      day_of_week,
+      article: tarteArticle,
+      row_index: nextIdx,
+      entrees: quantity,
+      lot_number: lot ? lot : null,
+    });
+  } catch (err) {
+    console.error("Sync mouvement tarte échoué", err);
+  }
+}
+
 export function AutocontrolManager() {
   const [entries, setEntries] = useState<AutocontrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -368,6 +440,12 @@ export function AutocontrolManager() {
             notes: baseResult.data.notes,
             extraData,
           });
+          await syncTarteMovementEntry(
+            p,
+            Number(row.quantity),
+            row.lotNumber.trim(),
+            baseResult.data.controlDate,
+          );
         }
       } else if (isDecoration) {
         const selectedDeco = Object.entries(decoProducts).filter(([, r]) => r.selected);
@@ -398,6 +476,14 @@ export function AutocontrolManager() {
         notes: baseResult.data.notes,
         extraData: isCtg ? extraData : isDecoration ? decorationExtra : isPanache ? panacheExtra : null,
       });
+      if (isPanache) {
+        await syncTarteMovementEntry(
+          "Panaché",
+          Number(baseResult.data.quantity),
+          (lotToSave ?? "").toString().trim(),
+          baseResult.data.controlDate,
+        );
+      }
       }
       toast.success("Fiche ajoutée");
       await refresh();
