@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { ClipboardCheck, Trash2, Plus, FileCheck } from "lucide-react";
 import { OPERATORS } from "@/lib/operators";
+import { getProducts } from "@/lib/stockData";
 import {
   Dialog,
   DialogContent,
@@ -81,6 +82,54 @@ const PANACHE_MATIERES = [
   "Caramel",
   "Biscuit",
 ];
+
+// Mapping ingrédient CTG → motif du nom produit dans Gestion des lots (FIFO)
+const CTG_INGREDIENT_PRODUCT_PATTERN: Record<string, RegExp> = {
+  "Farine": /FARINE/i,
+  "Huile": /HUIL+E/i,
+  "Eau": /^EAU\b/i,
+  "Sucre semoule": /SUCRE\s*GRANULE/i,
+  "Poudre vanille": /POUDRE\s*VANILLE/i,
+  "Sel": /^SEL\b/i,
+  "Beurre": /BEURRE/i,
+};
+
+// Mapping matière première Panaché → article du Mouvement glaces
+const PANACHE_FLAVOR_ARTICLE: Record<string, string> = {
+  "Vanille": "Vanille",
+  "Parfait café": "Parfait",
+  "Nougat": "Nougat",
+  "Chocolat": "Chocolat",
+  "Caramel": "Caramel",
+  "Biscuit": "Biscuit",
+};
+
+async function fetchFifoLotForProduct(productId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("lot_entries")
+    .select("lot_number, expiry_date, remaining_quantity")
+    .eq("product_id", productId)
+    .gt("remaining_quantity", 0)
+    .order("expiry_date", { ascending: true })
+    .limit(1);
+  if (error) return null;
+  return data?.[0]?.lot_number ?? null;
+}
+
+async function fetchLatestGlaceLot(article: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("weekly_tracking")
+    .select("lot_number, week_start, day_of_week, created_at")
+    .eq("fiche_type", "Mouvement glaces & tartes")
+    .eq("article", article)
+    .not("lot_number", "is", null)
+    .order("week_start", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (error) return null;
+  const lot = data?.[0]?.lot_number;
+  return lot && lot.trim().length > 0 ? lot : null;
+}
 
 const initialPanacheExtra = (): CtgExtraData => ({
   matieresPremieres: PANACHE_MATIERES.map((name) => ({ name, lot: "" })),
