@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
 import { OPERATORS } from "@/lib/operators";
 import { PinPromptDialog } from "./PinPromptDialog";
-import { printElement, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
+import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
@@ -194,7 +194,11 @@ export function WeeklyTracking() {
   const [pinTarget, setPinTarget] = useState<string | null>(null);
   const ficheRef = useRef<HTMLDivElement>(null);
   const handlePrintFiche = () => {
-    if (ficheRef.current) printElement(ficheRef.current);
+    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : "mouvement-tartes";
+    printStructuredPdf(buildWeeklyPdf(label)).catch((err: any) => {
+      toast.error("Erreur impression", { description: err?.message ?? String(err) });
+      if (ficheRef.current) printElement(ficheRef.current);
+    });
   };
   const handleDownloadFiche = async () => {
     const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : "mouvement-tartes";
