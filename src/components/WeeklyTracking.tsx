@@ -192,6 +192,20 @@ export function WeeklyTracking() {
   const [showControls, setShowControls] = useState(true);
   const [unlockedDays, setUnlockedDays] = useState<Set<string>>(new Set());
   const [pinTarget, setPinTarget] = useState<string | null>(null);
+  const ficheRef = useRef<HTMLDivElement>(null);
+  const handlePrintFiche = () => {
+    if (ficheRef.current) printElement(ficheRef.current);
+  };
+  const handleDownloadFiche = async () => {
+    if (!ficheRef.current) return;
+    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : "mouvement-tartes";
+    toast.info("Génération du PDF...");
+    try {
+      await downloadElementAsPdf(ficheRef.current, `fiche-${label}-${weekStart}.pdf`);
+    } catch (err: any) {
+      toast.error("Erreur PDF", { description: err?.message ?? String(err) });
+    }
+  };
   const todayIso = fmt(new Date());
   const dayIso = (wkStart: string, dIdx: number) => {
     const d = parseISO(wkStart);
