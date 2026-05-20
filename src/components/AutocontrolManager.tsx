@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -23,7 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ClipboardCheck, Trash2, Plus, FileCheck } from "lucide-react";
+import { ClipboardCheck, Trash2, Plus, FileCheck, Printer, FileDown, Eye } from "lucide-react";
 import { OPERATORS } from "@/lib/operators";
 import { getProducts } from "@/lib/stockData";
 import {
@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { PinPromptDialog } from "./PinPromptDialog";
+import { printElement, downloadElementAsPdf } from "@/lib/printExport";
 
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Oranges/Bigarreaux confits": "Orange confit",
