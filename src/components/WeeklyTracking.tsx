@@ -358,7 +358,11 @@ export function WeeklyTracking() {
         const total = batches.reduce((s, b) => s + b.remaining, 0);
         if (total > siMon) {
           let excess = total - siMon;
-          for (const b of batches) {
+            const ordered = [
+              ...batches.filter((b) => !b.lot),
+              ...batches.filter((b) => !!b.lot),
+            ];
+            for (const b of ordered) {
             if (excess <= 0) break;
             const take = Math.min(b.remaining, excess);
             b.remaining -= take;
@@ -376,7 +380,11 @@ export function WeeklyTracking() {
       }
       const sortie = getMovementSortie(d, wkStart);
       let need = typeof sortie === "number" ? sortie : 0;
-      for (const b of batches) {
+        const ordered = [
+          ...batches.filter((b) => !!b.lot),
+          ...batches.filter((b) => !b.lot),
+        ];
+        for (const b of ordered) {
         if (need <= 0) break;
         if (b.remaining <= 0) continue;
         const take = Math.min(b.remaining, need);
@@ -412,7 +420,12 @@ export function WeeklyTracking() {
       const current = batches.reduce((s, b) => s + Math.max(0, b.remaining), 0);
       if (current > target) {
         let excess = current - target;
-        for (const b of batches) {
+        // Retirer d'abord les fillers "(sans lot)" puis FIFO sur les vrais lots
+        const ordered = [
+          ...batches.filter((b) => !b.lot),
+          ...batches.filter((b) => !!b.lot),
+        ];
+        for (const b of ordered) {
           if (excess <= 0) break;
           if (b.remaining <= 0) continue;
           const take = Math.min(b.remaining, excess);
@@ -427,7 +440,12 @@ export function WeeklyTracking() {
     const consumeFifo = (quantity: number) => {
       const allocations: Allocation[] = [];
       let need = Math.max(0, quantity);
-      for (const b of batches) {
+      // Consommer d'abord les vrais lots (FIFO), puis les fillers "(sans lot)"
+      const ordered = [
+        ...batches.filter((b) => !!b.lot),
+        ...batches.filter((b) => !b.lot),
+      ];
+      for (const b of ordered) {
         if (need <= 0) break;
         if (b.remaining <= 0) continue;
         const take = Math.min(b.remaining, need);
