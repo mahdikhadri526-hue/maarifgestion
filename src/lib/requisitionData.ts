@@ -39,9 +39,8 @@ export const ALL_REQUISITION_IDS = new Set<string>([
 ]);
 
 export async function getRequisitions(): Promise<RequisitionEntry[]> {
-  const { data, error } = await supabase.from("requisitions").select("*");
-  if (error) throw error;
-  return (data || []).map((row: any) => ({
+  const data = await fetchAllRows<any>(() => supabase.from("requisitions").select("*"));
+  return data.map((row: any) => ({
     id: row.id,
     date: row.date,
     type: row.type as "salle" | "emporter",
