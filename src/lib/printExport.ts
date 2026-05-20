@@ -33,12 +33,23 @@ const ENTRY_BG: [number, number, number] = [236, 253, 245];
 const EXIT_RED: [number, number, number] = [153, 27, 27];
 const EXIT_BG: [number, number, number] = [254, 242, 242];
 
-function addFooter(doc: jsPDF) {
+function addHeaderAndFooter(doc: jsPDF, title: string, subtitle?: string) {
   const pageCount = doc.getNumberOfPages();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
+    doc.setFillColor(...BRAND_BLUE);
+    doc.rect(0, 0, pageWidth, 16, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(title, 10, 10.5);
+    if (subtitle) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text(subtitle, pageWidth - 10, 10.5, { align: "right" });
+    }
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(90, 104, 122);
@@ -110,7 +121,7 @@ export async function downloadStructuredPdf(options: StructuredPdfOptions) {
         Object.fromEntries(section.columns.map((col) => [col.dataKey, row[col.dataKey] ?? "—"])),
       ),
       startY: y,
-      margin: { left: margin, right: margin, top: margin, bottom: 12 },
+      margin: { left: margin, right: margin, top: 22, bottom: 12 },
       styles: {
         font: "helvetica",
         fontSize: 7.2,
@@ -159,7 +170,7 @@ export async function downloadStructuredPdf(options: StructuredPdfOptions) {
     y = ((doc as any).lastAutoTable?.finalY ?? y) + 8;
   }
 
-  addFooter(doc);
+  addHeaderAndFooter(doc, options.title, options.subtitle);
   doc.save(options.filename.endsWith(".pdf") ? options.filename : `${options.filename}.pdf`);
 }
 
