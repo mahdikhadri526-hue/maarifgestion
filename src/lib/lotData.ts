@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { syncLotBalances } from "./lotBalance";
+import { fetchAllRows } from "@/lib/supabasePaginate";
 
 export interface LotEntry {
   id: string;
@@ -25,9 +26,8 @@ function mapRow(row: any): LotEntry {
 
 export async function getLotEntries(): Promise<LotEntry[]> {
   await syncLotBalances();
-  const { data, error } = await supabase.from("lot_entries").select("*");
-  if (error) throw error;
-  return (data || []).map(mapRow);
+  const data = await fetchAllRows<any>(() => supabase.from("lot_entries").select("*"));
+  return data.map(mapRow);
 }
 
 export async function addLotEntry(entry: Omit<LotEntry, "id" | "remainingQuantity">): Promise<LotEntry> {

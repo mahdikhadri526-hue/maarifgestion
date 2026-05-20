@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { fetchAllRows } from "@/lib/supabasePaginate";
 
 type LotRow = {
   id: string;
@@ -29,32 +30,26 @@ const compareMovements = (a: MovementRow, b: MovementRow) =>
   toDayKey(a.date).localeCompare(toDayKey(b.date)) || a.created_at.localeCompare(b.created_at);
 
 export async function syncLotBalances(productId?: string): Promise<Map<string, number>> {
-  const lotQuery = productId
-    ? supabase.from("lot_entries").select("*").eq("product_id", productId)
-    : supabase.from("lot_entries").select("*");
-  const movementQuery = productId
-    ? supabase
-        .from("stock_movements")
-        .select("product_id, quantity, date, created_at")
-        .eq("category", "alimentaire")
-        .eq("type", "sortie")
-        .eq("product_id", productId)
-    : supabase
-        .from("stock_movements")
-        .select("product_id, quantity, date, created_at")
-        .eq("category", "alimentaire")
-        .eq("type", "sortie");
+  const buildLots = () =>
+    productId
+      ? supabase.from("lot_entries").select("*").eq("product_id", productId)
+      : supabase.from("lot_entries").select("*");
+  const buildMovements = () => {
+    const q = supabase
+      .from("stock_movements")
+      .select("product_id, quantity, date, created_at")
+      .eq("category", "alimentaire")
+      .eq("type", "sortie");
+    return productId ? q.eq("product_id", productId) : q;
+  };
 
-  const [{ data: lotRows, error: lotError }, { data: movementRows, error: movementError }] = await Promise.all([
-    lotQuery,
-    movementQuery,
+  const [lotRows, movementRows] = await Promise.all([
+    fetchAllRows<LotRow>(buildLots),
+    fetchAllRows<MovementRow>(buildMovements),
   ]);
 
-  if (lotError) throw lotError;
-  if (movementError) throw movementError;
-
-  const lots = (lotRows || []) as LotRow[];
-  const movements = ((movementRows || []) as MovementRow[]).sort(compareMovements);
+  const lots = lotRows;
+  const movements = movementRows.sort(compareMovements);
   const remainingByLot = new Map<string, number>(lots.map((lot) => [lot.id, lot.quantity]));
   const lotsByProduct = new Map<string, LotRow[]>();
 
