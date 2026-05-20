@@ -1514,6 +1514,134 @@ export function AutocontrolManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={viewEntry !== null}
+        onOpenChange={(open) => { if (!open) setViewEntry(null); }}
+      >
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between gap-2">
+              <span>Fiche d'autocontrôle</span>
+              <div className="flex items-center gap-2 no-print mr-6">
+                <Button size="sm" variant="outline" onClick={printViewFiche}>
+                  <Printer className="h-4 w-4 mr-1" /> Imprimer
+                </Button>
+                <Button size="sm" variant="outline" onClick={downloadViewFiche}>
+                  <FileDown className="h-4 w-4 mr-1" /> Télécharger PDF
+                </Button>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          {viewEntry && (
+            <div ref={viewRef} className="bg-background p-4 space-y-4 text-sm">
+              <div className="border-b pb-2">
+                <h2 className="text-lg font-bold">{viewEntry.ficheType}</h2>
+                <p className="text-xs text-muted-foreground">
+                  Date : {formatDateFR(viewEntry.controlDate)} • Collaborateur : {viewEntry.collaborateur}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div><span className="text-muted-foreground">Article :</span> <strong>{viewEntry.article}</strong></div>
+                <div><span className="text-muted-foreground">Lot :</span> {viewEntry.lotNumber || "—"}</div>
+                <div><span className="text-muted-foreground">Quantité :</span> {viewEntry.quantity ?? "—"}</div>
+                <div><span className="text-muted-foreground">DLC :</span> {viewEntry.dlc ? formatDateFR(viewEntry.dlc) : "—"}</div>
+                <div className="col-span-2">
+                  <span className="text-muted-foreground">Visa manager :</span>{" "}
+                  {viewEntry.visaManager?.trim() ? <strong>{viewEntry.visaManager}</strong> : <em className="text-amber-600">En attente</em>}
+                </div>
+                {viewEntry.notes && (
+                  <div className="col-span-2">
+                    <span className="text-muted-foreground">Observations :</span> {viewEntry.notes}
+                  </div>
+                )}
+              </div>
+
+              {viewEntry.extraData?.ingredients && viewEntry.extraData.ingredients.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-1">Ingrédients</h3>
+                  <table className="w-full text-xs border">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="text-left p-1.5 border">Nom</th>
+                        <th className="text-left p-1.5 border">Quantité</th>
+                        <th className="text-left p-1.5 border">Lot</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {viewEntry.extraData.ingredients.map((i, k) => (
+                        <tr key={k}>
+                          <td className="p-1.5 border">{i.name}</td>
+                          <td className="p-1.5 border">{i.quantity || "—"}</td>
+                          <td className="p-1.5 border">{i.lot || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {viewEntry.extraData?.matieresPremieres && viewEntry.extraData.matieresPremieres.length > 0 && (
+                <div>
+                  <h3 className="font-semibold mb-1">Matières premières</h3>
+                  <table className="w-full text-xs border">
+                    <thead className="bg-muted">
+                      <tr>
+                        <th className="text-left p-1.5 border">Nom</th>
+                        <th className="text-left p-1.5 border">Lot</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {viewEntry.extraData.matieresPremieres.map((m, k) => (
+                        <tr key={k}>
+                          <td className="p-1.5 border">{m.name}</td>
+                          <td className="p-1.5 border">{m.lot || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {viewEntry.extraData?.cleaning && (
+                <div>
+                  <h3 className="font-semibold mb-1">Nettoyage</h3>
+                  <ul className="text-xs space-y-1">
+                    {Object.entries(viewEntry.extraData.cleaning)
+                      .filter(([k]) => k !== "notes")
+                      .map(([k, v]) => (
+                        <li key={k}>
+                          {k} : {v === true || v === "conforme" ? "✓ Fait" : "—"}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+
+              {viewEntry.extraData?.managerControl && (
+                <div>
+                  <h3 className="font-semibold mb-1">Contrôle manager</h3>
+                  <ul className="text-xs space-y-1">
+                    {Object.entries(viewEntry.extraData.managerControl)
+                      .filter(([k]) => k !== "notes")
+                      .map(([k, v]) => (
+                        <li key={k}>
+                          {k} :{" "}
+                          {v === "conforme" || v === true
+                            ? "✓ Conforme"
+                            : v === "non_conforme"
+                              ? "✗ Non conforme"
+                              : "—"}
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
