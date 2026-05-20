@@ -1,5 +1,3 @@
-import type { PostgrestFilterBuilder } from "@supabase/postgrest-js";
-
 const PAGE_SIZE = 1000;
 
 /**
@@ -7,7 +5,7 @@ const PAGE_SIZE = 1000;
  * Pass a factory that returns a fresh query builder each call (so .range can be applied).
  */
 export async function fetchAllRows<T = any>(
-  buildQuery: () => PostgrestFilterBuilder<any, any, any>,
+  buildQuery: () => any,
 ): Promise<T[]> {
   const all: T[] = [];
   let from = 0;
