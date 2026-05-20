@@ -61,7 +61,7 @@ function addHeaderAndFooter(doc: jsPDF, title: string, subtitle?: string) {
  * Generate a professional A4 landscape PDF from structured data.
  * This is fully vector-based: selectable text, real paginated tables, no screenshots.
  */
-export async function downloadStructuredPdf(options: StructuredPdfOptions) {
+function createStructuredPdf(options: StructuredPdfOptions) {
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -171,6 +171,19 @@ export async function downloadStructuredPdf(options: StructuredPdfOptions) {
   }
 
   addHeaderAndFooter(doc, options.title, options.subtitle);
+  return doc;
+}
+
+export async function printStructuredPdf(options: StructuredPdfOptions) {
+  const doc = createStructuredPdf(options);
+  doc.autoPrint();
+  const url = doc.output("bloburl").toString();
+  const win = window.open(url, "_blank", "noopener,noreferrer");
+  if (!win) doc.save(options.filename.endsWith(".pdf") ? options.filename : `${options.filename}.pdf`);
+}
+
+export async function downloadStructuredPdf(options: StructuredPdfOptions) {
+  const doc = createStructuredPdf(options);
   doc.save(options.filename.endsWith(".pdf") ? options.filename : `${options.filename}.pdf`);
 }
 
