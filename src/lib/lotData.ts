@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { syncLotBalances } from "./lotBalance";
+import { fetchAllRows } from "@/lib/supabasePaginate";
 
 export interface LotEntry {
   id: string;
