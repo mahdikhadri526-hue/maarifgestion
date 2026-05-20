@@ -1443,6 +1443,7 @@ export function WeeklyTracking() {
           </div>
         </TabsContent>
         ))}
+        </div>
       </Tabs>
       <PinPromptDialog
         open={!!pinTarget}
