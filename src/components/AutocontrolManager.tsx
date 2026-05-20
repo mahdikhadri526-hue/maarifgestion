@@ -369,6 +369,22 @@ export function AutocontrolManager() {
   const [editVisa, setEditVisa] = useState("");
   const [editExtra, setEditExtra] = useState<CtgExtraData | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
+  const [viewEntry, setViewEntry] = useState<AutocontrolEntry | null>(null);
+  const viewRef = useRef<HTMLDivElement>(null);
+  const printViewFiche = () => {
+    if (viewRef.current) printElement(viewRef.current);
+  };
+  const downloadViewFiche = async () => {
+    if (!viewRef.current || !viewEntry) return;
+    toast.info("Génération du PDF...");
+    try {
+      const safe = `${viewEntry.ficheType}-${viewEntry.controlDate}-${viewEntry.article}`
+        .replace(/[^a-zA-Z0-9-_]+/g, "_");
+      await downloadElementAsPdf(viewRef.current, `fiche-${safe}.pdf`);
+    } catch (err: any) {
+      toast.error("Erreur PDF", { description: err?.message ?? String(err) });
+    }
+  };
 
   const isCtg = form.ficheType === "Cornet/Tulipe/Gaufrette";
   const isConfit = form.article === "Orange confit" || form.article === "Bigarreaux confits";
