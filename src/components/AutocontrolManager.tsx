@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { PinPromptDialog } from "./PinPromptDialog";
-import { printElement, downloadElementAsPdf } from "@/lib/printExport";
+import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Oranges/Bigarreaux confits": "Orange confit",
@@ -372,15 +372,109 @@ export function AutocontrolManager() {
   const [viewEntry, setViewEntry] = useState<AutocontrolEntry | null>(null);
   const viewRef = useRef<HTMLDivElement>(null);
   const printViewFiche = () => {
-    if (viewRef.current) printElement(viewRef.current);
+    if (!viewEntry) return;
+    printStructuredPdf(buildAutocontrolPdf(viewEntry)).catch((err: any) => {
+      toast.error("Erreur impression", { description: err?.message ?? String(err) });
+      if (viewRef.current) printElement(viewRef.current);
+    });
+  };
+  const formatStatus = (v: unknown) =>
+    v === "conforme" || v === true ? "Conforme / Fait" : v === "non_conforme" ? "Non conforme" : "—";
+  const cleanLabel = (key: string) => key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase());
+  const buildAutocontrolPdf = (entry: AutocontrolEntry) => {
+    const sections: PdfTableSection[] = [
+      {
+        title: "Informations générales",
+        columns: [
+          { header: "Date", dataKey: "date", width: 24 },
+          { header: "Fiche", dataKey: "fiche", width: 48 },
+          { header: "Collaborateur", dataKey: "collaborateur", width: 36 },
+          { header: "Article", dataKey: "article", width: 48 },
+          { header: "Lot", dataKey: "lot", width: 42, tone: "lot" },
+          { header: "Quantité", dataKey: "quantite", width: 22, halign: "center" },
+          { header: "DLC", dataKey: "dlc", width: 24 },
+          { header: "Visa manager", dataKey: "visa", width: 34, tone: entry.visaManager?.trim() ? undefined : "warning" },
+        ],
+        rows: [{
+          date: formatDateFR(entry.controlDate),
+          fiche: entry.ficheType,
+          collaborateur: entry.collaborateur,
+          article: entry.article,
+          lot: entry.lotNumber || "—",
+          quantite: entry.quantity ?? "—",
+          dlc: entry.dlc ? formatDateFR(entry.dlc) : "—",
+          visa: entry.visaManager?.trim() || "En attente",
+        }],
+      },
+    ];
+
+    if (entry.notes?.trim()) {
+      sections.push({
+        title: "Observations",
+        columns: [{ header: "Notes", dataKey: "notes", width: 274 }],
+        rows: [{ notes: entry.notes }],
+      });
+    }
+    if (entry.extraData?.ingredients?.length) {
+      sections.push({
+        title: "Ingrédients",
+        columns: [
+          { header: "Nom", dataKey: "name", width: 90 },
+          { header: "Quantité", dataKey: "quantity", width: 45, halign: "center" },
+          { header: "Lot", dataKey: "lot", width: 120, tone: "lot" },
+        ],
+        rows: entry.extraData.ingredients.map((i) => ({ name: i.name, quantity: i.quantity || "—", lot: i.lot || "—" })),
+      });
+    }
+    if (entry.extraData?.matieresPremieres?.length) {
+      sections.push({
+        title: "Matières premières",
+        columns: [
+          { header: "Nom", dataKey: "name", width: 120 },
+          { header: "Lot", dataKey: "lot", width: 135, tone: "lot" },
+        ],
+        rows: entry.extraData.matieresPremieres.map((m) => ({ name: m.name, lot: m.lot || "—" })),
+      });
+    }
+    if (entry.extraData?.cleaning) {
+      sections.push({
+        title: "Nettoyage",
+        columns: [
+          { header: "Point de contrôle", dataKey: "label", width: 140 },
+          { header: "Résultat", dataKey: "status", width: 80, halign: "center" },
+        ],
+        rows: Object.entries(entry.extraData.cleaning)
+          .filter(([k]) => k !== "notes")
+          .map(([k, v]) => ({ label: cleanLabel(k), status: formatStatus(v) })),
+      });
+    }
+    if (entry.extraData?.managerControl) {
+      sections.push({
+        title: "Contrôle manager",
+        columns: [
+          { header: "Point de contrôle", dataKey: "label", width: 140 },
+          { header: "Résultat", dataKey: "status", width: 80, halign: "center" },
+        ],
+        rows: Object.entries(entry.extraData.managerControl)
+          .filter(([k]) => k !== "notes")
+          .map(([k, v]) => ({ label: cleanLabel(k), status: formatStatus(v) })),
+      });
+    }
+
+    const safe = `${entry.ficheType}-${entry.controlDate}-${entry.article}`.replace(/[^a-zA-Z0-9-_]+/g, "_");
+    return {
+      filename: `fiche-${safe}.pdf`,
+      title: `Autocontrôle — ${entry.ficheType}`,
+      subtitle: `Date : ${formatDateFR(entry.controlDate)}`,
+      meta: [`Collaborateur : ${entry.collaborateur}`, `Généré le ${new Date().toLocaleDateString("fr-FR")}`],
+      sections,
+    };
   };
   const downloadViewFiche = async () => {
-    if (!viewRef.current || !viewEntry) return;
+    if (!viewEntry) return;
     toast.info("Génération du PDF...");
     try {
-      const safe = `${viewEntry.ficheType}-${viewEntry.controlDate}-${viewEntry.article}`
-        .replace(/[^a-zA-Z0-9-_]+/g, "_");
-      await downloadElementAsPdf(viewRef.current, `fiche-${safe}.pdf`);
+      await downloadStructuredPdf(buildAutocontrolPdf(viewEntry));
     } catch (err: any) {
       toast.error("Erreur PDF", { description: err?.message ?? String(err) });
     }

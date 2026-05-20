@@ -1,6 +1,192 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
+type PdfTone = "entry" | "exit" | "lot" | "warning";
+
+export type PdfColumn = {
+  header: string;
+  dataKey: string;
+  width?: number;
+  halign?: "left" | "center" | "right";
+  tone?: PdfTone;
+};
+
+export type PdfTableSection = {
+  title: string;
+  columns: PdfColumn[];
+  rows: Record<string, string | number | null | undefined>[];
+};
+
+export type StructuredPdfOptions = {
+  filename: string;
+  title: string;
+  subtitle?: string;
+  meta?: string[];
+  sections: PdfTableSection[];
+};
+
+const BRAND_BLUE: [number, number, number] = [30, 64, 124];
+const SOFT_BLUE: [number, number, number] = [235, 243, 255];
+const GRID: [number, number, number] = [204, 214, 226];
+const ENTRY_GREEN: [number, number, number] = [22, 101, 52];
+const ENTRY_BG: [number, number, number] = [236, 253, 245];
+const EXIT_RED: [number, number, number] = [153, 27, 27];
+const EXIT_BG: [number, number, number] = [254, 242, 242];
+
+function addHeaderAndFooter(doc: jsPDF, title: string, subtitle?: string) {
+  const pageCount = doc.getNumberOfPages();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFillColor(...BRAND_BLUE);
+    doc.rect(0, 0, pageWidth, 16, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(12);
+    doc.text(title, 10, 10.5);
+    if (subtitle) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.text(subtitle, pageWidth - 10, 10.5, { align: "right" });
+    }
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(7);
+    doc.setTextColor(90, 104, 122);
+    doc.text(`Page ${i}/${pageCount}`, pageWidth - 12, pageHeight - 6, { align: "right" });
+  }
+}
+
+/**
+ * Generate a professional A4 landscape PDF from structured data.
+ * This is fully vector-based: selectable text, real paginated tables, no screenshots.
+ */
+function createStructuredPdf(options: StructuredPdfOptions) {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 10;
+  let y = margin;
+
+  doc.setProperties({ title: options.title, subject: options.subtitle ?? options.title });
+  doc.setFillColor(...BRAND_BLUE);
+  doc.rect(0, 0, pageWidth, 16, "F");
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text(options.title, margin, 10.5);
+
+  y = 22;
+  if (options.subtitle) {
+    doc.setTextColor(30, 41, 59);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.text(options.subtitle, margin, y);
+    y += 5;
+  }
+  if (options.meta?.length) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(71, 85, 105);
+    const meta = options.meta.filter(Boolean).join("  •  ");
+    doc.text(meta, margin, y);
+    y += 6;
+  }
+
+  for (const section of options.sections) {
+    if (y > pageHeight - 32) {
+      doc.addPage();
+      y = 22;
+    }
+    doc.setFillColor(...SOFT_BLUE);
+    doc.roundedRect(margin, y, pageWidth - margin * 2, 7, 1.5, 1.5, "F");
+    doc.setTextColor(...BRAND_BLUE);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(section.title, margin + 2, y + 4.8);
+    y += 9;
+
+    const columnStyles = section.columns.reduce<Record<string, any>>((acc, col) => {
+      acc[col.dataKey] = {
+        cellWidth: col.width ?? "auto",
+        halign: col.halign ?? "left",
+      };
+      return acc;
+    }, {});
+    const tones = new Map(section.columns.map((col) => [col.dataKey, col.tone]));
+
+    autoTable(doc, {
+      columns: section.columns.map((col) => ({ header: col.header, dataKey: col.dataKey })),
+      body: section.rows.map((row) =>
+        Object.fromEntries(section.columns.map((col) => [col.dataKey, row[col.dataKey] ?? "—"])),
+      ),
+      startY: y,
+      margin: { left: margin, right: margin, top: 22, bottom: 12 },
+      styles: {
+        font: "helvetica",
+        fontSize: 7.2,
+        cellPadding: { top: 1.3, right: 1.3, bottom: 1.3, left: 1.3 },
+        overflow: "linebreak",
+        valign: "middle",
+        lineColor: GRID,
+        lineWidth: 0.15,
+        textColor: [15, 23, 42],
+        minCellHeight: 5.2,
+      },
+      headStyles: {
+        fillColor: BRAND_BLUE,
+        textColor: 255,
+        fontStyle: "bold",
+        halign: "center",
+      },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles,
+      theme: "grid",
+      pageBreak: "auto",
+      rowPageBreak: "avoid",
+      showHead: "everyPage",
+      didParseCell: (data: any) => {
+        if (data.section !== "body") return;
+        const tone = tones.get(String(data.column.dataKey));
+        if (tone === "entry") {
+          data.cell.styles.textColor = ENTRY_GREEN;
+          data.cell.styles.fillColor = ENTRY_BG;
+          data.cell.styles.fontStyle = "bold";
+        }
+        if (tone === "exit") {
+          data.cell.styles.textColor = EXIT_RED;
+          data.cell.styles.fillColor = EXIT_BG;
+          data.cell.styles.fontStyle = "bold";
+        }
+        if (tone === "lot") {
+          data.cell.styles.textColor = BRAND_BLUE;
+        }
+        if (tone === "warning") {
+          data.cell.styles.textColor = [180, 83, 9];
+          data.cell.styles.fontStyle = "bold";
+        }
+      },
+    });
+    y = ((doc as any).lastAutoTable?.finalY ?? y) + 8;
+  }
+
+  addHeaderAndFooter(doc, options.title, options.subtitle);
+  return doc;
+}
+
+export async function printStructuredPdf(options: StructuredPdfOptions) {
+  const doc = createStructuredPdf(options);
+  doc.autoPrint();
+  const url = doc.output("bloburl").toString();
+  const win = window.open(url, "_blank", "noopener,noreferrer");
+  if (!win) doc.save(options.filename.endsWith(".pdf") ? options.filename : `${options.filename}.pdf`);
+}
+
+export async function downloadStructuredPdf(options: StructuredPdfOptions) {
+  const doc = createStructuredPdf(options);
+  doc.save(options.filename.endsWith(".pdf") ? options.filename : `${options.filename}.pdf`);
+}
+
 /**
  * Opens the browser print dialog with ONLY the given element visible.
  * Keeps the exact same design (CSS) thanks to a print stylesheet that
@@ -21,7 +207,7 @@ export function printElement(node: HTMLElement) {
   }
   style.innerHTML = `
     @media print {
-      @page { size: A4; margin: 10mm; }
+      @page { size: A4 landscape; margin: 10mm; }
       body * { visibility: hidden !important; }
       #${PRINT_ID}, #${PRINT_ID} * { visibility: visible !important; }
       #${PRINT_ID} {
@@ -52,7 +238,7 @@ export function printElement(node: HTMLElement) {
  * with proper page breaks. No screenshots involved.
  */
 export async function downloadElementAsPdf(node: HTMLElement, filename: string) {
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 12;
