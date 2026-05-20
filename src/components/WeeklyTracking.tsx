@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,13 +6,14 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, Save, Check, Plus, Trash2, Filter, X, CalendarIcon, Eye, EyeOff, Lock } from "lucide-react";
+import { ChevronLeft, ChevronRight, Save, Check, Plus, Trash2, Filter, X, CalendarIcon, Eye, EyeOff, Lock, Printer, FileDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
 import { OPERATORS } from "@/lib/operators";
 import { PinPromptDialog } from "./PinPromptDialog";
+import { printElement, downloadElementAsPdf } from "@/lib/printExport";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
@@ -191,6 +192,20 @@ export function WeeklyTracking() {
   const [showControls, setShowControls] = useState(true);
   const [unlockedDays, setUnlockedDays] = useState<Set<string>>(new Set());
   const [pinTarget, setPinTarget] = useState<string | null>(null);
+  const ficheRef = useRef<HTMLDivElement>(null);
+  const handlePrintFiche = () => {
+    if (ficheRef.current) printElement(ficheRef.current);
+  };
+  const handleDownloadFiche = async () => {
+    if (!ficheRef.current) return;
+    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : "mouvement-tartes";
+    toast.info("Génération du PDF...");
+    try {
+      await downloadElementAsPdf(ficheRef.current, `fiche-${label}-${weekStart}.pdf`);
+    } catch (err: any) {
+      toast.error("Erreur PDF", { description: err?.message ?? String(err) });
+    }
+  };
   const todayIso = fmt(new Date());
   const dayIso = (wkStart: string, dIdx: number) => {
     const d = parseISO(wkStart);
@@ -973,7 +988,15 @@ export function WeeklyTracking() {
           {showControls ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
           {showControls ? "Masquer" : "Afficher"}
         </Button>
-        <div className={showControls ? "" : "ml-auto"}>
+        <div className={cn("flex items-center gap-2 no-print", showControls ? "" : "ml-auto")}>
+          <Button onClick={handlePrintFiche} size="sm" variant="outline" className="shadow-sm">
+            <Printer className="h-4 w-4 mr-2" />
+            Imprimer
+          </Button>
+          <Button onClick={handleDownloadFiche} size="sm" variant="outline" className="shadow-sm">
+            <FileDown className="h-4 w-4 mr-2" />
+            Télécharger PDF
+          </Button>
           <Button onClick={handleSave} disabled={saving} size="sm" className="shadow-sm">
             <Save className="h-4 w-4 mr-2" />
             {saving ? "Enregistrement..." : "Enregistrer"}
@@ -987,6 +1010,15 @@ export function WeeklyTracking() {
           <TabsTrigger value="glace">Mouvement glaces</TabsTrigger>
           <TabsTrigger value="tarte">Mouvement tartes</TabsTrigger>
         </TabsList>
+        <div ref={ficheRef} className="bg-background p-2 rounded-md">
+          <div className="hidden print:block mb-2 px-2">
+            <h2 className="text-base font-semibold">
+              Suivi hebdomadaire — {tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : "Mouvement tartes"}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Semaine du {parseISO(weekStart).toLocaleDateString("fr-FR")} → {addDays(weekStart, 6)}
+            </p>
+          </div>
 
         <TabsContent value="creme" className="mt-4">
           <div className="bg-card rounded-lg border overflow-x-auto">
@@ -1411,6 +1443,7 @@ export function WeeklyTracking() {
           </div>
         </TabsContent>
         ))}
+        </div>
       </Tabs>
       <PinPromptDialog
         open={!!pinTarget}
