@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { PinPromptDialog } from "./PinPromptDialog";
-import { printElement, downloadElementAsPdf } from "@/lib/printExport";
+import { printElement, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Oranges/Bigarreaux confits": "Orange confit",
