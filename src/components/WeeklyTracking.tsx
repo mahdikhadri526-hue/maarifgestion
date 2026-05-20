@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
 import { OPERATORS } from "@/lib/operators";
 import { PinPromptDialog } from "./PinPromptDialog";
-import { printElement, downloadElementAsPdf } from "@/lib/printExport";
+import { printElement, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
@@ -197,11 +197,10 @@ export function WeeklyTracking() {
     if (ficheRef.current) printElement(ficheRef.current);
   };
   const handleDownloadFiche = async () => {
-    if (!ficheRef.current) return;
     const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : "mouvement-tartes";
     toast.info("Génération du PDF...");
     try {
-      await downloadElementAsPdf(ficheRef.current, `fiche-${label}-${weekStart}.pdf`);
+      await downloadStructuredPdf(buildWeeklyPdf(label));
     } catch (err: any) {
       toast.error("Erreur PDF", { description: err?.message ?? String(err) });
     }
