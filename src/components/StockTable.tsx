@@ -183,7 +183,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   // Recalcule les totaux par produit selon le filtre période
   useEffect(() => {
-    if (variant !== "order" || mode === "all" || !levels || isWeeklyCat) {
+    if (mode === "all" || !levels || isWeeklyCat) {
       setPeriodTotals({});
       return;
     }
@@ -289,7 +289,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   };
 
   const getRowValues = (level: typeof filtered[number]) => {
-    if (variant !== "order" || mode === "all") {
+    if (mode === "all") {
       return {
         stockInitial: level.stockInitial,
         entrees: level.totalEntrees,
@@ -341,13 +341,19 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           </div>
         </div>
 
-        {/* Filtres par date - uniquement pour la variante "order" */}
-        {variant === "order" && (
+        {/* Filtres par date */}
         <div className="mt-3 flex flex-col gap-2">
           <div className="flex flex-wrap gap-2">
+            {variant !== "order" && (
+              <Button size="sm" variant={mode === "all" ? "default" : "outline"} onClick={() => setMode("all")}>Tout</Button>
+            )}
+            <Button size="sm" variant={mode === "day" ? "default" : "outline"} onClick={() => setMode("day")}>Jour</Button>
             <Button size="sm" variant={mode === "month" ? "default" : "outline"} onClick={() => setMode("month")}>Mois</Button>
             <Button size="sm" variant={mode === "period" ? "default" : "outline"} onClick={() => setMode("period")}>Période</Button>
           </div>
+          {mode === "day" && (
+            <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="w-full sm:w-48" />
+          )}
           {mode === "month" && (
             <Input type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="w-full sm:w-48" />
           )}
@@ -364,7 +370,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             </div>
           )}
         </div>
-        )}
       </div>
       {(loading || periodLoading || weeklyLoading) ? (
         <p className="text-center text-muted-foreground py-8">Chargement...</p>
