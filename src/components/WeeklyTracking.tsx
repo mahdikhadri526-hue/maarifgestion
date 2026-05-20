@@ -14,6 +14,7 @@ import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
 import { OPERATORS } from "@/lib/operators";
 import { PinPromptDialog } from "./PinPromptDialog";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
+import { fetchAllRows } from "@/lib/supabasePaginate";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
@@ -240,28 +241,35 @@ export function WeeklyTracking() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("weekly_tracking")
-        .select("*")
-        .in("week_start", weeksToLoad)
-        .eq("fiche_type", ficheType);
-      if (error) {
+      try {
+        const data = await fetchAllRows<any>(() =>
+          supabase
+            .from("weekly_tracking")
+            .select("*")
+            .in("week_start", weeksToLoad)
+            .eq("fiche_type", ficheType),
+        );
+        setRows(data || []);
+      } catch (error) {
         toast.error("Erreur de chargement");
-        return;
       }
-      setRows(data || []);
     })();
   }, [weeksToLoad, ficheType]);
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("weekly_tracking")
-        .select("*")
-        .eq("fiche_type", "Mouvement glaces & tartes")
-        .eq("article", "Crème fraîche (mousse fouettée)");
-      if (error) return;
-      setCremeGlaceRows(data || []);
+      try {
+        const data = await fetchAllRows<any>(() =>
+          supabase
+            .from("weekly_tracking")
+            .select("*")
+            .eq("fiche_type", "Mouvement glaces & tartes")
+            .eq("article", "Crème fraîche (mousse fouettée)"),
+        );
+        setCremeGlaceRows(data || []);
+      } catch {
+        /* ignore */
+      }
     })();
   }, [rows]);
 
@@ -768,13 +776,27 @@ export function WeeklyTracking() {
         );
       });
 
-      const wkStarts = Array.from(new Set(meaningful.map((r) => r.week_start).concat([weekStart])));
-      const { error: delErr } = await supabase
-        .from("weekly_tracking")
-        .delete()
-        .in("week_start", wkStarts)
-        .eq("fiche_type", ficheType);
-      if (delErr) throw delErr;
+      // SAFETY: only delete the weeks actually loaded in memory, otherwise a
+      // truncated load (Supabase 1000-row cap) could wipe rows we never saw.
+      // We always include the current weekStart so that clearing all cells of
+      // the current week actually persists.
+      const loadedWeeks = new Set<string>(weeksToLoad);
+      const wkStarts = Array.from(
+        new Set(
+          meaningful
+            .map((r) => r.week_start as string)
+            .concat([weekStart])
+            .filter((w) => loadedWeeks.has(w)),
+        ),
+      );
+      if (wkStarts.length > 0) {
+        const { error: delErr } = await supabase
+          .from("weekly_tracking")
+          .delete()
+          .in("week_start", wkStarts)
+          .eq("fiche_type", ficheType);
+        if (delErr) throw delErr;
+      }
 
       if (meaningful.length > 0) {
         const payload = meaningful.map((r) => ({
