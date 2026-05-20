@@ -35,7 +35,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { PinPromptDialog } from "./PinPromptDialog";
-import { printElement, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
+import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Oranges/Bigarreaux confits": "Orange confit",
@@ -372,7 +372,11 @@ export function AutocontrolManager() {
   const [viewEntry, setViewEntry] = useState<AutocontrolEntry | null>(null);
   const viewRef = useRef<HTMLDivElement>(null);
   const printViewFiche = () => {
-    if (viewRef.current) printElement(viewRef.current);
+    if (!viewEntry) return;
+    printStructuredPdf(buildAutocontrolPdf(viewEntry)).catch((err: any) => {
+      toast.error("Erreur impression", { description: err?.message ?? String(err) });
+      if (viewRef.current) printElement(viewRef.current);
+    });
   };
   const formatStatus = (v: unknown) =>
     v === "conforme" || v === true ? "Conforme / Fait" : v === "non_conforme" ? "Non conforme" : "—";
