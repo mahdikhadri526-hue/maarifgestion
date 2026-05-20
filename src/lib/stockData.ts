@@ -279,12 +279,10 @@ export function detectProductUnit(name: string): string {
 // ===== Async Supabase functions =====
 
 export async function getMovements(): Promise<StockMovement[]> {
-  const { data, error } = await supabase
-    .from("stock_movements")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) throw error;
-  return (data || []).map((row: any) => ({
+  const data = await fetchAllRows<any>(() =>
+    supabase.from("stock_movements").select("*").order("created_at", { ascending: false }),
+  );
+  return data.map((row: any) => ({
     id: row.id,
     date: row.date,
     productId: row.product_id,
