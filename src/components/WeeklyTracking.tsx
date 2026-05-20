@@ -886,6 +886,104 @@ export function WeeklyTracking() {
   const filtersActive =
     filterArticle !== "all" || filterDay !== "all" || filterType !== "all" || !!filterFrom || !!filterTo;
 
+  const dash = (value: any) => (value === "" || value == null ? "—" : String(value));
+  const conformityText = (value: any) => (value === "C" ? "C" : "—");
+  const formatLots = (batches: { lot: string; remaining: number }[]) => {
+    const merged = new Map<string, number>();
+    batches.forEach((b) => {
+      if (b.remaining <= 0) return;
+      const lot = b.lot?.trim() ? b.lot.trim() : "(sans lot)";
+      merged.set(lot, (merged.get(lot) ?? 0) + b.remaining);
+    });
+    return Array.from(merged.entries()).map(([lot, qty]) => `${lot} ×${qty}`).join(" / ") || "—";
+  };
+
+  const buildWeeklyPdf = (label: string) => {
+    const periodText = filterFrom || filterTo
+      ? `Période du ${filterFrom ? parseISO(filterFrom).toLocaleDateString("fr-FR") : parseISO(weekStart).toLocaleDateString("fr-FR")} au ${filterTo ? parseISO(filterTo).toLocaleDateString("fr-FR") : addDays(weekStart, 6)}`
+      : `Semaine du ${parseISO(weekStart).toLocaleDateString("fr-FR")} au ${addDays(weekStart, 6)}`;
+    const title = `Suivi hebdomadaire — ${tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : "Mouvement tartes"}`;
+    const sections: PdfTableSection[] = [];
+
+    if (tab === "creme") {
+      sections.push({
+        title: "Fiche crème fraîche",
+        columns: [
+          { header: "Jour", dataKey: "jour", width: 18, halign: "center" },
+          { header: "Date", dataKey: "date", width: 17, halign: "center" },
+          { header: "Shift", dataKey: "shift", width: 15, halign: "center" },
+          { header: "Ligne", dataKey: "ligne", width: 12, halign: "center" },
+          { header: "Quantité", dataKey: "quantite", width: 18, halign: "center" },
+          { header: "N° lot crème fraîche", dataKey: "lot", width: 62, tone: "lot" },
+          { header: "Couleur", dataKey: "couleur", width: 18, halign: "center" },
+          { header: "Odeur", dataKey: "odeur", width: 18, halign: "center" },
+          { header: "Texture", dataKey: "texture", width: 18, halign: "center" },
+          { header: "Visa opérateur", dataKey: "operateur", width: 34 },
+          { header: "Visa manager", dataKey: "manager", width: 34 },
+        ],
+        rows: DAYS.flatMap((day, dIdx) => [0, 1, 2, 3].map((rowIdx) => {
+          const c = cell(day, rowIdx, null);
+          const qty = numLocal(c.quantity);
+          return {
+            jour: day,
+            date: dayShort(weekStart, dIdx),
+            shift: rowIdx < 2 ? "Matin" : "Soir",
+            ligne: rowIdx < 2 ? rowIdx + 1 : rowIdx - 1,
+            quantite: dash(c.quantity),
+            lot: qty > 0 ? dash(cremeAutoLotMap.get(`${weekStart}|${day}|${rowIdx}`) ?? c.lot_number) : dash(c.lot_number),
+            couleur: conformityText(c.couleur),
+            odeur: conformityText(c.odeur),
+            texture: conformityText(c.texture),
+            operateur: dash(c.visa_operateur),
+            manager: dash(c.visa_manager),
+          };
+        })),
+      });
+    } else {
+      sections.push({
+        title: `Tableau restructuré pour impression — ${tab === "glace" ? "glaces" : "tartes"}`,
+        columns: [
+          { header: "Article", dataKey: "article", width: 48 },
+          { header: "Jour", dataKey: "jour", width: 18, halign: "center" },
+          { header: "Date", dataKey: "date", width: 17, halign: "center" },
+          { header: "Stock initial", dataKey: "si", width: 22, halign: "center" },
+          { header: "Entrées", dataKey: "entrees", width: 24, halign: "center", tone: "entry" },
+          { header: "Lots d'entrée", dataKey: "lotsEntree", width: 56, tone: "lot" },
+          { header: "Sorties", dataKey: "sorties", width: 22, halign: "center", tone: "exit" },
+          { header: "Lot existant FIFO", dataKey: "lotsRestants", width: 68, tone: "lot" },
+        ],
+        rows: filteredArticles.flatMap(({ article }) => visibleDays.map(({ day, dIdx, wkStart }) => {
+          const c = cellAt(wkStart, day, 0, article);
+          const entries = entriesForAt(wkStart, day, article);
+          const entreeText = entries.filter((e) => num(e.entree) > 0).map((e) => dash(e.entree)).join(" / ") || "—";
+          const lotsEntree = entries.filter((e) => num(e.entree) > 0 || e.lot).map((e) => `${dash(e.lot)}${num(e.entree) > 0 ? ` ×${dash(e.entree)}` : ""}`).join(" / ") || "—";
+          return {
+            article,
+            jour: day,
+            date: dayShort(wkStart, dIdx),
+            si: dash(c.stock_initial),
+            entrees: entreeText,
+            lotsEntree,
+            sorties: dash(getSortie(dIdx, article, wkStart)),
+            lotsRestants: formatLots(getLotsOfDay(dIdx, article, wkStart)),
+          };
+        })),
+      });
+    }
+
+    return {
+      filename: `fiche-${label}-${weekStart}.pdf`,
+      title,
+      subtitle: periodText,
+      meta: [
+        `Généré le ${new Date().toLocaleDateString("fr-FR")}`,
+        filterArticle !== "all" ? `Produit : ${filterArticle}` : "Tous les produits",
+        filterType === "masquer_lots" ? "Lots masqués à l'écran — PDF complet" : "Entrées vertes / sorties rouges",
+      ],
+      sections,
+    };
+  };
+
   const handleScanResults = (scanned: ScannedEntry[]) => {
     const today = new Date();
     const monday = getMonday(today);
