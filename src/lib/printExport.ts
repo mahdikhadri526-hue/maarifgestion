@@ -1,5 +1,5 @@
-import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 /**
  * Opens the browser print dialog with ONLY the given element visible.
@@ -46,61 +46,95 @@ export function printElement(node: HTMLElement) {
 }
 
 /**
- * Capture the given DOM node and download a PDF that visually matches
- * the on-screen rendering.
+ * Generate a TRUE vector PDF (selectable text, real tables) from a DOM node.
+ * Walks the node sequentially and renders headings/paragraphs as text and
+ * <table> elements via jspdf-autotable, which handles multi-page A4 layout
+ * with proper page breaks. No screenshots involved.
  */
 export async function downloadElementAsPdf(node: HTMLElement, filename: string) {
-  // Force light background so the PDF is readable regardless of theme.
-  const canvas = await html2canvas(node, {
-    scale: 2,
-    backgroundColor: "#ffffff",
-    useCORS: true,
-    windowWidth: node.scrollWidth,
-  });
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 12;
+  let y = margin;
 
-  const imgData = canvas.toDataURL("image/png");
-  const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 8;
-
-  const imgWidth = pageWidth - margin * 2;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-  if (imgHeight <= pageHeight - margin * 2) {
-    pdf.addImage(imgData, "PNG", margin, margin, imgWidth, imgHeight);
-  } else {
-    // Slice the canvas into A4 page-sized chunks.
-    const pageHeightPx = ((pageHeight - margin * 2) * canvas.width) / imgWidth;
-    let renderedHeight = 0;
-    let pageIndex = 0;
-    while (renderedHeight < canvas.height) {
-      const sliceHeight = Math.min(pageHeightPx, canvas.height - renderedHeight);
-      const pageCanvas = document.createElement("canvas");
-      pageCanvas.width = canvas.width;
-      pageCanvas.height = sliceHeight;
-      const ctx = pageCanvas.getContext("2d")!;
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-      ctx.drawImage(
-        canvas,
-        0,
-        renderedHeight,
-        canvas.width,
-        sliceHeight,
-        0,
-        0,
-        canvas.width,
-        sliceHeight,
-      );
-      const sliceImg = pageCanvas.toDataURL("image/png");
-      const sliceImgHeight = (sliceHeight * imgWidth) / canvas.width;
-      if (pageIndex > 0) pdf.addPage();
-      pdf.addImage(sliceImg, "PNG", margin, margin, imgWidth, sliceImgHeight);
-      renderedHeight += sliceHeight;
-      pageIndex += 1;
+  const ensureSpace = (needed = 8) => {
+    if (y + needed > pageHeight - margin) {
+      doc.addPage();
+      y = margin;
     }
-  }
+  };
 
-  pdf.save(filename.endsWith(".pdf") ? filename : `${filename}.pdf`);
+  const writeText = (text: string, opts: { size?: number; bold?: boolean; gap?: number } = {}) => {
+    const { size = 9, bold = false, gap = 1.5 } = opts;
+    const clean = text.replace(/\s+/g, " ").trim();
+    if (!clean) return;
+    doc.setFont("helvetica", bold ? "bold" : "normal");
+    doc.setFontSize(size);
+    const lineHeight = size * 0.42;
+    const lines = doc.splitTextToSize(clean, pageWidth - margin * 2);
+    for (const line of lines) {
+      ensureSpace(lineHeight);
+      doc.text(line, margin, y);
+      y += lineHeight;
+    }
+    y += gap;
+  };
+
+  const renderTable = (table: HTMLTableElement) => {
+    ensureSpace(20);
+    autoTable(doc, {
+      html: table,
+      startY: y,
+      margin: { left: margin, right: margin, top: margin, bottom: margin },
+      styles: { fontSize: 7.5, cellPadding: 1.4, overflow: "linebreak", valign: "middle" },
+      headStyles: { fillColor: [30, 64, 124], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [245, 247, 250] },
+      theme: "grid",
+      tableWidth: "auto",
+    });
+    y = ((doc as any).lastAutoTable?.finalY ?? y) + 4;
+  };
+
+  const SKIP_CLASSES = ["no-print", "no-pdf"];
+  const shouldSkip = (el: Element) =>
+    SKIP_CLASSES.some((c) => el.classList?.contains(c));
+
+  const walk = (el: Element) => {
+    if (shouldSkip(el)) return;
+    const tag = el.tagName;
+
+    if (tag === "TABLE") {
+      renderTable(el as HTMLTableElement);
+      return;
+    }
+
+    if (/^H[1-6]$/.test(tag)) {
+      const size = tag === "H1" ? 15 : tag === "H2" ? 13 : tag === "H3" ? 11 : 10;
+      writeText(el.textContent ?? "", { size, bold: true, gap: 2 });
+      return;
+    }
+
+    // If the element contains structured children, recurse to preserve order.
+    const hasStructured = el.querySelector(
+      ":scope table, :scope h1, :scope h2, :scope h3, :scope h4, :scope h5, :scope h6, :scope ul, :scope ol, :scope > div, :scope > section, :scope > article",
+    );
+    if (hasStructured && el.children.length > 0) {
+      Array.from(el.children).forEach((c) => walk(c));
+      return;
+    }
+
+    if (tag === "UL" || tag === "OL") {
+      Array.from(el.children).forEach((li) => writeText("• " + (li.textContent ?? "")));
+      return;
+    }
+
+    // Leaf text content
+    const text = el.textContent ?? "";
+    if (text.trim()) writeText(text);
+  };
+
+  Array.from(node.children).forEach((c) => walk(c));
+
+  doc.save(filename.endsWith(".pdf") ? filename : `${filename}.pdf`);
 }
