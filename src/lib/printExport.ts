@@ -96,7 +96,7 @@ export async function downloadStructuredPdf(options: StructuredPdfOptions) {
   for (const section of options.sections) {
     if (y > pageHeight - 32) {
       doc.addPage();
-      y = margin;
+      y = 22;
     }
     doc.setFillColor(...SOFT_BLUE);
     doc.roundedRect(margin, y, pageWidth - margin * 2, 7, 1.5, 1.5, "F");
