@@ -14,6 +14,7 @@ import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
 import { OPERATORS } from "@/lib/operators";
 import { PinPromptDialog } from "./PinPromptDialog";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
+import { fetchAllRows } from "@/lib/supabasePaginate";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
@@ -240,28 +241,35 @@ export function WeeklyTracking() {
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("weekly_tracking")
-        .select("*")
-        .in("week_start", weeksToLoad)
-        .eq("fiche_type", ficheType);
-      if (error) {
+      try {
+        const data = await fetchAllRows<any>(() =>
+          supabase
+            .from("weekly_tracking")
+            .select("*")
+            .in("week_start", weeksToLoad)
+            .eq("fiche_type", ficheType),
+        );
+        setRows(data || []);
+      } catch (error) {
         toast.error("Erreur de chargement");
-        return;
       }
-      setRows(data || []);
     })();
   }, [weeksToLoad, ficheType]);
 
   useEffect(() => {
     (async () => {
-      const { data, error } = await supabase
-        .from("weekly_tracking")
-        .select("*")
-        .eq("fiche_type", "Mouvement glaces & tartes")
-        .eq("article", "Crème fraîche (mousse fouettée)");
-      if (error) return;
-      setCremeGlaceRows(data || []);
+      try {
+        const data = await fetchAllRows<any>(() =>
+          supabase
+            .from("weekly_tracking")
+            .select("*")
+            .eq("fiche_type", "Mouvement glaces & tartes")
+            .eq("article", "Crème fraîche (mousse fouettée)"),
+        );
+        setCremeGlaceRows(data || []);
+      } catch {
+        /* ignore */
+      }
     })();
   }, [rows]);
 
