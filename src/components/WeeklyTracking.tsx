@@ -776,13 +776,27 @@ export function WeeklyTracking() {
         );
       });
 
-      const wkStarts = Array.from(new Set(meaningful.map((r) => r.week_start).concat([weekStart])));
-      const { error: delErr } = await supabase
-        .from("weekly_tracking")
-        .delete()
-        .in("week_start", wkStarts)
-        .eq("fiche_type", ficheType);
-      if (delErr) throw delErr;
+      // SAFETY: only delete the weeks actually loaded in memory, otherwise a
+      // truncated load (Supabase 1000-row cap) could wipe rows we never saw.
+      // We always include the current weekStart so that clearing all cells of
+      // the current week actually persists.
+      const loadedWeeks = new Set<string>(weeksToLoad);
+      const wkStarts = Array.from(
+        new Set(
+          meaningful
+            .map((r) => r.week_start as string)
+            .concat([weekStart])
+            .filter((w) => loadedWeeks.has(w)),
+        ),
+      );
+      if (wkStarts.length > 0) {
+        const { error: delErr } = await supabase
+          .from("weekly_tracking")
+          .delete()
+          .in("week_start", wkStarts)
+          .eq("fiche_type", ficheType);
+        if (delErr) throw delErr;
+      }
 
       if (meaningful.length > 0) {
         const payload = meaningful.map((r) => ({
