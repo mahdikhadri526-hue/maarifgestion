@@ -988,7 +988,15 @@ export function WeeklyTracking() {
           {showControls ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
           {showControls ? "Masquer" : "Afficher"}
         </Button>
-        <div className={showControls ? "" : "ml-auto"}>
+        <div className={cn("flex items-center gap-2 no-print", showControls ? "" : "ml-auto")}>
+          <Button onClick={handlePrintFiche} size="sm" variant="outline" className="shadow-sm">
+            <Printer className="h-4 w-4 mr-2" />
+            Imprimer
+          </Button>
+          <Button onClick={handleDownloadFiche} size="sm" variant="outline" className="shadow-sm">
+            <FileDown className="h-4 w-4 mr-2" />
+            Télécharger PDF
+          </Button>
           <Button onClick={handleSave} disabled={saving} size="sm" className="shadow-sm">
             <Save className="h-4 w-4 mr-2" />
             {saving ? "Enregistrement..." : "Enregistrer"}
@@ -1002,6 +1010,15 @@ export function WeeklyTracking() {
           <TabsTrigger value="glace">Mouvement glaces</TabsTrigger>
           <TabsTrigger value="tarte">Mouvement tartes</TabsTrigger>
         </TabsList>
+        <div ref={ficheRef} className="bg-background p-2 rounded-md">
+          <div className="hidden print:block mb-2 px-2">
+            <h2 className="text-base font-semibold">
+              Suivi hebdomadaire — {tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : "Mouvement tartes"}
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Semaine du {parseISO(weekStart).toLocaleDateString("fr-FR")} → {addDays(weekStart, 6)}
+            </p>
+          </div>
 
         <TabsContent value="creme" className="mt-4">
           <div className="bg-card rounded-lg border overflow-x-auto">
