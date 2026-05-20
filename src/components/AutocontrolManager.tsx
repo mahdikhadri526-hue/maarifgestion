@@ -1351,6 +1351,14 @@ export function AutocontrolManager() {
                       <Button
                         size="sm"
                         variant="ghost"
+                        title="Voir / Imprimer / Télécharger PDF"
+                        onClick={() => setViewEntry(e)}
+                      >
+                        <Eye className="h-4 w-4 text-primary" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
                         onClick={() => setDeleteId(e.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
