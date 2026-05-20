@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { saveMovement, MovementUnit, getProducts } from "./stockData";
+import { fetchAllRows } from "@/lib/supabasePaginate";
 
 // Produits à exclure de la réquisition (mais conservés dans le stock global)
 const REQUISITION_EXCLUDED_NAMES = [
