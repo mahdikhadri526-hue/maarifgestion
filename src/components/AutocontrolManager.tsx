@@ -660,8 +660,12 @@ export function AutocontrolManager() {
         const row = ctgProducts[p];
         const qty = Number(row.quantity);
         if (!Number.isFinite(qty) || qty <= 0) errors.push(`${p} : quantité obligatoire`);
-        if (!row.lotNumber.trim()) errors.push(`${p} : N° de lot obligatoire`);
+        const effLot = ctgSameDough.enabled ? ctgSameDough.lotNumber.trim() : row.lotNumber.trim();
+        if (!effLot) errors.push(`${p} : N° de lot obligatoire`);
       });
+      if (ctgSameDough.enabled && !ctgSameDough.lotNumber.trim()) {
+        errors.push("Pâte commune : N° de lot obligatoire");
+      }
     }
 
     const decorationExtra = isDecoration ? form.extraData : null;
