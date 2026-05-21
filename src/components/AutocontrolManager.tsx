@@ -1467,13 +1467,11 @@ export function AutocontrolManager() {
                               </div>
                             )}
                             
-                          </div>
-                        </details>
-                      ) : (
-                        <span className="truncate block" title={e.notes || ""}>
-                          {e.notes || "—"}
-                        </span>
-                      )}
+                           </div>
+                         </details>
+                       ) : (
+                         <span className="truncate block">—</span>
+                       )}
                     </td>
                     <td className="py-2 pr-2">
                        {!e.visaManager?.trim() && (
