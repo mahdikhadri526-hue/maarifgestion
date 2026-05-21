@@ -1523,7 +1523,13 @@ export function AutocontrolManager() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => setDeleteId(e.id)}
+                        onClick={() => {
+                          if (can("delete_autocontrol")) {
+                            setDeleteId(e.id);
+                          } else {
+                            toast.error("Opération non autorisée");
+                          }
+                        }}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
