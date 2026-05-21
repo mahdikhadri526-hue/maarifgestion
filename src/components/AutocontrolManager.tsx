@@ -1792,11 +1792,6 @@ export function AutocontrolManager() {
                   <span className="text-muted-foreground">Visa manager :</span>{" "}
                   {viewEntry.visaManager?.trim() ? <strong>{viewEntry.visaManager}</strong> : <em className="text-amber-600">En attente</em>}
                 </div>
-                {viewEntry.notes && (
-                  <div className="col-span-2">
-                    <span className="text-muted-foreground">Observations :</span> {viewEntry.notes}
-                  </div>
-                )}
               </div>
 
               {viewEntry.extraData?.ingredients && viewEntry.extraData.ingredients.length > 0 && (
