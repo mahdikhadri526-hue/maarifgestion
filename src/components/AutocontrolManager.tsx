@@ -1725,7 +1725,6 @@ export function AutocontrolManager() {
                       throw new Error("N° de lot obligatoire");
                     }
                     const qty2 = Number(editFields.quantity2);
-                    const prevQty2 = Number((editExtra as any)?.quantity2 ?? 0);
                     nextExtra = { ...(editExtra as any) };
                     if (Number.isFinite(qty2) && qty2 > 0) {
                       nextExtra.quantity2 = qty2;
