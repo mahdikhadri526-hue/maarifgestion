@@ -1546,6 +1546,7 @@ export function AutocontrolManager() {
             setEditEntry(null);
             setEditExtra(null);
             setEditVisa("");
+            setEditFields({ quantity: "", quantity2: "", lotNumber: "", dlc: "" });
           }
         }}
       >
