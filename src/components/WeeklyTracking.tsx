@@ -799,9 +799,10 @@ export function WeeklyTracking() {
   const removeEntryRow = (day: string, rowIndex: number, article: string, wkStart: string = weekStart) => {
     const key = `${wkStart}|${day}|${rowIndex}|${article}`;
     setRows((prev) =>
-      prev.filter(
-        (r) => `${r.week_start}|${r.day_of_week}|${r.row_index}|${r.article ?? ""}` !== key,
-      ),
+      prev.flatMap((r) => {
+        if (`${r.week_start}|${r.day_of_week}|${r.row_index}|${r.article ?? ""}` !== key) return [r];
+        return r.id ? [{ ...r, entrees: null, lot_number: null }] : [];
+      }),
     );
   };
 
@@ -820,9 +821,10 @@ export function WeeklyTracking() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const meaningful = normalizeWeeklyRows(rows).filter(hasWeeklyValue);
-      if (meaningful.length > 0) {
-        const payload = meaningful.map((r) => ({
+      const normalizedRows = normalizeWeeklyRows(rows);
+      const rowsToPersist = normalizedRows.filter((r) => hasWeeklyValue(r) || r.id);
+      if (rowsToPersist.length > 0) {
+        const payload = rowsToPersist.map((r) => ({
           fiche_type: ficheType,
           week_start: r.week_start ?? weekStart,
           day_of_week: r.day_of_week,
@@ -840,14 +842,16 @@ export function WeeklyTracking() {
           visa_manager: r.visa_manager ?? null,
         }));
         for (const item of payload) {
-          const { data: existing, error: findErr } = await supabase
+          const baseQuery = supabase
             .from("weekly_tracking")
             .select("id")
             .eq("fiche_type", item.fiche_type)
             .eq("week_start", item.week_start)
             .eq("day_of_week", item.day_of_week)
-            .eq("row_index", item.row_index)
-            .eq("article", item.article ?? "")
+            .eq("row_index", item.row_index);
+          const { data: existing, error: findErr } = await (item.article == null
+            ? baseQuery.is("article", null)
+            : baseQuery.eq("article", item.article))
             .order("updated_at", { ascending: false })
             .limit(1);
           if (findErr) throw findErr;
@@ -858,7 +862,7 @@ export function WeeklyTracking() {
           if (error) throw error;
         }
       }
-      setRows(meaningful);
+      setRows(normalizeWeeklyRows(rowsToPersist));
       toast.success("Suivi hebdomadaire enregistré");
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de l'enregistrement");
