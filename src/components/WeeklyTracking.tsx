@@ -820,37 +820,7 @@ export function WeeklyTracking() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const meaningful = rows.filter((r) => {
-        const fields = ["lot_number", "couleur", "odeur", "texture", "visa_operateur", "visa_manager"];
-        const nums = ["stock_initial", "entrees", "sorties", "quantity"];
-        return (
-          fields.some((f) => (r[f] ?? "").toString().trim().length > 0) ||
-          nums.some((f) => r[f] !== null && r[f] !== undefined && r[f] !== "")
-        );
-      });
-
-      // SAFETY: only delete the weeks actually loaded in memory, otherwise a
-      // truncated load (Supabase 1000-row cap) could wipe rows we never saw.
-      // We always include the current weekStart so that clearing all cells of
-      // the current week actually persists.
-      const loadedWeeks = new Set<string>(weeksToLoad);
-      const wkStarts = Array.from(
-        new Set(
-          meaningful
-            .map((r) => r.week_start as string)
-            .concat([weekStart])
-            .filter((w) => loadedWeeks.has(w)),
-        ),
-      );
-      if (wkStarts.length > 0) {
-        const { error: delErr } = await supabase
-          .from("weekly_tracking")
-          .delete()
-          .in("week_start", wkStarts)
-          .eq("fiche_type", ficheType);
-        if (delErr) throw delErr;
-      }
-
+      const meaningful = normalizeWeeklyRows(rows).filter(hasWeeklyValue);
       if (meaningful.length > 0) {
         const payload = meaningful.map((r) => ({
           fiche_type: ficheType,
@@ -869,9 +839,26 @@ export function WeeklyTracking() {
           visa_operateur: r.visa_operateur ?? null,
           visa_manager: r.visa_manager ?? null,
         }));
-        const { error } = await supabase.from("weekly_tracking").insert(payload);
-        if (error) throw error;
+        for (const item of payload) {
+          const { data: existing, error: findErr } = await supabase
+            .from("weekly_tracking")
+            .select("id")
+            .eq("fiche_type", item.fiche_type)
+            .eq("week_start", item.week_start)
+            .eq("day_of_week", item.day_of_week)
+            .eq("row_index", item.row_index)
+            .eq("article", item.article ?? "")
+            .order("updated_at", { ascending: false })
+            .limit(1);
+          if (findErr) throw findErr;
+          const id = existing?.[0]?.id;
+          const { error } = id
+            ? await supabase.from("weekly_tracking").update(item).eq("id", id)
+            : await supabase.from("weekly_tracking").insert(item);
+          if (error) throw error;
+        }
       }
+      setRows(meaningful);
       toast.success("Suivi hebdomadaire enregistré");
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de l'enregistrement");
