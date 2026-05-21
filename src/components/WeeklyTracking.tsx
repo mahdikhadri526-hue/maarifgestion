@@ -131,6 +131,12 @@ function normalizeWeeklyRows(input: Row[]) {
   );
 }
 
+async function runInBatches<T>(items: T[], worker: (item: T) => Promise<void>, batchSize = 25) {
+  for (let i = 0; i < items.length; i += batchSize) {
+    await Promise.all(items.slice(i, i + batchSize).map(worker));
+  }
+}
+
 function ConformityToggle({
   value,
   onChange,
