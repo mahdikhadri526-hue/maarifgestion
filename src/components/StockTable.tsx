@@ -194,24 +194,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     let cancelled = false;
     setWeeklyLoading(true);
     (async () => {
-      let q = supabase
-        .from("weekly_tracking")
-        .select("article, sorties, entrees, stock_initial, day_of_week, week_start, fiche_type, row_index")
-        .eq("fiche_type", "Mouvement glaces & tartes")
-        .range(0, 5000);
-      const { data } = await q;
+      const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
+        supabase
+          .from("weekly_tracking")
+          .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
+          .eq("fiche_type", "Mouvement glaces & tartes"),
+      );
       if (cancelled) return;
       const list = category === "tarte" ? TARTE_ARTICLES : GLACE_ARTICLES;
-      const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-      const isoDate = (base: string, offset: number) => {
-        const [y, m, d] = base.split("-").map(Number);
-        const date = new Date(y, (m || 1) - 1, d || 1);
-        date.setDate(date.getDate() + offset);
-        const yy = date.getFullYear();
-        const mm = String(date.getMonth() + 1).padStart(2, "0");
-        const dd = String(date.getDate()).padStart(2, "0");
-        return `${yy}-${mm}-${dd}`;
-      };
       const isInSelectedPeriod = (date: string) => {
         if (mode === "day") return day ? date === day : true;
         if (mode === "month") return month ? date.startsWith(month) : true;
@@ -222,69 +212,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         }
         return true;
       };
-      const num = (v: any) => {
-        if (v === "" || v == null) return 0;
-        const n = Number(v);
-        return isNaN(n) ? 0 : n;
-      };
-      // Calcul par "spans" entre deux relevés de stock initial.
-      // Pour chaque article, on agrège toutes les saisies chronologiquement,
-      // puis on calcule les sorties = SI_début + entrées_du_span - SI_fin.
-      // Cela évite de perdre les sorties les jours où le stock initial n'a pas
-      // été saisi mais où il y a eu des entrées.
-      type Entry = { date: string; si: number | null; e: number };
-      const byArticle = new Map<string, Map<string, { si: number | null; e: number }>>();
-      (data || []).forEach((r: any) => {
-        const article = r.article;
-        if (!article || !list.includes(article)) return;
-        const dayIdx = DAYS.indexOf(r.day_of_week);
-        if (dayIdx < 0 || !r.week_start) return;
-        const date = isoDate(r.week_start, dayIdx);
-        if (!byArticle.has(article)) byArticle.set(article, new Map());
-        const am = byArticle.get(article)!;
-        const cur = am.get(date) ?? { si: null, e: 0 };
-        if (r.stock_initial != null && r.stock_initial !== "") {
-          cur.si = (cur.si ?? 0) + num(r.stock_initial);
-        }
-        cur.e += num(r.entrees);
-        am.set(date, cur);
-      });
-      const totals: Record<string, number> = {};
-      const latestStock: Record<string, { date: string; value: number }> = {};
-      list.forEach((a) => (totals[a] = 0));
-      byArticle.forEach((am, article) => {
-        const entries: Entry[] = Array.from(am.entries())
-          .map(([date, c]) => ({ date, si: c.si, e: c.e }))
-          .sort((a, b) => a.date.localeCompare(b.date));
-        let prevSI: number | null = null;
-        let pendingE = 0;
-        let lastSpanEndDate: string | null = null;
-        let lastSpanEndValue: number | null = null;
-        for (const ent of entries) {
-          if (ent.si != null) {
-            if (prevSI != null) {
-              const sortie = Math.max(0, prevSI + pendingE - ent.si);
-              if (isInSelectedPeriod(ent.date)) totals[article] += sortie;
-            }
-            prevSI = ent.si;
-            pendingE = ent.e;
-            lastSpanEndDate = ent.date;
-            lastSpanEndValue = ent.si;
-          } else {
-            pendingE += ent.e;
-          }
-        }
-        // Stock actuel = dernier SI relevé (les entrées postérieures sans
-        // nouveau SI seront re-comptabilisées dès la prochaine saisie).
-        if (lastSpanEndValue != null && lastSpanEndDate != null) {
-          latestStock[article] = { date: lastSpanEndDate, value: lastSpanEndValue };
-        }
-      });
-      setWeeklyRows(list.map((article) => ({
-        article,
-        sorties: totals[article],
-        stockActuel: latestStock[article]?.value ?? 0,
-      })));
+      setWeeklyRows(buildWeeklyOrderRows(data || [], list, isInSelectedPeriod));
       setWeeklyLoading(false);
     })();
     return () => { cancelled = true; };
