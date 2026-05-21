@@ -185,10 +185,10 @@ const initialCtgProducts = (): Record<CtgProductKey, CtgProductRow> => ({
   Gaufrette: { selected: false, quantity: "", lotNumber: "", dlc: "" },
 });
 
-type DecoProductRow = { selected: boolean; quantity: string; lotNumber: string };
+type DecoProductRow = { selected: boolean; quantity: string; lotNumber: string; lotNumberDemi?: string };
 const initialDecoProducts = (): Record<string, DecoProductRow> => {
   const arr = ARTICLE_OPTIONS_BY_FICHE["Décoration"] ?? [];
-  return Object.fromEntries(arr.map((a) => [a, { selected: false, quantity: "", lotNumber: "" }]));
+  return Object.fromEntries(arr.map((a) => [a, { selected: false, quantity: "", lotNumber: "", lotNumberDemi: "" }]));
 };
 
 const initialForm = {
@@ -578,7 +578,10 @@ export function AutocontrolManager() {
     const selected = Object.entries(decoProducts).filter(
       ([, r]) => r.selected && r.lotNumber.trim().length === 0,
     );
-    if (selected.length === 0) return;
+    const needsDemi =
+      decoProducts["Tarte 12"]?.selected &&
+      !(decoProducts["Tarte 12"]?.lotNumberDemi ?? "").trim();
+    if (selected.length === 0 && !needsDemi) return;
     let cancelled = false;
     (async () => {
       const updates: Record<string, string> = {};
@@ -590,13 +593,17 @@ export function AutocontrolManager() {
           if (lot) updates[name] = lot;
         }),
       );
-      if (cancelled || Object.keys(updates).length === 0) return;
+      const demiLot = needsDemi ? await fetchLatestGlaceLot("Demis") : null;
+      if (cancelled || (Object.keys(updates).length === 0 && !demiLot)) return;
       setDecoProducts((s) => {
         const next = { ...s };
         for (const [name, lot] of Object.entries(updates)) {
           if (next[name] && !next[name].lotNumber.trim()) {
             next[name] = { ...next[name], lotNumber: lot };
           }
+        }
+        if (demiLot && next["Tarte 12"]?.selected && !(next["Tarte 12"].lotNumberDemi ?? "").trim()) {
+          next["Tarte 12"] = { ...next["Tarte 12"], lotNumberDemi: demiLot };
         }
         return next;
       });
@@ -741,6 +748,20 @@ export function AutocontrolManager() {
             notes: baseResult.data.notes,
             extraData: decorationExtra,
           });
+          if (name === "Tarte 12" && (row.lotNumberDemi ?? "").trim()) {
+            await addAutocontrol({
+              ficheType: form.ficheType,
+              controlDate: baseResult.data.controlDate,
+              collaborateur: baseResult.data.collaborateur,
+              article: "Tarte 12 - Demi",
+              lotNumber: row.lotNumberDemi!.trim(),
+              quantity: Number(row.quantity),
+              dlc: null,
+              visaManager: baseResult.data.visaManager,
+              notes: baseResult.data.notes,
+              extraData: decorationExtra,
+            });
+          }
         }
       } else {
       await addAutocontrol({
@@ -936,6 +957,20 @@ export function AutocontrolManager() {
                               onChange={() => {}}
                             />
                           </div>
+                          {name === "Tarte 12" && (
+                            <div className="sm:col-span-2">
+                              <label className="text-xs text-muted-foreground">N° de lot Demi</label>
+                              <Input
+                                value={row.lotNumberDemi ?? ""}
+                                maxLength={120}
+                                readOnly
+                                tabIndex={-1}
+                                className="bg-muted/50 cursor-not-allowed"
+                                placeholder="Auto (Demis – Mouvement tarte)"
+                                onChange={() => {}}
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
