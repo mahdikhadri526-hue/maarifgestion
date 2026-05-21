@@ -331,7 +331,7 @@ export function WeeklyTracking() {
         /* ignore */
       }
     })();
-  }, [rows]);
+  }, []);
 
   const CREME_ARTICLE = "Crème fraîche (mousse fouettée)";
 
