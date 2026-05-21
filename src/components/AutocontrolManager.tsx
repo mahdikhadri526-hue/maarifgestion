@@ -414,13 +414,6 @@ export function AutocontrolManager() {
       },
     ];
 
-    if (entry.notes?.trim()) {
-      sections.push({
-        title: "Observations",
-        columns: [{ header: "Notes", dataKey: "notes", width: 274 }],
-        rows: [{ notes: entry.notes }],
-      });
-    }
     if (entry.extraData?.ingredients?.length) {
       sections.push({
         title: "Ingrédients",
@@ -1348,16 +1341,6 @@ export function AutocontrolManager() {
             </div>
           )}
 
-          <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-muted-foreground">Observations</label>
-            <Textarea
-              rows={2}
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              maxLength={1000}
-              // validated by Zod
-            />
-          </div>
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
             <Input
