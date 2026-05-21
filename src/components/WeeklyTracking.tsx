@@ -302,7 +302,7 @@ export function WeeklyTracking() {
             .in("week_start", weeksToLoad)
             .eq("fiche_type", ficheType),
         );
-        setRows(data || []);
+        setRows(normalizeWeeklyRows(data || []));
       } catch (error) {
         toast.error("Erreur de chargement");
       }
@@ -319,7 +319,7 @@ export function WeeklyTracking() {
             .eq("fiche_type", "Mouvement glaces & tartes")
             .eq("article", "Crème fraîche (mousse fouettée)"),
         );
-        setCremeGlaceRows(data || []);
+        setCremeGlaceRows(normalizeWeeklyRows(data || []));
       } catch {
         /* ignore */
       }
