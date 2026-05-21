@@ -578,7 +578,10 @@ export function AutocontrolManager() {
     const selected = Object.entries(decoProducts).filter(
       ([, r]) => r.selected && r.lotNumber.trim().length === 0,
     );
-    if (selected.length === 0) return;
+    const needsDemi =
+      decoProducts["Tarte 12"]?.selected &&
+      !(decoProducts["Tarte 12"]?.lotNumberDemi ?? "").trim();
+    if (selected.length === 0 && !needsDemi) return;
     let cancelled = false;
     (async () => {
       const updates: Record<string, string> = {};
@@ -590,13 +593,17 @@ export function AutocontrolManager() {
           if (lot) updates[name] = lot;
         }),
       );
-      if (cancelled || Object.keys(updates).length === 0) return;
+      const demiLot = needsDemi ? await fetchLatestGlaceLot("Demis") : null;
+      if (cancelled || (Object.keys(updates).length === 0 && !demiLot)) return;
       setDecoProducts((s) => {
         const next = { ...s };
         for (const [name, lot] of Object.entries(updates)) {
           if (next[name] && !next[name].lotNumber.trim()) {
             next[name] = { ...next[name], lotNumber: lot };
           }
+        }
+        if (demiLot && next["Tarte 12"]?.selected && !(next["Tarte 12"].lotNumberDemi ?? "").trim()) {
+          next["Tarte 12"] = { ...next["Tarte 12"], lotNumberDemi: demiLot };
         }
         return next;
       });
