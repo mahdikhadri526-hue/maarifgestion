@@ -83,6 +83,49 @@ function lotDateKey(lot: string): string | null {
 
 type Row = Record<string, any>;
 
+const WEEKLY_VALUE_FIELDS = [
+  "lot_number",
+  "couleur",
+  "odeur",
+  "texture",
+  "visa_operateur",
+  "visa_manager",
+  "stock_initial",
+  "entrees",
+  "sorties",
+  "quantity",
+] as const;
+
+const rowKey = (r: Row) => `${r.fiche_type}|${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}|${r.article ?? ""}`;
+const filled = (v: any) => v !== null && v !== undefined && v !== "";
+const rowStamp = (r: Row) => new Date(r.updated_at ?? r.created_at ?? 0).getTime();
+const hasWeeklyValue = (r: Row) => WEEKLY_VALUE_FIELDS.some((f) => filled(r[f]));
+
+function normalizeWeeklyRows(input: Row[]) {
+  const merged = new Map<string, Row>();
+  input.forEach((row) => {
+    const key = rowKey(row);
+    const current = merged.get(key);
+    if (!current) {
+      merged.set(key, { ...row });
+      return;
+    }
+    const newer = rowStamp(row) >= rowStamp(current) ? { ...row } : { ...current };
+    const older = newer.id === row.id ? current : row;
+    WEEKLY_VALUE_FIELDS.forEach((field) => {
+      if (!filled(newer[field]) && filled(older[field])) newer[field] = older[field];
+    });
+    merged.set(key, newer);
+  });
+  return Array.from(merged.values()).sort(
+    (a, b) =>
+      String(a.week_start ?? "").localeCompare(String(b.week_start ?? "")) ||
+      DAYS.indexOf(a.day_of_week).toString().localeCompare(DAYS.indexOf(b.day_of_week).toString()) ||
+      String(a.article ?? "").localeCompare(String(b.article ?? "")) ||
+      Number(a.row_index ?? 0) - Number(b.row_index ?? 0),
+  );
+}
+
 function ConformityToggle({
   value,
   onChange,
