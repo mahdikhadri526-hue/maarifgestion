@@ -111,66 +111,61 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         const n = Number(v);
         return isNaN(n) ? 0 : n;
       };
-      // Group rows by week + article
-      type Cell = { stock_initial: number | null; entrees: number; sorties: number | null };
-      const map = new Map<string, Map<string, Map<number, Cell>>>(); // week -> article -> dayIdx -> cell
+      // Calcul par "spans" entre deux relevés de stock initial.
+      // Pour chaque article, on agrège toutes les saisies chronologiquement,
+      // puis on calcule les sorties = SI_début + entrées_du_span - SI_fin.
+      // Cela évite de perdre les sorties les jours où le stock initial n'a pas
+      // été saisi mais où il y a eu des entrées.
+      type Entry = { date: string; si: number | null; e: number };
+      const byArticle = new Map<string, Map<string, { si: number | null; e: number }>>();
       (data || []).forEach((r: any) => {
         const article = r.article;
         if (!article || !list.includes(article)) return;
         const dayIdx = DAYS.indexOf(r.day_of_week);
-        if (dayIdx < 0) return;
-        if (!map.has(r.week_start)) map.set(r.week_start, new Map());
-        const wm = map.get(r.week_start)!;
-        if (!wm.has(article)) wm.set(article, new Map());
-        const am = wm.get(article)!;
-        const cur = am.get(dayIdx) ?? { stock_initial: null, entrees: 0, sorties: null };
-        if (r.stock_initial != null) cur.stock_initial = num(r.stock_initial);
-        cur.entrees += num(r.entrees);
-        if (r.sorties != null) cur.sorties = (cur.sorties ?? 0) + num(r.sorties);
-        am.set(dayIdx, cur);
+        if (dayIdx < 0 || !r.week_start) return;
+        const date = isoDate(r.week_start, dayIdx);
+        if (!byArticle.has(article)) byArticle.set(article, new Map());
+        const am = byArticle.get(article)!;
+        const cur = am.get(date) ?? { si: null, e: 0 };
+        if (r.stock_initial != null && r.stock_initial !== "") {
+          cur.si = (cur.si ?? 0) + num(r.stock_initial);
+        }
+        cur.e += num(r.entrees);
+        am.set(date, cur);
       });
       const totals: Record<string, number> = {};
-      list.forEach((a) => (totals[a] = 0));
-      // Même calcul que le Suivi hebdo, y compris Dimanche -> Lundi suivant.
-      const getCell = (week: string, article: string, d: number) => map.get(week)?.get(article)?.get(d);
-      const getSortie = (week: string, article: string, d: number) => {
-        const cell = getCell(week, article, d);
-        if (!cell) return 0;
-        if (d >= DAYS.length - 1) {
-          const nextMonday = getCell(isoDate(week, 7), article, 0);
-          if (cell.stock_initial != null && nextMonday?.stock_initial != null) {
-            return Math.max(0, cell.stock_initial + cell.entrees - nextMonday.stock_initial);
-          }
-          return cell.sorties != null ? Math.max(0, cell.sorties) : 0;
-        }
-        const next = getCell(week, article, d + 1);
-        if (cell.stock_initial != null && next?.stock_initial != null) {
-          return Math.max(0, cell.stock_initial + cell.entrees - next.stock_initial);
-        }
-        return 0;
-      };
       const latestStock: Record<string, { date: string; value: number }> = {};
-      const weekKeys = Array.from(map.keys()).sort();
-      for (const week of weekKeys) {
-        const wm = map.get(week)!;
-        wm.forEach((am, article) => {
-          let runningStock: number | null = null;
-          for (let d = 0; d < DAYS.length; d++) {
-            const cell = am.get(d);
-            if (!cell) continue;
-            const date = isoDate(week, d);
-            const sortie = getSortie(week, article, d);
-            if (isInSelectedPeriod(date)) totals[article] += sortie;
-            if (cell.stock_initial != null) runningStock = cell.stock_initial;
-            if (runningStock != null) runningStock = Math.max(0, runningStock + cell.entrees - sortie);
-            const currentStock = runningStock ?? cell.stock_initial;
-            if (currentStock != null) {
-              const cur = latestStock[article];
-              if (!cur || date >= cur.date) latestStock[article] = { date, value: currentStock };
+      list.forEach((a) => (totals[a] = 0));
+      byArticle.forEach((am, article) => {
+        const entries: Entry[] = Array.from(am.entries())
+          .map(([date, c]) => ({ date, si: c.si, e: c.e }))
+          .sort((a, b) => a.date.localeCompare(b.date));
+        let prevSI: number | null = null;
+        let pendingE = 0;
+        let lastSpanEndDate: string | null = null;
+        let lastSpanEndValue: number | null = null;
+        for (const ent of entries) {
+          if (ent.si != null) {
+            if (prevSI != null) {
+              const sortie = Math.max(0, prevSI + pendingE - ent.si);
+              if (isInSelectedPeriod(ent.date)) totals[article] += sortie;
             }
+            prevSI = ent.si;
+            pendingE = ent.e;
+            lastSpanEndDate = ent.date;
+            lastSpanEndValue = ent.si;
+          } else {
+            pendingE += ent.e;
           }
-        });
-      }
+        }
+        // Stock actuel = dernier relevé de SI + entrées non encore "clôturées"
+        if (lastSpanEndValue != null && lastSpanEndDate != null) {
+          const stockActuel = Math.max(0, lastSpanEndValue + (pendingE - (lastSpanEndValue === prevSI ? 0 : 0)));
+          // pendingE inclut déjà les entrées depuis le dernier SI : on les ajoute
+          const value = Math.max(0, lastSpanEndValue + (prevSI === lastSpanEndValue ? pendingE - (entries[entries.length - 1]?.si === lastSpanEndValue ? 0 : 0) : 0));
+          latestStock[article] = { date: lastSpanEndDate, value: lastSpanEndValue };
+        }
+      });
       setWeeklyRows(list.map((article) => ({
         article,
         sorties: totals[article],
