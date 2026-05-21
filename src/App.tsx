@@ -1,10 +1,8 @@
-import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { PinLock } from "@/components/PinLock";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AuthPage } from "@/components/auth/AuthPage";
 import Index from "./pages/Index.tsx";
@@ -29,17 +27,6 @@ function AuthGate() {
 }
 
 const App = () => {
-  const [unlocked, setUnlocked] = useState(false);
-
-  if (!unlocked) {
-    return (
-      <>
-        <Sonner />
-        <PinLock onUnlock={() => setUnlocked(true)} />
-      </>
-    );
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
