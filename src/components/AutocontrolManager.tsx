@@ -364,6 +364,11 @@ export function AutocontrolManager() {
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [ctgProducts, setCtgProducts] = useState<Record<CtgProductKey, CtgProductRow>>(initialCtgProducts());
+  const [ctgSameDough, setCtgSameDough] = useState<{ enabled: boolean; lotNumber: string; dlc: string }>({
+    enabled: false,
+    lotNumber: "",
+    dlc: "",
+  });
   const [decoProducts, setDecoProducts] = useState<Record<string, DecoProductRow>>(initialDecoProducts());
   const [editEntry, setEditEntry] = useState<AutocontrolEntry | null>(null);
   const [editVisa, setEditVisa] = useState("");
@@ -655,8 +660,12 @@ export function AutocontrolManager() {
         const row = ctgProducts[p];
         const qty = Number(row.quantity);
         if (!Number.isFinite(qty) || qty <= 0) errors.push(`${p} : quantité obligatoire`);
-        if (!row.lotNumber.trim()) errors.push(`${p} : N° de lot obligatoire`);
+        const effLot = ctgSameDough.enabled ? ctgSameDough.lotNumber.trim() : row.lotNumber.trim();
+        if (!effLot) errors.push(`${p} : N° de lot obligatoire`);
       });
+      if (ctgSameDough.enabled && !ctgSameDough.lotNumber.trim()) {
+        errors.push("Pâte commune : N° de lot obligatoire");
+      }
     }
 
     const decorationExtra = isDecoration ? form.extraData : null;
@@ -714,14 +723,16 @@ export function AutocontrolManager() {
         const selected = CTG_PRODUCTS.filter((p) => ctgProducts[p].selected);
         for (const p of selected) {
           const row = ctgProducts[p];
+          const effLot = ctgSameDough.enabled ? ctgSameDough.lotNumber.trim() : row.lotNumber.trim();
+          const effDlc = ctgSameDough.enabled ? (ctgSameDough.dlc || null) : (row.dlc || null);
           await addAutocontrol({
             ficheType: form.ficheType,
             controlDate: baseResult.data.controlDate,
             collaborateur: baseResult.data.collaborateur,
             article: p,
-            lotNumber: row.lotNumber.trim(),
+            lotNumber: effLot,
             quantity: Number(row.quantity),
-            dlc: row.dlc || null,
+            dlc: effDlc,
             visaManager: baseResult.data.visaManager,
             notes: baseResult.data.notes,
             extraData,
@@ -729,7 +740,7 @@ export function AutocontrolManager() {
           await syncTarteMovementEntry(
             p,
             Number(row.quantity),
-            row.lotNumber.trim(),
+            effLot,
             baseResult.data.controlDate,
           );
         }
@@ -794,6 +805,7 @@ export function AutocontrolManager() {
         extraData: isCtg ? initialCtgExtra() : isDecoration ? initialDecorationExtra() : isPanache ? initialPanacheExtra() : null,
       });
       if (isCtg) setCtgProducts(initialCtgProducts());
+      if (isCtg) setCtgSameDough({ enabled: false, lotNumber: "", dlc: "" });
       if (isDecoration) setDecoProducts(initialDecoProducts());
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
@@ -986,6 +998,39 @@ export function AutocontrolManager() {
               <p className="text-xs text-muted-foreground mb-3">
                 Cochez chaque produit fabriqué avec ces ingrédients et renseignez sa quantité, son N° de lot et sa DLC.
               </p>
+              <div className="mb-3 border rounded-md p-2 bg-background">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <Checkbox
+                    checked={ctgSameDough.enabled}
+                    onCheckedChange={(v) => setCtgSameDough((s) => ({ ...s, enabled: !!v }))}
+                  />
+                  <span className="text-sm font-medium">
+                    Pâte commune — même N° de lot et DLC pour tous les produits
+                  </span>
+                </label>
+                {ctgSameDough.enabled && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                    <div>
+                      <label className="text-xs text-muted-foreground">N° de lot pâte *</label>
+                      <Input
+                        value={ctgSameDough.lotNumber}
+                        maxLength={120}
+                        onChange={(e) =>
+                          setCtgSameDough((s) => ({ ...s, lotNumber: e.target.value }))
+                        }
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">DLC pâte</label>
+                      <Input
+                        type="date"
+                        value={ctgSameDough.dlc}
+                        onChange={(e) => setCtgSameDough((s) => ({ ...s, dlc: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
               <div className="space-y-3">
                 {CTG_PRODUCTS.map((p) => {
                   const row = ctgProducts[p];
@@ -1001,7 +1046,7 @@ export function AutocontrolManager() {
                         <span className="font-medium text-sm">{p}</span>
                       </label>
                       {row.selected && (
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-2">
+                        <div className={`grid grid-cols-1 ${ctgSameDough.enabled ? "" : "sm:grid-cols-3"} gap-2 mt-2`}>
                           <div>
                             <label className="text-xs text-muted-foreground">Quantité *</label>
                             <Input
@@ -1014,26 +1059,30 @@ export function AutocontrolManager() {
                               }
                             />
                           </div>
-                          <div>
-                            <label className="text-xs text-muted-foreground">N° de lot *</label>
-                            <Input
-                              value={row.lotNumber}
-                              maxLength={120}
-                              onChange={(e) =>
-                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], lotNumber: e.target.value } }))
-                              }
-                            />
-                          </div>
-                          <div>
-                            <label className="text-xs text-muted-foreground">DLC</label>
-                            <Input
-                              type="date"
-                              value={row.dlc}
-                              onChange={(e) =>
-                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], dlc: e.target.value } }))
-                              }
-                            />
-                          </div>
+                          {!ctgSameDough.enabled && (
+                            <>
+                              <div>
+                                <label className="text-xs text-muted-foreground">N° de lot *</label>
+                                <Input
+                                  value={row.lotNumber}
+                                  maxLength={120}
+                                  onChange={(e) =>
+                                    setCtgProducts((s) => ({ ...s, [p]: { ...s[p], lotNumber: e.target.value } }))
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <label className="text-xs text-muted-foreground">DLC</label>
+                                <Input
+                                  type="date"
+                                  value={row.dlc}
+                                  onChange={(e) =>
+                                    setCtgProducts((s) => ({ ...s, [p]: { ...s[p], dlc: e.target.value } }))
+                                  }
+                                />
+                              </div>
+                            </>
+                          )}
                         </div>
                       )}
                     </div>
