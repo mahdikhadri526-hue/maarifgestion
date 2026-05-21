@@ -12,6 +12,7 @@ import {
 } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { useStockLevels } from "@/hooks/useStockData";
+import { fetchAllRows } from "@/lib/supabasePaginate";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
@@ -31,7 +32,7 @@ const TARTE_ARTICLES = [
   "Merg.trt", "Merg.Pt KG", "Merg.Pt SCH", "Merg.Glacé", "Org.Confit", "Biscuit",
   "Bigarreaux", "Cake Chocolat", "Cake.citron", "Pain Savoi", "Brownies.G", "Brownies.Top",
   "Amandes.Top", "Noix.Top", "Tulipes", "Cornet", "Gaufrette",
-  "Orange", "Citron", "POMME", "POIRE", "Ananas",
+  "Orange fruits", "Citron fruits", "POMME fruits", "POIRE fruits", "Ananas fruits", "Kiwi fruits",
 ];
 const GLACE_ARTICLES = [
   "Sicilienne vanille", "Sicilienne chocolat", "Sicilienne fraise", "Sicilienne mangue",
@@ -43,6 +44,121 @@ const GLACE_ARTICLES = [
 
 const UNITS: UnitType[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU"];
 const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre", PAQUET: "Paquet", COLIS: "Colis", ROULEAU: "Rouleau" };
+const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
+
+type WeeklyTrackingOrderRecord = {
+  article: string | null;
+  sorties: number | string | null;
+  entrees: number | string | null;
+  stock_initial: number | string | null;
+  day_of_week: string;
+  week_start: string;
+};
+
+function parseISODate(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+}
+
+function formatISODate(date: Date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function trackingDate(weekStart: string, dayIdx: number) {
+  const date = parseISODate(weekStart);
+  // Les anciennes fiches ont parfois un week_start au dimanche : on les corrige
+  // ici pour que Commande lise toujours les mêmes dates que le suivi hebdo.
+  date.setDate(date.getDate() + dayIdx + (date.getDay() === 0 ? 1 : 0));
+  return formatISODate(date);
+}
+
+function numericValue(value: unknown) {
+  if (value === "" || value == null) return 0;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function buildWeeklyOrderRows(
+  records: WeeklyTrackingOrderRecord[],
+  articles: readonly string[],
+  isInSelectedPeriod: (date: string) => boolean,
+) {
+  type DayBucket = { si: number | null; entrees: number; explicitSorties: number };
+  const articleSet = new Set(articles);
+  const byArticle = new Map<string, Map<string, DayBucket>>();
+  const ensureBucket = (article: string, date: string) => {
+    if (!byArticle.has(article)) byArticle.set(article, new Map());
+    const days = byArticle.get(article)!;
+    if (!days.has(date)) days.set(date, { si: null, entrees: 0, explicitSorties: 0 });
+    return days.get(date)!;
+  };
+
+  records.forEach((r) => {
+    const article = (r.article ?? "").trim();
+    if (!articleSet.has(article)) return;
+    const dayIdx = DAYS.indexOf(r.day_of_week as typeof DAYS[number]);
+    if (dayIdx < 0 || !r.week_start) return;
+    const bucket = ensureBucket(article, trackingDate(r.week_start, dayIdx));
+    if (r.stock_initial !== "" && r.stock_initial != null) bucket.si = numericValue(r.stock_initial);
+    bucket.entrees += numericValue(r.entrees);
+    if (r.sorties !== "" && r.sorties != null) bucket.explicitSorties += numericValue(r.sorties);
+  });
+
+  const totals: Record<string, number> = {};
+  const latestStock: Record<string, number> = {};
+  articles.forEach((article) => {
+    totals[article] = 0;
+    latestStock[article] = 0;
+  });
+
+  byArticle.forEach((days, article) => {
+    const entries = Array.from(days.entries()).sort(([a], [b]) => a.localeCompare(b));
+    const closedDates = new Set<string>();
+    let prevSI: number | null = null;
+    let spanStart: string | null = null;
+    let pendingEntries = 0;
+
+    for (const [date, bucket] of entries) {
+      if (bucket.si != null) {
+        if (prevSI != null && spanStart) {
+          const sortie = Math.max(0, prevSI + pendingEntries - bucket.si);
+          if (isInSelectedPeriod(spanStart)) totals[article] += sortie;
+          for (let d = parseISODate(spanStart); formatISODate(d) < date; d.setDate(d.getDate() + 1)) {
+            closedDates.add(formatISODate(d));
+          }
+        }
+        prevSI = bucket.si;
+        spanStart = date;
+        pendingEntries = bucket.entrees;
+        latestStock[article] = bucket.si;
+      } else {
+        pendingEntries += bucket.entrees;
+      }
+    }
+
+    entries.forEach(([date, bucket]) => {
+      if (bucket.explicitSorties > 0 && !closedDates.has(date) && isInSelectedPeriod(date)) {
+        totals[article] += bucket.explicitSorties;
+      }
+    });
+
+    if (prevSI != null) {
+      const openExplicit = entries.reduce((sum, [date, bucket]) => (
+        !closedDates.has(date) && bucket.explicitSorties > 0 ? sum + bucket.explicitSorties : sum
+      ), 0);
+      latestStock[article] = Math.max(0, prevSI + pendingEntries - openExplicit);
+    }
+  });
+
+  return articles.map((article) => ({
+    article,
+    sorties: roundStockQuantity(totals[article] ?? 0),
+    stockActuel: roundStockQuantity(latestStock[article] ?? 0),
+  }));
+}
 
 type FilterMode = "all" | "day" | "month" | "period";
 const todayISO = () => new Date().toISOString().split("T")[0];
