@@ -216,31 +216,6 @@ export function InitialStockForm({ onUpdated }: Props) {
           </tbody>
         </table>
       </div>
-      <PinPromptDialog
-        open={!!pendingSave}
-        onOpenChange={(open) => !open && setPendingSave(null)}
-        title="Modifier le stock initial"
-        description="Entrez le code à 4 chiffres pour autoriser la modification."
-        onConfirm={() => {
-          if (pendingSave) {
-            const { productId, category } = pendingSave;
-            setPendingSave(null);
-            handleSave(productId, category);
-          }
-        }}
-      />
-      <PinPromptDialog
-        open={!!pendingUnlockId}
-        onOpenChange={(open) => !open && setPendingUnlockId(null)}
-        title="Déverrouiller le stock initial"
-        description="Entrez le code à 4 chiffres pour autoriser la modification de ce produit."
-        onConfirm={() => {
-          if (pendingUnlockId) {
-            setUnlockedIds((s) => new Set(s).add(pendingUnlockId));
-            setPendingUnlockId(null);
-          }
-        }}
-      />
     </div>
   );
 }
