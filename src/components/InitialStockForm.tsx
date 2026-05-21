@@ -194,13 +194,19 @@ export function InitialStockForm({ onUpdated }: Props) {
                           </button>
                         </>
                       ) : (
-                        <button
-                          onClick={() => setPendingUnlockId(p.id)}
-                          className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                          title="Déverrouiller pour modifier"
-                        >
-                          <Lock className="h-4 w-4" />
-                        </button>
+                      <button
+                        onClick={() => {
+                          if (can("edit_stock")) {
+                            setUnlockedIds((s) => new Set(s).add(p.id));
+                          } else {
+                            toast.error("Opération non autorisée");
+                          }
+                        }}
+                        className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                        title="Déverrouiller pour modifier"
+                      >
+                        <Lock className="h-4 w-4" />
+                      </button>
                       )}
                     </div>
                   </td>
