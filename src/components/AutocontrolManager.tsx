@@ -178,11 +178,11 @@ const initialCtgExtra = (): CtgExtraData => ({
 
 type CtgProductKey = "Cornet" | "Tulipe" | "Gaufrette";
 const CTG_PRODUCTS: CtgProductKey[] = ["Cornet", "Tulipe", "Gaufrette"];
-type CtgProductRow = { selected: boolean; quantity: string; lotNumber: string; dlc: string };
+type CtgProductRow = { selected: boolean; quantity: string; quantity2: string; lotNumber: string; dlc: string };
 const initialCtgProducts = (): Record<CtgProductKey, CtgProductRow> => ({
-  Cornet: { selected: true, quantity: "", lotNumber: "", dlc: "" },
-  Tulipe: { selected: false, quantity: "", lotNumber: "", dlc: "" },
-  Gaufrette: { selected: false, quantity: "", lotNumber: "", dlc: "" },
+  Cornet: { selected: true, quantity: "", quantity2: "", lotNumber: "", dlc: "" },
+  Tulipe: { selected: false, quantity: "", quantity2: "", lotNumber: "", dlc: "" },
+  Gaufrette: { selected: false, quantity: "", quantity2: "", lotNumber: "", dlc: "" },
 });
 
 type DecoProductRow = { selected: boolean; quantity: string; lotNumber: string; lotNumberDemi?: string };
