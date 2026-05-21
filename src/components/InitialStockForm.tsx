@@ -18,9 +18,8 @@ export function InitialStockForm({ onUpdated }: Props) {
   const [stocks, setStocks] = useState<Record<string, string>>({});
   const [lotNumbers, setLotNumbers] = useState<Record<string, string>>({});
   const [expiryDates, setExpiryDates] = useState<Record<string, string>>({});
-  const [pendingSave, setPendingSave] = useState<{ productId: string; category: Category } | null>(null);
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
-  const [pendingUnlockId, setPendingUnlockId] = useState<string | null>(null);
+  const { can } = useAuth();
   const { data: savedStocks, loading } = useInitialStocks();
 
   useEffect(() => {
