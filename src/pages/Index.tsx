@@ -11,6 +11,9 @@ import { WeeklyTracking } from "@/components/WeeklyTracking";
 import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
+import { useAuth } from "@/contexts/AuthContext";
+import { UserMenu } from "@/components/auth/UserMenu";
+import { UserManagement } from "@/components/auth/UserManagement";
 
 type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "hebdo";
 
@@ -18,20 +21,28 @@ const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
   const [refreshKey, setRefreshKey] = useState(0);
   const [showStock, setShowStock] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const { can, isAdmin } = useAuth();
 
   const refresh = () => setRefreshKey((k) => k + 1);
 
-  const tabs = [
-    { id: "dashboard" as Tab, label: "Tableau de bord", icon: LayoutDashboard },
-    { id: "stock-initial" as Tab, label: "Stock Initial", icon: Database },
-    { id: "mouvements" as Tab, label: "Mouvements", icon: PlusCircle },
-    { id: "historique" as Tab, label: "Historique Mouvements", icon: History },
-    { id: "produit" as Tab, label: "Stock Restant", icon: FileText },
-    { id: "lots" as Tab, label: "Lots / DLC", icon: Boxes },
-    { id: "requisition" as Tab, label: "Réquisition", icon: ClipboardList },
-    { id: "autocontrole" as Tab, label: "Autocontrôle", icon: ClipboardCheck },
-    { id: "hebdo" as Tab, label: "Suivi hebdomadaire", icon: CalendarDays },
+  const allTabs = [
+    { id: "dashboard" as Tab, label: "Tableau de bord", icon: LayoutDashboard, perm: "view_dashboard" },
+    { id: "stock-initial" as Tab, label: "Stock Initial", icon: Database, perm: "view_stock" },
+    { id: "mouvements" as Tab, label: "Mouvements", icon: PlusCircle, perm: "edit_movements" },
+    { id: "historique" as Tab, label: "Historique Mouvements", icon: History, perm: "view_movements" },
+    { id: "produit" as Tab, label: "Stock Restant", icon: FileText, perm: "view_reports" },
+    { id: "lots" as Tab, label: "Lots / DLC", icon: Boxes, perm: "view_lots" },
+    { id: "requisition" as Tab, label: "Réquisition", icon: ClipboardList, perm: "view_requisitions" },
+    { id: "autocontrole" as Tab, label: "Autocontrôle", icon: ClipboardCheck, perm: "view_autocontrol" },
+    { id: "hebdo" as Tab, label: "Suivi hebdomadaire", icon: CalendarDays, perm: "view_weekly" },
   ];
+  const tabs = allTabs.filter((t) => can(t.perm));
+
+  // Ensure current tab is allowed
+  if (tabs.length > 0 && !tabs.some((t) => t.id === tab)) {
+    setTimeout(() => setTab(tabs[0].id), 0);
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -40,13 +51,20 @@ const Index = () => {
           <div className="w-10 h-10 rounded-full overflow-hidden">
             <img src={logo} alt="Oliveri Logo" className="w-full h-full object-cover" />
           </div>
-          <div>
+          <div className="flex-1">
             <h1 className="text-lg font-bold tracking-tight">Gestion de Stock Maarif</h1>
             <p className="text-xs text-sidebar-foreground/60">Suivi des entrées, sorties et stock restant</p>
           </div>
+          <UserMenu onOpenAdmin={() => setShowAdmin(true)} />
         </div>
       </header>
 
+      {showAdmin && isAdmin ? (
+        <main className="max-w-5xl mx-auto px-4 py-6">
+          <UserManagement onBack={() => setShowAdmin(false)} />
+        </main>
+      ) : (
+      <>
       <nav className="bg-card border-b sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 flex gap-1 overflow-x-auto">
           {tabs.map((t) => (
@@ -67,6 +85,12 @@ const Index = () => {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {tabs.length === 0 && (
+          <div className="bg-card border rounded-xl p-8 text-center">
+            <h2 className="text-lg font-semibold mb-2">Aucune permission</h2>
+            <p className="text-sm text-muted-foreground">Votre compte n'a accès à aucune section. Contactez l'administrateur.</p>
+          </div>
+        )}
         {tab === "dashboard" && (<div key={refreshKey}>
           <>
             {/* Hero Section */}
@@ -179,6 +203,8 @@ const Index = () => {
 
         {tab === "hebdo" && <WeeklyTracking />}
       </main>
+      </>
+      )}
     </div>
   );
 };
