@@ -373,6 +373,7 @@ export function AutocontrolManager() {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { can } = useAuth();
   const [ctgProducts, setCtgProducts] = useState<Record<CtgProductKey, CtgProductRow>>(initialCtgProducts());
   const [decoProducts, setDecoProducts] = useState<Record<string, DecoProductRow>>(initialDecoProducts());
   const [editEntry, setEditEntry] = useState<AutocontrolEntry | null>(null);
