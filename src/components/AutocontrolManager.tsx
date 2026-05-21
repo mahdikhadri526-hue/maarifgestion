@@ -1416,7 +1416,10 @@ export function AutocontrolManager() {
                     <td className="py-2 pr-2">{e.collaborateur}</td>
                     <td className="py-2 pr-2">{e.article}</td>
                     <td className="py-2 pr-2">{e.lotNumber || "—"}</td>
-                    <td className="py-2 pr-2">{e.quantity ?? "—"}</td>
+                    <td className="py-2 pr-2">
+                      {e.quantity ?? "—"}
+                      {(e.extraData as any)?.quantity2 ? ` + ${(e.extraData as any).quantity2}` : ""}
+                    </td>
                     <td className="py-2 pr-2">{e.dlc ? formatDateFR(e.dlc) : "—"}</td>
                     <td className="py-2 pr-2">
                       {e.visaManager && e.visaManager.trim() ? (
@@ -1771,7 +1774,12 @@ export function AutocontrolManager() {
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Article :</span> <strong>{viewEntry.article}</strong></div>
                 <div><span className="text-muted-foreground">Lot :</span> {viewEntry.lotNumber || "—"}</div>
-                <div><span className="text-muted-foreground">Quantité :</span> {viewEntry.quantity ?? "—"}</div>
+                <div>
+                  <span className="text-muted-foreground">Quantité :</span> {viewEntry.quantity ?? "—"}
+                  {(viewEntry.extraData as any)?.quantity2
+                    ? ` (+ ${(viewEntry.extraData as any).quantity2})`
+                    : ""}
+                </div>
                 <div><span className="text-muted-foreground">DLC :</span> {viewEntry.dlc ? formatDateFR(viewEntry.dlc) : "—"}</div>
                 <div className="col-span-2">
                   <span className="text-muted-foreground">Visa manager :</span>{" "}
