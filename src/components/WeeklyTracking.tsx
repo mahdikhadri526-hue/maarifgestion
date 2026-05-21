@@ -1598,22 +1598,6 @@ export function WeeklyTracking() {
         ))}
         </div>
       </Tabs>
-      <PinPromptDialog
-        open={!!pinTarget}
-        onOpenChange={(o) => { if (!o) setPinTarget(null); }}
-        onConfirm={() => {
-          if (pinTarget) {
-            setUnlockedDays((s) => {
-              const next = new Set(s);
-              next.add(pinTarget);
-              return next;
-            });
-          }
-          setPinTarget(null);
-        }}
-        title="Jour verrouillé"
-        description="Ce jour n'est pas le jour J. Entrez le code à 4 chiffres pour autoriser les modifications."
-      />
     </div>
   );
 }
