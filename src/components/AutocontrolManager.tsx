@@ -742,6 +742,14 @@ export function AutocontrolManager() {
             row.lotNumber.trim(),
             baseResult.data.controlDate,
           );
+          if (Number.isFinite(qty2) && qty2 > 0) {
+            await syncTarteMovementEntry(
+              p,
+              qty2,
+              row.lotNumber.trim(),
+              baseResult.data.controlDate,
+            );
+          }
         }
       } else if (isDecoration) {
         const selectedDeco = Object.entries(decoProducts).filter(([, r]) => r.selected);
@@ -1729,6 +1737,19 @@ export function AutocontrolManager() {
                     patch.dlc = editFields.dlc || null;
                   }
                   await updateAutocontrol(editEntry.id, patch);
+                  if (isCtgEdit) {
+                    const qty2New = Number(editFields.quantity2);
+                    const prevQty2 = Number((editExtra as any)?.quantity2 ?? 0);
+                    const delta = (Number.isFinite(qty2New) && qty2New > 0 ? qty2New : 0) - (Number.isFinite(prevQty2) ? prevQty2 : 0);
+                    if (delta > 0) {
+                      await syncTarteMovementEntry(
+                        editEntry.article,
+                        delta,
+                        editFields.lotNumber.trim(),
+                        editEntry.controlDate,
+                      );
+                    }
+                  }
                   toast.success("Fiche mise à jour");
                   setEditEntry(null);
                   setEditExtra(null);
