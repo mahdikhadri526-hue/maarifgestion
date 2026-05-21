@@ -192,7 +192,7 @@ export function WeeklyTracking() {
   const [filterTo, setFilterTo] = useState<string>(""); // YYYY-MM-DD
   const [showControls, setShowControls] = useState(true);
   const [unlockedDays, setUnlockedDays] = useState<Set<string>>(new Set());
-  const [pinTarget, setPinTarget] = useState<string | null>(null);
+  const { can } = useAuth();
   const ficheRef = useRef<HTMLDivElement>(null);
   const handlePrintFiche = () => {
     const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : "mouvement-tartes";
