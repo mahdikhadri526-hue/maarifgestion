@@ -805,6 +805,7 @@ export function AutocontrolManager() {
         extraData: isCtg ? initialCtgExtra() : isDecoration ? initialDecorationExtra() : isPanache ? initialPanacheExtra() : null,
       });
       if (isCtg) setCtgProducts(initialCtgProducts());
+      if (isCtg) setCtgSameDough({ enabled: false, lotNumber: "", dlc: "" });
       if (isDecoration) setDecoProducts(initialDecoProducts());
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
