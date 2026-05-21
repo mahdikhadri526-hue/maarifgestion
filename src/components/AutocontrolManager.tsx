@@ -1019,6 +1019,19 @@ export function AutocontrolManager() {
                             />
                           </div>
                           <div>
+                            <label className="text-xs text-muted-foreground">Quantité 2</label>
+                            <Input
+                              type="number"
+                              step="any"
+                              min="0"
+                              placeholder="Optionnel"
+                              value={row.quantity2}
+                              onChange={(e) =>
+                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], quantity2: e.target.value } }))
+                              }
+                            />
+                          </div>
+                          <div>
                             <label className="text-xs text-muted-foreground">N° de lot *</label>
                             <Input
                               value={row.lotNumber}
