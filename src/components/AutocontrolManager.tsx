@@ -185,10 +185,10 @@ const initialCtgProducts = (): Record<CtgProductKey, CtgProductRow> => ({
   Gaufrette: { selected: false, quantity: "", lotNumber: "", dlc: "" },
 });
 
-type DecoProductRow = { selected: boolean; quantity: string; lotNumber: string };
+type DecoProductRow = { selected: boolean; quantity: string; lotNumber: string; lotNumberDemi?: string };
 const initialDecoProducts = (): Record<string, DecoProductRow> => {
   const arr = ARTICLE_OPTIONS_BY_FICHE["Décoration"] ?? [];
-  return Object.fromEntries(arr.map((a) => [a, { selected: false, quantity: "", lotNumber: "" }]));
+  return Object.fromEntries(arr.map((a) => [a, { selected: false, quantity: "", lotNumber: "", lotNumberDemi: "" }]));
 };
 
 const initialForm = {
