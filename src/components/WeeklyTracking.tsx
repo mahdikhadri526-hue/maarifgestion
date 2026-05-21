@@ -578,7 +578,7 @@ export function WeeklyTracking() {
         if (numLocal(r.quantity) <= 0) return r;
         if ((r.lot_number ?? "") === auto) return r;
         changed = true;
-        return { ...r, lot_number: auto };
+        return { ...r, lot_number: auto, __dirty: true };
       });
       return changed ? next : prev;
     });
