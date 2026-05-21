@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Save, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
-import { PinPromptDialog } from "./PinPromptDialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
   onUpdated: () => void;
