@@ -400,7 +400,13 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                     </button>
                   )}
                   <button
-                    onClick={() => setPendingDeleteId(m.id)}
+                    onClick={() => {
+                      if (can("delete_movements")) {
+                        setDeleteId(m.id);
+                      } else {
+                        toast.error("Opération non autorisée");
+                      }
+                    }}
                     className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     title="Supprimer"
                   >
