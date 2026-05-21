@@ -192,7 +192,9 @@ export function WeeklyTracking() {
   const [filterTo, setFilterTo] = useState<string>(""); // YYYY-MM-DD
   const [showControls, setShowControls] = useState(true);
   const [unlockedDays, setUnlockedDays] = useState<Set<string>>(new Set());
-  const { can } = useAuth();
+  const { can, user } = useAuth();
+  const restrictedEmail = "gestionmaarif1@gmail.com";
+  const isRestrictedUser = (user?.email ?? "").toLowerCase() === restrictedEmail;
   const ficheRef = useRef<HTMLDivElement>(null);
   const handlePrintFiche = () => {
     const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : "mouvement-tartes";
@@ -211,12 +213,16 @@ export function WeeklyTracking() {
     }
   };
   const todayIso = fmt(new Date());
+  const tomorrowIso = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return fmt(d); })();
   const dayIso = (wkStart: string, dIdx: number) => {
     const d = parseISO(wkStart);
     d.setDate(d.getDate() + dIdx);
     return fmt(d);
   };
-  const isDayEditable = (iso: string) => iso === todayIso || unlockedDays.has(iso);
+  const isDayEditable = (iso: string) => {
+    if (isRestrictedUser) return iso === todayIso || iso === tomorrowIso;
+    return iso === todayIso || unlockedDays.has(iso);
+  };
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
   const activeArticles = tab === "glace" ? GLACE_ARTICLES : tab === "tarte" ? TARTE_ARTICLES : ARTICLES;
