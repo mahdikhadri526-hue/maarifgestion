@@ -1466,7 +1466,7 @@ export function AutocontrolManager() {
                                   .join(" • ") || "—"}
                               </div>
                             )}
-                            {e.notes && <div><strong>Obs :</strong> {e.notes}</div>}
+                            
                           </div>
                         </details>
                       ) : (
