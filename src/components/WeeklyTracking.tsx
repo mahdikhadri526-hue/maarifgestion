@@ -83,6 +83,53 @@ function lotDateKey(lot: string): string | null {
 
 type Row = Record<string, any>;
 
+const WEEKLY_VALUE_FIELDS = [
+  "lot_number",
+  "couleur",
+  "odeur",
+  "texture",
+  "visa_operateur",
+  "visa_manager",
+  "stock_initial",
+  "entrees",
+  "sorties",
+  "quantity",
+] as const;
+
+const rowKey = (r: Row) => `${r.fiche_type}|${r.week_start}|${r.day_of_week}|${r.row_index ?? 0}|${r.article ?? ""}`;
+const filled = (v: any) => v !== null && v !== undefined && v !== "";
+const rowStamp = (r: Row) => new Date(r.updated_at ?? r.created_at ?? 0).getTime();
+const hasWeeklyValue = (r: Row) => WEEKLY_VALUE_FIELDS.some((f) => filled(r[f]));
+
+function normalizeWeeklyRows(input: Row[]) {
+  const merged = new Map<string, Row>();
+  input.forEach((row) => {
+    const key = rowKey(row);
+    const current = merged.get(key);
+    if (!current) {
+      merged.set(key, { ...row });
+      return;
+    }
+    const newer = rowStamp(row) >= rowStamp(current) ? { ...row } : { ...current };
+    const older = newer.id === row.id ? current : row;
+    WEEKLY_VALUE_FIELDS.forEach((field) => {
+      if (!filled(newer[field]) && filled(older[field])) newer[field] = older[field];
+    });
+    merged.set(key, newer);
+  });
+  const dayRank = (day: any) => {
+    const idx = DAYS.indexOf(day as typeof DAYS[number]);
+    return idx < 0 ? 99 : idx;
+  };
+  return Array.from(merged.values()).sort(
+    (a, b) =>
+      String(a.week_start ?? "").localeCompare(String(b.week_start ?? "")) ||
+      dayRank(a.day_of_week) - dayRank(b.day_of_week) ||
+      String(a.article ?? "").localeCompare(String(b.article ?? "")) ||
+      Number(a.row_index ?? 0) - Number(b.row_index ?? 0),
+  );
+}
+
 function ConformityToggle({
   value,
   onChange,
@@ -255,7 +302,7 @@ export function WeeklyTracking() {
             .in("week_start", weeksToLoad)
             .eq("fiche_type", ficheType),
         );
-        setRows(data || []);
+        setRows(normalizeWeeklyRows(data || []));
       } catch (error) {
         toast.error("Erreur de chargement");
       }
@@ -272,7 +319,7 @@ export function WeeklyTracking() {
             .eq("fiche_type", "Mouvement glaces & tartes")
             .eq("article", "Crème fraîche (mousse fouettée)"),
         );
-        setCremeGlaceRows(data || []);
+        setCremeGlaceRows(normalizeWeeklyRows(data || []));
       } catch {
         /* ignore */
       }
@@ -752,9 +799,10 @@ export function WeeklyTracking() {
   const removeEntryRow = (day: string, rowIndex: number, article: string, wkStart: string = weekStart) => {
     const key = `${wkStart}|${day}|${rowIndex}|${article}`;
     setRows((prev) =>
-      prev.filter(
-        (r) => `${r.week_start}|${r.day_of_week}|${r.row_index}|${r.article ?? ""}` !== key,
-      ),
+      prev.flatMap((r) => {
+        if (`${r.week_start}|${r.day_of_week}|${r.row_index}|${r.article ?? ""}` !== key) return [r];
+        return r.id ? [{ ...r, entrees: null, lot_number: null }] : [];
+      }),
     );
   };
 
@@ -773,39 +821,10 @@ export function WeeklyTracking() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const meaningful = rows.filter((r) => {
-        const fields = ["lot_number", "couleur", "odeur", "texture", "visa_operateur", "visa_manager"];
-        const nums = ["stock_initial", "entrees", "sorties", "quantity"];
-        return (
-          fields.some((f) => (r[f] ?? "").toString().trim().length > 0) ||
-          nums.some((f) => r[f] !== null && r[f] !== undefined && r[f] !== "")
-        );
-      });
-
-      // SAFETY: only delete the weeks actually loaded in memory, otherwise a
-      // truncated load (Supabase 1000-row cap) could wipe rows we never saw.
-      // We always include the current weekStart so that clearing all cells of
-      // the current week actually persists.
-      const loadedWeeks = new Set<string>(weeksToLoad);
-      const wkStarts = Array.from(
-        new Set(
-          meaningful
-            .map((r) => r.week_start as string)
-            .concat([weekStart])
-            .filter((w) => loadedWeeks.has(w)),
-        ),
-      );
-      if (wkStarts.length > 0) {
-        const { error: delErr } = await supabase
-          .from("weekly_tracking")
-          .delete()
-          .in("week_start", wkStarts)
-          .eq("fiche_type", ficheType);
-        if (delErr) throw delErr;
-      }
-
-      if (meaningful.length > 0) {
-        const payload = meaningful.map((r) => ({
+      const normalizedRows = normalizeWeeklyRows(rows);
+      const rowsToPersist = normalizedRows.filter((r) => hasWeeklyValue(r) || r.id);
+      if (rowsToPersist.length > 0) {
+        const payload = rowsToPersist.map((r) => ({
           fiche_type: ficheType,
           week_start: r.week_start ?? weekStart,
           day_of_week: r.day_of_week,
@@ -822,9 +841,28 @@ export function WeeklyTracking() {
           visa_operateur: r.visa_operateur ?? null,
           visa_manager: r.visa_manager ?? null,
         }));
-        const { error } = await supabase.from("weekly_tracking").insert(payload);
-        if (error) throw error;
+        for (const item of payload) {
+          const baseQuery = supabase
+            .from("weekly_tracking")
+            .select("id")
+            .eq("fiche_type", item.fiche_type)
+            .eq("week_start", item.week_start)
+            .eq("day_of_week", item.day_of_week)
+            .eq("row_index", item.row_index);
+          const { data: existing, error: findErr } = await (item.article == null
+            ? baseQuery.is("article", null)
+            : baseQuery.eq("article", item.article))
+            .order("updated_at", { ascending: false })
+            .limit(1);
+          if (findErr) throw findErr;
+          const id = existing?.[0]?.id;
+          const { error } = id
+            ? await supabase.from("weekly_tracking").update(item).eq("id", id)
+            : await supabase.from("weekly_tracking").insert(item);
+          if (error) throw error;
+        }
       }
+      setRows(normalizeWeeklyRows(rowsToPersist));
       toast.success("Suivi hebdomadaire enregistré");
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de l'enregistrement");
