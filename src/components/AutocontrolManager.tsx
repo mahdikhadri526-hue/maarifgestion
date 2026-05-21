@@ -714,16 +714,14 @@ export function AutocontrolManager() {
         const selected = CTG_PRODUCTS.filter((p) => ctgProducts[p].selected);
         for (const p of selected) {
           const row = ctgProducts[p];
-          const effLot = ctgSameDough.enabled ? ctgSameDough.lotNumber.trim() : row.lotNumber.trim();
-          const effDlc = ctgSameDough.enabled ? (ctgSameDough.dlc || null) : (row.dlc || null);
           await addAutocontrol({
             ficheType: form.ficheType,
             controlDate: baseResult.data.controlDate,
             collaborateur: baseResult.data.collaborateur,
             article: p,
-            lotNumber: effLot,
+            lotNumber: row.lotNumber.trim(),
             quantity: Number(row.quantity),
-            dlc: effDlc,
+            dlc: row.dlc || null,
             visaManager: baseResult.data.visaManager,
             notes: baseResult.data.notes,
             extraData,
@@ -731,7 +729,7 @@ export function AutocontrolManager() {
           await syncTarteMovementEntry(
             p,
             Number(row.quantity),
-            effLot,
+            row.lotNumber.trim(),
             baseResult.data.controlDate,
           );
         }
@@ -796,7 +794,6 @@ export function AutocontrolManager() {
         extraData: isCtg ? initialCtgExtra() : isDecoration ? initialDecorationExtra() : isPanache ? initialPanacheExtra() : null,
       });
       if (isCtg) setCtgProducts(initialCtgProducts());
-      if (isCtg) setCtgSameDough({ enabled: false, lotNumber: "", dlc: "" });
       if (isDecoration) setDecoProducts(initialDecoProducts());
     } catch (e: any) {
       toast.error("Erreur", { description: e.message });
