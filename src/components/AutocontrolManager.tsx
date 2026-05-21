@@ -742,6 +742,14 @@ export function AutocontrolManager() {
             row.lotNumber.trim(),
             baseResult.data.controlDate,
           );
+          if (Number.isFinite(qty2) && qty2 > 0) {
+            await syncTarteMovementEntry(
+              p,
+              qty2,
+              row.lotNumber.trim(),
+              baseResult.data.controlDate,
+            );
+          }
         }
       } else if (isDecoration) {
         const selectedDeco = Object.entries(decoProducts).filter(([, r]) => r.selected);
