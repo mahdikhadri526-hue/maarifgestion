@@ -36,6 +36,10 @@ export function InitialStockForm({ onUpdated }: Props) {
   );
 
   const handleSave = async (productId: string, productCategory: Category) => {
+    if (!can("edit_stock")) {
+      toast.error("Opération non autorisée");
+      return;
+    }
     const val = Number(stocks[productId] || 0);
     if (isNaN(val) || val < 0) {
       toast.error("Quantité invalide");
