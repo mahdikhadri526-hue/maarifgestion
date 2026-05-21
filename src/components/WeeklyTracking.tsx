@@ -115,6 +115,7 @@ function normalizeWeeklyRows(input: Row[]) {
     WEEKLY_VALUE_FIELDS.forEach((field) => {
       if (!filled(newer[field]) && filled(older[field])) newer[field] = older[field];
     });
+    if (row.__dirty || current.__dirty) newer.__dirty = true;
     merged.set(key, newer);
   });
   const dayRank = (day: any) => {
@@ -128,6 +129,12 @@ function normalizeWeeklyRows(input: Row[]) {
       String(a.article ?? "").localeCompare(String(b.article ?? "")) ||
       Number(a.row_index ?? 0) - Number(b.row_index ?? 0),
   );
+}
+
+async function runInBatches<T>(items: T[], worker: (item: T) => Promise<void>, batchSize = 25) {
+  for (let i = 0; i < items.length; i += batchSize) {
+    await Promise.all(items.slice(i, i + batchSize).map(worker));
+  }
 }
 
 function ConformityToggle({
@@ -324,7 +331,7 @@ export function WeeklyTracking() {
         /* ignore */
       }
     })();
-  }, [rows]);
+  }, [weekStart, tab]);
 
   const CREME_ARTICLE = "Crème fraîche (mousse fouettée)";
 
@@ -571,7 +578,7 @@ export function WeeklyTracking() {
         if (numLocal(r.quantity) <= 0) return r;
         if ((r.lot_number ?? "") === auto) return r;
         changed = true;
-        return { ...r, lot_number: auto };
+        return { ...r, lot_number: auto, __dirty: true };
       });
       return changed ? next : prev;
     });
@@ -591,7 +598,7 @@ export function WeeklyTracking() {
       );
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = { ...next[idx], ...patch };
+        next[idx] = { ...next[idx], ...patch, __dirty: true };
         return next;
       }
       return [
@@ -602,6 +609,7 @@ export function WeeklyTracking() {
           day_of_week: day,
           row_index: rowIndex,
           article,
+          __dirty: true,
           ...patch,
         },
       ];
@@ -801,7 +809,7 @@ export function WeeklyTracking() {
     setRows((prev) =>
       prev.flatMap((r) => {
         if (`${r.week_start}|${r.day_of_week}|${r.row_index}|${r.article ?? ""}` !== key) return [r];
-        return r.id ? [{ ...r, entrees: null, lot_number: null }] : [];
+        return r.id ? [{ ...r, entrees: null, lot_number: null, __dirty: true }] : [];
       }),
     );
   };
@@ -822,9 +830,10 @@ export function WeeklyTracking() {
     setSaving(true);
     try {
       const normalizedRows = normalizeWeeklyRows(rows);
-      const rowsToPersist = normalizedRows.filter((r) => hasWeeklyValue(r) || r.id);
+      const rowsToPersist = normalizedRows.filter((r) => (r.__dirty || !r.id) && (hasWeeklyValue(r) || r.id));
       if (rowsToPersist.length > 0) {
         const payload = rowsToPersist.map((r) => ({
+          id: r.id,
           fiche_type: ficheType,
           week_start: r.week_start ?? weekStart,
           day_of_week: r.day_of_week,
@@ -841,28 +850,49 @@ export function WeeklyTracking() {
           visa_operateur: r.visa_operateur ?? null,
           visa_manager: r.visa_manager ?? null,
         }));
-        for (const item of payload) {
-          const baseQuery = supabase
-            .from("weekly_tracking")
-            .select("id")
-            .eq("fiche_type", item.fiche_type)
-            .eq("week_start", item.week_start)
-            .eq("day_of_week", item.day_of_week)
-            .eq("row_index", item.row_index);
-          const { data: existing, error: findErr } = await (item.article == null
-            ? baseQuery.is("article", null)
-            : baseQuery.eq("article", item.article))
-            .order("updated_at", { ascending: false })
-            .limit(1);
-          if (findErr) throw findErr;
-          const id = existing?.[0]?.id;
-          const { error } = id
-            ? await supabase.from("weekly_tracking").update(item).eq("id", id)
-            : await supabase.from("weekly_tracking").insert(item);
+        const toMutation = (item: (typeof payload)[number]) => ({
+          fiche_type: item.fiche_type,
+          week_start: item.week_start,
+          day_of_week: item.day_of_week,
+          row_index: item.row_index,
+          article: item.article,
+          lot_number: item.lot_number,
+          couleur: item.couleur,
+          odeur: item.odeur,
+          texture: item.texture,
+          stock_initial: item.stock_initial,
+          entrees: item.entrees,
+          sorties: item.sorties,
+          quantity: item.quantity,
+          visa_operateur: item.visa_operateur,
+          visa_manager: item.visa_manager,
+        });
+        const updates = payload.filter((item) => item.id);
+        const inserts = payload.filter((item) => !item.id).map(toMutation);
+
+        await runInBatches(updates, async (item) => {
+          const updateItem = toMutation(item);
+          const { error } = await supabase.from("weekly_tracking").update(updateItem as never).eq("id", item.id);
           if (error) throw error;
+
+          const idx = normalizedRows.findIndex((row) => row.id === item.id);
+          if (idx >= 0) normalizedRows[idx] = { ...normalizedRows[idx], ...updateItem, __dirty: false };
+        });
+
+        if (inserts.length > 0) {
+          const { data, error } = await supabase
+            .from("weekly_tracking")
+            .insert(inserts as never)
+            .select();
+          if (error) throw error;
+          const saved = normalizeWeeklyRows(data || []);
+          saved.forEach((savedRow) => {
+            const idx = normalizedRows.findIndex((row) => rowKey(row) === rowKey(savedRow));
+            if (idx >= 0) normalizedRows[idx] = { ...savedRow, __dirty: false };
+          });
         }
       }
-      setRows(normalizeWeeklyRows(rowsToPersist));
+      setRows(normalizeWeeklyRows(normalizedRows));
       toast.success("Suivi hebdomadaire enregistré");
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de l'enregistrement");
