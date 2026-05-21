@@ -410,32 +410,6 @@ export function LotManager() {
           )}
         </div>
       )}
-      <PinPromptDialog
-        open={!!pendingEdit}
-        onOpenChange={(open) => !open && setPendingEdit(null)}
-        title="Modifier un lot / DLC"
-        description="Entrez le code à 4 chiffres pour autoriser la modification."
-        onConfirm={() => {
-          if (pendingEdit) {
-            const lot = pendingEdit;
-            setPendingEdit(null);
-            startEdit(lot);
-          }
-        }}
-      />
-      <PinPromptDialog
-        open={!!pendingDelete}
-        onOpenChange={(open) => !open && setPendingDelete(null)}
-        title="Supprimer un lot"
-        description="Entrez le code à 4 chiffres pour autoriser la suppression."
-        onConfirm={() => {
-          if (pendingDelete) {
-            const lot = pendingDelete;
-            setPendingDelete(null);
-            handleDelete(lot);
-          }
-        }}
-      />
     </div>
   );
 }
