@@ -244,7 +244,7 @@ const baseAutocontrolSchema = z.object({
   lotNumber: requiredText("N° de lot", 120),
   quantity: z.coerce.number({ invalid_type_error: "Quantité obligatoire" }).positive("Quantité obligatoire"),
   dlc: z.string().max(20, "DLC trop long").optional().or(z.literal("")),
-  notes: requiredText("Observations", 1000),
+  notes: z.string().max(1000).optional().or(z.literal("")),
   visaManager: z.string().max(100, "Visa manager trop long").optional().or(z.literal("")),
 });
 
@@ -414,13 +414,6 @@ export function AutocontrolManager() {
       },
     ];
 
-    if (entry.notes?.trim()) {
-      sections.push({
-        title: "Observations",
-        columns: [{ header: "Notes", dataKey: "notes", width: 274 }],
-        rows: [{ notes: entry.notes }],
-      });
-    }
     if (entry.extraData?.ingredients?.length) {
       sections.push({
         title: "Ingrédients",
@@ -1349,16 +1342,6 @@ export function AutocontrolManager() {
           )}
 
           <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-muted-foreground">Observations</label>
-            <Textarea
-              rows={2}
-              value={form.notes}
-              onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-              maxLength={1000}
-              // validated by Zod
-            />
-          </div>
-          <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
             <Input
               value={form.visaManager}
@@ -1483,14 +1466,12 @@ export function AutocontrolManager() {
                                   .join(" • ") || "—"}
                               </div>
                             )}
-                            {e.notes && <div><strong>Obs :</strong> {e.notes}</div>}
-                          </div>
-                        </details>
-                      ) : (
-                        <span className="truncate block" title={e.notes || ""}>
-                          {e.notes || "—"}
-                        </span>
-                      )}
+                            
+                           </div>
+                         </details>
+                       ) : (
+                         <span className="truncate block">—</span>
+                       )}
                     </td>
                     <td className="py-2 pr-2">
                        {!e.visaManager?.trim() && (
@@ -1574,7 +1555,6 @@ export function AutocontrolManager() {
                 <div>Collaborateur : {editEntry.collaborateur}</div>
                 <div>Article : {editEntry.article} {editEntry.lotNumber ? `(lot ${editEntry.lotNumber})` : ""}</div>
                 <div>Quantité : {editEntry.quantity ?? "—"}{editEntry.dlc ? ` • DLC ${formatDateFR(editEntry.dlc)}` : ""}</div>
-                {editEntry.notes && <div>Observations : {editEntry.notes}</div>}
               </div>
 
               {editEntry.ficheType === "Cornet/Tulipe/Gaufrette" && editExtra && (
@@ -1810,11 +1790,6 @@ export function AutocontrolManager() {
                   <span className="text-muted-foreground">Visa manager :</span>{" "}
                   {viewEntry.visaManager?.trim() ? <strong>{viewEntry.visaManager}</strong> : <em className="text-amber-600">En attente</em>}
                 </div>
-                {viewEntry.notes && (
-                  <div className="col-span-2">
-                    <span className="text-muted-foreground">Observations :</span> {viewEntry.notes}
-                  </div>
-                )}
               </div>
 
               {viewEntry.extraData?.ingredients && viewEntry.extraData.ingredients.length > 0 && (
