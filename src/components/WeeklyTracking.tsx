@@ -1203,9 +1203,15 @@ export function WeeklyTracking() {
                             {!editable && (
                               <button
                                 type="button"
-                                onClick={() => setPinTarget(iso)}
+                                onClick={() => {
+                                  if (can("edit_weekly")) {
+                                    setUnlockedDays((s) => { const n = new Set(s); n.add(iso); return n; });
+                                  } else {
+                                    toast.error("Opération non autorisée");
+                                  }
+                                }}
                                 className="mt-1 inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-primary-foreground"
-                                title="Jour verrouillé — entrer le code"
+                                title="Jour verrouillé — déverrouiller"
                               >
                                 <Lock className="h-3 w-3" /> Déverrouiller
                               </button>
