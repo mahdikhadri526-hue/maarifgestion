@@ -864,7 +864,7 @@ export function WeeklyTracking() {
         if (inserts.length > 0) {
           const { data, error } = await supabase
             .from("weekly_tracking")
-            .upsert(inserts, { onConflict: "fiche_type,week_start,day_of_week,row_index,article" })
+            .insert(inserts)
             .select();
           if (error) throw error;
           const saved = normalizeWeeklyRows(data || []);
@@ -874,7 +874,7 @@ export function WeeklyTracking() {
           });
         }
       }
-      setRows(normalizeWeeklyRows(rowsToPersist));
+      setRows(normalizeWeeklyRows(normalizedRows));
       toast.success("Suivi hebdomadaire enregistré");
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de l'enregistrement");
