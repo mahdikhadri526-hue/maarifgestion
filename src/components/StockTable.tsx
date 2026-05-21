@@ -158,11 +158,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             pendingE += ent.e;
           }
         }
-        // Stock actuel = dernier relevé de SI + entrées non encore "clôturées"
+        // Stock actuel = dernier SI relevé (les entrées postérieures sans
+        // nouveau SI seront re-comptabilisées dès la prochaine saisie).
         if (lastSpanEndValue != null && lastSpanEndDate != null) {
-          const stockActuel = Math.max(0, lastSpanEndValue + (pendingE - (lastSpanEndValue === prevSI ? 0 : 0)));
-          // pendingE inclut déjà les entrées depuis le dernier SI : on les ajoute
-          const value = Math.max(0, lastSpanEndValue + (prevSI === lastSpanEndValue ? pendingE - (entries[entries.length - 1]?.si === lastSpanEndValue ? 0 : 0) : 0));
           latestStock[article] = { date: lastSpanEndDate, value: lastSpanEndValue };
         }
       });
