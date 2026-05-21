@@ -38,8 +38,8 @@ interface MovementHistoryProps {
 
 export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [reintegratingId, setReintegratingId] = useState<string | null>(null);
+  const { can } = useAuth();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterDate, setFilterDate] = useState<string>("");
   const [filterStartDate, setFilterStartDate] = useState<string>("");
