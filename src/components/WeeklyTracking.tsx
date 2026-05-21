@@ -850,15 +850,33 @@ export function WeeklyTracking() {
           visa_operateur: r.visa_operateur ?? null,
           visa_manager: r.visa_manager ?? null,
         }));
+        const toMutation = (item: (typeof payload)[number]) => ({
+          fiche_type: item.fiche_type,
+          week_start: item.week_start,
+          day_of_week: item.day_of_week,
+          row_index: item.row_index,
+          article: item.article,
+          lot_number: item.lot_number,
+          couleur: item.couleur,
+          odeur: item.odeur,
+          texture: item.texture,
+          stock_initial: item.stock_initial,
+          entrees: item.entrees,
+          sorties: item.sorties,
+          quantity: item.quantity,
+          visa_operateur: item.visa_operateur,
+          visa_manager: item.visa_manager,
+        });
         const updates = payload.filter((item) => item.id);
-        const inserts = payload.filter((item) => !item.id).map(({ id, ...item }) => item);
+        const inserts = payload.filter((item) => !item.id).map(toMutation);
 
-        await runInBatches(updates, async ({ id, ...item }) => {
-          const { error } = await supabase.from("weekly_tracking").update(item).eq("id", id);
+        await runInBatches(updates, async (item) => {
+          const updateItem = toMutation(item);
+          const { error } = await supabase.from("weekly_tracking").update(updateItem).eq("id", item.id);
           if (error) throw error;
 
-          const idx = normalizedRows.findIndex((row) => row.id === id);
-          if (idx >= 0) normalizedRows[idx] = { ...normalizedRows[idx], ...item, __dirty: false };
+          const idx = normalizedRows.findIndex((row) => row.id === item.id);
+          if (idx >= 0) normalizedRows[idx] = { ...normalizedRows[idx], ...updateItem, __dirty: false };
         });
 
         if (inserts.length > 0) {
