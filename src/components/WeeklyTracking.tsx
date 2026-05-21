@@ -115,6 +115,7 @@ function normalizeWeeklyRows(input: Row[]) {
     WEEKLY_VALUE_FIELDS.forEach((field) => {
       if (!filled(newer[field]) && filled(older[field])) newer[field] = older[field];
     });
+    if (row.__dirty || current.__dirty) newer.__dirty = true;
     merged.set(key, newer);
   });
   const dayRank = (day: any) => {
@@ -128,6 +129,12 @@ function normalizeWeeklyRows(input: Row[]) {
       String(a.article ?? "").localeCompare(String(b.article ?? "")) ||
       Number(a.row_index ?? 0) - Number(b.row_index ?? 0),
   );
+}
+
+async function runInBatches<T>(items: T[], worker: (item: T) => Promise<void>, batchSize = 25) {
+  for (let i = 0; i < items.length; i += batchSize) {
+    await Promise.all(items.slice(i, i + batchSize).map(worker));
+  }
 }
 
 function ConformityToggle({
