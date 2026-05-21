@@ -1485,11 +1485,12 @@ export function AutocontrolManager() {
                       )}
                     </td>
                     <td className="py-2 pr-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        title="Modifier la fiche"
-                        onClick={() => {
+                       {!e.visaManager?.trim() && (
+                       <Button
+                         size="sm"
+                         variant="ghost"
+                         title="Compléter la fiche"
+                         onClick={() => {
                           setEditEntry(e);
                           setEditVisa(e.visaManager ?? "");
                           setEditExtra(
@@ -1510,6 +1511,7 @@ export function AutocontrolManager() {
                       >
                         <FileCheck className="h-4 w-4 text-primary" />
                       </Button>
+                       )}
                       <Button
                         size="sm"
                         variant="ghost"
@@ -1579,7 +1581,8 @@ export function AutocontrolManager() {
                           step="any"
                           min="0.01"
                           value={editFields.quantity}
-                          onChange={(e) => setEditFields((f) => ({ ...f, quantity: e.target.value }))}
+                          readOnly
+                          disabled
                         />
                       </div>
                       <div>
@@ -1598,7 +1601,8 @@ export function AutocontrolManager() {
                         <Input
                           value={editFields.lotNumber}
                           maxLength={120}
-                          onChange={(e) => setEditFields((f) => ({ ...f, lotNumber: e.target.value }))}
+                          readOnly
+                          disabled
                         />
                       </div>
                       <div>
