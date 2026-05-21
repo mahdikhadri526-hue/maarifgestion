@@ -51,7 +51,6 @@ const currentMonthISO = () => new Date().toISOString().slice(0, 7);
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
   const [category, setCategory] = useState<Category | "all" | "tarte" | "glace">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
-  const [pendingUnit, setPendingUnit] = useState<{ productId: string; currentUnit: UnitType } | null>(null);
   const [mode, setMode] = useState<FilterMode>(variant === "order" ? "month" : "all");
   const [day, setDay] = useState<string>(todayISO());
   const [month, setMonth] = useState<string>(currentMonthISO());
