@@ -244,7 +244,7 @@ const baseAutocontrolSchema = z.object({
   lotNumber: requiredText("N° de lot", 120),
   quantity: z.coerce.number({ invalid_type_error: "Quantité obligatoire" }).positive("Quantité obligatoire"),
   dlc: z.string().max(20, "DLC trop long").optional().or(z.literal("")),
-  notes: requiredText("Observations", 1000),
+  notes: z.string().max(1000).optional().or(z.literal("")),
   visaManager: z.string().max(100, "Visa manager trop long").optional().or(z.literal("")),
 });
 
