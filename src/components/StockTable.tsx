@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
-import { PinPromptDialog } from "./PinPromptDialog";
+import { useAuth } from "@/contexts/AuthContext";
 import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/integrations/supabase/client";
 
