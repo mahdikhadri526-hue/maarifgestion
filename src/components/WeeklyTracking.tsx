@@ -598,7 +598,7 @@ export function WeeklyTracking() {
       );
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = { ...next[idx], ...patch };
+        next[idx] = { ...next[idx], ...patch, __dirty: true };
         return next;
       }
       return [
@@ -609,6 +609,7 @@ export function WeeklyTracking() {
           day_of_week: day,
           row_index: rowIndex,
           article,
+          __dirty: true,
           ...patch,
         },
       ];
@@ -808,7 +809,7 @@ export function WeeklyTracking() {
     setRows((prev) =>
       prev.flatMap((r) => {
         if (`${r.week_start}|${r.day_of_week}|${r.row_index}|${r.article ?? ""}` !== key) return [r];
-        return r.id ? [{ ...r, entrees: null, lot_number: null }] : [];
+        return r.id ? [{ ...r, entrees: null, lot_number: null, __dirty: true }] : [];
       }),
     );
   };
@@ -829,9 +830,10 @@ export function WeeklyTracking() {
     setSaving(true);
     try {
       const normalizedRows = normalizeWeeklyRows(rows);
-      const rowsToPersist = normalizedRows.filter((r) => hasWeeklyValue(r) || r.id);
+      const rowsToPersist = normalizedRows.filter((r) => (r.__dirty || !r.id) && (hasWeeklyValue(r) || r.id));
       if (rowsToPersist.length > 0) {
         const payload = rowsToPersist.map((r) => ({
+          id: r.id,
           fiche_type: ficheType,
           week_start: r.week_start ?? weekStart,
           day_of_week: r.day_of_week,
@@ -848,25 +850,28 @@ export function WeeklyTracking() {
           visa_operateur: r.visa_operateur ?? null,
           visa_manager: r.visa_manager ?? null,
         }));
-        for (const item of payload) {
-          const baseQuery = supabase
-            .from("weekly_tracking")
-            .select("id")
-            .eq("fiche_type", item.fiche_type)
-            .eq("week_start", item.week_start)
-            .eq("day_of_week", item.day_of_week)
-            .eq("row_index", item.row_index);
-          const { data: existing, error: findErr } = await (item.article == null
-            ? baseQuery.is("article", null)
-            : baseQuery.eq("article", item.article))
-            .order("updated_at", { ascending: false })
-            .limit(1);
-          if (findErr) throw findErr;
-          const id = existing?.[0]?.id;
-          const { error } = id
-            ? await supabase.from("weekly_tracking").update(item).eq("id", id)
-            : await supabase.from("weekly_tracking").insert(item);
+        const updates = payload.filter((item) => item.id);
+        const inserts = payload.filter((item) => !item.id).map(({ id, ...item }) => item);
+
+        await runInBatches(updates, async ({ id, ...item }) => {
+          const { error } = await supabase.from("weekly_tracking").update(item).eq("id", id);
           if (error) throw error;
+
+          const idx = normalizedRows.findIndex((row) => row.id === id);
+          if (idx >= 0) normalizedRows[idx] = { ...normalizedRows[idx], ...item, __dirty: false };
+        });
+
+        if (inserts.length > 0) {
+          const { data, error } = await supabase
+            .from("weekly_tracking")
+            .upsert(inserts, { onConflict: "fiche_type,week_start,day_of_week,row_index,article" })
+            .select();
+          if (error) throw error;
+          const saved = normalizeWeeklyRows(data || []);
+          saved.forEach((savedRow) => {
+            const idx = normalizedRows.findIndex((row) => rowKey(row) === rowKey(savedRow));
+            if (idx >= 0) normalizedRows[idx] = { ...savedRow, __dirty: false };
+          });
         }
       }
       setRows(normalizeWeeklyRows(rowsToPersist));
