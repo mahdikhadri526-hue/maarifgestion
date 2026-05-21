@@ -17,7 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Search } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
-import { PinPromptDialog } from "./PinPromptDialog";
+import { useAuth } from "@/contexts/AuthContext";
 import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -51,7 +51,6 @@ const currentMonthISO = () => new Date().toISOString().slice(0, 7);
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
   const [category, setCategory] = useState<Category | "all" | "tarte" | "glace">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
-  const [pendingUnit, setPendingUnit] = useState<{ productId: string; currentUnit: UnitType } | null>(null);
   const [mode, setMode] = useState<FilterMode>(variant === "order" ? "month" : "all");
   const [day, setDay] = useState<string>(todayISO());
   const [month, setMonth] = useState<string>(currentMonthISO());
@@ -61,6 +60,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [periodLoading, setPeriodLoading] = useState(false);
   const [weeklyRows, setWeeklyRows] = useState<Array<{ article: string; sorties: number; stockActuel: number }>>([]);
   const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const { can } = useAuth();
 
   const isWeeklyCat = category === "tarte" || category === "glace";
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
@@ -464,7 +464,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   </td>
                   <td className="p-3">
                     <button
-                      onClick={() => setPendingUnit({ productId: level.productId, currentUnit: level.unit })}
+                      onClick={() => {
+                        if (can("edit_stock")) {
+                          cycleUnit(level.productId, level.unit);
+                        } else {
+                          toast.error("Opération non autorisée");
+                        }
+                      }}
                       className="cursor-pointer text-xs px-2 py-1 rounded-md border font-medium transition-colors hover:bg-muted select-none"
                       title="Cliquer pour changer l'unité"
                     >
@@ -498,19 +504,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           )}
         </div>
       )}
-      <PinPromptDialog
-        open={!!pendingUnit}
-        onOpenChange={(open) => !open && setPendingUnit(null)}
-        title="Changer l'unité"
-        description="Entrez le code à 4 chiffres pour autoriser le changement d'unité."
-        onConfirm={() => {
-          if (pendingUnit) {
-            const { productId, currentUnit } = pendingUnit;
-            setPendingUnit(null);
-            cycleUnit(productId, currentUnit);
-          }
-        }}
-      />
     </div>
   );
 }

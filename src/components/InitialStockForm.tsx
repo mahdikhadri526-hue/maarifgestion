@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Save, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
-import { PinPromptDialog } from "./PinPromptDialog";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface Props {
   onUpdated: () => void;
@@ -18,9 +18,8 @@ export function InitialStockForm({ onUpdated }: Props) {
   const [stocks, setStocks] = useState<Record<string, string>>({});
   const [lotNumbers, setLotNumbers] = useState<Record<string, string>>({});
   const [expiryDates, setExpiryDates] = useState<Record<string, string>>({});
-  const [pendingSave, setPendingSave] = useState<{ productId: string; category: Category } | null>(null);
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
-  const [pendingUnlockId, setPendingUnlockId] = useState<string | null>(null);
+  const { can } = useAuth();
   const { data: savedStocks, loading } = useInitialStocks();
 
   useEffect(() => {
@@ -37,6 +36,10 @@ export function InitialStockForm({ onUpdated }: Props) {
   );
 
   const handleSave = async (productId: string, productCategory: Category) => {
+    if (!can("edit_stock")) {
+      toast.error("Opération non autorisée");
+      return;
+    }
     const val = Number(stocks[productId] || 0);
     if (isNaN(val) || val < 0) {
       toast.error("Quantité invalide");
@@ -195,13 +198,19 @@ export function InitialStockForm({ onUpdated }: Props) {
                           </button>
                         </>
                       ) : (
-                        <button
-                          onClick={() => setPendingUnlockId(p.id)}
-                          className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                          title="Déverrouiller pour modifier"
-                        >
-                          <Lock className="h-4 w-4" />
-                        </button>
+                      <button
+                        onClick={() => {
+                          if (can("edit_stock")) {
+                            setUnlockedIds((s) => new Set(s).add(p.id));
+                          } else {
+                            toast.error("Opération non autorisée");
+                          }
+                        }}
+                        className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                        title="Déverrouiller pour modifier"
+                      >
+                        <Lock className="h-4 w-4" />
+                      </button>
                       )}
                     </div>
                   </td>
@@ -211,31 +220,6 @@ export function InitialStockForm({ onUpdated }: Props) {
           </tbody>
         </table>
       </div>
-      <PinPromptDialog
-        open={!!pendingSave}
-        onOpenChange={(open) => !open && setPendingSave(null)}
-        title="Modifier le stock initial"
-        description="Entrez le code à 4 chiffres pour autoriser la modification."
-        onConfirm={() => {
-          if (pendingSave) {
-            const { productId, category } = pendingSave;
-            setPendingSave(null);
-            handleSave(productId, category);
-          }
-        }}
-      />
-      <PinPromptDialog
-        open={!!pendingUnlockId}
-        onOpenChange={(open) => !open && setPendingUnlockId(null)}
-        title="Déverrouiller le stock initial"
-        description="Entrez le code à 4 chiffres pour autoriser la modification de ce produit."
-        onConfirm={() => {
-          if (pendingUnlockId) {
-            setUnlockedIds((s) => new Set(s).add(pendingUnlockId));
-            setPendingUnlockId(null);
-          }
-        }}
-      />
     </div>
   );
 }

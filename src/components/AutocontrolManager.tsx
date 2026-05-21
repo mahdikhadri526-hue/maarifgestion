@@ -34,7 +34,17 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { PinPromptDialog } from "./PinPromptDialog";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
@@ -363,6 +373,7 @@ export function AutocontrolManager() {
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const { can } = useAuth();
   const [ctgProducts, setCtgProducts] = useState<Record<CtgProductKey, CtgProductRow>>(initialCtgProducts());
   const [decoProducts, setDecoProducts] = useState<Record<string, DecoProductRow>>(initialDecoProducts());
   const [editEntry, setEditEntry] = useState<AutocontrolEntry | null>(null);
@@ -1512,7 +1523,13 @@ export function AutocontrolManager() {
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => setDeleteId(e.id)}
+                        onClick={() => {
+                          if (can("delete_autocontrol")) {
+                            setDeleteId(e.id);
+                          } else {
+                            toast.error("Opération non autorisée");
+                          }
+                        }}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -1525,13 +1542,22 @@ export function AutocontrolManager() {
         )}
       </div>
 
-      <PinPromptDialog
-        open={deleteId !== null}
-        onOpenChange={(open) => !open && setDeleteId(null)}
-        onConfirm={confirmDelete}
-        title="Confirmer la suppression"
-        description="Entrez le code PIN pour supprimer cette fiche."
-      />
+      <AlertDialog open={deleteId !== null} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
+            <AlertDialogDescription>
+              Voulez-vous vraiment supprimer cette fiche d'autocontrôle ?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <Dialog
         open={editEntry !== null}

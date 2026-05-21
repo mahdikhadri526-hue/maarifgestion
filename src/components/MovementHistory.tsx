@@ -6,7 +6,7 @@ import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send, U
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
-import { PinPromptDialog } from "./PinPromptDialog";
+import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { ENABLE_TRANSFERTS, ENABLE_REQUISITION_BADGE, ENABLE_MOVEMENT_TIME } from "@/lib/featureFlags";
 import {
@@ -38,8 +38,8 @@ interface MovementHistoryProps {
 
 export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const [reintegratingId, setReintegratingId] = useState<string | null>(null);
+  const { can } = useAuth();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterDate, setFilterDate] = useState<string>("");
   const [filterStartDate, setFilterStartDate] = useState<string>("");
@@ -400,7 +400,13 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                     </button>
                   )}
                   <button
-                    onClick={() => setPendingDeleteId(m.id)}
+                    onClick={() => {
+                      if (can("delete_movements")) {
+                        setDeleteId(m.id);
+                      } else {
+                        toast.error("Opération non autorisée");
+                      }
+                    }}
                     className="p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     title="Supprimer"
                   >
@@ -441,16 +447,6 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
         </AlertDialogContent>
       </AlertDialog>
 
-      <PinPromptDialog
-        open={!!pendingDeleteId}
-        onOpenChange={(open) => !open && setPendingDeleteId(null)}
-        title="Supprimer un mouvement"
-        description="Entrez le code à 4 chiffres pour autoriser la suppression."
-        onConfirm={() => {
-          setDeleteId(pendingDeleteId);
-          setPendingDeleteId(null);
-        }}
-      />
     </div>
   );
 }

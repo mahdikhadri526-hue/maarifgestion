@@ -12,7 +12,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
 import { OPERATORS } from "@/lib/operators";
-import { PinPromptDialog } from "./PinPromptDialog";
+import { useAuth } from "@/contexts/AuthContext";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 
@@ -192,7 +192,7 @@ export function WeeklyTracking() {
   const [filterTo, setFilterTo] = useState<string>(""); // YYYY-MM-DD
   const [showControls, setShowControls] = useState(true);
   const [unlockedDays, setUnlockedDays] = useState<Set<string>>(new Set());
-  const [pinTarget, setPinTarget] = useState<string | null>(null);
+  const { can } = useAuth();
   const ficheRef = useRef<HTMLDivElement>(null);
   const handlePrintFiche = () => {
     const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : "mouvement-tartes";
@@ -1203,9 +1203,15 @@ export function WeeklyTracking() {
                             {!editable && (
                               <button
                                 type="button"
-                                onClick={() => setPinTarget(iso)}
+                                onClick={() => {
+                                  if (can("edit_weekly")) {
+                                    setUnlockedDays((s) => { const n = new Set(s); n.add(iso); return n; });
+                                  } else {
+                                    toast.error("Opération non autorisée");
+                                  }
+                                }}
                                 className="mt-1 inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-primary-foreground"
-                                title="Jour verrouillé — entrer le code"
+                                title="Jour verrouillé — déverrouiller"
                               >
                                 <Lock className="h-3 w-3" /> Déverrouiller
                               </button>
@@ -1405,9 +1411,15 @@ export function WeeklyTracking() {
                       {!isDayEditable(iso) && (
                         <button
                           type="button"
-                          onClick={() => setPinTarget(iso)}
+                          onClick={() => {
+                            if (can("edit_weekly")) {
+                              setUnlockedDays((s) => { const n = new Set(s); n.add(iso); return n; });
+                            } else {
+                              toast.error("Opération non autorisée");
+                            }
+                          }}
                           className="mt-1 inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary hover:text-primary-foreground"
-                          title="Jour verrouillé — entrer le code"
+                          title="Jour verrouillé — déverrouiller"
                         >
                           <Lock className="h-3 w-3" /> Déverrouiller
                         </button>
@@ -1586,22 +1598,6 @@ export function WeeklyTracking() {
         ))}
         </div>
       </Tabs>
-      <PinPromptDialog
-        open={!!pinTarget}
-        onOpenChange={(o) => { if (!o) setPinTarget(null); }}
-        onConfirm={() => {
-          if (pinTarget) {
-            setUnlockedDays((s) => {
-              const next = new Set(s);
-              next.add(pinTarget);
-              return next;
-            });
-          }
-          setPinTarget(null);
-        }}
-        title="Jour verrouillé"
-        description="Ce jour n'est pas le jour J. Entrez le code à 4 chiffres pour autoriser les modifications."
-      />
     </div>
   );
 }
