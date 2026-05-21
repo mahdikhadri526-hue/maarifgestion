@@ -872,7 +872,7 @@ export function WeeklyTracking() {
 
         await runInBatches(updates, async (item) => {
           const updateItem = toMutation(item);
-          const { error } = await supabase.from("weekly_tracking").update(updateItem).eq("id", item.id);
+          const { error } = await supabase.from("weekly_tracking").update(updateItem as any).eq("id", item.id);
           if (error) throw error;
 
           const idx = normalizedRows.findIndex((row) => row.id === item.id);
@@ -882,7 +882,7 @@ export function WeeklyTracking() {
         if (inserts.length > 0) {
           const { data, error } = await supabase
             .from("weekly_tracking")
-            .insert(inserts)
+            .insert(inserts as any)
             .select();
           if (error) throw error;
           const saved = normalizeWeeklyRows(data || []);
