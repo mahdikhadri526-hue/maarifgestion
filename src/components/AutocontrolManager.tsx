@@ -1581,7 +1581,8 @@ export function AutocontrolManager() {
                           step="any"
                           min="0.01"
                           value={editFields.quantity}
-                          onChange={(e) => setEditFields((f) => ({ ...f, quantity: e.target.value }))}
+                          readOnly
+                          disabled
                         />
                       </div>
                       <div>
@@ -1600,7 +1601,8 @@ export function AutocontrolManager() {
                         <Input
                           value={editFields.lotNumber}
                           maxLength={120}
-                          onChange={(e) => setEditFields((f) => ({ ...f, lotNumber: e.target.value }))}
+                          readOnly
+                          disabled
                         />
                       </div>
                       <div>
