@@ -1695,14 +1695,38 @@ export function AutocontrolManager() {
                 if (!editEntry) return;
                 setSavingEdit(true);
                 try {
-                  await updateAutocontrol(editEntry.id, {
-                    visaManager: editVisa.trim() || null as any,
+                  const isCtgEdit = editEntry.ficheType === "Cornet/Tulipe/Gaufrette";
+                  let nextExtra: any = editExtra;
+                  const patch: any = {
+                    visaManager: editVisa.trim() || (null as any),
                     extraData: editExtra,
-                  });
+                  };
+                  if (isCtgEdit) {
+                    const qty = Number(editFields.quantity);
+                    if (!Number.isFinite(qty) || qty <= 0) {
+                      throw new Error("Quantité invalide");
+                    }
+                    if (!editFields.lotNumber.trim()) {
+                      throw new Error("N° de lot obligatoire");
+                    }
+                    const qty2 = Number(editFields.quantity2);
+                    nextExtra = { ...(editExtra as any) };
+                    if (Number.isFinite(qty2) && qty2 > 0) {
+                      nextExtra.quantity2 = qty2;
+                    } else {
+                      delete nextExtra.quantity2;
+                    }
+                    patch.extraData = nextExtra;
+                    patch.quantity = qty;
+                    patch.lotNumber = editFields.lotNumber.trim();
+                    patch.dlc = editFields.dlc || null;
+                  }
+                  await updateAutocontrol(editEntry.id, patch);
                   toast.success("Fiche mise à jour");
                   setEditEntry(null);
                   setEditExtra(null);
                   setEditVisa("");
+                  setEditFields({ quantity: "", quantity2: "", lotNumber: "", dlc: "" });
                   await refresh();
                 } catch (err: any) {
                   toast.error("Erreur", { description: err.message });
