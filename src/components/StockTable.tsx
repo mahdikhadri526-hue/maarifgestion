@@ -60,6 +60,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [periodLoading, setPeriodLoading] = useState(false);
   const [weeklyRows, setWeeklyRows] = useState<Array<{ article: string; sorties: number; stockActuel: number }>>([]);
   const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const { can } = useAuth();
 
   const isWeeklyCat = category === "tarte" || category === "glace";
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
