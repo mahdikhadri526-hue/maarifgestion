@@ -188,8 +188,7 @@ export function LotManager() {
   const [editingLot, setEditingLot] = useState<string | null>(null);
   const [editLotNumber, setEditLotNumber] = useState("");
   const [editExpiryDate, setEditExpiryDate] = useState("");
-  const [pendingEdit, setPendingEdit] = useState<LotEntry | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<LotEntry | null>(null);
+  const { can } = useAuth();
 
   const products = getProducts("alimentaire");
   const { data: lots, loading } = useProductLots(selectedProductId);
