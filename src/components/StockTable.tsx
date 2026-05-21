@@ -463,7 +463,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   </td>
                   <td className="p-3">
                     <button
-                      onClick={() => setPendingUnit({ productId: level.productId, currentUnit: level.unit })}
+                      onClick={() => {
+                        if (can("edit_stock")) {
+                          cycleUnit(level.productId, level.unit);
+                        } else {
+                          toast.error("Opération non autorisée");
+                        }
+                      }}
                       className="cursor-pointer text-xs px-2 py-1 rounded-md border font-medium transition-colors hover:bg-muted select-none"
                       title="Cliquer pour changer l'unité"
                     >
