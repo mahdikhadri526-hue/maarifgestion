@@ -1482,11 +1482,10 @@ export function AutocontrolManager() {
                       )}
                     </td>
                     <td className="py-2 pr-2">
-                      {(!e.visaManager || !e.visaManager.trim()) && (
                       <Button
                         size="sm"
                         variant="ghost"
-                        title="Compléter la fiche (visa + contrôle manager)"
+                        title="Modifier la fiche"
                         onClick={() => {
                           setEditEntry(e);
                           setEditVisa(e.visaManager ?? "");
@@ -1495,11 +1494,19 @@ export function AutocontrolManager() {
                               ? JSON.parse(JSON.stringify(e.extraData))
                               : null,
                           );
+                          setEditFields({
+                            quantity: e.quantity != null ? String(e.quantity) : "",
+                            quantity2:
+                              (e.extraData as any)?.quantity2 != null
+                                ? String((e.extraData as any).quantity2)
+                                : "",
+                            lotNumber: e.lotNumber ?? "",
+                            dlc: e.dlc ?? "",
+                          });
                         }}
                       >
                         <FileCheck className="h-4 w-4 text-primary" />
                       </Button>
-                      )}
                       <Button
                         size="sm"
                         variant="ghost"
