@@ -117,12 +117,16 @@ export async function deleteAutocontrol(id: string) {
 
 export async function updateAutocontrol(
   id: string,
-  patch: Partial<Pick<AutocontrolEntry, "visaManager" | "extraData" | "notes">>,
+  patch: Partial<Pick<AutocontrolEntry, "visaManager" | "extraData" | "notes" | "article" | "lotNumber" | "quantity" | "dlc">>,
 ) {
   const payload: any = {};
   if (patch.visaManager !== undefined) payload.visa_manager = patch.visaManager;
   if (patch.extraData !== undefined) payload.extra_data = patch.extraData;
   if (patch.notes !== undefined) payload.notes = patch.notes;
+  if (patch.article !== undefined) payload.article = patch.article;
+  if (patch.lotNumber !== undefined) payload.lot_number = patch.lotNumber;
+  if (patch.quantity !== undefined) payload.quantity = patch.quantity;
+  if (patch.dlc !== undefined) payload.dlc = patch.dlc;
   const { error } = await supabase.from("autocontrols").update(payload).eq("id", id);
   if (error) throw error;
 }

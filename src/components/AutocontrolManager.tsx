@@ -178,11 +178,11 @@ const initialCtgExtra = (): CtgExtraData => ({
 
 type CtgProductKey = "Cornet" | "Tulipe" | "Gaufrette";
 const CTG_PRODUCTS: CtgProductKey[] = ["Cornet", "Tulipe", "Gaufrette"];
-type CtgProductRow = { selected: boolean; quantity: string; lotNumber: string; dlc: string };
+type CtgProductRow = { selected: boolean; quantity: string; quantity2: string; lotNumber: string; dlc: string };
 const initialCtgProducts = (): Record<CtgProductKey, CtgProductRow> => ({
-  Cornet: { selected: true, quantity: "", lotNumber: "", dlc: "" },
-  Tulipe: { selected: false, quantity: "", lotNumber: "", dlc: "" },
-  Gaufrette: { selected: false, quantity: "", lotNumber: "", dlc: "" },
+  Cornet: { selected: true, quantity: "", quantity2: "", lotNumber: "", dlc: "" },
+  Tulipe: { selected: false, quantity: "", quantity2: "", lotNumber: "", dlc: "" },
+  Gaufrette: { selected: false, quantity: "", quantity2: "", lotNumber: "", dlc: "" },
 });
 
 type DecoProductRow = { selected: boolean; quantity: string; lotNumber: string; lotNumberDemi?: string };
@@ -368,6 +368,12 @@ export function AutocontrolManager() {
   const [editEntry, setEditEntry] = useState<AutocontrolEntry | null>(null);
   const [editVisa, setEditVisa] = useState("");
   const [editExtra, setEditExtra] = useState<CtgExtraData | null>(null);
+  const [editFields, setEditFields] = useState<{ quantity: string; quantity2: string; lotNumber: string; dlc: string }>({
+    quantity: "",
+    quantity2: "",
+    lotNumber: "",
+    dlc: "",
+  });
   const [savingEdit, setSavingEdit] = useState(false);
   const [viewEntry, setViewEntry] = useState<AutocontrolEntry | null>(null);
   const viewRef = useRef<HTMLDivElement>(null);
@@ -714,6 +720,10 @@ export function AutocontrolManager() {
         const selected = CTG_PRODUCTS.filter((p) => ctgProducts[p].selected);
         for (const p of selected) {
           const row = ctgProducts[p];
+          const qty2 = Number(row.quantity2);
+          const perEntryExtra = Number.isFinite(qty2) && qty2 > 0
+            ? { ...(extraData as any), quantity2: qty2 }
+            : extraData;
           await addAutocontrol({
             ficheType: form.ficheType,
             controlDate: baseResult.data.controlDate,
@@ -724,7 +734,7 @@ export function AutocontrolManager() {
             dlc: row.dlc || null,
             visaManager: baseResult.data.visaManager,
             notes: baseResult.data.notes,
-            extraData,
+            extraData: perEntryExtra,
           });
           await syncTarteMovementEntry(
             p,
@@ -1011,6 +1021,19 @@ export function AutocontrolManager() {
                               value={row.quantity}
                               onChange={(e) =>
                                 setCtgProducts((s) => ({ ...s, [p]: { ...s[p], quantity: e.target.value } }))
+                              }
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground">Quantité 2</label>
+                            <Input
+                              type="number"
+                              step="any"
+                              min="0"
+                              placeholder="Optionnel"
+                              value={row.quantity2}
+                              onChange={(e) =>
+                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], quantity2: e.target.value } }))
                               }
                             />
                           </div>
@@ -1393,7 +1416,10 @@ export function AutocontrolManager() {
                     <td className="py-2 pr-2">{e.collaborateur}</td>
                     <td className="py-2 pr-2">{e.article}</td>
                     <td className="py-2 pr-2">{e.lotNumber || "—"}</td>
-                    <td className="py-2 pr-2">{e.quantity ?? "—"}</td>
+                    <td className="py-2 pr-2">
+                      {e.quantity ?? "—"}
+                      {(e.extraData as any)?.quantity2 ? ` + ${(e.extraData as any).quantity2}` : ""}
+                    </td>
                     <td className="py-2 pr-2">{e.dlc ? formatDateFR(e.dlc) : "—"}</td>
                     <td className="py-2 pr-2">
                       {e.visaManager && e.visaManager.trim() ? (
@@ -1459,11 +1485,10 @@ export function AutocontrolManager() {
                       )}
                     </td>
                     <td className="py-2 pr-2">
-                      {(!e.visaManager || !e.visaManager.trim()) && (
                       <Button
                         size="sm"
                         variant="ghost"
-                        title="Compléter la fiche (visa + contrôle manager)"
+                        title="Modifier la fiche"
                         onClick={() => {
                           setEditEntry(e);
                           setEditVisa(e.visaManager ?? "");
@@ -1472,11 +1497,19 @@ export function AutocontrolManager() {
                               ? JSON.parse(JSON.stringify(e.extraData))
                               : null,
                           );
+                          setEditFields({
+                            quantity: e.quantity != null ? String(e.quantity) : "",
+                            quantity2:
+                              (e.extraData as any)?.quantity2 != null
+                                ? String((e.extraData as any).quantity2)
+                                : "",
+                            lotNumber: e.lotNumber ?? "",
+                            dlc: e.dlc ?? "",
+                          });
                         }}
                       >
                         <FileCheck className="h-4 w-4 text-primary" />
                       </Button>
-                      )}
                       <Button
                         size="sm"
                         variant="ghost"
@@ -1516,6 +1549,7 @@ export function AutocontrolManager() {
             setEditEntry(null);
             setEditExtra(null);
             setEditVisa("");
+            setEditFields({ quantity: "", quantity2: "", lotNumber: "", dlc: "" });
           }
         }}
       >
@@ -1535,6 +1569,48 @@ export function AutocontrolManager() {
 
               {editEntry.ficheType === "Cornet/Tulipe/Gaufrette" && editExtra && (
                 <>
+                  <div className="bg-muted/30 rounded-lg p-3">
+                    <h4 className="text-sm font-semibold mb-2">Produit — {editEntry.article}</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs text-muted-foreground">Quantité *</label>
+                        <Input
+                          type="number"
+                          step="any"
+                          min="0.01"
+                          value={editFields.quantity}
+                          onChange={(e) => setEditFields((f) => ({ ...f, quantity: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">Quantité 2</label>
+                        <Input
+                          type="number"
+                          step="any"
+                          min="0"
+                          placeholder="Optionnel"
+                          value={editFields.quantity2}
+                          onChange={(e) => setEditFields((f) => ({ ...f, quantity2: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">N° de lot *</label>
+                        <Input
+                          value={editFields.lotNumber}
+                          maxLength={120}
+                          onChange={(e) => setEditFields((f) => ({ ...f, lotNumber: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">DLC</label>
+                        <Input
+                          type="date"
+                          value={editFields.dlc}
+                          onChange={(e) => setEditFields((f) => ({ ...f, dlc: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
                   <div className="bg-muted/30 rounded-lg p-3">
                     <h4 className="text-sm font-semibold mb-2">Nettoyage</h4>
                     <div className="space-y-2">
@@ -1622,14 +1698,38 @@ export function AutocontrolManager() {
                 if (!editEntry) return;
                 setSavingEdit(true);
                 try {
-                  await updateAutocontrol(editEntry.id, {
-                    visaManager: editVisa.trim() || null as any,
+                  const isCtgEdit = editEntry.ficheType === "Cornet/Tulipe/Gaufrette";
+                  let nextExtra: any = editExtra;
+                  const patch: any = {
+                    visaManager: editVisa.trim() || (null as any),
                     extraData: editExtra,
-                  });
+                  };
+                  if (isCtgEdit) {
+                    const qty = Number(editFields.quantity);
+                    if (!Number.isFinite(qty) || qty <= 0) {
+                      throw new Error("Quantité invalide");
+                    }
+                    if (!editFields.lotNumber.trim()) {
+                      throw new Error("N° de lot obligatoire");
+                    }
+                    const qty2 = Number(editFields.quantity2);
+                    nextExtra = { ...(editExtra as any) };
+                    if (Number.isFinite(qty2) && qty2 > 0) {
+                      nextExtra.quantity2 = qty2;
+                    } else {
+                      delete nextExtra.quantity2;
+                    }
+                    patch.extraData = nextExtra;
+                    patch.quantity = qty;
+                    patch.lotNumber = editFields.lotNumber.trim();
+                    patch.dlc = editFields.dlc || null;
+                  }
+                  await updateAutocontrol(editEntry.id, patch);
                   toast.success("Fiche mise à jour");
                   setEditEntry(null);
                   setEditExtra(null);
                   setEditVisa("");
+                  setEditFields({ quantity: "", quantity2: "", lotNumber: "", dlc: "" });
                   await refresh();
                 } catch (err: any) {
                   toast.error("Erreur", { description: err.message });
@@ -1674,7 +1774,12 @@ export function AutocontrolManager() {
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Article :</span> <strong>{viewEntry.article}</strong></div>
                 <div><span className="text-muted-foreground">Lot :</span> {viewEntry.lotNumber || "—"}</div>
-                <div><span className="text-muted-foreground">Quantité :</span> {viewEntry.quantity ?? "—"}</div>
+                <div>
+                  <span className="text-muted-foreground">Quantité :</span> {viewEntry.quantity ?? "—"}
+                  {(viewEntry.extraData as any)?.quantity2
+                    ? ` (+ ${(viewEntry.extraData as any).quantity2})`
+                    : ""}
+                </div>
                 <div><span className="text-muted-foreground">DLC :</span> {viewEntry.dlc ? formatDateFR(viewEntry.dlc) : "—"}</div>
                 <div className="col-span-2">
                   <span className="text-muted-foreground">Visa manager :</span>{" "}
