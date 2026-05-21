@@ -714,6 +714,10 @@ export function AutocontrolManager() {
         const selected = CTG_PRODUCTS.filter((p) => ctgProducts[p].selected);
         for (const p of selected) {
           const row = ctgProducts[p];
+          const qty2 = Number(row.quantity2);
+          const perEntryExtra = Number.isFinite(qty2) && qty2 > 0
+            ? { ...(extraData as any), quantity2: qty2 }
+            : extraData;
           await addAutocontrol({
             ficheType: form.ficheType,
             controlDate: baseResult.data.controlDate,
@@ -724,7 +728,7 @@ export function AutocontrolManager() {
             dlc: row.dlc || null,
             visaManager: baseResult.data.visaManager,
             notes: baseResult.data.notes,
-            extraData,
+            extraData: perEntryExtra,
           });
           await syncTarteMovementEntry(
             p,
