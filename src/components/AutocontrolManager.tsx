@@ -368,6 +368,12 @@ export function AutocontrolManager() {
   const [editEntry, setEditEntry] = useState<AutocontrolEntry | null>(null);
   const [editVisa, setEditVisa] = useState("");
   const [editExtra, setEditExtra] = useState<CtgExtraData | null>(null);
+  const [editFields, setEditFields] = useState<{ quantity: string; quantity2: string; lotNumber: string; dlc: string }>({
+    quantity: "",
+    quantity2: "",
+    lotNumber: "",
+    dlc: "",
+  });
   const [savingEdit, setSavingEdit] = useState(false);
   const [viewEntry, setViewEntry] = useState<AutocontrolEntry | null>(null);
   const viewRef = useRef<HTMLDivElement>(null);
