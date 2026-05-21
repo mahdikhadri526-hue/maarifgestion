@@ -943,6 +943,20 @@ export function AutocontrolManager() {
                               onChange={() => {}}
                             />
                           </div>
+                          {name === "Tarte 12" && (
+                            <div className="sm:col-span-2">
+                              <label className="text-xs text-muted-foreground">N° de lot Demi</label>
+                              <Input
+                                value={row.lotNumberDemi ?? ""}
+                                maxLength={120}
+                                readOnly
+                                tabIndex={-1}
+                                className="bg-muted/50 cursor-not-allowed"
+                                placeholder="Auto (Demis – Mouvement tarte)"
+                                onChange={() => {}}
+                              />
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
