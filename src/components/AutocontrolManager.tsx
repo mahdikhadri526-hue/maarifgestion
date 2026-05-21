@@ -364,11 +364,6 @@ export function AutocontrolManager() {
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [ctgProducts, setCtgProducts] = useState<Record<CtgProductKey, CtgProductRow>>(initialCtgProducts());
-  const [ctgSameDough, setCtgSameDough] = useState<{ enabled: boolean; lotNumber: string; dlc: string }>({
-    enabled: false,
-    lotNumber: "",
-    dlc: "",
-  });
   const [decoProducts, setDecoProducts] = useState<Record<string, DecoProductRow>>(initialDecoProducts());
   const [editEntry, setEditEntry] = useState<AutocontrolEntry | null>(null);
   const [editVisa, setEditVisa] = useState("");
