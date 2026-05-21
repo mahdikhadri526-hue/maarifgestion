@@ -34,7 +34,17 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { PinPromptDialog } from "./PinPromptDialog";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
