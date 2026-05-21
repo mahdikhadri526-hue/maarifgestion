@@ -748,6 +748,20 @@ export function AutocontrolManager() {
             notes: baseResult.data.notes,
             extraData: decorationExtra,
           });
+          if (name === "Tarte 12" && (row.lotNumberDemi ?? "").trim()) {
+            await addAutocontrol({
+              ficheType: form.ficheType,
+              controlDate: baseResult.data.controlDate,
+              collaborateur: baseResult.data.collaborateur,
+              article: "Tarte 12 - Demi",
+              lotNumber: row.lotNumberDemi!.trim(),
+              quantity: Number(row.quantity),
+              dlc: null,
+              visaManager: baseResult.data.visaManager,
+              notes: baseResult.data.notes,
+              extraData: decorationExtra,
+            });
+          }
         }
       } else {
       await addAutocontrol({
