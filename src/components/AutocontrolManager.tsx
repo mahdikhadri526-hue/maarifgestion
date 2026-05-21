@@ -1567,6 +1567,48 @@ export function AutocontrolManager() {
               {editEntry.ficheType === "Cornet/Tulipe/Gaufrette" && editExtra && (
                 <>
                   <div className="bg-muted/30 rounded-lg p-3">
+                    <h4 className="text-sm font-semibold mb-2">Produit — {editEntry.article}</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="text-xs text-muted-foreground">Quantité *</label>
+                        <Input
+                          type="number"
+                          step="any"
+                          min="0.01"
+                          value={editFields.quantity}
+                          onChange={(e) => setEditFields((f) => ({ ...f, quantity: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">Quantité 2</label>
+                        <Input
+                          type="number"
+                          step="any"
+                          min="0"
+                          placeholder="Optionnel"
+                          value={editFields.quantity2}
+                          onChange={(e) => setEditFields((f) => ({ ...f, quantity2: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">N° de lot *</label>
+                        <Input
+                          value={editFields.lotNumber}
+                          maxLength={120}
+                          onChange={(e) => setEditFields((f) => ({ ...f, lotNumber: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs text-muted-foreground">DLC</label>
+                        <Input
+                          type="date"
+                          value={editFields.dlc}
+                          onChange={(e) => setEditFields((f) => ({ ...f, dlc: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-muted/30 rounded-lg p-3">
                     <h4 className="text-sm font-semibold mb-2">Nettoyage</h4>
                     <div className="space-y-2">
                       {([
