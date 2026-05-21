@@ -109,7 +109,7 @@ const PANACHE_FLAVOR_ARTICLE: Record<string, string> = {
 const DECORATION_TARTE_ARTICLE: Record<string, string> = {
   "Tarte 10": "Tarte 10",
   "Tarte 6": "Tarte 6",
-  "Tarte 12": "Tarte 12",
+  "Tarte 12": "Tarte 8",
   "Tarte spéciale": "Tte Sp.",
   "Tarte spéciale 8": "Tte.Sp 8",
   "Tarte sorbet": "Tte Sor.",
