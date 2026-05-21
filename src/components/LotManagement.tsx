@@ -379,10 +379,22 @@ export function LotManager() {
                             </div>
                           ) : (
                             <div className="flex gap-1 justify-center">
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setPendingEdit(lot)}>
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => {
+                                if (can("edit_lots")) {
+                                  startEdit(lot);
+                                } else {
+                                  toast.error("Opération non autorisée");
+                                }
+                              }}>
                                 <Edit2 className="h-3.5 w-3.5" />
                               </Button>
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setPendingDelete(lot)}>
+                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => {
+                                if (can("delete_lots")) {
+                                  handleDelete(lot);
+                                } else {
+                                  toast.error("Opération non autorisée");
+                                }
+                              }}>
                                 <Trash2 className="h-3.5 w-3.5 text-destructive" />
                               </Button>
                             </div>
