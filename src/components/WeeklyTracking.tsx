@@ -117,10 +117,14 @@ function normalizeWeeklyRows(input: Row[]) {
     });
     merged.set(key, newer);
   });
+  const dayRank = (day: any) => {
+    const idx = DAYS.indexOf(day as typeof DAYS[number]);
+    return idx < 0 ? 99 : idx;
+  };
   return Array.from(merged.values()).sort(
     (a, b) =>
       String(a.week_start ?? "").localeCompare(String(b.week_start ?? "")) ||
-      DAYS.indexOf(a.day_of_week).toString().localeCompare(DAYS.indexOf(b.day_of_week).toString()) ||
+      dayRank(a.day_of_week) - dayRank(b.day_of_week) ||
       String(a.article ?? "").localeCompare(String(b.article ?? "")) ||
       Number(a.row_index ?? 0) - Number(b.row_index ?? 0),
   );
