@@ -1725,6 +1725,7 @@ export function AutocontrolManager() {
                       throw new Error("N° de lot obligatoire");
                     }
                     const qty2 = Number(editFields.quantity2);
+                    const prevQty2 = Number((editExtra as any)?.quantity2 ?? 0);
                     nextExtra = { ...(editExtra as any) };
                     if (Number.isFinite(qty2) && qty2 > 0) {
                       nextExtra.quantity2 = qty2;
@@ -1737,6 +1738,19 @@ export function AutocontrolManager() {
                     patch.dlc = editFields.dlc || null;
                   }
                   await updateAutocontrol(editEntry.id, patch);
+                  if (isCtgEdit) {
+                    const qty2New = Number(editFields.quantity2);
+                    const prevQty2 = Number((editExtra as any)?.quantity2 ?? 0);
+                    const delta = (Number.isFinite(qty2New) && qty2New > 0 ? qty2New : 0) - (Number.isFinite(prevQty2) ? prevQty2 : 0);
+                    if (delta > 0) {
+                      await syncTarteMovementEntry(
+                        editEntry.article,
+                        delta,
+                        editFields.lotNumber.trim(),
+                        editEntry.controlDate,
+                      );
+                    }
+                  }
                   toast.success("Fiche mise à jour");
                   setEditEntry(null);
                   setEditExtra(null);
