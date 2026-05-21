@@ -61,11 +61,6 @@ export function AuthPage() {
         </div>
 
         <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Connexion</TabsTrigger>
-            <TabsTrigger value="signup">Créer un compte</TabsTrigger>
-          </TabsList>
-
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-4 mt-4 bg-card p-5 rounded-lg border">
               <div className="space-y-2">
@@ -85,30 +80,6 @@ export function AuthPage() {
               <Button type="submit" className="w-full" disabled={loading}>
                 <LogIn className="h-4 w-4 mr-2" /> Se connecter
               </Button>
-            </form>
-          </TabsContent>
-
-          <TabsContent value="signup">
-            <form onSubmit={handleSignup} className="space-y-4 mt-4 bg-card p-5 rounded-lg border">
-              <div className="space-y-2">
-                <Label>Nom affiché</Label>
-                <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Prénom" />
-              </div>
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="vous@exemple.com" />
-              </div>
-              <div className="space-y-2">
-                <Label>Mot de passe</Label>
-                <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-                <p className="text-xs text-muted-foreground">6 caractères minimum</p>
-              </div>
-              <Button type="submit" className="w-full" disabled={loading}>
-                <UserPlus className="h-4 w-4 mr-2" /> Créer le compte
-              </Button>
-              <p className="text-xs text-muted-foreground text-center">
-                Les permissions sont attribuées par l'administrateur après création.
-              </p>
             </form>
           </TabsContent>
         </Tabs>
