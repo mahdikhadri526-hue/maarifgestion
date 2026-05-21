@@ -1557,7 +1557,6 @@ export function AutocontrolManager() {
                 <div>Collaborateur : {editEntry.collaborateur}</div>
                 <div>Article : {editEntry.article} {editEntry.lotNumber ? `(lot ${editEntry.lotNumber})` : ""}</div>
                 <div>Quantité : {editEntry.quantity ?? "—"}{editEntry.dlc ? ` • DLC ${formatDateFR(editEntry.dlc)}` : ""}</div>
-                {editEntry.notes && <div>Observations : {editEntry.notes}</div>}
               </div>
 
               {editEntry.ficheType === "Cornet/Tulipe/Gaufrette" && editExtra && (
