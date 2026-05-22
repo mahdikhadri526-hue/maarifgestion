@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { formatDateFR } from "@/lib/utils";
+import { formatDateFR, cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
