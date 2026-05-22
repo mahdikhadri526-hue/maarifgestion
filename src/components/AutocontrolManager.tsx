@@ -1394,53 +1394,74 @@ export function AutocontrolManager() {
         ) : filtered.length === 0 ? (
           <p className="text-sm text-muted-foreground">Aucune fiche enregistrée.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-lg border border-border">
+            <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="border-b text-left text-muted-foreground text-xs uppercase">
-                  <th className="py-2 pr-2">Date</th>
-                  <th className="py-2 pr-2">Fiche</th>
-                  <th className="py-2 pr-2">Collaborateur</th>
-                  <th className="py-2 pr-2">Article</th>
-                  <th className="py-2 pr-2">Lot</th>
-                  <th className="py-2 pr-2">Qté</th>
-                  <th className="py-2 pr-2">DLC</th>
-                  <th className="py-2 pr-2">Visa</th>
-                  <th className="py-2 pr-2">Notes</th>
-                  <th className="py-2 pr-2"></th>
+                <tr className="bg-muted/80 text-left text-xs uppercase tracking-wide text-muted-foreground border-b border-border">
+                  <th className="py-3 px-3 font-semibold border-r border-border/50">Date</th>
+                  <th className="py-3 px-3 font-semibold border-r border-border/50">Fiche</th>
+                  <th className="py-3 px-3 font-semibold border-r border-border/50">Collaborateur</th>
+                  <th className="py-3 px-3 font-semibold border-r border-border/50">Article</th>
+                  <th className="py-3 px-3 font-semibold border-r border-border/50">Lot</th>
+                  <th className="py-3 px-3 font-semibold border-r border-border/50 text-center">Qté</th>
+                  <th className="py-3 px-3 font-semibold border-r border-border/50">DLC</th>
+                  <th className="py-3 px-3 font-semibold border-r border-border/50">Visa</th>
+                  <th className="py-3 px-3 font-semibold border-r border-border/50">Notes</th>
+                  <th className="py-3 px-3 font-semibold text-center">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((e) => (
-                  <tr key={e.id} className="border-b hover:bg-muted/30">
-                    <td className="py-2 pr-2 whitespace-nowrap">{formatDateFR(e.controlDate)}</td>
-                    <td className="py-2 pr-2">{e.ficheType}</td>
-                    <td className="py-2 pr-2">{e.collaborateur}</td>
-                    <td className="py-2 pr-2">{e.article}</td>
-                    <td className="py-2 pr-2">{e.lotNumber || "—"}</td>
-                    <td className="py-2 pr-2">
-                      {e.quantity ?? "—"}
-                      {(e.extraData as any)?.quantity2 ? ` + ${(e.extraData as any).quantity2}` : ""}
+                {filtered.map((e, idx) => (
+                  <tr
+                    key={e.id}
+                    className={cn(
+                      "border-b border-border/60 hover:bg-accent/30 transition-colors",
+                      idx % 2 === 0 ? "bg-background" : "bg-muted/20",
+                    )}
+                  >
+                    <td className="py-3 px-3 whitespace-nowrap border-r border-border/40 font-medium">
+                      {formatDateFR(e.controlDate)}
                     </td>
-                    <td className="py-2 pr-2">{e.dlc ? formatDateFR(e.dlc) : "—"}</td>
-                    <td className="py-2 pr-2">
+                    <td className="py-3 px-3 border-r border-border/40">
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-medium">
+                        {e.ficheType}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 border-r border-border/40">{e.collaborateur}</td>
+                    <td className="py-3 px-3 border-r border-border/40 font-medium">{e.article}</td>
+                    <td className="py-3 px-3 border-r border-border/40 text-xs font-mono text-muted-foreground">
+                      {e.lotNumber || "—"}
+                    </td>
+                    <td className="py-3 px-3 border-r border-border/40 text-center font-semibold tabular-nums">
+                      {e.quantity ?? "—"}
+                      {(e.extraData as any)?.quantity2 ? (
+                        <span className="text-muted-foreground font-normal"> + {(e.extraData as any).quantity2}</span>
+                      ) : null}
+                    </td>
+                    <td className="py-3 px-3 border-r border-border/40 whitespace-nowrap text-xs">
+                      {e.dlc ? formatDateFR(e.dlc) : "—"}
+                    </td>
+                    <td className="py-3 px-3 border-r border-border/40">
                       {e.visaManager && e.visaManager.trim() ? (
-                        e.visaManager
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold">
+                          <FileCheck className="h-3 w-3" />
+                          {e.visaManager}
+                        </span>
                       ) : (
-                        <span className="text-xs px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-400 font-medium whitespace-nowrap">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
                           En attente
                         </span>
                       )}
                     </td>
-                    <td className="py-2 pr-2 max-w-[260px]">
+                    <td className="py-3 px-3 border-r border-border/40 max-w-[260px]">
                       {e.extraData ? (
                         <details className="text-xs">
-                          <summary className="cursor-pointer text-primary">Détails</summary>
-                          <div className="mt-1 space-y-1">
+                          <summary className="cursor-pointer text-primary font-medium hover:underline">Voir détails</summary>
+                          <div className="mt-2 space-y-2 p-2 bg-muted/40 rounded-md border border-border/50">
                             {e.extraData.ingredients && e.extraData.ingredients.length > 0 && (
                               <div>
-                                <strong>Ingrédients :</strong>
-                                <ul className="ml-3 list-disc">
+                                <strong className="text-xs uppercase tracking-wide text-muted-foreground">Ingrédients</strong>
+                                <ul className="mt-1 ml-3 list-disc space-y-0.5">
                                   {e.extraData.ingredients.map((i, k) => (
                                     <li key={k}>
                                       {i.name} — {i.quantity} (lot {i.lot || "—"})
@@ -1451,8 +1472,8 @@ export function AutocontrolManager() {
                             )}
                             {e.extraData.matieresPremieres && e.extraData.matieresPremieres.length > 0 && (
                               <div>
-                                <strong>Matières premières :</strong>
-                                <ul className="ml-3 list-disc">
+                                <strong className="text-xs uppercase tracking-wide text-muted-foreground">Matières premières</strong>
+                                <ul className="mt-1 ml-3 list-disc space-y-0.5">
                                   {e.extraData.matieresPremieres.map((m, k) => (
                                     <li key={k}>{m.name} — lot {m.lot || "—"}</li>
                                   ))}
@@ -1461,78 +1482,107 @@ export function AutocontrolManager() {
                             )}
                             {e.extraData.cleaning && (
                               <div>
-                                <strong>Nettoyage :</strong>{" "}
-                                {Object.entries(e.extraData.cleaning)
-                                  .filter(([k]) => k !== "notes")
-                                  .map(([k, v]) => `${k}: ${v === true || v === "conforme" ? "✓ Fait" : "—"}`)
-                                  .join(" • ") || "—"}
+                                <strong className="text-xs uppercase tracking-wide text-muted-foreground">Nettoyage</strong>{" "}
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {Object.entries(e.extraData.cleaning)
+                                    .filter(([k]) => k !== "notes")
+                                    .map(([k, v]) => (
+                                      <span
+                                        key={k}
+                                        className={cn(
+                                          "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium",
+                                          v === true || v === "conforme"
+                                            ? "bg-emerald-100 text-emerald-700"
+                                            : "bg-muted text-muted-foreground",
+                                        )}
+                                      >
+                                        {k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())}: {v === true || v === "conforme" ? "✓" : "—"}
+                                      </span>
+                                    ))}
+                                </div>
                               </div>
                             )}
                             {e.extraData.managerControl && (
                               <div>
-                                <strong>Contrôle :</strong>{" "}
-                                {Object.entries(e.extraData.managerControl)
-                                  .filter(([k]) => k !== "notes")
-                                  .map(([k, v]) => `${k}: ${v === "conforme" || v === true ? "✓ Conforme" : v === "non_conforme" ? "✗ Non conforme" : "—"}`)
-                                  .join(" • ") || "—"}
+                                <strong className="text-xs uppercase tracking-wide text-muted-foreground">Contrôle manager</strong>{" "}
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {Object.entries(e.extraData.managerControl)
+                                    .filter(([k]) => k !== "notes")
+                                    .map(([k, v]) => (
+                                      <span
+                                        key={k}
+                                        className={cn(
+                                          "inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium",
+                                          v === "conforme" || v === true
+                                            ? "bg-emerald-100 text-emerald-700"
+                                            : v === "non_conforme"
+                                            ? "bg-red-100 text-red-700"
+                                            : "bg-muted text-muted-foreground",
+                                        )}
+                                      >
+                                        {k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())}: {v === "conforme" || v === true ? "✓" : v === "non_conforme" ? "✗" : "—"}
+                                      </span>
+                                    ))}
+                                </div>
                               </div>
                             )}
-                            
-                           </div>
-                         </details>
-                       ) : (
-                         <span className="truncate block">—</span>
-                       )}
+                          </div>
+                        </details>
+                      ) : (
+                        <span className="truncate block text-muted-foreground">—</span>
+                      )}
                     </td>
-                    <td className="py-2 pr-2">
-                       {!e.visaManager?.trim() && (
-                       <Button
-                         size="sm"
-                         variant="ghost"
-                         title="Compléter la fiche"
-                         onClick={() => {
-                          setEditEntry(e);
-                          setEditVisa(e.visaManager ?? "");
-                          setEditExtra(
-                            e.extraData
-                              ? JSON.parse(JSON.stringify(e.extraData))
-                              : null,
-                          );
-                          setEditFields({
-                            quantity: e.quantity != null ? String(e.quantity) : "",
-                            quantity2:
-                              (e.extraData as any)?.quantity2 != null
-                                ? String((e.extraData as any).quantity2)
-                                : "",
-                            lotNumber: e.lotNumber ?? "",
-                            dlc: e.dlc ?? "",
-                          });
-                        }}
-                      >
-                        <FileCheck className="h-4 w-4 text-primary" />
-                      </Button>
-                       )}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        title="Voir / Imprimer / Télécharger PDF"
-                        onClick={() => setViewEntry(e)}
-                      >
-                        <Eye className="h-4 w-4 text-primary" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          if (can("delete_autocontrol")) {
-                            setDeleteId(e.id);
-                          } else {
-                            toast.error("Opération non autorisée");
-                          }
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                    <td className="py-3 px-3">
+                      <div className="flex items-center justify-center gap-1">
+                        {!e.visaManager?.trim() && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title="Compléter la fiche"
+                            onClick={() => {
+                              setEditEntry(e);
+                              setEditVisa(e.visaManager ?? "");
+                              setEditExtra(
+                                e.extraData
+                                  ? JSON.parse(JSON.stringify(e.extraData))
+                                  : null,
+                              );
+                              setEditFields({
+                                quantity: e.quantity != null ? String(e.quantity) : "",
+                                quantity2:
+                                  (e.extraData as any)?.quantity2 != null
+                                    ? String((e.extraData as any).quantity2)
+                                    : "",
+                                lotNumber: e.lotNumber ?? "",
+                                dlc: e.dlc ?? "",
+                              });
+                            }}
+                          >
+                            <FileCheck className="h-4 w-4 text-primary" />
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          title="Voir / Imprimer / Télécharger PDF"
+                          onClick={() => setViewEntry(e)}
+                        >
+                          <Eye className="h-4 w-4 text-primary" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            if (can("delete_autocontrol")) {
+                              setDeleteId(e.id);
+                            } else {
+                              toast.error("Opération non autorisée");
+                            }
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
