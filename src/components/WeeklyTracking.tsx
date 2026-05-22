@@ -29,6 +29,8 @@ const TARTE_ARTICLES = [
   "Bigarreaux", "Cake Chocolat", "Cake.citron", "Pain Savoi", "Brownies.G", "Brownies.Top",
   "Amandes.Top", "Noix.Top", "Tulipes", "Cornet", "Gaufrette",
   "Orange fruits", "Citron fruits", "POMME fruits", "POIRE fruits", "Ananas fruits", "Kiwi fruits",
+  "Rc 20", "Chlorane", "Solnet", "Flexi", "Mitard A", "Renovac", "Clean plack",
+  "Handonet", "Rince Matic", "Wach Matic", "Handobac",
 ];
 const GLACE_ARTICLES = [
   "Sicilienne vanille", "Sicilienne chocolat", "Sicilienne fraise", "Sicilienne mangue",
