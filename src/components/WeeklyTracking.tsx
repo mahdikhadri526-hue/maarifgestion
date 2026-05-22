@@ -1222,10 +1222,25 @@ export function WeeklyTracking() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-        <TabsList>
-          <TabsTrigger value="creme">Crème fraîche</TabsTrigger>
-          <TabsTrigger value="glace">Mouvement glaces</TabsTrigger>
-          <TabsTrigger value="tarte">Mouvement tartes</TabsTrigger>
+        <TabsList className="bg-muted/60 p-1.5 gap-1.5 rounded-xl">
+          <TabsTrigger
+            value="creme"
+            className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-amber-700 data-[state=inactive]:hover:bg-amber-100 transition-all"
+          >
+            Crème fraîche
+          </TabsTrigger>
+          <TabsTrigger
+            value="glace"
+            className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-sky-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-sky-700 data-[state=inactive]:hover:bg-sky-100 transition-all"
+          >
+            Mouvement glaces
+          </TabsTrigger>
+          <TabsTrigger
+            value="tarte"
+            className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-rose-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-rose-700 data-[state=inactive]:hover:bg-rose-100 transition-all"
+          >
+            Mouvement tartes
+          </TabsTrigger>
         </TabsList>
         <div ref={ficheRef} className="bg-background p-2 rounded-md">
           <div className="hidden print:block mb-2 px-2">
