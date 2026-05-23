@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { Camera, Loader2, Trash2 } from "lucide-react";
+import { Camera, Loader2, Trash2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export interface ScannedEntry {
@@ -38,6 +38,7 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
     setEntries([]);
@@ -141,27 +142,47 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) handleFile(f);
+                  e.target.value = "";
                 }}
               />
-              <Button
-                type="button"
-                variant="default"
-                onClick={() => fileRef.current?.click()}
-                disabled={loading}
-                className="w-full"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Analyse en cours...
-                  </>
-                ) : (
-                  <>
+              <input
+                ref={galleryRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleFile(f);
+                  e.target.value = "";
+                }}
+              />
+              {loading ? (
+                <Button type="button" variant="default" disabled className="w-full">
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Analyse en cours...
+                </Button>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={() => fileRef.current?.click()}
+                    className="w-full"
+                  >
                     <Camera className="h-4 w-4 mr-2" />
-                    Prendre / choisir une photo
-                  </>
-                )}
-              </Button>
+                    Prendre photo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => galleryRef.current?.click()}
+                    className="w-full"
+                  >
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    Galerie
+                  </Button>
+                </div>
+              )}
             </div>
 
             {previewUrl && (
