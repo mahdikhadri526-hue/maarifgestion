@@ -1480,9 +1480,9 @@ export function WeeklyTracking() {
                 <X className="h-3 w-3 mr-1" /> Réinitialiser
               </Button>
             )}
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
               <Select value={scanDay} onValueChange={setScanDay}>
-                <SelectTrigger className="h-9 w-[150px] inline-flex mr-2">
+                <SelectTrigger className="h-9 w-[150px]">
                   <SelectValue placeholder="Jour" />
                 </SelectTrigger>
                 <SelectContent>
