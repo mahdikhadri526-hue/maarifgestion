@@ -1273,13 +1273,13 @@ export function WeeklyTracking() {
             </p>
           </div>
 
-        <TabsContent value="creme" className="mt-4">
-          <div className="bg-card rounded-lg border overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted">
+        <TabsContent value="creme" className="mt-4 min-w-0">
+          <div className="bg-card rounded-lg border overflow-auto max-h-[70vh] max-w-full">
+            <table className="w-full text-sm border-collapse">
+              <thead className="bg-muted sticky top-0 z-30">
                 <tr>
-                  <th className="p-2 text-left">Jour</th>
-                  <th className="p-2 text-left">Shift</th>
+                  <th className="p-2 text-left sticky left-0 bg-muted z-40 border-r">Jour</th>
+                  <th className="p-2 text-left sticky left-[68px] bg-muted z-40 border-r">Shift</th>
                   <th className="p-2 text-left">Quantité</th>
                   <th className="p-2 text-left min-w-[260px]">N° lot crème fraîche</th>
                   <th className="p-2 text-left">Couleur</th>
