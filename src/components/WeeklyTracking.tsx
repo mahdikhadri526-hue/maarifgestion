@@ -1435,7 +1435,7 @@ export function WeeklyTracking() {
         </TabsContent>
 
         {(["glace", "tarte"] as const).map((t) => (
-        <TabsContent key={t} value={t} className="mt-4 space-y-3">
+        <TabsContent key={t} value={t} className="mt-4 space-y-3 min-w-0">
           {/* FILTERS BAR */}
           {showControls && (
           <div className="bg-card rounded-lg border p-3 flex flex-wrap items-end gap-3">
