@@ -248,6 +248,7 @@ export function WeeklyTracking() {
   const [filterTo, setFilterTo] = useState<string>(""); // YYYY-MM-DD
   const [showControls, setShowControls] = useState(true);
   const [unlockedDays, setUnlockedDays] = useState<Set<string>>(new Set());
+  const [scanDay, setScanDay] = useState<string>("today");
   const { can, user } = useAuth();
   const restrictedEmail = "gestionmaarif1@gmail.com";
   const isRestrictedUser = (user?.email ?? "").toLowerCase() === restrictedEmail;
@@ -1113,14 +1114,19 @@ export function WeeklyTracking() {
         monday.getTime()) /
         86400000,
     );
-    const dayName = DAYS[Math.max(0, Math.min(6, dayDiff))];
+    const dayName =
+      scanDay === "today"
+        ? DAYS[Math.max(0, Math.min(6, dayDiff))]
+        : (scanDay as typeof DAYS[number]);
+    const useCurrentWeek = scanDay === "today";
+    const finalWeek = useCurrentWeek ? targetWeek : weekStart;
 
     setRows((prev) => {
       let next = [...prev];
       for (const e of scanned) {
         const existingForArticle = next.filter(
           (r) =>
-            r.week_start === targetWeek &&
+            r.week_start === finalWeek &&
             r.day_of_week === dayName &&
             r.article === e.article &&
             (r.entrees != null || r.lot_number),
@@ -1131,7 +1137,7 @@ export function WeeklyTracking() {
             : 1;
         next.push({
           fiche_type: ficheType,
-          week_start: targetWeek,
+          week_start: finalWeek,
           day_of_week: dayName,
           row_index: nextIdx,
           article: e.article,
@@ -1142,7 +1148,7 @@ export function WeeklyTracking() {
       return next;
     });
 
-    if (targetWeek !== weekStart) setWeekStart(targetWeek);
+    if (useCurrentWeek && targetWeek !== weekStart) setWeekStart(targetWeek);
     toast.info("N'oubliez pas d'enregistrer pour sauvegarder.");
   };
 
@@ -1474,7 +1480,18 @@ export function WeeklyTracking() {
                 <X className="h-3 w-3 mr-1" /> Réinitialiser
               </Button>
             )}
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
+              <Select value={scanDay} onValueChange={setScanDay}>
+                <SelectTrigger className="h-9 w-[150px]">
+                  <SelectValue placeholder="Jour" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">Aujourd'hui</SelectItem>
+                  {DAYS.map((d) => (
+                    <SelectItem key={d} value={d}>{d}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <PhotoScanEntry
                 articles={t === "glace" ? GLACE_ARTICLES : TARTE_ARTICLES}
                 onConfirm={handleScanResults}
