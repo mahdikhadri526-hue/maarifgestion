@@ -1307,7 +1307,7 @@ export function WeeklyTracking() {
                         )}
                       >
                         {isFirstOfDay && (
-                          <td rowSpan={4} className="p-2 font-medium border-r align-middle">
+                          <td rowSpan={4} className="p-2 font-medium border-r align-middle sticky left-0 bg-card z-20 w-[80px]">
                             <div>{day}</div>
                             <div className="text-[10px] font-normal text-muted-foreground">
                               {dayShort(weekStart, dIdx)}
