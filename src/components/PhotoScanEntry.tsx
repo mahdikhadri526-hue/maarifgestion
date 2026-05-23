@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { Camera, Loader2, Trash2 } from "lucide-react";
+import { Camera, Loader2, Trash2, Image as ImageIcon } from "lucide-react";
 import { toast } from "sonner";
 
 export interface ScannedEntry {
@@ -38,6 +38,7 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const galleryRef = useRef<HTMLInputElement>(null);
 
   const reset = () => {
     setEntries([]);
