@@ -1273,12 +1273,12 @@ export function WeeklyTracking() {
             </p>
           </div>
 
-        <TabsContent value="creme" className="mt-4">
-          <div className="bg-card rounded-lg border overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted">
+        <TabsContent value="creme" className="mt-4 min-w-0">
+          <div className="bg-card rounded-lg border overflow-auto max-h-[70vh] max-w-full">
+            <table className="w-full text-sm border-collapse">
+              <thead className="bg-muted sticky top-0 z-30">
                 <tr>
-                  <th className="p-2 text-left">Jour</th>
+                  <th className="p-2 text-left sticky left-0 bg-muted z-40 border-r w-[80px]">Jour</th>
                   <th className="p-2 text-left">Shift</th>
                   <th className="p-2 text-left">Quantité</th>
                   <th className="p-2 text-left min-w-[260px]">N° lot crème fraîche</th>
@@ -1307,7 +1307,7 @@ export function WeeklyTracking() {
                         )}
                       >
                         {isFirstOfDay && (
-                          <td rowSpan={4} className="p-2 font-medium border-r align-middle">
+                          <td rowSpan={4} className="p-2 font-medium border-r align-middle sticky left-0 bg-card z-20 w-[80px]">
                             <div>{day}</div>
                             <div className="text-[10px] font-normal text-muted-foreground">
                               {dayShort(weekStart, dIdx)}
@@ -1435,7 +1435,7 @@ export function WeeklyTracking() {
         </TabsContent>
 
         {(["glace", "tarte"] as const).map((t) => (
-        <TabsContent key={t} value={t} className="mt-4 space-y-3">
+        <TabsContent key={t} value={t} className="mt-4 space-y-3 min-w-0">
           {/* FILTERS BAR */}
           {showControls && (
           <div className="bg-card rounded-lg border p-3 flex flex-wrap items-end gap-3">
@@ -1516,11 +1516,11 @@ export function WeeklyTracking() {
           </div>
           )}
 
-          <div className="bg-card rounded-lg border overflow-x-auto">
+          <div className="bg-card rounded-lg border overflow-auto max-h-[70vh] max-w-full">
             <table className="text-xs border-collapse">
-              <thead className="bg-muted sticky top-0">
+              <thead className="bg-muted sticky top-0 z-30">
                 <tr>
-                  <th className="p-1 text-left sticky left-0 bg-muted z-10 border-r w-[110px] text-[11px]">Article</th>
+                  <th className="p-1 text-left sticky left-0 bg-muted z-40 border-r w-[110px] text-[11px]">Article</th>
                   {visibleDays.map(({ day, dIdx, wkStart, iso }) => (
                     <th
                       key={`${wkStart}-${day}`}
@@ -1551,7 +1551,7 @@ export function WeeklyTracking() {
                   ))}
                 </tr>
                 <tr>
-                  <th className="p-1 sticky left-0 bg-muted z-10 border-r"></th>
+                  <th className="p-1 sticky left-0 bg-muted z-40 border-r"></th>
                   {visibleDays.map(({ day, wkStart }) => (
                     <Fragment key={`${wkStart}-${day}-h`}>
                       <th className="p-1 border-l text-center font-normal">SI</th>
