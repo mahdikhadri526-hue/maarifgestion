@@ -1105,7 +1105,7 @@ export function WeeklyTracking() {
     };
   };
 
-  const handleScanResults = (scanned: ScannedEntry[]) => {
+  const handleScanResults = async (scanned: ScannedEntry[]) => {
     const today = new Date();
     const monday = getMonday(today);
     const targetWeek = fmt(monday);
@@ -1121,35 +1121,50 @@ export function WeeklyTracking() {
     const useCurrentWeek = scanDay === "today";
     const finalWeek = useCurrentWeek ? targetWeek : weekStart;
 
-    setRows((prev) => {
-      let next = [...prev];
-      for (const e of scanned) {
-        const existingForArticle = next.filter(
-          (r) =>
-            r.week_start === finalWeek &&
-            r.day_of_week === dayName &&
-            r.article === e.article &&
-            (r.entrees != null || r.lot_number),
-        );
-        const nextIdx =
-          existingForArticle.length > 0
-            ? Math.max(...existingForArticle.map((r) => r.row_index ?? 0)) + 1
-            : 1;
-        next.push({
-          fiche_type: ficheType,
-          week_start: finalWeek,
-          day_of_week: dayName,
-          row_index: nextIdx,
-          article: e.article,
-          entrees: e.quantity,
-          lot_number: e.lotNumber,
-        });
-      }
-      return next;
+    // Build inserts with computed row_index per article based on current rows
+    const indexTracker = new Map<string, number>();
+    const inserts = scanned.map((e) => {
+      const key = `${e.article}`;
+      const existing = rows.filter(
+        (r) =>
+          r.week_start === finalWeek &&
+          r.day_of_week === dayName &&
+          r.article === e.article &&
+          (r.entrees != null || r.lot_number),
+      );
+      const baseIdx =
+        existing.length > 0 ? Math.max(...existing.map((r) => r.row_index ?? 0)) : 0;
+      const offset = indexTracker.get(key) ?? 0;
+      indexTracker.set(key, offset + 1);
+      return {
+        fiche_type: ficheType,
+        week_start: finalWeek,
+        day_of_week: dayName,
+        row_index: baseIdx + offset + 1,
+        article: e.article,
+        lot_number: e.lotNumber || null,
+        entrees: typeof e.quantity === "number" ? e.quantity : null,
+      };
     });
 
-    if (useCurrentWeek && targetWeek !== weekStart) setWeekStart(targetWeek);
-    toast.info("N'oubliez pas d'enregistrer pour sauvegarder.");
+    try {
+      const { data, error } = await supabase
+        .from("weekly_tracking")
+        .insert(inserts as never)
+        .select();
+      if (error) throw error;
+      const saved = normalizeWeeklyRows(data || []);
+      if (useCurrentWeek && targetWeek !== weekStart) {
+        setWeekStart(targetWeek);
+      } else {
+        setRows((prev) => [...prev, ...saved]);
+      }
+      toast.success(`${saved.length} entrée(s) enregistrée(s)`);
+    } catch (e: any) {
+      console.error("scan save error", e);
+      toast.error(e?.message || "Erreur lors de l'enregistrement du scan");
+      throw e;
+    }
   };
 
   return (
