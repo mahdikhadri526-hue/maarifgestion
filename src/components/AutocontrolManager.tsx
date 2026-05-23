@@ -1354,11 +1354,16 @@ export function AutocontrolManager() {
 
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
-            <Input
-              value={form.visaManager}
-              onChange={(e) => setForm((f) => ({ ...f, visaManager: e.target.value }))}
-              maxLength={100}
-            />
+            <Select
+              value={form.visaManager ?? ""}
+              onValueChange={(v) => setForm((f) => ({ ...f, visaManager: v }))}
+            >
+              <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Mr Mahdi Khadri">Mr Mahdi Khadri</SelectItem>
+                <SelectItem value="Mr Hamza Fadlou">Mr Hamza Fadlou</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="sm:col-span-2">
@@ -1745,11 +1750,16 @@ export function AutocontrolManager() {
 
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
-                <Input
-                  value={editVisa}
-                  maxLength={100}
-                  onChange={(e) => setEditVisa(e.target.value)}
-                />
+                <Select
+                  value={editVisa ?? ""}
+                  onValueChange={(v) => setEditVisa(v)}
+                >
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Mr Mahdi Khadri">Mr Mahdi Khadri</SelectItem>
+                    <SelectItem value="Mr Hamza Fadlou">Mr Hamza Fadlou</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           )}
