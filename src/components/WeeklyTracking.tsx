@@ -1417,12 +1417,17 @@ export function WeeklyTracking() {
                         </td>
                         {isFirstOfShift && (
                           <td rowSpan={2} className="p-1 align-middle border-l">
-                            <Input
+                            <Select
                               value={cell(day, rowIdx, null).visa_manager ?? ""}
-                              onChange={(e) => updateCell(day, rowIdx, null, { visa_manager: e.target.value })}
-                              className="h-8"
+                              onValueChange={(v) => updateCell(day, rowIdx, null, { visa_manager: v })}
                               disabled={!editable}
-                            />
+                            >
+                              <SelectTrigger className="h-8 min-w-[140px]"><SelectValue placeholder="—" /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Mr Mahdi Khadri">Mr Mahdi Khadri</SelectItem>
+                                <SelectItem value="Mr Hamza Fadlou">Mr Hamza Fadlou</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </td>
                         )}
                       </tr>
