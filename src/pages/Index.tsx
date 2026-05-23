@@ -84,7 +84,7 @@ const Index = () => {
         </div>
       </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+      <main className="max-w-7xl mx-auto px-4 py-6 space-y-6 overflow-x-hidden min-w-0">
         {tabs.length === 0 && (
           <div className="bg-card border rounded-xl p-8 text-center">
             <h2 className="text-lg font-semibold mb-2">Aucune permission</h2>
