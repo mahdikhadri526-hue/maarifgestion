@@ -108,7 +108,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         } else if (type === "transfert") {
           toast.success(`Transfert FIFO de ${totalQty} pièces ${selectedProduct?.name} → ${destination.trim()} enregistré`);
         } else {
-          toast.success(`Sortie Mr Hassan de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
+          toast.success(`Sortie Direction de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
         }
       } else {
         const label =
@@ -118,7 +118,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
             ? "Sortie"
             : type === "transfert"
             ? `Transfert → ${destination.trim()}`
-            : "Sortie Mr Hassan";
+            : "Sortie Direction";
         toast.success(`${label} de ${totalQty} pièces ${selectedProduct?.name} enregistré`);
       }
 
@@ -177,7 +177,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
                 type === "hassan" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               }`}
             >
-              <Send className="h-3.5 w-3.5" /> Mr Hassan
+              <Send className="h-3.5 w-3.5" /> Direction
             </button>
           </>
         )}
