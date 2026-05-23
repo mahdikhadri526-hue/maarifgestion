@@ -177,7 +177,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
                 type === "hassan" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               }`}
             >
-              <Send className="h-3.5 w-3.5" /> Mr Hassan
+              <Send className="h-3.5 w-3.5" /> Direction
             </button>
           </>
         )}
