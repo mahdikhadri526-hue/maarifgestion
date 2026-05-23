@@ -1516,11 +1516,11 @@ export function WeeklyTracking() {
           </div>
           )}
 
-          <div className="bg-card rounded-lg border overflow-x-auto">
+          <div className="bg-card rounded-lg border overflow-auto max-h-[70vh] max-w-full">
             <table className="text-xs border-collapse">
-              <thead className="bg-muted sticky top-0">
+              <thead className="bg-muted sticky top-0 z-30">
                 <tr>
-                  <th className="p-1 text-left sticky left-0 bg-muted z-10 border-r w-[110px] text-[11px]">Article</th>
+                  <th className="p-1 text-left sticky left-0 bg-muted z-40 border-r w-[110px] text-[11px]">Article</th>
                   {visibleDays.map(({ day, dIdx, wkStart, iso }) => (
                     <th
                       key={`${wkStart}-${day}`}
@@ -1551,7 +1551,7 @@ export function WeeklyTracking() {
                   ))}
                 </tr>
                 <tr>
-                  <th className="p-1 sticky left-0 bg-muted z-10 border-r"></th>
+                  <th className="p-1 sticky left-0 bg-muted z-40 border-r"></th>
                   {visibleDays.map(({ day, wkStart }) => (
                     <Fragment key={`${wkStart}-${day}-h`}>
                       <th className="p-1 border-l text-center font-normal">SI</th>
