@@ -289,7 +289,11 @@ export function WeeklyTracking() {
   const weeksToLoad = useMemo(() => {
     const set = new Set<string>([weekStart]);
     // Always load adjacent weeks so lots & sorties can flow between Sunday and next Monday
-    const prev = parseISO(weekStart); prev.setDate(prev.getDate() - 7); set.add(fmt(prev));
+    // On charge 2 semaines en arrière car le calcul du report de lots
+    // au lundi a besoin de la fin du dimanche précédent, lui-même calculé
+    // à partir du report de la semaine encore avant.
+    const prev1 = parseISO(weekStart); prev1.setDate(prev1.getDate() - 7); set.add(fmt(prev1));
+    const prev2 = parseISO(weekStart); prev2.setDate(prev2.getDate() - 14); set.add(fmt(prev2));
     const next = parseISO(weekStart); next.setDate(next.getDate() + 7); set.add(fmt(next));
     if (filterFrom) set.add(fmt(getMonday(parseISO(filterFrom))));
     if (filterTo) set.add(fmt(getMonday(parseISO(filterTo))));
