@@ -913,7 +913,9 @@ export function AutocontrolManager() {
           </div>
           {!isPanache && !isCtg && !isDecoration && (
           <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-muted-foreground">Article / Désignation *</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              {isPerte ? "Produit / matériel *" : "Article / Désignation *"}
+            </label>
             {ARTICLE_OPTIONS_BY_FICHE[form.ficheType] && ARTICLE_OPTIONS_BY_FICHE[form.ficheType]!.length > 0 ? (
               <Select
                 value={form.article}
@@ -932,6 +934,7 @@ export function AutocontrolManager() {
                 onChange={(e) => setForm((f) => ({ ...f, article: e.target.value }))}
                 maxLength={120}
                 // validated by Zod
+                placeholder={isPerte ? "Ex: Plat en porcelaine, crème, ..." : undefined}
               />
             )}
           </div>
