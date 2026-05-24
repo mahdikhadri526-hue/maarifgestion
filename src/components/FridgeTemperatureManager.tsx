@@ -330,7 +330,7 @@ export function FridgeTemperatureManager() {
                   return (
                     <TableRow key={eq.code} className={row.id ? "bg-success/5" : ""}>
                       <TableCell className="font-mono text-xs">{eq.code}</TableCell>
-                      <TableCell className={`sticky left-0 z-10 ${row.id ? "bg-success/5" : "bg-background"} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]`}>
+                      <TableCell className={`sticky left-0 z-10 bg-card ${row.id ? "border-l-4 border-l-success" : ""} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]`}>
                         <div className="font-medium">{eq.name}</div>
                         <div className="text-xs text-muted-foreground">{eq.type}</div>
                       </TableCell>
