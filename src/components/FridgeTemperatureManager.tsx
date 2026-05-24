@@ -130,8 +130,8 @@ export function FridgeTemperatureManager() {
       temperature_haut: tVal,
       temperature_bas: null,
       conformite: row.conformite || null,
-      commentaire: row.commentaire || null,
-      action_corrective: row.action_corrective || null,
+      commentaire: row.commentaire?.trim() ? row.commentaire : "RAS",
+      action_corrective: row.action_corrective?.trim() ? row.action_corrective : "RAS",
       performed_by: operator,
       visa_manager: row.visa_manager || null,
     } as any;
@@ -145,7 +145,12 @@ export function FridgeTemperatureManager() {
       toast({ title: "Erreur d'enregistrement", description: error.message, variant: "destructive" });
       return;
     }
-    updateRow(code, { id: data.id, performed_by: operator });
+    updateRow(code, {
+      id: data.id,
+      performed_by: operator,
+      commentaire: payload.commentaire,
+      action_corrective: payload.action_corrective,
+    });
     toast({ title: "Enregistré", description: `${eq.name} (${slot})` });
   }
 
@@ -173,8 +178,8 @@ export function FridgeTemperatureManager() {
         equipment_code: eq.code, equipment_name: eq.name, equipment_type: eq.type,
         temperature_haut: tVal, temperature_bas: null,
         conformite: r.conformite || null,
-        commentaire: r.commentaire || null,
-        action_corrective: r.action_corrective || null,
+        commentaire: r.commentaire?.trim() ? r.commentaire : "RAS",
+        action_corrective: r.action_corrective?.trim() ? r.action_corrective : "RAS",
         performed_by: slotOperator,
         visa_manager: r.visa_manager || null,
       } as any;
@@ -182,7 +187,15 @@ export function FridgeTemperatureManager() {
         .from("fridge_temperatures")
         .upsert(payload, { onConflict: "control_date,slot,equipment_code" })
         .select().single();
-      if (error) { ko++; } else { ok++; updateRow(eq.code, { id: data.id, performed_by: slotOperator }); }
+      if (error) { ko++; } else {
+        ok++;
+        updateRow(eq.code, {
+          id: data.id,
+          performed_by: slotOperator,
+          commentaire: payload.commentaire,
+          action_corrective: payload.action_corrective,
+        });
+      }
     }
     setSavingAll(false);
     toast({ title: "Enregistrement terminé", description: `${ok} ligne(s) enregistrée(s)${ko ? `, ${ko} erreur(s)` : ""}` });
