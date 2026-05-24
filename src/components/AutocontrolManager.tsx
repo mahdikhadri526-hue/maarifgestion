@@ -940,7 +940,7 @@ export function AutocontrolManager() {
                 onChange={(e) => setForm((f) => ({ ...f, article: e.target.value }))}
                 maxLength={120}
                 // validated by Zod
-                placeholder={isPerte ? "Ex: Plat en porcelaine, crème, ..." : undefined}
+                placeholder={isPerte ? "Ex: Crème, matériel, ..." : undefined}
               />
             )}
           </div>
