@@ -313,7 +313,7 @@ export function FridgeTemperatureManager() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="min-w-[110px]">Code</TableHead>
-                  <TableHead className="min-w-[160px]">Équipement</TableHead>
+                  <TableHead className="min-w-[180px] sticky left-0 z-20 bg-background shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">Équipement</TableHead>
                   <TableHead className="min-w-[110px]">Zone</TableHead>
                   <TableHead className="min-w-[120px]">Température (°C)</TableHead>
                   <TableHead className="min-w-[100px]">Conforme</TableHead>
@@ -325,10 +325,12 @@ export function FridgeTemperatureManager() {
               <TableBody>
                 {visibleEquipments.map((eq) => {
                   const row = rows[eq.code] ?? emptyRow();
+                  const locked = !!row.id;
+                  const editable = canEdit && !locked;
                   return (
                     <TableRow key={eq.code} className={row.id ? "bg-success/5" : ""}>
                       <TableCell className="font-mono text-xs">{eq.code}</TableCell>
-                      <TableCell>
+                      <TableCell className={`sticky left-0 z-10 ${row.id ? "bg-success/5" : "bg-background"} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]`}>
                         <div className="font-medium">{eq.name}</div>
                         <div className="text-xs text-muted-foreground">{eq.type}</div>
                       </TableCell>
@@ -342,7 +344,7 @@ export function FridgeTemperatureManager() {
                             const formatted = formatDisplayTemp(row.temperature, eq.type);
                             if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
                           }}
-                          disabled={!canEdit}
+                          disabled={!editable}
                           className="h-9 w-24"
                         />
                       </TableCell>
@@ -350,7 +352,7 @@ export function FridgeTemperatureManager() {
                         <Select
                           value={row.conformite || "__none"}
                           onValueChange={(v) => updateRow(eq.code, { conformite: v === "__none" ? "" : (v as RowState["conformite"]) })}
-                          disabled={!canEdit}
+                          disabled={!editable}
                         >
                           <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
                           <SelectContent>
@@ -367,7 +369,7 @@ export function FridgeTemperatureManager() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Select value={row.visa_manager || "__none"} onValueChange={(v) => updateRow(eq.code, { visa_manager: v === "__none" ? "" : v })} disabled={!canEdit}>
+                        <Select value={row.visa_manager || "__none"} onValueChange={(v) => updateRow(eq.code, { visa_manager: v === "__none" ? "" : v })} disabled={!editable}>
                           <SelectTrigger className="h-9"><SelectValue placeholder="Manager" /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="__none">—</SelectItem>
@@ -380,7 +382,7 @@ export function FridgeTemperatureManager() {
                           rows={1}
                           value={row.commentaire}
                           onChange={(e) => updateRow(eq.code, { commentaire: e.target.value })}
-                          disabled={!canEdit}
+                          disabled={!editable}
                           placeholder="Observations…"
                           className="min-h-9"
                         />
@@ -391,17 +393,14 @@ export function FridgeTemperatureManager() {
                             rows={1}
                             value={row.action_corrective}
                             onChange={(e) => updateRow(eq.code, { action_corrective: e.target.value })}
-                            disabled={!canEdit}
+                            disabled={!editable}
                             placeholder={row.conformite === "non_conforme" ? "Action corrective…" : "—"}
                             className="min-h-9 flex-1"
                           />
-                          {canEdit && (
+                          {editable && (
                             <Button size="sm" variant="ghost" onClick={() => saveRow(eq.code)} disabled={saving === eq.code} title="Enregistrer cette ligne">
                               <Save className="h-4 w-4" />
                             </Button>
-                          )}
-                          {canDelete && row.id && (
-                            <Button size="sm" variant="ghost" onClick={() => deleteRow(eq.code)} title="Supprimer">✕</Button>
                           )}
                         </div>
                       </TableCell>
