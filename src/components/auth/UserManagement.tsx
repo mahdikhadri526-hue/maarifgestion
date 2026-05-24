@@ -25,6 +25,7 @@ const ROLE_PRESETS: Record<AppRole, string[]> = {
     "view_lots", "edit_lots", "delete_lots",
     "view_autocontrol", "edit_autocontrol",
     "view_weekly", "edit_weekly",
+    "view_temperatures", "edit_temperatures",
     "view_reports",
   ],
   operator: [
@@ -33,6 +34,7 @@ const ROLE_PRESETS: Record<AppRole, string[]> = {
     "view_lots", "edit_lots",
     "view_autocontrol", "edit_autocontrol",
     "view_weekly", "edit_weekly",
+    "view_temperatures", "edit_temperatures",
   ],
   viewer: ["view_dashboard"],
 };
