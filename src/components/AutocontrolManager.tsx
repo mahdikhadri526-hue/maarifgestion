@@ -702,6 +702,12 @@ export function AutocontrolManager() {
       }
     }
 
+    if (isPerte) {
+      if (!form.notes || form.notes.trim().length === 0) {
+        errors.push("Causes : champ obligatoire");
+      }
+    }
+
     if (errors.length > 0) {
       const unique = Array.from(new Set(errors));
       toast.error("Fiche incomplète — remplissez tous les champs", {
