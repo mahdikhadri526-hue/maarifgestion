@@ -643,6 +643,8 @@ export function AutocontrolManager() {
       ? { ...form, article: form.article || "Cornet", lotNumber: form.lotNumber || "_", quantity: form.quantity || "1", dlc: form.dlc || "" }
       : isDecoration
       ? { ...form, article: form.article || "Décoration", lotNumber: form.lotNumber || "_", quantity: form.quantity || "1", dlc: "" }
+      : isPerte
+      ? { ...form, lotNumber: form.lotNumber || "_", dlc: "" }
       : form;
     const baseResult = baseAutocontrolSchema.safeParse(formForBase);
     if (!baseResult.success) {
