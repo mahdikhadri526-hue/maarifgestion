@@ -52,6 +52,7 @@ const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Décoration": "",
   "Panaché": "",
   "Cornet/Tulipe/Gaufrette": "Cornet",
+  "Suivi perte produit et casse matériel": "",
   "Autre": "",
 };
 
