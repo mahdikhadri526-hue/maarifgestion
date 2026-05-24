@@ -1162,7 +1162,7 @@ export function AutocontrolManager() {
             </div>
           )}
 
-          {!isConfit && !isCtg && !isDecoration && (
+          {!isConfit && !isCtg && !isDecoration && !isPerte && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
               <Input
@@ -1186,7 +1186,7 @@ export function AutocontrolManager() {
             />
           </div>
           )}
-          {!isDecoration && !isCtg && (
+          {!isDecoration && !isCtg && !isPerte && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">DLC</label>
               <Input
