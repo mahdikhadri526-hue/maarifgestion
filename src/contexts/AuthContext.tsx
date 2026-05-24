@@ -24,6 +24,9 @@ export const ALL_PERMISSIONS = [
   { key: "view_weekly", label: "Voir le suivi hebdomadaire" },
   { key: "edit_weekly", label: "Modifier le suivi hebdomadaire" },
   { key: "delete_weekly", label: "Supprimer du suivi hebdomadaire" },
+  { key: "view_temperatures", label: "Voir les températures frigos" },
+  { key: "edit_temperatures", label: "Modifier les températures frigos" },
+  { key: "delete_temperatures", label: "Supprimer des températures frigos" },
   { key: "view_reports", label: "Voir les rapports / stock restant" },
 ] as const;
 
