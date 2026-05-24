@@ -1359,6 +1359,20 @@ export function AutocontrolManager() {
             </div>
           )}
 
+          {isPerte && (
+            <div className="sm:col-span-2">
+              <label className="text-xs font-medium text-muted-foreground">Causes *</label>
+              <Textarea
+                value={form.notes ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                maxLength={1000}
+                rows={3}
+                placeholder="Décrire la cause de la perte ou de la casse"
+              />
+            </div>
+          )}
+
+          {!isPerte && (
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
             <Select
@@ -1372,6 +1386,7 @@ export function AutocontrolManager() {
               </SelectContent>
             </Select>
           </div>
+          )}
 
           <div className="sm:col-span-2">
             <Button type="submit" disabled={submitting} className="w-full">
