@@ -64,6 +64,7 @@ export type Database = {
       }
       fridge_temperatures: {
         Row: {
+          action_corrective: string | null
           commentaire: string | null
           conformite: string | null
           control_date: string
@@ -81,6 +82,7 @@ export type Database = {
           zone: string
         }
         Insert: {
+          action_corrective?: string | null
           commentaire?: string | null
           conformite?: string | null
           control_date: string
@@ -98,6 +100,7 @@ export type Database = {
           zone: string
         }
         Update: {
+          action_corrective?: string | null
           commentaire?: string | null
           conformite?: string | null
           control_date?: string
