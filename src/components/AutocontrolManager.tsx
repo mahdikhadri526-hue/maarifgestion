@@ -52,6 +52,7 @@ const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Décoration": "",
   "Panaché": "",
   "Cornet/Tulipe/Gaufrette": "Cornet",
+  "Suivi perte produit et casse matériel": "",
   "Autre": "",
 };
 
@@ -494,6 +495,7 @@ export function AutocontrolManager() {
   const isConfit = form.article === "Orange confit" || form.article === "Bigarreaux confits";
   const isDecoration = form.ficheType === "Décoration";
   const isPanache = form.ficheType === "Panaché";
+  const isPerte = form.ficheType === "Suivi perte produit et casse matériel";
 
   const refresh = useCallback(async () => {
     try {
@@ -641,6 +643,8 @@ export function AutocontrolManager() {
       ? { ...form, article: form.article || "Cornet", lotNumber: form.lotNumber || "_", quantity: form.quantity || "1", dlc: form.dlc || "" }
       : isDecoration
       ? { ...form, article: form.article || "Décoration", lotNumber: form.lotNumber || "_", quantity: form.quantity || "1", dlc: "" }
+      : isPerte
+      ? { ...form, lotNumber: form.lotNumber || "_", dlc: "" }
       : form;
     const baseResult = baseAutocontrolSchema.safeParse(formForBase);
     if (!baseResult.success) {
@@ -695,6 +699,12 @@ export function AutocontrolManager() {
       if (form.visaManager && form.visaManager.trim()) {
         const pRes = panacheManagerSchema.safeParse(panacheExtra);
         if (!pRes.success) pRes.error.issues.forEach((i) => errors.push(i.message));
+      }
+    }
+
+    if (isPerte) {
+      if (!form.notes || form.notes.trim().length === 0) {
+        errors.push("Causes : champ obligatoire");
       }
     }
 
@@ -791,9 +801,9 @@ export function AutocontrolManager() {
         controlDate: baseResult.data.controlDate,
         collaborateur: baseResult.data.collaborateur,
         article: articleToSave,
-        lotNumber: lotToSave,
+        lotNumber: isPerte ? null : lotToSave,
         quantity: baseResult.data.quantity,
-          dlc: isDecoration ? null : (baseResult.data.dlc || null),
+          dlc: (isDecoration || isPerte) ? null : (baseResult.data.dlc || null),
         visaManager: baseResult.data.visaManager,
         notes: baseResult.data.notes,
         extraData: isCtg ? extraData : isDecoration ? decorationExtra : isPanache ? panacheExtra : null,
@@ -909,7 +919,9 @@ export function AutocontrolManager() {
           </div>
           {!isPanache && !isCtg && !isDecoration && (
           <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-muted-foreground">Article / Désignation *</label>
+            <label className="text-xs font-medium text-muted-foreground">
+              {isPerte ? "Produit / matériel *" : "Article / Désignation *"}
+            </label>
             {ARTICLE_OPTIONS_BY_FICHE[form.ficheType] && ARTICLE_OPTIONS_BY_FICHE[form.ficheType]!.length > 0 ? (
               <Select
                 value={form.article}
@@ -928,6 +940,7 @@ export function AutocontrolManager() {
                 onChange={(e) => setForm((f) => ({ ...f, article: e.target.value }))}
                 maxLength={120}
                 // validated by Zod
+                placeholder={isPerte ? "Ex: Plat en porcelaine, crème, ..." : undefined}
               />
             )}
           </div>
@@ -1155,7 +1168,7 @@ export function AutocontrolManager() {
             </div>
           )}
 
-          {!isConfit && !isCtg && !isDecoration && (
+          {!isConfit && !isCtg && !isDecoration && !isPerte && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">N° de lot</label>
               <Input
@@ -1179,7 +1192,7 @@ export function AutocontrolManager() {
             />
           </div>
           )}
-          {!isDecoration && !isCtg && (
+          {!isDecoration && !isCtg && !isPerte && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">DLC</label>
               <Input
@@ -1352,6 +1365,20 @@ export function AutocontrolManager() {
             </div>
           )}
 
+          {isPerte && (
+            <div className="sm:col-span-2">
+              <label className="text-xs font-medium text-muted-foreground">Causes *</label>
+              <Textarea
+                value={form.notes ?? ""}
+                onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
+                maxLength={1000}
+                rows={3}
+                placeholder="Décrire la cause de la perte ou de la casse"
+              />
+            </div>
+          )}
+
+          {!isPerte && (
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
             <Select
@@ -1365,6 +1392,7 @@ export function AutocontrolManager() {
               </SelectContent>
             </Select>
           </div>
+          )}
 
           <div className="sm:col-span-2">
             <Button type="submit" disabled={submitting} className="w-full">
