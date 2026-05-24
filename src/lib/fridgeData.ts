@@ -62,6 +62,10 @@ export function formatDisplayTemp(value: number | string, type?: string): string
   if (type && (type.startsWith("Frigo positif") || type === "Chambre positive")) {
     return num >= 0 ? `+${num}` : `${num}`;
   }
+  if (type && (type.startsWith("Frigo négatif") || type.startsWith("Congélateur") || type === "Chambre négative")) {
+    const abs = Math.abs(num);
+    return num === 0 ? `-0` : `-${abs}`;
+  }
   return `${num}`;
 }
 
