@@ -8,14 +8,15 @@ import { RequisitionForm } from "@/components/RequisitionForm";
 import { ExpiryAlerts, LotManager, StockOutAlerts, PendingAutocontrolAlerts } from "@/components/LotManagement";
 import { AutocontrolManager } from "@/components/AutocontrolManager";
 import { WeeklyTracking } from "@/components/WeeklyTracking";
-import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight } from "lucide-react";
+import { FridgeTemperatureManager } from "@/components/FridgeTemperatureManager";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { UserManagement } from "@/components/auth/UserManagement";
 
-type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "hebdo";
+type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "hebdo" | "temperatures";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -36,6 +37,7 @@ const Index = () => {
     { id: "requisition" as Tab, label: "Réquisition", icon: ClipboardList, perm: "view_requisitions" },
     { id: "autocontrole" as Tab, label: "Autocontrôle", icon: ClipboardCheck, perm: "view_autocontrol" },
     { id: "hebdo" as Tab, label: "Suivi hebdomadaire", icon: CalendarDays, perm: "view_weekly" },
+    { id: "temperatures" as Tab, label: "Températures frigos", icon: Thermometer, perm: "view_temperatures" },
   ];
   const tabs = allTabs.filter((t) => can(t.perm));
 
@@ -202,6 +204,8 @@ const Index = () => {
         {tab === "autocontrole" && <AutocontrolManager />}
 
         {tab === "hebdo" && <WeeklyTracking />}
+
+        {tab === "temperatures" && <FridgeTemperatureManager />}
       </main>
       </>
       )}
