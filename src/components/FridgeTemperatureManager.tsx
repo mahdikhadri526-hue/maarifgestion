@@ -200,8 +200,7 @@ export function FridgeTemperatureManager() {
                   <TableHead className="min-w-[110px]">Code</TableHead>
                   <TableHead className="min-w-[160px]">Équipement</TableHead>
                   <TableHead className="min-w-[110px]">Zone</TableHead>
-                  <TableHead className="min-w-[120px]">T° Haut (°C)</TableHead>
-                  <TableHead className="min-w-[120px]">T° Bas (°C)</TableHead>
+                  <TableHead className="min-w-[120px]">Température (°C)</TableHead>
                   <TableHead className="min-w-[100px]">Conforme</TableHead>
                   <TableHead className="min-w-[180px]">Effectué par *</TableHead>
                   <TableHead className="min-w-[180px]">Visa manager</TableHead>
