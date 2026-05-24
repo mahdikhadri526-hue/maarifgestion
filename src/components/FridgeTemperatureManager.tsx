@@ -100,13 +100,9 @@ export function FridgeTemperatureManager() {
     const eq = EQUIPMENTS.find((e) => e.code === code);
     if (!eq) return;
     const row = rows[code] ?? emptyRow();
-    const tVal = row.temperature.trim() === "" ? null : Number(row.temperature.replace(",", "."));
+    const tVal = parseDisplayTemp(row.temperature);
     if (tVal === null) {
       toast({ title: "Saisir la température", variant: "destructive" });
-      return;
-    }
-    if (Number.isNaN(tVal)) {
-      toast({ title: "Température invalide", variant: "destructive" });
       return;
     }
     if (!row.performed_by) {
