@@ -495,6 +495,7 @@ export function AutocontrolManager() {
   const isConfit = form.article === "Orange confit" || form.article === "Bigarreaux confits";
   const isDecoration = form.ficheType === "Décoration";
   const isPanache = form.ficheType === "Panaché";
+  const isPerte = form.ficheType === "Suivi perte produit et casse matériel";
 
   const refresh = useCallback(async () => {
     try {
