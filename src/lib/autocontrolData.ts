@@ -5,6 +5,7 @@ export type FicheType =
   | "Décoration"
   | "Panaché"
   | "Cornet/Tulipe/Gaufrette"
+  | "Suivi perte produit et casse matériel"
   | "Autre";
 
 export const FICHE_TYPES: FicheType[] = [
@@ -12,6 +13,7 @@ export const FICHE_TYPES: FicheType[] = [
   "Décoration",
   "Panaché",
   "Cornet/Tulipe/Gaufrette",
+  "Suivi perte produit et casse matériel",
   "Autre",
 ];
 
