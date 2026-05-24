@@ -224,9 +224,13 @@ export function FridgeTemperatureManager() {
                       <TableCell><Badge variant="outline">{eq.zone}</Badge></TableCell>
                       <TableCell>
                         <Input
-                          type="number" step="0.1" inputMode="decimal"
+                          type="text" inputMode="decimal"
                           value={row.temperature}
                           onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
+                          onBlur={() => {
+                            const formatted = formatDisplayTemp(row.temperature, eq.type);
+                            if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
+                          }}
                           disabled={!canEdit}
                           className="h-9 w-24"
                         />
