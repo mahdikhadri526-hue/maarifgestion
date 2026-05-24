@@ -62,6 +62,57 @@ export type Database = {
         }
         Relationships: []
       }
+      fridge_temperatures: {
+        Row: {
+          commentaire: string | null
+          control_date: string
+          created_at: string
+          equipment_code: string
+          equipment_name: string
+          equipment_type: string
+          id: string
+          performed_by: string
+          slot: string
+          temperature_bas: number | null
+          temperature_haut: number | null
+          updated_at: string
+          visa_manager: string | null
+          zone: string
+        }
+        Insert: {
+          commentaire?: string | null
+          control_date: string
+          created_at?: string
+          equipment_code: string
+          equipment_name: string
+          equipment_type: string
+          id?: string
+          performed_by: string
+          slot: string
+          temperature_bas?: number | null
+          temperature_haut?: number | null
+          updated_at?: string
+          visa_manager?: string | null
+          zone: string
+        }
+        Update: {
+          commentaire?: string | null
+          control_date?: string
+          created_at?: string
+          equipment_code?: string
+          equipment_name?: string
+          equipment_type?: string
+          id?: string
+          performed_by?: string
+          slot?: string
+          temperature_bas?: number | null
+          temperature_haut?: number | null
+          updated_at?: string
+          visa_manager?: string | null
+          zone?: string
+        }
+        Relationships: []
+      }
       initial_stocks: {
         Row: {
           carton_enabled: boolean
