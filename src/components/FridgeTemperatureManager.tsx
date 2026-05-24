@@ -10,21 +10,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Thermometer, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { EQUIPMENTS, SLOTS, ZONES, type FridgeSlot, type FridgeZone, isTemperatureOk, getTargetRange } from "@/lib/fridgeData";
+import { EQUIPMENTS, SLOTS, ZONES, type FridgeSlot, type FridgeZone, isTemperatureOk } from "@/lib/fridgeData";
 import { OPERATORS } from "@/lib/operators";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface RowState {
   id?: string;
-  temperature_haut: string;
-  temperature_bas: string;
+  temperature: string;
   commentaire: string;
   performed_by: string;
   visa_manager: string;
 }
 
 function emptyRow(): RowState {
-  return { temperature_haut: "", temperature_bas: "", commentaire: "", performed_by: "", visa_manager: "" };
+  return { temperature: "", commentaire: "", performed_by: "", visa_manager: "" };
 }
 
 function todayStr() {
@@ -73,8 +72,7 @@ export function FridgeTemperatureManager() {
     (data ?? []).forEach((r: any) => {
       map[r.equipment_code] = {
         id: r.id,
-        temperature_haut: r.temperature_haut?.toString() ?? "",
-        temperature_bas: r.temperature_bas?.toString() ?? "",
+        temperature: (r.temperature_haut ?? r.temperature_bas)?.toString() ?? "",
         commentaire: r.commentaire ?? "",
         performed_by: r.performed_by ?? "",
         visa_manager: r.visa_manager ?? "",
@@ -96,13 +94,12 @@ export function FridgeTemperatureManager() {
     const eq = EQUIPMENTS.find((e) => e.code === code);
     if (!eq) return;
     const row = rows[code] ?? emptyRow();
-    const tHaut = row.temperature_haut.trim() === "" ? null : Number(row.temperature_haut.replace(",", "."));
-    const tBas = row.temperature_bas.trim() === "" ? null : Number(row.temperature_bas.replace(",", "."));
-    if (tHaut === null && tBas === null) {
-      toast({ title: "Saisir au moins une température", variant: "destructive" });
+    const tVal = row.temperature.trim() === "" ? null : Number(row.temperature.replace(",", "."));
+    if (tVal === null) {
+      toast({ title: "Saisir la température", variant: "destructive" });
       return;
     }
-    if ((tHaut !== null && Number.isNaN(tHaut)) || (tBas !== null && Number.isNaN(tBas))) {
+    if (Number.isNaN(tVal)) {
       toast({ title: "Température invalide", variant: "destructive" });
       return;
     }
@@ -118,8 +115,8 @@ export function FridgeTemperatureManager() {
       equipment_code: eq.code,
       equipment_name: eq.name,
       equipment_type: eq.type,
-      temperature_haut: tHaut,
-      temperature_bas: tBas,
+      temperature_haut: tVal,
+      temperature_bas: null,
       commentaire: row.commentaire || null,
       performed_by: row.performed_by,
       visa_manager: row.visa_manager || null,
@@ -203,8 +200,7 @@ export function FridgeTemperatureManager() {
                   <TableHead className="min-w-[110px]">Code</TableHead>
                   <TableHead className="min-w-[160px]">Équipement</TableHead>
                   <TableHead className="min-w-[110px]">Zone</TableHead>
-                  <TableHead className="min-w-[120px]">T° Haut (°C)</TableHead>
-                  <TableHead className="min-w-[120px]">T° Bas (°C)</TableHead>
+                  <TableHead className="min-w-[120px]">Température (°C)</TableHead>
                   <TableHead className="min-w-[100px]">Conforme</TableHead>
                   <TableHead className="min-w-[180px]">Effectué par *</TableHead>
                   <TableHead className="min-w-[180px]">Visa manager</TableHead>
@@ -215,35 +211,21 @@ export function FridgeTemperatureManager() {
               <TableBody>
                 {visibleEquipments.map((eq) => {
                   const row = rows[eq.code] ?? emptyRow();
-                  const range = getTargetRange(eq.type);
-                  const tH = row.temperature_haut ? Number(row.temperature_haut.replace(",", ".")) : null;
-                  const tB = row.temperature_bas ? Number(row.temperature_bas.replace(",", ".")) : null;
-                  const okH = isTemperatureOk(eq.type, tH);
-                  const okB = isTemperatureOk(eq.type, tB);
-                  const anyOk = okH === false || okB === false ? false : okH === true || okB === true ? true : null;
+                  const tV = row.temperature ? Number(row.temperature.replace(",", ".")) : null;
+                  const anyOk = isTemperatureOk(eq.type, tV);
                   return (
                     <TableRow key={eq.code} className={row.id ? "bg-success/5" : ""}>
                       <TableCell className="font-mono text-xs">{eq.code}</TableCell>
                       <TableCell>
                         <div className="font-medium">{eq.name}</div>
                         <div className="text-xs text-muted-foreground">{eq.type}</div>
-                        {range && <div className="text-[10px] text-muted-foreground">Cible: {range.min}…{range.max}°C</div>}
                       </TableCell>
                       <TableCell><Badge variant="outline">{eq.zone}</Badge></TableCell>
                       <TableCell>
                         <Input
                           type="number" step="0.1" inputMode="decimal"
-                          value={row.temperature_haut}
-                          onChange={(e) => updateRow(eq.code, { temperature_haut: e.target.value })}
-                          disabled={!canEdit}
-                          className="h-9 w-24"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number" step="0.1" inputMode="decimal"
-                          value={row.temperature_bas}
-                          onChange={(e) => updateRow(eq.code, { temperature_bas: e.target.value })}
+                          value={row.temperature}
+                          onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
                           disabled={!canEdit}
                           className="h-9 w-24"
                         />

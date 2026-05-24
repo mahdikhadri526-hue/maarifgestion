@@ -1,6 +1,6 @@
 // Données de référence pour le module HACCP - Prise de température des frigos
 
-export type FridgeZone = "Salle" | "Emporter" | "Entre-sol";
+export type FridgeZone = "Salle" | "Emporter" | "Entre-sol" | "Passe";
 
 export type FridgeSlot = "07h" | "16h" | "00h";
 export const SLOTS: FridgeSlot[] = ["07h", "16h", "00h"];
@@ -12,7 +12,7 @@ export interface FridgeEquipment {
   zone: FridgeZone;
 }
 
-export const ZONES: FridgeZone[] = ["Salle", "Emporter", "Entre-sol"];
+export const ZONES: FridgeZone[] = ["Salle", "Emporter", "Entre-sol", "Passe"];
 
 export const EQUIPMENTS: FridgeEquipment[] = [
   { code: "SAL-N01", name: "Frigo négatif 1", type: "Frigo négatif", zone: "Salle" },
@@ -37,8 +37,8 @@ export const EQUIPMENTS: FridgeEquipment[] = [
   { code: "ETS-C08", name: "Congélateur 8", type: "Congélateur", zone: "Entre-sol" },
   { code: "ETS-I01", name: "Congélateur inox 1", type: "Congélateur inox", zone: "Entre-sol" },
   { code: "ETS-I02", name: "Congélateur inox 2", type: "Congélateur inox", zone: "Entre-sol" },
-  { code: "ETS-CN01", name: "Chambre négative", type: "Chambre négative", zone: "Entre-sol" },
-  { code: "ETS-CP01", name: "Chambre positive", type: "Chambre positive", zone: "Entre-sol" },
+  { code: "PAS-CP01", name: "Chambre positive", type: "Chambre positive", zone: "Passe" },
+  { code: "PAS-CN01", name: "Chambre négative", type: "Chambre négative", zone: "Passe" },
 ];
 
 // Plages de température recommandées (HACCP)
