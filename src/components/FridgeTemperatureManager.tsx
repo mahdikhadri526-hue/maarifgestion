@@ -73,9 +73,11 @@ export function FridgeTemperatureManager() {
     const map: Record<string, RowState> = {};
     EQUIPMENTS.forEach((e) => (map[e.code] = emptyRow()));
     (data ?? []).forEach((r: any) => {
+      const eq = EQUIPMENTS.find((e) => e.code === r.equipment_code);
+      const rawTemp = r.temperature_haut ?? r.temperature_bas;
       map[r.equipment_code] = {
         id: r.id,
-        temperature: (r.temperature_haut ?? r.temperature_bas)?.toString() ?? "",
+        temperature: rawTemp !== null && rawTemp !== undefined ? formatDisplayTemp(rawTemp, eq?.type) : "",
         conformite: (r.conformite as RowState["conformite"]) ?? "",
         commentaire: r.commentaire ?? "",
         performed_by: r.performed_by ?? "",
