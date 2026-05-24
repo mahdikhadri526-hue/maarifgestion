@@ -9,10 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Thermometer, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Thermometer, Save, AlertTriangle, CheckCircle2, FileDown } from "lucide-react";
 import { EQUIPMENTS, SLOTS, ZONES, formatDisplayTemp, parseDisplayTemp, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
 import { OPERATORS } from "@/lib/operators";
 import { useAuth } from "@/contexts/AuthContext";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const MANAGERS = ["Mr Mahdi Khadri", "Mr Hamza Fadlou"] as const;
 
@@ -21,12 +23,13 @@ interface RowState {
   temperature: string;
   conformite: "" | "conforme" | "non_conforme";
   commentaire: string;
+  action_corrective: string;
   performed_by: string;
   visa_manager: string;
 }
 
 function emptyRow(): RowState {
-  return { temperature: "", conformite: "", commentaire: "", performed_by: "", visa_manager: "" };
+  return { temperature: "", conformite: "", commentaire: "", action_corrective: "", performed_by: "", visa_manager: "" };
 }
 
 function todayStr() {
@@ -52,6 +55,8 @@ export function FridgeTemperatureManager() {
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
+  const [slotOperator, setSlotOperator] = useState<string>("");
+  const [savingAll, setSavingAll] = useState(false);
 
   const visibleEquipments = useMemo(
     () => EQUIPMENTS.filter((e) => zoneFilter === "Toutes" || e.zone === zoneFilter),
@@ -72,6 +77,7 @@ export function FridgeTemperatureManager() {
     }
     const map: Record<string, RowState> = {};
     EQUIPMENTS.forEach((e) => (map[e.code] = emptyRow()));
+    let detectedOperator = "";
     (data ?? []).forEach((r: any) => {
       const eq = EQUIPMENTS.find((e) => e.code === r.equipment_code);
       const rawTemp = r.temperature_haut ?? r.temperature_bas;
@@ -80,11 +86,14 @@ export function FridgeTemperatureManager() {
         temperature: rawTemp !== null && rawTemp !== undefined ? formatDisplayTemp(rawTemp, eq?.type) : "",
         conformite: (r.conformite as RowState["conformite"]) ?? "",
         commentaire: r.commentaire ?? "",
+        action_corrective: r.action_corrective ?? "",
         performed_by: r.performed_by ?? "",
         visa_manager: r.visa_manager ?? "",
       };
+      if (!detectedOperator && r.performed_by) detectedOperator = r.performed_by;
     });
     setRows(map);
+    setSlotOperator(detectedOperator);
   }
 
   useEffect(() => {
@@ -105,7 +114,8 @@ export function FridgeTemperatureManager() {
       toast({ title: "Saisir la température", variant: "destructive" });
       return;
     }
-    if (!row.performed_by) {
+    const operator = slotOperator || row.performed_by;
+    if (!operator) {
       toast({ title: "Opérateur requis", description: "Sélectionnez l'opérateur (Effectué par)", variant: "destructive" });
       return;
     }
@@ -121,9 +131,10 @@ export function FridgeTemperatureManager() {
       temperature_bas: null,
       conformite: row.conformite || null,
       commentaire: row.commentaire || null,
-      performed_by: row.performed_by,
+      action_corrective: row.action_corrective || null,
+      performed_by: operator,
       visa_manager: row.visa_manager || null,
-    };
+    } as any;
     const { data, error } = await supabase
       .from("fridge_temperatures")
       .upsert(payload, { onConflict: "control_date,slot,equipment_code" })
@@ -134,8 +145,76 @@ export function FridgeTemperatureManager() {
       toast({ title: "Erreur d'enregistrement", description: error.message, variant: "destructive" });
       return;
     }
-    updateRow(code, { id: data.id });
+    updateRow(code, { id: data.id, performed_by: operator });
     toast({ title: "Enregistré", description: `${eq.name} (${slot})` });
+  }
+
+  async function saveAll() {
+    if (!slotOperator) {
+      toast({ title: "Opérateur requis", description: "Sélectionnez « Effectué par » pour ce créneau", variant: "destructive" });
+      return;
+    }
+    const toSave = visibleEquipments.filter((eq) => {
+      const r = rows[eq.code];
+      return r && r.temperature.trim() !== "";
+    });
+    if (toSave.length === 0) {
+      toast({ title: "Aucune température saisie" });
+      return;
+    }
+    setSavingAll(true);
+    let ok = 0, ko = 0;
+    for (const eq of toSave) {
+      const r = rows[eq.code];
+      const tVal = parseDisplayTemp(r.temperature);
+      if (tVal === null) { ko++; continue; }
+      const payload = {
+        control_date: date, slot, zone: eq.zone,
+        equipment_code: eq.code, equipment_name: eq.name, equipment_type: eq.type,
+        temperature_haut: tVal, temperature_bas: null,
+        conformite: r.conformite || null,
+        commentaire: r.commentaire || null,
+        action_corrective: r.action_corrective || null,
+        performed_by: slotOperator,
+        visa_manager: r.visa_manager || null,
+      } as any;
+      const { data, error } = await supabase
+        .from("fridge_temperatures")
+        .upsert(payload, { onConflict: "control_date,slot,equipment_code" })
+        .select().single();
+      if (error) { ko++; } else { ok++; updateRow(eq.code, { id: data.id, performed_by: slotOperator }); }
+    }
+    setSavingAll(false);
+    toast({ title: "Enregistrement terminé", description: `${ok} ligne(s) enregistrée(s)${ko ? `, ${ko} erreur(s)` : ""}` });
+  }
+
+  function exportPdf() {
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    doc.setFontSize(14);
+    doc.text("Prise de température des frigos (HACCP)", 14, 14);
+    doc.setFontSize(10);
+    doc.text(`Date : ${date}   Créneau : ${slot}   Zone : ${zoneFilter}   Effectué par : ${slotOperator || "—"}`, 14, 21);
+    const body = visibleEquipments.map((eq) => {
+      const r = rows[eq.code] ?? emptyRow();
+      return [
+        eq.code,
+        `${eq.name}\n${eq.type}`,
+        eq.zone,
+        r.temperature || "—",
+        r.conformite === "conforme" ? "Conforme" : r.conformite === "non_conforme" ? "Non conforme" : "—",
+        r.action_corrective || "—",
+        r.commentaire || "—",
+        r.visa_manager || "—",
+      ];
+    });
+    autoTable(doc, {
+      startY: 26,
+      head: [["Code", "Équipement", "Zone", "Temp (°C)", "Conforme", "Action si non conforme", "Commentaire", "Visa manager"]],
+      body,
+      styles: { fontSize: 8, cellPadding: 1.5 },
+      headStyles: { fillColor: [30, 64, 175] },
+    });
+    doc.save(`temperatures_${date}_${slot}.pdf`);
   }
 
   async function deleteRow(code: string) {
@@ -189,6 +268,26 @@ export function FridgeTemperatureManager() {
               </Select>
             </div>
           </div>
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3 mt-3 items-end">
+            <div>
+              <Label>Effectué par (créneau {slot}) *</Label>
+              <Select value={slotOperator} onValueChange={setSlotOperator} disabled={!canEdit}>
+                <SelectTrigger><SelectValue placeholder="Sélectionner l'opérateur" /></SelectTrigger>
+                <SelectContent>
+                  {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            {canEdit && (
+              <Button onClick={saveAll} disabled={savingAll}>
+                <Save className="h-4 w-4 mr-1" />
+                {savingAll ? "Enregistrement…" : "Enregistrer tout"}
+              </Button>
+            )}
+            <Button variant="outline" onClick={exportPdf}>
+              <FileDown className="h-4 w-4 mr-1" /> Exporter PDF
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -205,10 +304,9 @@ export function FridgeTemperatureManager() {
                   <TableHead className="min-w-[110px]">Zone</TableHead>
                   <TableHead className="min-w-[120px]">Température (°C)</TableHead>
                   <TableHead className="min-w-[100px]">Conforme</TableHead>
-                  <TableHead className="min-w-[180px]">Effectué par *</TableHead>
                   <TableHead className="min-w-[180px]">Visa manager</TableHead>
                   <TableHead className="min-w-[200px]">Commentaire</TableHead>
-                  <TableHead className="min-w-[160px] text-right">Actions</TableHead>
+                  <TableHead className="min-w-[220px]">Action en cas non conforme</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -256,14 +354,6 @@ export function FridgeTemperatureManager() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Select value={row.performed_by} onValueChange={(v) => updateRow(eq.code, { performed_by: v })} disabled={!canEdit}>
-                          <SelectTrigger className="h-9"><SelectValue placeholder="Opérateur" /></SelectTrigger>
-                          <SelectContent>
-                            {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
                         <Select value={row.visa_manager || "__none"} onValueChange={(v) => updateRow(eq.code, { visa_manager: v === "__none" ? "" : v })} disabled={!canEdit}>
                           <SelectTrigger className="h-9"><SelectValue placeholder="Manager" /></SelectTrigger>
                           <SelectContent>
@@ -282,16 +372,23 @@ export function FridgeTemperatureManager() {
                           className="min-h-9"
                         />
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
+                      <TableCell>
+                        <div className="flex items-start gap-2">
+                          <Textarea
+                            rows={1}
+                            value={row.action_corrective}
+                            onChange={(e) => updateRow(eq.code, { action_corrective: e.target.value })}
+                            disabled={!canEdit}
+                            placeholder={row.conformite === "non_conforme" ? "Action corrective…" : "—"}
+                            className="min-h-9 flex-1"
+                          />
                           {canEdit && (
-                            <Button size="sm" onClick={() => saveRow(eq.code)} disabled={saving === eq.code}>
-                              <Save className="h-3.5 w-3.5 mr-1" />
-                              {row.id ? "Mettre à jour" : "Enregistrer"}
+                            <Button size="sm" variant="ghost" onClick={() => saveRow(eq.code)} disabled={saving === eq.code} title="Enregistrer cette ligne">
+                              <Save className="h-4 w-4" />
                             </Button>
                           )}
                           {canDelete && row.id && (
-                            <Button size="sm" variant="outline" onClick={() => deleteRow(eq.code)}>Supprimer</Button>
+                            <Button size="sm" variant="ghost" onClick={() => deleteRow(eq.code)} title="Supprimer">✕</Button>
                           )}
                         </div>
                       </TableCell>
