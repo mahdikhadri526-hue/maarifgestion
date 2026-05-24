@@ -55,3 +55,20 @@ export function isTemperatureOk(type: string, temp: number | null | undefined): 
   if (!range) return null;
   return temp >= range.min && temp <= range.max;
 }
+
+export function formatDisplayTemp(value: number | string, type?: string): string {
+  const num = typeof value === "string" ? Number(value.replace(/^\+/, "").replace(",", ".")) : value;
+  if (Number.isNaN(num)) return String(value);
+  if (type && (type.startsWith("Frigo positif") || type === "Chambre positive")) {
+    return num >= 0 ? `+${num}` : `${num}`;
+  }
+  return `${num}`;
+}
+
+export function parseDisplayTemp(value: string): number | null {
+  const cleaned = value.trim().replace(",", ".");
+  if (cleaned === "") return null;
+  const num = Number(cleaned.replace(/^\+/, ""));
+  if (Number.isNaN(num)) return null;
+  return num;
+}

@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Thermometer, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { EQUIPMENTS, SLOTS, ZONES, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
+import { EQUIPMENTS, SLOTS, ZONES, formatDisplayTemp, parseDisplayTemp, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
 import { OPERATORS } from "@/lib/operators";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -73,9 +73,11 @@ export function FridgeTemperatureManager() {
     const map: Record<string, RowState> = {};
     EQUIPMENTS.forEach((e) => (map[e.code] = emptyRow()));
     (data ?? []).forEach((r: any) => {
+      const eq = EQUIPMENTS.find((e) => e.code === r.equipment_code);
+      const rawTemp = r.temperature_haut ?? r.temperature_bas;
       map[r.equipment_code] = {
         id: r.id,
-        temperature: (r.temperature_haut ?? r.temperature_bas)?.toString() ?? "",
+        temperature: rawTemp !== null && rawTemp !== undefined ? formatDisplayTemp(rawTemp, eq?.type) : "",
         conformite: (r.conformite as RowState["conformite"]) ?? "",
         commentaire: r.commentaire ?? "",
         performed_by: r.performed_by ?? "",
@@ -98,13 +100,9 @@ export function FridgeTemperatureManager() {
     const eq = EQUIPMENTS.find((e) => e.code === code);
     if (!eq) return;
     const row = rows[code] ?? emptyRow();
-    const tVal = row.temperature.trim() === "" ? null : Number(row.temperature.replace(",", "."));
+    const tVal = parseDisplayTemp(row.temperature);
     if (tVal === null) {
       toast({ title: "Saisir la température", variant: "destructive" });
-      return;
-    }
-    if (Number.isNaN(tVal)) {
-      toast({ title: "Température invalide", variant: "destructive" });
       return;
     }
     if (!row.performed_by) {
@@ -226,9 +224,13 @@ export function FridgeTemperatureManager() {
                       <TableCell><Badge variant="outline">{eq.zone}</Badge></TableCell>
                       <TableCell>
                         <Input
-                          type="number" step="0.1" inputMode="decimal"
+                          type="text" inputMode="decimal"
                           value={row.temperature}
                           onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
+                          onBlur={() => {
+                            const formatted = formatDisplayTemp(row.temperature, eq.type);
+                            if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
+                          }}
                           disabled={!canEdit}
                           className="h-9 w-24"
                         />
