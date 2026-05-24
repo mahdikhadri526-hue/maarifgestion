@@ -1,0 +1,1 @@
+ALTER TABLE public.fridge_temperatures ADD COLUMN IF NOT EXISTS conformite text;

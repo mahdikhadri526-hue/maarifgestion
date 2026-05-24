@@ -10,20 +10,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Thermometer, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { EQUIPMENTS, SLOTS, ZONES, type FridgeSlot, type FridgeZone, isTemperatureOk } from "@/lib/fridgeData";
+import { EQUIPMENTS, SLOTS, ZONES, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
 import { OPERATORS } from "@/lib/operators";
 import { useAuth } from "@/contexts/AuthContext";
+
+const MANAGERS = ["Mr Mahdi Khadri", "Mr Hamza Fadlou"] as const;
 
 interface RowState {
   id?: string;
   temperature: string;
+  conformite: "" | "conforme" | "non_conforme";
   commentaire: string;
   performed_by: string;
   visa_manager: string;
 }
 
 function emptyRow(): RowState {
-  return { temperature: "", commentaire: "", performed_by: "", visa_manager: "" };
+  return { temperature: "", conformite: "", commentaire: "", performed_by: "", visa_manager: "" };
 }
 
 function todayStr() {
@@ -73,6 +76,7 @@ export function FridgeTemperatureManager() {
       map[r.equipment_code] = {
         id: r.id,
         temperature: (r.temperature_haut ?? r.temperature_bas)?.toString() ?? "",
+        conformite: (r.conformite as RowState["conformite"]) ?? "",
         commentaire: r.commentaire ?? "",
         performed_by: r.performed_by ?? "",
         visa_manager: r.visa_manager ?? "",
@@ -117,6 +121,7 @@ export function FridgeTemperatureManager() {
       equipment_type: eq.type,
       temperature_haut: tVal,
       temperature_bas: null,
+      conformite: row.conformite || null,
       commentaire: row.commentaire || null,
       performed_by: row.performed_by,
       visa_manager: row.visa_manager || null,
@@ -211,8 +216,6 @@ export function FridgeTemperatureManager() {
               <TableBody>
                 {visibleEquipments.map((eq) => {
                   const row = rows[eq.code] ?? emptyRow();
-                  const tV = row.temperature ? Number(row.temperature.replace(",", ".")) : null;
-                  const anyOk = isTemperatureOk(eq.type, tV);
                   return (
                     <TableRow key={eq.code} className={row.id ? "bg-success/5" : ""}>
                       <TableCell className="font-mono text-xs">{eq.code}</TableCell>
@@ -231,9 +234,24 @@ export function FridgeTemperatureManager() {
                         />
                       </TableCell>
                       <TableCell>
-                        {anyOk === true && <Badge className="bg-success text-success-foreground"><CheckCircle2 className="h-3 w-3 mr-1" />OK</Badge>}
-                        {anyOk === false && <Badge variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Hors plage</Badge>}
-                        {anyOk === null && <span className="text-xs text-muted-foreground">—</span>}
+                        <Select
+                          value={row.conformite || "__none"}
+                          onValueChange={(v) => updateRow(eq.code, { conformite: v === "__none" ? "" : (v as RowState["conformite"]) })}
+                          disabled={!canEdit}
+                        >
+                          <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none">—</SelectItem>
+                            <SelectItem value="conforme">Conforme</SelectItem>
+                            <SelectItem value="non_conforme">Non conforme</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {row.conformite === "conforme" && (
+                          <Badge className="mt-1 bg-success text-success-foreground"><CheckCircle2 className="h-3 w-3 mr-1" />OK</Badge>
+                        )}
+                        {row.conformite === "non_conforme" && (
+                          <Badge className="mt-1" variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Non conforme</Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Select value={row.performed_by} onValueChange={(v) => updateRow(eq.code, { performed_by: v })} disabled={!canEdit}>
@@ -248,7 +266,7 @@ export function FridgeTemperatureManager() {
                           <SelectTrigger className="h-9"><SelectValue placeholder="Manager" /></SelectTrigger>
                           <SelectContent>
                             <SelectItem value="__none">—</SelectItem>
-                            {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                            {MANAGERS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                           </SelectContent>
                         </Select>
                       </TableCell>
