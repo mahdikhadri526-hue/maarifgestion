@@ -271,14 +271,15 @@ export function WeeklyTracking() {
   };
   const todayIso = fmt(new Date());
   const tomorrowIso = (() => { const d = new Date(); d.setDate(d.getDate() + 1); return fmt(d); })();
+  const yesterdayIso = (() => { const d = new Date(); d.setDate(d.getDate() - 1); return fmt(d); })();
   const dayIso = (wkStart: string, dIdx: number) => {
     const d = parseISO(wkStart);
     d.setDate(d.getDate() + dIdx);
     return fmt(d);
   };
   const isDayEditable = (iso: string) => {
-    if (isRestrictedUser) return iso === todayIso || iso === tomorrowIso;
-    return iso === todayIso || unlockedDays.has(iso);
+    if (isRestrictedUser) return iso === yesterdayIso || iso === todayIso || iso === tomorrowIso;
+    return iso === yesterdayIso || iso === todayIso || iso === tomorrowIso || unlockedDays.has(iso);
   };
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
