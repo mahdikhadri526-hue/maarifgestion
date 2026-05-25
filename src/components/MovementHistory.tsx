@@ -62,7 +62,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   );
   const isFromRequisition = (m: { date: string; productId: string; category: string; type: string; destination?: string | null }) => {
     if (m.type !== "sortie") return false;
-    if (m.destination) return false; // exclut transferts / Mr Hassan
+    if (m.destination) return false; // exclut transferts / Direction
     return requisitionKeys.has(`${m.date.slice(0, 10)}|${m.productId}|${m.category}`);
   };
 
