@@ -710,7 +710,17 @@ export function WeeklyTracking() {
       }
       for (const e of entriesForAt(wkStart, day, article)) {
         const q = num(e.entree);
-        if (q > 0) batches.push({ lot: (e.lot ?? "").toString(), remaining: q });
+        if (q > 0) {
+          const lotStr = (e.lot ?? "").toString().trim();
+          if (!lotStr && ficheType === "Mouvement glaces & tartes") {
+            // Sans lot : on ajoute la quantité au lot existant le plus ancien (FIFO)
+            const target = batches.find((b) => b.remaining > 0) ?? batches[0];
+            if (target) target.remaining += q;
+            else batches.push({ lot: "", remaining: q });
+          } else {
+            batches.push({ lot: lotStr, remaining: q });
+          }
+        }
       }
       let sortie = num(cellAt(wkStart, day, 0, article).sorties);
       if (!sortie) {
@@ -786,7 +796,17 @@ export function WeeklyTracking() {
       const dayDate = (() => { const dt = parseISO(wkStart); dt.setDate(dt.getDate() + d); return fmt(dt); })();
       for (const e of entriesForAt(wkStart, DAYS[d], article)) {
         const q = num(e.entree);
-        if (q > 0) out.push({ lot: (e.lot ?? "").toString(), remaining: q, entryDate: dayDate });
+        if (q > 0) {
+          const lotStr = (e.lot ?? "").toString().trim();
+          if (!lotStr && ficheType === "Mouvement glaces & tartes") {
+            // Sans lot : on cumule la quantité dans le lot existant le plus ancien
+            const target = out.find((b) => b.remaining > 0) ?? out[0];
+            if (target) target.remaining += q;
+            else out.push({ lot: "", remaining: q, entryDate: dayDate });
+          } else {
+            out.push({ lot: lotStr, remaining: q, entryDate: dayDate });
+          }
+        }
       }
       let sortie = num(cellAt(wkStart, DAYS[d], 0, article).sorties);
       if (!sortie) {
