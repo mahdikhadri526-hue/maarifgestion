@@ -204,6 +204,15 @@ function LotExistantCell({
     if (ad !== bd) return ad < bd ? -1 : 1;
     return a.order - b.order;
   });
+  // Fusion "(sans lot)" -> ajoute la quantité au lot réel le plus ancien si disponible
+  const sansLotIdx = merged.findIndex((m) => m.lot === "(sans lot)");
+  if (sansLotIdx !== -1) {
+    const realLot = merged.find((m) => m.lot !== "(sans lot)");
+    if (realLot) {
+      realLot.remaining += merged[sansLotIdx].remaining;
+      merged.splice(sansLotIdx, 1);
+    }
+  }
   return (
     <div className="min-h-7 w-44 text-[11px] px-1 py-1 bg-primary/5 border border-primary/20 rounded leading-tight space-y-0.5">
       {merged.length === 0 ? (
