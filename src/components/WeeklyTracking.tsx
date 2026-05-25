@@ -492,9 +492,28 @@ export function WeeklyTracking() {
       Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.00$/, "").replace(/0$/, "");
 
     const formatAllocations = (allocations: Allocation[], missing: number) => {
-      const parts = allocations
-        .filter((a) => a.quantity > 0)
-        .map((a) => `${a.lot.trim() || "(sans lot)"} ×${formatQty(a.quantity)}`);
+      // Fusionner les portions "(sans lot)" dans le lot réel le plus ancien si présent.
+      const filtered = allocations.filter((a) => a.quantity > 0);
+      const firstReal = filtered.find((a) => a.lot.trim());
+      const fallbackReal =
+        firstReal ??
+        (() => {
+          const b = batches.find((x) => x.lot.trim());
+          return b ? { lot: b.lot, quantity: 0 } : undefined;
+        })();
+      const merged: Allocation[] = [];
+      for (const a of filtered) {
+        if (!a.lot.trim() && fallbackReal) {
+          const tgt = merged.find((m) => m.lot === fallbackReal.lot);
+          if (tgt) tgt.quantity += a.quantity;
+          else merged.push({ lot: fallbackReal.lot, quantity: a.quantity });
+        } else {
+          const tgt = merged.find((m) => m.lot === a.lot);
+          if (tgt) tgt.quantity += a.quantity;
+          else merged.push({ ...a });
+        }
+      }
+      const parts = merged.map((a) => `${a.lot.trim() || "(sans lot)"} ×${formatQty(a.quantity)}`);
       if (missing > 0) parts.push(`manque ×${formatQty(missing)}`);
       return parts.join(" / ");
     };
