@@ -488,6 +488,23 @@ export function WeeklyTracking() {
     type Allocation = { lot: string; quantity: number };
     const batches: Batch[] = [];
 
+    const latestRealLot = (onlyWithStock: boolean) => {
+      for (let i = batches.length - 1; i >= 0; i--) {
+        const lot = batches[i].lot.trim();
+        if (lot && (!onlyWithStock || batches[i].remaining > 0)) return lot;
+      }
+      return "";
+    };
+
+    const lotForUntrackedStock = () => latestRealLot(true) || latestRealLot(false);
+
+    const addUntrackedStock = (quantity: number) => {
+      const q = Math.max(0, quantity);
+      if (q <= 0) return;
+      const lot = lotForUntrackedStock();
+      batches.push({ lot, remaining: q });
+    };
+
     const formatQty = (value: number) =>
       Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.00$/, "").replace(/0$/, "");
 
@@ -495,18 +512,13 @@ export function WeeklyTracking() {
       // Fusionner les portions "(sans lot)" dans le lot réel le plus ancien si présent.
       const filtered = allocations.filter((a) => a.quantity > 0);
       const firstReal = filtered.find((a) => a.lot.trim());
-      const fallbackReal =
-        firstReal ??
-        (() => {
-          const b = batches.find((x) => x.lot.trim());
-          return b ? { lot: b.lot, quantity: 0 } : undefined;
-        })();
+      const fallbackLot = firstReal?.lot || lotForUntrackedStock();
       const merged: Allocation[] = [];
       for (const a of filtered) {
-        if (!a.lot.trim() && fallbackReal) {
-          const tgt = merged.find((m) => m.lot === fallbackReal.lot);
+        if (!a.lot.trim() && fallbackLot) {
+          const tgt = merged.find((m) => m.lot === fallbackLot);
           if (tgt) tgt.quantity += a.quantity;
-          else merged.push({ lot: fallbackReal.lot, quantity: a.quantity });
+          else merged.push({ lot: fallbackLot, quantity: a.quantity });
         } else {
           const tgt = merged.find((m) => m.lot === a.lot);
           if (tgt) tgt.quantity += a.quantity;
@@ -536,7 +548,7 @@ export function WeeklyTracking() {
           excess -= take;
         }
       } else if (current < target) {
-        batches.push({ lot: "", remaining: target - current });
+        addUntrackedStock(target - current);
       }
     };
 
@@ -576,7 +588,11 @@ export function WeeklyTracking() {
 
         for (const e of movementEntriesForAt(wk, day)) {
           const q = numLocal(e.entree);
-          if (q > 0) batches.push({ lot: (e.lot ?? "").toString(), remaining: q });
+          if (q > 0) {
+            const lot = (e.lot ?? "").toString().trim();
+            if (lot) batches.push({ lot, remaining: q });
+            else addUntrackedStock(q);
+          }
         }
 
         let cremeConsumed = 0;
