@@ -86,9 +86,9 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     if (filterProduct !== "all" && m.productId !== filterProduct) return false;
     if (filterType !== "all") {
       if (filterType === "transfert") {
-        if (!m.destination || m.destination === "Mr Hassan") return false;
+        if (!m.destination || m.destination === "Mr Hassan" || m.destination === "Direction") return false;
       } else if (filterType === "hassan") {
-        if (m.destination !== "Mr Hassan") return false;
+        if (m.destination !== "Mr Hassan" && m.destination !== "Direction") return false;
       } else if (filterType === "sortie") {
         // Sorties "pures" (hors transferts)
         if (m.type !== "sortie" || m.destination) return false;
@@ -264,7 +264,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   {ENABLE_TRANSFERTS && (
                     <>
                       <SelectItem value="transfert">Transferts</SelectItem>
-                      <SelectItem value="hassan">Mr Hassan</SelectItem>
+                      <SelectItem value="hassan">Direction</SelectItem>
                     </>
                   )}
                 </SelectContent>
