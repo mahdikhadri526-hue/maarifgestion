@@ -721,7 +721,7 @@ export function WeeklyTracking() {
         const q = num(e.entree);
         if (q > 0) {
           const lotStr = (e.lot ?? "").toString().trim();
-          if (!lotStr && ficheType === "Mouvement glaces & tartes") {
+          if (!lotStr) {
             // Sans lot : on ajoute la quantité au lot existant le plus ancien (FIFO)
             const target = batches.find((b) => b.remaining > 0) ?? batches[0];
             if (target) target.remaining += q;
@@ -807,7 +807,7 @@ export function WeeklyTracking() {
         const q = num(e.entree);
         if (q > 0) {
           const lotStr = (e.lot ?? "").toString().trim();
-          if (!lotStr && ficheType === "Mouvement glaces & tartes") {
+          if (!lotStr) {
             // Sans lot : on cumule la quantité dans le lot existant le plus ancien
             const target = out.find((b) => b.remaining > 0) ?? out[0];
             if (target) target.remaining += q;
