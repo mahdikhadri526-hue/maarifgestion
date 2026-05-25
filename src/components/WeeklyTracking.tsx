@@ -314,7 +314,6 @@ export function WeeklyTracking() {
           supabase
             .from("weekly_tracking")
             .select("*")
-            .in("week_start", weeksToLoad)
             .eq("fiche_type", ficheType),
         );
         setRows(normalizeWeeklyRows(data || []));
@@ -322,7 +321,7 @@ export function WeeklyTracking() {
         toast.error("Erreur de chargement");
       }
     })();
-  }, [weeksToLoad, ficheType]);
+  }, [ficheType]);
 
   useEffect(() => {
     (async () => {
