@@ -339,12 +339,12 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                         <>
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
                             <Send className="h-3 w-3" />
-                            {(m.destination.replace(/^✓\s*/, "")) === "Mr Hassan" ? "Mr Hassan" : "Transfert"}
+                            {(m.destination.replace(/^✓\s*/, "")) === "Mr Hassan" || (m.destination.replace(/^✓\s*/, "")) === "Direction" ? "Direction" : "Transfert"}
                             {m.destination.startsWith("✓") && (
                               <CheckCircle2 className="h-3 w-3 text-success" />
                             )}
                           </span>
-                          {m.destination.replace(/^✓\s*/, "") !== "Mr Hassan" && (
+                          {m.destination.replace(/^✓\s*/, "") !== "Mr Hassan" && m.destination.replace(/^✓\s*/, "") !== "Direction" && (
                             <span className="text-[10px] text-muted-foreground mt-0.5">
                               → {m.destination.replace(/^✓\s*/, "")}
                             </span>
