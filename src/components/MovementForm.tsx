@@ -65,7 +65,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
     try {
       const operatorName = performedBy.trim();
       const unitUsed = dominantUnit(multi, config);
-      // Les transferts et "Mr Hassan" sont stockés comme des sorties pour que le calcul du stock reste correct
+      // Les transferts et "Direction" sont stockés comme des sorties pour que le calcul du stock reste correct
       const movementType: "entree" | "sortie" =
         type === "transfert" || type === "hassan" ? "sortie" : type;
       // Bloquer toute sortie qui dépasserait le stock disponible
@@ -79,7 +79,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         }
       }
       const destinationValue =
-        type === "transfert" ? destination.trim() : type === "hassan" ? "Mr Hassan" : undefined;
+        type === "transfert" ? destination.trim() : type === "hassan" ? "Direction" : undefined;
       await saveMovement({
         date,
         productId,

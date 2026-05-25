@@ -62,7 +62,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   );
   const isFromRequisition = (m: { date: string; productId: string; category: string; type: string; destination?: string | null }) => {
     if (m.type !== "sortie") return false;
-    if (m.destination) return false; // exclut transferts / Mr Hassan
+    if (m.destination) return false; // exclut transferts / Direction
     return requisitionKeys.has(`${m.date.slice(0, 10)}|${m.productId}|${m.category}`);
   };
 
@@ -86,9 +86,9 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     if (filterProduct !== "all" && m.productId !== filterProduct) return false;
     if (filterType !== "all") {
       if (filterType === "transfert") {
-        if (!m.destination || m.destination === "Mr Hassan") return false;
+        if (!m.destination || m.destination === "Mr Hassan" || m.destination === "Direction") return false;
       } else if (filterType === "hassan") {
-        if (m.destination !== "Mr Hassan") return false;
+        if (m.destination !== "Mr Hassan" && m.destination !== "Direction") return false;
       } else if (filterType === "sortie") {
         // Sorties "pures" (hors transferts)
         if (m.type !== "sortie" || m.destination) return false;
@@ -264,7 +264,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   {ENABLE_TRANSFERTS && (
                     <>
                       <SelectItem value="transfert">Transferts</SelectItem>
-                      <SelectItem value="hassan">Mr Hassan</SelectItem>
+                      <SelectItem value="hassan">Direction</SelectItem>
                     </>
                   )}
                 </SelectContent>
@@ -339,12 +339,12 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                         <>
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
                             <Send className="h-3 w-3" />
-                            {(m.destination.replace(/^✓\s*/, "")) === "Mr Hassan" ? "Mr Hassan" : "Transfert"}
+                            {(m.destination.replace(/^✓\s*/, "")) === "Mr Hassan" || (m.destination.replace(/^✓\s*/, "")) === "Direction" ? "Direction" : "Transfert"}
                             {m.destination.startsWith("✓") && (
                               <CheckCircle2 className="h-3 w-3 text-success" />
                             )}
                           </span>
-                          {m.destination.replace(/^✓\s*/, "") !== "Mr Hassan" && (
+                          {m.destination.replace(/^✓\s*/, "") !== "Mr Hassan" && m.destination.replace(/^✓\s*/, "") !== "Direction" && (
                             <span className="text-[10px] text-muted-foreground mt-0.5">
                               → {m.destination.replace(/^✓\s*/, "")}
                             </span>
