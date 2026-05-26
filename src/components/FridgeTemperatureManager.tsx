@@ -29,7 +29,7 @@ interface RowState {
 }
 
 function emptyRow(): RowState {
-  return { temperature: "", conformite: "", commentaire: "", action_corrective: "", performed_by: "", visa_manager: "" };
+  return { temperature: "", conformite: "conforme", commentaire: "", action_corrective: "", performed_by: "", visa_manager: "" };
 }
 
 function todayStr() {
@@ -71,6 +71,15 @@ export function FridgeTemperatureManager() {
     });
     return groups;
   }, [visibleEquipments]);
+
+  const zonesMissingVisa = useMemo(() => {
+    const missing = new Set<string>();
+    Object.entries(equipmentsByZone).forEach(([zone, equips]) => {
+      const hasSaved = equips.some((eq) => rows[eq.code]?.id);
+      if (hasSaved && !zoneVisa[zone]) missing.add(zone);
+    });
+    return Array.from(missing);
+  }, [equipmentsByZone, rows, zoneVisa]);
 
   async function load() {
     setLoading(true);
@@ -312,6 +321,17 @@ export function FridgeTemperatureManager() {
               <FileDown className="h-4 w-4 mr-1" /> Exporter PDF
             </Button>
           </div>
+          {zonesMissingVisa.length > 0 && (
+            <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+              <div>
+                <div className="font-medium">Visa manager manquant</div>
+                <div className="text-xs opacity-90">
+                  Aucun visa enregistré pour&nbsp;: {zonesMissingVisa.join(", ")}
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
