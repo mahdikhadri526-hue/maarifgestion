@@ -458,7 +458,7 @@ export function FridgeTemperatureManager() {
             </CardContent>
           </Card>
         );
-      })}
+      }))}
     </div>
   );
 }
