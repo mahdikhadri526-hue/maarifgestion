@@ -364,7 +364,7 @@ export function FridgeTemperatureManager() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {equips.map((eq) => {
+                {sortedEquips.map((eq) => {
                   const row = rows[eq.code] ?? emptyRow();
                   const locked = !!row.id;
                   const editable = canEdit && !locked;
@@ -457,8 +457,8 @@ export function FridgeTemperatureManager() {
             </div>
             </CardContent>
           </Card>
-        ))
-      )}
+        );
+      })}
     </div>
   );
 }
