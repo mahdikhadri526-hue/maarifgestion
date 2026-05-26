@@ -56,12 +56,21 @@ export function FridgeTemperatureManager() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
   const [slotOperator, setSlotOperator] = useState<string>("");
-  const [savingAll, setSavingAll] = useState(false);
+  const [savingZone, setSavingZone] = useState<FridgeZone | null>(null);
+  const [zoneVisa, setZoneVisa] = useState<Record<string, string>>({});
 
   const visibleEquipments = useMemo(
     () => EQUIPMENTS.filter((e) => zoneFilter === "Toutes" || e.zone === zoneFilter),
     [zoneFilter]
   );
+
+  const equipmentsByZone = useMemo(() => {
+    const groups: Record<string, typeof EQUIPMENTS> = {};
+    visibleEquipments.forEach((e) => {
+      (groups[e.zone] ||= []).push(e);
+    });
+    return groups;
+  }, [visibleEquipments]);
 
   async function load() {
     setLoading(true);
@@ -94,6 +103,12 @@ export function FridgeTemperatureManager() {
     });
     setRows(map);
     setSlotOperator(detectedOperator);
+    // Pré-remplir le visa par zone à partir des saisies existantes
+    const visaByZone: Record<string, string> = {};
+    (data ?? []).forEach((r: any) => {
+      if (r.visa_manager && !visaByZone[r.zone]) visaByZone[r.zone] = r.visa_manager;
+    });
+    setZoneVisa(visaByZone);
   }
 
   useEffect(() => {
@@ -154,22 +169,23 @@ export function FridgeTemperatureManager() {
     toast({ title: "Enregistré", description: `${eq.name} (${slot})` });
   }
 
-  async function saveAll() {
+  async function saveZone(zone: FridgeZone) {
     if (!slotOperator) {
       toast({ title: "Opérateur requis", description: "Sélectionnez « Effectué par » pour ce créneau", variant: "destructive" });
       return;
     }
-    const toSave = visibleEquipments.filter((eq) => {
+    const visa = zoneVisa[zone] || "";
+    const zoneEquips = (equipmentsByZone[zone] || []).filter((eq) => {
       const r = rows[eq.code];
       return r && r.temperature.trim() !== "";
     });
-    if (toSave.length === 0) {
-      toast({ title: "Aucune température saisie" });
+    if (zoneEquips.length === 0) {
+      toast({ title: "Aucune température saisie dans cette zone" });
       return;
     }
-    setSavingAll(true);
+    setSavingZone(zone);
     let ok = 0, ko = 0;
-    for (const eq of toSave) {
+    for (const eq of zoneEquips) {
       const r = rows[eq.code];
       const tVal = parseDisplayTemp(r.temperature);
       if (tVal === null) { ko++; continue; }
@@ -181,7 +197,7 @@ export function FridgeTemperatureManager() {
         commentaire: r.commentaire?.trim() ? r.commentaire : "RAS",
         action_corrective: r.action_corrective?.trim() ? r.action_corrective : "RAS",
         performed_by: slotOperator,
-        visa_manager: r.visa_manager || null,
+        visa_manager: visa || null,
       } as any;
       const { data, error } = await supabase
         .from("fridge_temperatures")
@@ -192,13 +208,14 @@ export function FridgeTemperatureManager() {
         updateRow(eq.code, {
           id: data.id,
           performed_by: slotOperator,
+          visa_manager: visa,
           commentaire: payload.commentaire,
           action_corrective: payload.action_corrective,
         });
       }
     }
-    setSavingAll(false);
-    toast({ title: "Enregistrement terminé", description: `${ok} ligne(s) enregistrée(s)${ko ? `, ${ko} erreur(s)` : ""}` });
+    setSavingZone(null);
+    toast({ title: `Zone ${zone} enregistrée`, description: `${ok} ligne(s) enregistrée(s)${ko ? `, ${ko} erreur(s)` : ""}` });
   }
 
   function exportPdf() {
@@ -281,7 +298,7 @@ export function FridgeTemperatureManager() {
               </Select>
             </div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto_auto] gap-3 mt-3 items-end">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 mt-3 items-end">
             <div>
               <Label>Effectué par (créneau {slot}) *</Label>
               <Select value={slotOperator} onValueChange={setSlotOperator} disabled={!canEdit}>
@@ -291,12 +308,6 @@ export function FridgeTemperatureManager() {
                 </SelectContent>
               </Select>
             </div>
-            {canEdit && (
-              <Button onClick={saveAll} disabled={savingAll}>
-                <Save className="h-4 w-4 mr-1" />
-                {savingAll ? "Enregistrement…" : "Enregistrer tout"}
-              </Button>
-            )}
             <Button variant="outline" onClick={exportPdf}>
               <FileDown className="h-4 w-4 mr-1" /> Exporter PDF
             </Button>
@@ -304,26 +315,52 @@ export function FridgeTemperatureManager() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="p-0 overflow-x-auto">
-          {loading ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">Chargement…</div>
-          ) : (
+      {loading ? (
+        <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Chargement…</CardContent></Card>
+      ) : (
+        Object.entries(equipmentsByZone).map(([zone, equips]) => (
+          <Card key={zone}>
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:justify-between">
+                <CardTitle className="text-base">Zone : {zone}</CardTitle>
+                <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+                  <div className="min-w-[200px]">
+                    <Label className="text-xs">Visa manager (zone)</Label>
+                    <Select
+                      value={zoneVisa[zone] || "__none"}
+                      onValueChange={(v) => setZoneVisa((p) => ({ ...p, [zone]: v === "__none" ? "" : v }))}
+                      disabled={!canEdit}
+                    >
+                      <SelectTrigger className="h-9"><SelectValue placeholder="Manager" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">—</SelectItem>
+                        {MANAGERS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {canEdit && (
+                    <Button onClick={() => saveZone(zone as FridgeZone)} disabled={savingZone === zone}>
+                      <Save className="h-4 w-4 mr-1" />
+                      {savingZone === zone ? "Enregistrement…" : "Enregistrer la zone"}
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="p-0 overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead className="min-w-[110px]">Code</TableHead>
                   <TableHead className="min-w-[180px] sticky left-0 z-20 bg-background shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">Équipement</TableHead>
-                  <TableHead className="min-w-[110px]">Zone</TableHead>
                   <TableHead className="min-w-[120px]">Température (°C)</TableHead>
                   <TableHead className="min-w-[100px]">Conforme</TableHead>
-                  <TableHead className="min-w-[180px]">Visa manager</TableHead>
                   <TableHead className="min-w-[200px]">Commentaire</TableHead>
                   <TableHead className="min-w-[220px]">Action en cas non conforme</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {visibleEquipments.map((eq) => {
+                {equips.map((eq) => {
                   const row = rows[eq.code] ?? emptyRow();
                   const locked = !!row.id;
                   const editable = canEdit && !locked;
@@ -334,7 +371,6 @@ export function FridgeTemperatureManager() {
                         <div className="font-medium">{eq.name}</div>
                         <div className="text-xs text-muted-foreground">{eq.type}</div>
                       </TableCell>
-                      <TableCell><Badge variant="outline">{eq.zone}</Badge></TableCell>
                       <TableCell>
                         <Input
                           type="text" inputMode="decimal"
@@ -369,15 +405,6 @@ export function FridgeTemperatureManager() {
                         )}
                       </TableCell>
                       <TableCell>
-                        <Select value={row.visa_manager || "__none"} onValueChange={(v) => updateRow(eq.code, { visa_manager: v === "__none" ? "" : v })} disabled={!editable}>
-                          <SelectTrigger className="h-9"><SelectValue placeholder="Manager" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none">—</SelectItem>
-                            {MANAGERS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                          </SelectContent>
-                        </Select>
-                      </TableCell>
-                      <TableCell>
                         <Textarea
                           rows={1}
                           value={row.commentaire}
@@ -388,30 +415,24 @@ export function FridgeTemperatureManager() {
                         />
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-start gap-2">
                           <Textarea
                             rows={1}
                             value={row.action_corrective}
                             onChange={(e) => updateRow(eq.code, { action_corrective: e.target.value })}
                             disabled={!editable}
                             placeholder={row.conformite === "non_conforme" ? "Action corrective…" : "—"}
-                            className="min-h-9 flex-1"
+                            className="min-h-9 w-full"
                           />
-                          {editable && (
-                            <Button size="sm" variant="ghost" onClick={() => saveRow(eq.code)} disabled={saving === eq.code} title="Enregistrer cette ligne">
-                              <Save className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
                       </TableCell>
                     </TableRow>
                   );
                 })}
               </TableBody>
             </Table>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        ))
+      )}
     </div>
   );
 }
