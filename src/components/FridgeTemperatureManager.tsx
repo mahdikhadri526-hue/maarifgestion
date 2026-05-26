@@ -321,27 +321,35 @@ export function FridgeTemperatureManager() {
               <FileDown className="h-4 w-4 mr-1" /> Exporter PDF
             </Button>
           </div>
-          {zonesMissingVisa.length > 0 && (
-            <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-              <div>
-                <div className="font-medium">Visa manager manquant</div>
-                <div className="text-xs opacity-90">
-                  Aucun visa enregistré pour&nbsp;: {zonesMissingVisa.join(", ")}
-                </div>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
       {loading ? (
         <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Chargement…</CardContent></Card>
       ) : (
-        Object.entries(equipmentsByZone).map(([zone, equips]) => (
+        Object.entries(equipmentsByZone).map(([zone, equips], zoneIndex) => {
+          const sortedEquips = [...equips].sort((a, b) => {
+            const ra = rows[a.code] ?? emptyRow();
+            const rb = rows[b.code] ?? emptyRow();
+            const pa = ra.conformite === "non_conforme" ? 0 : ra.temperature === "" ? 1 : 2;
+            const pb = rb.conformite === "non_conforme" ? 0 : rb.temperature === "" ? 1 : 2;
+            return pa - pb;
+          });
+          return (
           <Card key={zone}>
             <CardHeader className="pb-3">
               <CardTitle className="text-base">Zone : {zone}</CardTitle>
+              {zoneIndex === 0 && zonesMissingVisa.length > 0 && (
+                <div className="mt-2 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-medium">Visa manager manquant</div>
+                    <div className="text-xs opacity-90">
+                      Aucun visa enregistré pour&nbsp;: {zonesMissingVisa.join(", ")}
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
             <Table>
@@ -356,7 +364,7 @@ export function FridgeTemperatureManager() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {equips.map((eq) => {
+                {sortedEquips.map((eq) => {
                   const row = rows[eq.code] ?? emptyRow();
                   const locked = !!row.id;
                   const editable = canEdit && !locked;
@@ -449,8 +457,8 @@ export function FridgeTemperatureManager() {
             </div>
             </CardContent>
           </Card>
-        ))
-      )}
+        );
+      }))}
     </div>
   );
 }
