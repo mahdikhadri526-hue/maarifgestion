@@ -321,31 +321,7 @@ export function FridgeTemperatureManager() {
         Object.entries(equipmentsByZone).map(([zone, equips]) => (
           <Card key={zone}>
             <CardHeader className="pb-3">
-              <div className="flex flex-col sm:flex-row sm:items-end gap-3 sm:justify-between">
-                <CardTitle className="text-base">Zone : {zone}</CardTitle>
-                <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
-                  <div className="min-w-[200px]">
-                    <Label className="text-xs">Visa manager (zone)</Label>
-                    <Select
-                      value={zoneVisa[zone] || "__none"}
-                      onValueChange={(v) => setZoneVisa((p) => ({ ...p, [zone]: v === "__none" ? "" : v }))}
-                      disabled={!canEdit}
-                    >
-                      <SelectTrigger className="h-9"><SelectValue placeholder="Manager" /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none">—</SelectItem>
-                        {MANAGERS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {canEdit && (
-                    <Button onClick={() => saveZone(zone as FridgeZone)} disabled={savingZone === zone}>
-                      <Save className="h-4 w-4 mr-1" />
-                      {savingZone === zone ? "Enregistrement…" : "Enregistrer la zone"}
-                    </Button>
-                  )}
-                </div>
-              </div>
+              <CardTitle className="text-base">Zone : {zone}</CardTitle>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
             <Table>
@@ -429,6 +405,28 @@ export function FridgeTemperatureManager() {
                 })}
               </TableBody>
             </Table>
+            <div className="flex flex-col sm:flex-row gap-2 sm:items-end justify-end p-4 border-t">
+              <div className="min-w-[200px]">
+                <Label className="text-xs">Visa manager (zone)</Label>
+                <Select
+                  value={zoneVisa[zone] || "__none"}
+                  onValueChange={(v) => setZoneVisa((p) => ({ ...p, [zone]: v === "__none" ? "" : v }))}
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Manager" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">—</SelectItem>
+                    {MANAGERS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {canEdit && (
+                <Button onClick={() => saveZone(zone as FridgeZone)} disabled={savingZone === zone}>
+                  <Save className="h-4 w-4 mr-1" />
+                  {savingZone === zone ? "Enregistrement…" : "Enregistrer la zone"}
+                </Button>
+              )}
+            </div>
             </CardContent>
           </Card>
         ))
