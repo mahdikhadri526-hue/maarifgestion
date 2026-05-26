@@ -321,17 +321,6 @@ export function FridgeTemperatureManager() {
               <FileDown className="h-4 w-4 mr-1" /> Exporter PDF
             </Button>
           </div>
-          {zonesMissingVisa.length > 0 && (
-            <div className="mt-3 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-              <div>
-                <div className="font-medium">Visa manager manquant</div>
-                <div className="text-xs opacity-90">
-                  Aucun visa enregistré pour&nbsp;: {zonesMissingVisa.join(", ")}
-                </div>
-              </div>
-            </div>
-          )}
         </CardContent>
       </Card>
 
