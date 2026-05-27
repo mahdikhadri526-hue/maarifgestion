@@ -492,11 +492,9 @@ export async function getProductDailyHistory(productId: string): Promise<DailySt
 // Permet de comparer directement avec une saisie MultiUnitInput pour bloquer
 // une sortie/réquisition qui dépasserait le stock disponible.
 export async function getProductAvailableStockInBasePieces(productId: string): Promise<number> {
-  const [allMovements, initialStocks, units, configs] = await Promise.all([
+  const [allMovements, initialStocks] = await Promise.all([
     getMovements(),
     getInitialStocks(),
-    getProductUnits(),
-    getProductUnitConfigs(),
   ]);
   const initial = initialStocks[productId] || 0;
   const initialBase = initial;
