@@ -386,7 +386,7 @@ export async function getProductUnitConfigs(): Promise<Record<string, ProductUni
 }
 
 export async function setProductUnitConfig(productId: string, config: Partial<ProductUnitConfig>) {
-  const payload: any = { product_id: productId, quantity: 0 };
+  const payload: any = { product_id: productId };
   if (config.cartonEnabled !== undefined) payload.carton_enabled = config.cartonEnabled;
   if (config.paquetEnabled !== undefined) payload.paquet_enabled = config.paquetEnabled;
   if (config.piecesPerCarton !== undefined) payload.pieces_per_carton = Math.max(1, config.piecesPerCarton);
@@ -400,7 +400,7 @@ export async function setProductUnitConfig(productId: string, config: Partial<Pr
 export async function setProductUnit(productId: string, unit: UnitType) {
   const { error } = await supabase
     .from("initial_stocks")
-    .upsert({ product_id: productId, unit, quantity: 0 }, { onConflict: "product_id" });
+    .upsert({ product_id: productId, unit }, { onConflict: "product_id" });
   if (error) throw error;
 }
 
