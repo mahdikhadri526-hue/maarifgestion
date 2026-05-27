@@ -100,38 +100,23 @@ export function roundStockQuantity(value: number): number {
   return Number.isInteger(value) ? value : Number(value.toFixed(2));
 }
 
-function getDisplayFactor(unit: UnitType, config?: ProductUnitConfig): number {
-  if (unit === "KILO" && config?.paquetEnabled && config.piecesPerPaquet > 0) return config.piecesPerPaquet;
-  if (unit === "PAQUET" && config?.paquetEnabled && config.piecesPerPaquet > 0) return config.piecesPerPaquet;
-  if (unit === "COLIS" && config?.cartonEnabled && config.piecesPerCarton > 0) return config.piecesPerCarton;
-  return 1;
-}
-
 export function movementPiecesToDisplay(
   quantity: number,
   unit: UnitType,
   config?: ProductUnitConfig,
   productId?: string,
 ): number {
-  // Le changement d'unité doit être un simple changement de libellé : on n'applique
-  // la conversion paquet/carton QUE pour les produits qui stockent réellement en pièces
-  // brutes (ex. café Brésil = 1 paquet = 1 Kg). Pour tous les autres, la quantité
-  // affichée reste identique quelle que soit l'unité sélectionnée.
-  if (productId && HIDE_PIECE_PRODUCTS.has(productId)) {
-    const factor = getDisplayFactor(unit, config);
-    return roundStockQuantity(factor > 0 ? quantity / factor : quantity);
-  }
+  // Le changement d'unité est uniquement un changement de libellé :
+  // aucune conversion, aucune exception produit, le stock restant reste identique.
   return roundStockQuantity(quantity);
 }
 
 export function displayQuantityForProduct(productId: string, quantity: number, config?: ProductUnitConfig): number {
-  if (productId === "ali-7") return roundStockQuantity(quantity / (config?.piecesPerPaquet || 2));
   return roundStockQuantity(quantity);
 }
 
 export function formatQuantityForProduct(productId: string, quantity: number, config?: ProductUnitConfig): string {
   const displayQuantity = displayQuantityForProduct(productId, quantity, config);
-  if (productId === "ali-7") return `${displayQuantity.toLocaleString("fr-FR")} Kg`;
   if (HIDE_PIECE_PRODUCTS.has(productId) && config?.paquetEnabled && config.piecesPerPaquet > 0) {
     if (quantity % config.piecesPerPaquet === 0) {
       return `${quantity / config.piecesPerPaquet} paq.`;
