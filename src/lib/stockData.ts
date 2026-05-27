@@ -108,7 +108,9 @@ function getDisplayFactor(unit: UnitType, config?: ProductUnitConfig): number {
 }
 
 export function movementPiecesToDisplay(quantity: number, unit: UnitType, config?: ProductUnitConfig): number {
-  return roundStockQuantity(quantity / getDisplayFactor(unit, config));
+  // L'unité affichée est purement un libellé : les quantités restent identiques
+  // quel que soit le choix d'unité (pièce, paquet, colis, kilo).
+  return roundStockQuantity(quantity);
 }
 
 export function displayQuantityForProduct(productId: string, quantity: number, config?: ProductUnitConfig): number {
