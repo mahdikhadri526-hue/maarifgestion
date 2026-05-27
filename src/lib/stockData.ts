@@ -107,10 +107,21 @@ function getDisplayFactor(unit: UnitType, config?: ProductUnitConfig): number {
   return 1;
 }
 
-export function movementPiecesToDisplay(quantity: number, unit: UnitType, config?: ProductUnitConfig): number {
-  // Convertit les pièces brutes stockées dans le mouvement vers l'unité d'affichage.
-  const factor = getDisplayFactor(unit, config);
-  return roundStockQuantity(factor > 0 ? quantity / factor : quantity);
+export function movementPiecesToDisplay(
+  quantity: number,
+  unit: UnitType,
+  config?: ProductUnitConfig,
+  productId?: string,
+): number {
+  // Le changement d'unité doit être un simple changement de libellé : on n'applique
+  // la conversion paquet/carton QUE pour les produits qui stockent réellement en pièces
+  // brutes (ex. café Brésil = 1 paquet = 1 Kg). Pour tous les autres, la quantité
+  // affichée reste identique quelle que soit l'unité sélectionnée.
+  if (productId && HIDE_PIECE_PRODUCTS.has(productId)) {
+    const factor = getDisplayFactor(unit, config);
+    return roundStockQuantity(factor > 0 ? quantity / factor : quantity);
+  }
+  return roundStockQuantity(quantity);
 }
 
 export function displayQuantityForProduct(productId: string, quantity: number, config?: ProductUnitConfig): number {
