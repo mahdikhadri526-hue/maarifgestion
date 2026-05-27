@@ -499,17 +499,7 @@ export async function getProductAvailableStockInBasePieces(productId: string): P
     getProductUnitConfigs(),
   ]);
   const initial = initialStocks[productId] || 0;
-  const unit = units[productId] || "PIECE";
-  const config = configs[productId];
-  const factor = (() => {
-    // Inverse de movementPiecesToDisplay : on remet le stock initial dans
-    // la même unité que les mouvements (= pièces brutes).
-    if (unit === "KILO" && config?.paquetEnabled && config.piecesPerPaquet > 0) return config.piecesPerPaquet;
-    if (unit === "PAQUET" && config?.paquetEnabled && config.piecesPerPaquet > 0) return config.piecesPerPaquet;
-    if (unit === "COLIS" && config?.cartonEnabled && config.piecesPerCarton > 0) return config.piecesPerCarton;
-    return 1;
-  })();
-  const initialBase = initial * factor;
+  const initialBase = initial;
   const productMovements = allMovements.filter((m) => m.productId === productId);
   const totalEntreesBase = productMovements
     .filter((m) => m.type === "entree")
