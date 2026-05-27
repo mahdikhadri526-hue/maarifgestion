@@ -438,10 +438,10 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
     const productMovements = movements.filter((m) => m.productId === product.id);
     const totalEntrees = productMovements
       .filter((m) => m.type === "entree")
-      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config), 0);
+      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config, product.id), 0);
     const totalSorties = productMovements
       .filter((m) => m.type === "sortie")
-      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config), 0);
+      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config, product.id), 0);
 
     return {
       productId: product.id,
@@ -481,7 +481,7 @@ export async function getProductDailyHistory(productId: string): Promise<DailySt
   movements.forEach((m) => {
     const d = m.date.split("T")[0];
     if (!byDate[d]) byDate[d] = { entrees: 0, sorties: 0 };
-    const displayQuantity = movementPiecesToDisplay(m.quantity, unit, config);
+    const displayQuantity = movementPiecesToDisplay(m.quantity, unit, config, productId);
     if (m.type === "entree") byDate[d].entrees += displayQuantity;
     else byDate[d].sorties += displayQuantity;
   });
