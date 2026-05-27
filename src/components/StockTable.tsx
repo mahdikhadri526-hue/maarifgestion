@@ -268,7 +268,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         if (!productIds.has(m.productId)) return;
         const unit = units[m.productId] || "PIECE";
         const cfg = configs[m.productId];
-        const dq = movementPiecesToDisplay(m.quantity, unit, cfg);
+        const dq = movementPiecesToDisplay(m.quantity, unit, cfg, m.productId);
         const d = m.date.split("T")[0];
         if (!byProduct[m.productId]) byProduct[m.productId] = {};
         const bd = byProduct[m.productId];

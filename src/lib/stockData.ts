@@ -107,10 +107,21 @@ function getDisplayFactor(unit: UnitType, config?: ProductUnitConfig): number {
   return 1;
 }
 
-export function movementPiecesToDisplay(quantity: number, unit: UnitType, config?: ProductUnitConfig): number {
-  // Convertit les pièces brutes stockées dans le mouvement vers l'unité d'affichage.
-  const factor = getDisplayFactor(unit, config);
-  return roundStockQuantity(factor > 0 ? quantity / factor : quantity);
+export function movementPiecesToDisplay(
+  quantity: number,
+  unit: UnitType,
+  config?: ProductUnitConfig,
+  productId?: string,
+): number {
+  // Le changement d'unité doit être un simple changement de libellé : on n'applique
+  // la conversion paquet/carton QUE pour les produits qui stockent réellement en pièces
+  // brutes (ex. café Brésil = 1 paquet = 1 Kg). Pour tous les autres, la quantité
+  // affichée reste identique quelle que soit l'unité sélectionnée.
+  if (productId && HIDE_PIECE_PRODUCTS.has(productId)) {
+    const factor = getDisplayFactor(unit, config);
+    return roundStockQuantity(factor > 0 ? quantity / factor : quantity);
+  }
+  return roundStockQuantity(quantity);
 }
 
 export function displayQuantityForProduct(productId: string, quantity: number, config?: ProductUnitConfig): number {
@@ -427,10 +438,10 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
     const productMovements = movements.filter((m) => m.productId === product.id);
     const totalEntrees = productMovements
       .filter((m) => m.type === "entree")
-      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config), 0);
+      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config, product.id), 0);
     const totalSorties = productMovements
       .filter((m) => m.type === "sortie")
-      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config), 0);
+      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config, product.id), 0);
 
     return {
       productId: product.id,
@@ -470,7 +481,7 @@ export async function getProductDailyHistory(productId: string): Promise<DailySt
   movements.forEach((m) => {
     const d = m.date.split("T")[0];
     if (!byDate[d]) byDate[d] = { entrees: 0, sorties: 0 };
-    const displayQuantity = movementPiecesToDisplay(m.quantity, unit, config);
+    const displayQuantity = movementPiecesToDisplay(m.quantity, unit, config, productId);
     if (m.type === "entree") byDate[d].entrees += displayQuantity;
     else byDate[d].sorties += displayQuantity;
   });
