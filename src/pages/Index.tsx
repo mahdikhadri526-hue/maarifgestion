@@ -163,24 +163,6 @@ const Index = () => {
             </div>
             )}
 
-            {/* Quick Actions */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {[
-                { label: "Nouvelle entrée", icon: TrendingUp, color: "text-success", action: () => setTab("mouvements") },
-                { label: "Nouvelle sortie", icon: TrendingDown, color: "text-destructive", action: () => setTab("mouvements") },
-                { label: "Stock initial", icon: Package, color: "text-primary", action: () => setTab("stock-initial") },
-                { label: "Lots / DLC", icon: Boxes, color: "text-accent-foreground", action: () => setTab("lots") },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  onClick={item.action}
-                  className="bg-card rounded-xl border p-4 flex flex-col items-center gap-2 hover:bg-muted/50 hover:shadow-md transition-all group"
-                >
-                  <item.icon className={`h-6 w-6 ${item.color} group-hover:scale-110 transition-transform`} />
-                  <span className="text-xs font-medium text-muted-foreground">{item.label}</span>
-                </button>
-              ))}
-            </div>
 
           </></div>
         )}
