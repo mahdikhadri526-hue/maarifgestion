@@ -108,9 +108,9 @@ function getDisplayFactor(unit: UnitType, config?: ProductUnitConfig): number {
 }
 
 export function movementPiecesToDisplay(quantity: number, unit: UnitType, config?: ProductUnitConfig): number {
-  // L'unité affichée est purement un libellé : les quantités restent identiques
-  // quel que soit le choix d'unité (pièce, paquet, colis, kilo).
-  return roundStockQuantity(quantity);
+  // Convertit les pièces brutes stockées dans le mouvement vers l'unité d'affichage.
+  const factor = getDisplayFactor(unit, config);
+  return roundStockQuantity(factor > 0 ? quantity / factor : quantity);
 }
 
 export function displayQuantityForProduct(productId: string, quantity: number, config?: ProductUnitConfig): number {
