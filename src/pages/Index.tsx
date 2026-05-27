@@ -9,7 +9,7 @@ import { ExpiryAlerts, LotManager, StockOutAlerts, PendingAutocontrolAlerts } fr
 import { AutocontrolManager } from "@/components/AutocontrolManager";
 import { WeeklyTracking } from "@/components/WeeklyTracking";
 import { FridgeTemperatureManager } from "@/components/FridgeTemperatureManager";
-import { LayoutDashboard, History, PlusCircle, Database, FileText, TrendingUp, TrendingDown, Package, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer } from "lucide-react";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, ClipboardCheck, CalendarDays, ArrowRight, Thermometer } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
