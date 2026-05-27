@@ -414,12 +414,8 @@ export function RequisitionForm({ onUpdated }: Props) {
                       if (decomposed.pieces) parts.push(`${decomposed.pieces} ${pieceLbl.short}`);
                       const paquetLbl = (PAQUET_LABEL_OVERRIDES[p.id] || "paq.").toLowerCase();
                       const emptyLabel = HIDE_PIECE_PRODUCTS.has(p.id) ? `0 ${paquetLbl}` : `0 ${pieceLbl.short}`;
-                      const breakdown = p.id === "ali-7"
-                        ? formatQuantityForProduct(p.id, existingTotal, cfg)
-                        : (parts.length > 0 ? parts.join(" + ") : emptyLabel);
-                      const totalLabel = p.id === "ali-7"
-                        ? formatQuantityForProduct(p.id, existingTotal, cfg)
-                        : HIDE_PIECE_PRODUCTS.has(p.id) && cfg.paquetEnabled && cfg.piecesPerPaquet > 0 && existingTotal % cfg.piecesPerPaquet === 0
+                      const breakdown = parts.length > 0 ? parts.join(" + ") : emptyLabel;
+                      const totalLabel = HIDE_PIECE_PRODUCTS.has(p.id) && cfg.paquetEnabled && cfg.piecesPerPaquet > 0 && existingTotal % cfg.piecesPerPaquet === 0
                           ? `${existingTotal / cfg.piecesPerPaquet} ${paquetLbl}`
                           : `${existingTotal} ${pieceLbl.short}`;
                       return (
