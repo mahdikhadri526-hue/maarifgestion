@@ -1565,6 +1565,35 @@ export function WeeklyTracking() {
                 Masquer lots (entrée + existant)
               </label>
             </div>
+            <div className="flex flex-col gap-1">
+              <Label className="text-xs">Vue</Label>
+              <div className="flex items-center h-8">
+                <button
+                  type="button"
+                  onClick={() => setTodayOnly((v) => !v)}
+                  className={cn(
+                    "h-8 px-3 rounded-l border text-xs font-medium transition-colors",
+                    todayOnly
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:bg-muted"
+                  )}
+                >
+                  Aujourd'hui
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTodayOnly((v) => !v)}
+                  className={cn(
+                    "h-8 px-3 rounded-r border text-xs font-medium transition-colors -ml-px",
+                    !todayOnly
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:bg-muted"
+                  )}
+                >
+                  Semaine
+                </button>
+              </div>
+            </div>
             {filtersActive && (
               <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8">
                 <X className="h-3 w-3 mr-1" /> Réinitialiser
