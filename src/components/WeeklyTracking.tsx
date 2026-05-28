@@ -316,7 +316,6 @@ export function WeeklyTracking() {
   const [filterFrom, setFilterFrom] = useState<string>(""); // YYYY-MM-DD
   const [filterTo, setFilterTo] = useState<string>(""); // YYYY-MM-DD
   const [showControls, setShowControls] = useState(true);
-  const [todayOnly, setTodayOnly] = useState(true);
   const [unlockedDays, setUnlockedDays] = useState<Set<string>>(new Set());
   const [scanDay, setScanDay] = useState<string>("today");
   const { can, user } = useAuth();
@@ -1058,16 +1057,12 @@ export function WeeklyTracking() {
         const iso = fmt(dt);
         if (filterDay !== "all" && weeks.length === 1 && Number(filterDay) !== i) return;
         if (filterFrom && iso < filterFrom) return;
-        if (filterTo && iso > filterTo) return;
+    if (filterTo && iso > filterTo) return;
         out.push({ wkStart: wk, day: d, dIdx: i, iso });
       });
     }
-    if (todayOnly) {
-      const todayMatch = out.filter((v) => v.iso === todayIso);
-      if (todayMatch.length > 0) return todayMatch;
-    }
     return out;
-  }, [filterDay, filterFrom, filterTo, weekStart, weeksToLoad, todayOnly, todayIso]);
+  }, [filterDay, filterFrom, filterTo, weekStart, weeksToLoad]);
 
   // For "type" filter: determine if a (day,article) cell matches
   const cellMatchesTypeFilter = (dIdx: number, article: string, wkStart: string = weekStart): boolean => {
@@ -1627,35 +1622,6 @@ export function WeeklyTracking() {
                 />
                 Masquer lots (entrée + existant)
               </label>
-            </div>
-            <div className="flex flex-col gap-1">
-              <Label className="text-xs">Vue</Label>
-              <div className="flex items-center h-8">
-                <button
-                  type="button"
-                  onClick={() => setTodayOnly((v) => !v)}
-                  className={cn(
-                    "h-8 px-3 rounded-l border text-xs font-medium transition-colors",
-                    todayOnly
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background text-muted-foreground border-border hover:bg-muted"
-                  )}
-                >
-                  Aujourd'hui
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setTodayOnly((v) => !v)}
-                  className={cn(
-                    "h-8 px-3 rounded-r border text-xs font-medium transition-colors -ml-px",
-                    !todayOnly
-                      ? "bg-primary text-primary-foreground border-primary"
-                      : "bg-background text-muted-foreground border-border hover:bg-muted"
-                  )}
-                >
-                  Semaine
-                </button>
-              </div>
             </div>
             {filtersActive && (
               <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8">
