@@ -1062,7 +1062,6 @@ export function WeeklyTracking() {
       });
     }
     return out;
-  }, [filterDay, filterFrom, filterTo, weekStart, weeksToLoad, todayOnly, todayIso]);
 
   // For "type" filter: determine if a (day,article) cell matches
   const cellMatchesTypeFilter = (dIdx: number, article: string, wkStart: string = weekStart): boolean => {
