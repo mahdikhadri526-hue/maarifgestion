@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -168,6 +168,66 @@ function ConformityToggle({
     </div>
   );
 }
+
+// Input bufferisé : conserve la valeur en local pendant la frappe et ne
+// remonte au parent qu'au blur ou à Enter. Évite de recomputer tout le
+// tableau (cellMap, FIFO, sorties auto…) à chaque caractère, ce qui
+// rendait la saisie très lente sur glace/tarte.
+const CommittedInput = React.memo(function CommittedInput({
+  value,
+  onCommit,
+  className,
+  disabled,
+  type,
+  inputMode,
+  placeholder,
+  ...rest
+}: {
+  value: any;
+  onCommit: (v: string) => void;
+  className?: string;
+  disabled?: boolean;
+  type?: string;
+  inputMode?: any;
+  placeholder?: string;
+  [key: string]: any;
+}) {
+  const initial = value ?? "";
+  const [local, setLocal] = useState<string>(String(initial));
+  const lastExternal = useRef<string>(String(initial));
+  useEffect(() => {
+    const ext = String(value ?? "");
+    if (ext !== lastExternal.current) {
+      lastExternal.current = ext;
+      setLocal(ext);
+    }
+  }, [value]);
+  const commit = () => {
+    if (local !== lastExternal.current) {
+      lastExternal.current = local;
+      onCommit(local);
+    }
+  };
+  return (
+    <Input
+      {...rest}
+      type={type}
+      inputMode={inputMode}
+      placeholder={placeholder}
+      disabled={disabled}
+      className={className}
+      value={local}
+      onChange={(e) => setLocal(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          (e.currentTarget as HTMLInputElement).blur();
+        }
+        rest.onKeyDown?.(e);
+      }}
+    />
+  );
+});
 
 type FilterType = "all" | "si" | "entree" | "sortie" | "sans_lot";
 type FilterTypeExt = FilterType | "sans_lot_existant" | "masquer_lots";
@@ -1702,17 +1762,16 @@ export function WeeklyTracking() {
                         <Fragment key={`${wkStart}-${day}`}>
                           {/* SI */}
                           <td className={cn("p-0.5 border-l-2 border-l-border align-top", dim && "opacity-30")}>
-                            <Input
+                            <CommittedInput
                               type="number"
                               inputMode="numeric"
                               data-si={`${dIdx}-${aIdx}`}
                               value={c.stock_initial ?? ""}
-                              onChange={(e) =>
-                                updateCellAt(wkStart, day, 0, article, { stock_initial: e.target.value })
+                              onCommit={(v) =>
+                                updateCellAt(wkStart, day, 0, article, { stock_initial: v })
                               }
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
-                                  e.preventDefault();
                                   focusNextSI(aIdx);
                                 }
                               }}
@@ -1724,13 +1783,13 @@ export function WeeklyTracking() {
                           <td className={cn("p-0.5 align-top", dim && "opacity-30")}>
                             <div className="flex flex-col gap-0.5">
                               {entryRows.map((er, i) => (
-                                <Input
+                                <CommittedInput
                                   key={`e-${er.rowIndex}-${i}`}
                                   type="number"
                                   inputMode="numeric"
                                   value={er.entree ?? ""}
-                                  onChange={(ev) =>
-                                    updateCellAt(wkStart, day, er.rowIndex, article, { entrees: ev.target.value })
+                                  onCommit={(v) =>
+                                    updateCellAt(wkStart, day, er.rowIndex, article, { entrees: v })
                                   }
                                   className="h-7 w-14 text-xs px-1 bg-success/10 text-success border-success/40 font-medium"
                                   disabled={!editable}
@@ -1760,10 +1819,10 @@ export function WeeklyTracking() {
                             <div className="flex flex-col gap-0.5">
                               {entryRows.map((er, i) => (
                                   <div key={`l-${er.rowIndex}-${i}`} className="flex items-center gap-0.5">
-                                    <Input
+                                    <CommittedInput
                                       value={er.lot ?? ""}
-                                      onChange={(ev) =>
-                                        updateCellAt(wkStart, day, er.rowIndex, article, { lot_number: ev.target.value })
+                                      onCommit={(v) =>
+                                        updateCellAt(wkStart, day, er.rowIndex, article, { lot_number: v })
                                       }
                                       placeholder="lot"
                                       className="h-7 w-20 text-xs px-1"
