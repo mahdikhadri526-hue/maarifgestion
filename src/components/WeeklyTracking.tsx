@@ -1057,13 +1057,9 @@ export function WeeklyTracking() {
         const iso = fmt(dt);
         if (filterDay !== "all" && weeks.length === 1 && Number(filterDay) !== i) return;
         if (filterFrom && iso < filterFrom) return;
-        if (filterTo && iso > filterTo) return;
+    if (filterTo && iso > filterTo) return;
         out.push({ wkStart: wk, day: d, dIdx: i, iso });
       });
-    }
-    if (todayOnly) {
-      const todayMatch = out.filter((v) => v.iso === todayIso);
-      if (todayMatch.length > 0) return todayMatch;
     }
     return out;
   }, [filterDay, filterFrom, filterTo, weekStart, weeksToLoad, todayOnly, todayIso]);
