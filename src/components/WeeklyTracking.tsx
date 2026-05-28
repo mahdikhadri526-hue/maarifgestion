@@ -169,6 +169,66 @@ function ConformityToggle({
   );
 }
 
+// Input bufferisé : conserve la valeur en local pendant la frappe et ne
+// remonte au parent qu'au blur ou à Enter. Évite de recomputer tout le
+// tableau (cellMap, FIFO, sorties auto…) à chaque caractère, ce qui
+// rendait la saisie très lente sur glace/tarte.
+const CommittedInput = React.memo(function CommittedInput({
+  value,
+  onCommit,
+  className,
+  disabled,
+  type,
+  inputMode,
+  placeholder,
+  ...rest
+}: {
+  value: any;
+  onCommit: (v: string) => void;
+  className?: string;
+  disabled?: boolean;
+  type?: string;
+  inputMode?: any;
+  placeholder?: string;
+  [key: string]: any;
+}) {
+  const initial = value ?? "";
+  const [local, setLocal] = useState<string>(String(initial));
+  const lastExternal = useRef<string>(String(initial));
+  useEffect(() => {
+    const ext = String(value ?? "");
+    if (ext !== lastExternal.current) {
+      lastExternal.current = ext;
+      setLocal(ext);
+    }
+  }, [value]);
+  const commit = () => {
+    if (local !== lastExternal.current) {
+      lastExternal.current = local;
+      onCommit(local);
+    }
+  };
+  return (
+    <Input
+      {...rest}
+      type={type}
+      inputMode={inputMode}
+      placeholder={placeholder}
+      disabled={disabled}
+      className={className}
+      value={local}
+      onChange={(e) => setLocal(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          (e.currentTarget as HTMLInputElement).blur();
+        }
+        rest.onKeyDown?.(e);
+      }}
+    />
+  );
+});
+
 type FilterType = "all" | "si" | "entree" | "sortie" | "sans_lot";
 type FilterTypeExt = FilterType | "sans_lot_existant" | "masquer_lots";
 
