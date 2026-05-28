@@ -256,6 +256,7 @@ export function WeeklyTracking() {
   const [filterFrom, setFilterFrom] = useState<string>(""); // YYYY-MM-DD
   const [filterTo, setFilterTo] = useState<string>(""); // YYYY-MM-DD
   const [showControls, setShowControls] = useState(true);
+  const [todayOnly, setTodayOnly] = useState(true);
   const [unlockedDays, setUnlockedDays] = useState<Set<string>>(new Set());
   const [scanDay, setScanDay] = useState<string>("today");
   const { can, user } = useAuth();
