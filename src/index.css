@@ -102,4 +102,9 @@
   tfoot td {
     @apply px-3 py-2;
   }
+
+  /* Finition pro des cartes du dashboard */
+  .rounded-lg.border.bg-card {
+    @apply shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
 }
