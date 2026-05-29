@@ -72,3 +72,34 @@
     font-family: var(--font-mono);
   }
 }
+
+@layer components {
+  /* Style professionnel uniforme pour tous les tableaux */
+  table {
+    @apply w-full border-collapse text-sm rounded-md overflow-hidden;
+  }
+  thead {
+    @apply bg-primary text-primary-foreground;
+  }
+  thead th {
+    @apply px-3 py-2.5 text-left font-semibold tracking-wide uppercase text-xs border-b border-primary/40;
+  }
+  tbody tr {
+    @apply border-b border-border/60 transition-colors;
+  }
+  tbody tr:nth-child(even) {
+    @apply bg-muted/40;
+  }
+  tbody tr:hover {
+    @apply bg-accent/70;
+  }
+  tbody td {
+    @apply px-3 py-2 align-middle;
+  }
+  tfoot {
+    @apply bg-muted/60 font-medium;
+  }
+  tfoot td {
+    @apply px-3 py-2;
+  }
+}
