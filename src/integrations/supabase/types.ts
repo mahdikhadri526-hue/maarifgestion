@@ -265,6 +265,7 @@ export type Database = {
           product_id: string
           product_name: string
           quantity: number
+          source: string | null
           type: string
           unit_used: string
         }
@@ -278,6 +279,7 @@ export type Database = {
           product_id: string
           product_name: string
           quantity: number
+          source?: string | null
           type: string
           unit_used?: string
         }
@@ -291,6 +293,7 @@ export type Database = {
           product_id?: string
           product_name?: string
           quantity?: number
+          source?: string | null
           type?: string
           unit_used?: string
         }
