@@ -82,6 +82,7 @@ export interface StockMovement {
   unitUsed?: MovementUnit;
   destination?: string;
   createdAt?: string;
+  source?: string;
 }
 
 export interface StockLevel {
@@ -309,6 +310,7 @@ export async function saveMovement(movement: Omit<StockMovement, "id">): Promise
       performed_by: movement.performedBy || null,
       unit_used: movement.unitUsed || "PIECE",
       destination: movement.destination || null,
+      source: movement.source || null,
     } as any)
     .select()
     .single();
