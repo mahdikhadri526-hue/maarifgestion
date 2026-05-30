@@ -62,6 +62,42 @@ export type Database = {
         }
         Relationships: []
       }
+      finished_products: {
+        Row: {
+          active: boolean
+          category: string | null
+          code: string
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          unit: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          unit?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fridge_temperatures: {
         Row: {
           action_corrective: string | null
@@ -191,6 +227,54 @@ export type Database = {
         }
         Relationships: []
       }
+      production_entries: {
+        Row: {
+          created_at: string
+          date: string
+          finished_product_id: string
+          id: string
+          notes: string | null
+          performed_by: string
+          quantity_produced: number
+          recipe_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          finished_product_id: string
+          id?: string
+          notes?: string | null
+          performed_by: string
+          quantity_produced: number
+          recipe_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          finished_product_id?: string
+          id?: string
+          notes?: string | null
+          performed_by?: string
+          quantity_produced?: number
+          recipe_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "production_entries_finished_product_id_fkey"
+            columns: ["finished_product_id"]
+            isOneToOne: false
+            referencedRelation: "finished_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -217,6 +301,91 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      recipe_ingredients: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          notes: string | null
+          product_id: string
+          quantity: number
+          recipe_id: string
+          unit: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id: string
+          quantity: number
+          recipe_id: string
+          unit?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          recipe_id?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipe_ingredients_recipe_id_fkey"
+            columns: ["recipe_id"]
+            isOneToOne: false
+            referencedRelation: "recipes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      recipes: {
+        Row: {
+          active: boolean
+          created_at: string
+          finished_product_id: string
+          id: string
+          notes: string | null
+          updated_at: string
+          version: number
+          yield_quantity: number
+          yield_unit: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          finished_product_id: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          version?: number
+          yield_quantity?: number
+          yield_unit?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          finished_product_id?: string
+          id?: string
+          notes?: string | null
+          updated_at?: string
+          version?: number
+          yield_quantity?: number
+          yield_unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recipes_finished_product_id_fkey"
+            columns: ["finished_product_id"]
+            isOneToOne: false
+            referencedRelation: "finished_products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       requisitions: {
         Row: {
