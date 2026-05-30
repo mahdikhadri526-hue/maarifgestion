@@ -82,6 +82,7 @@ export interface StockMovement {
   unitUsed?: MovementUnit;
   destination?: string;
   createdAt?: string;
+  source?: string;
 }
 
 export interface StockLevel {
