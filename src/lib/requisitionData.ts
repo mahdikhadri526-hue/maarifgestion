@@ -79,6 +79,7 @@ export async function saveRequisition(entry: Omit<RequisitionEntry, "id">): Prom
     quantity: entry.quantity,
     performedBy: entry.performedBy,
     unitUsed: entry.unitUsed,
+    source: "requisition",
   });
 
   const row: any = data;
@@ -157,7 +158,8 @@ export async function setRequisitionTotal(
     .eq("date", date)
     .eq("product_id", productId)
     .eq("category", category)
-    .eq("type", "sortie");
+    .eq("type", "sortie")
+    .eq("source", "requisition");
   if (delMovErr) throw delMovErr;
 
   if (newQuantity > 0) {
@@ -183,6 +185,7 @@ export async function setRequisitionTotal(
       type: "sortie",
       quantity: newQuantity,
       performedBy,
+      source: "requisition",
     });
   }
 }
