@@ -1403,10 +1403,10 @@ export function WeeklyTracking() {
 
         <TabsContent value="creme" className="mt-4 min-w-0">
           <div className="bg-card rounded-lg border overflow-auto max-h-[70vh] max-w-full">
-            <table className="weekly-sticky-table text-sm">
+            <table className="weekly-sticky-table text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", overflow: "visible" }}>
               <thead className="bg-muted sticky top-0 z-30">
                 <tr>
-                  <th className="p-2 text-left weekly-sticky-column weekly-sticky-head bg-muted border-r w-[80px]">Jour</th>
+                  <th className="p-2 text-left weekly-sticky-column weekly-sticky-head bg-muted border-r w-[80px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Jour</th>
                   <th className="p-2 text-left">Shift</th>
                   <th className="p-2 text-left">Quantité</th>
                   <th className="p-2 text-left min-w-[260px]">N° lot crème fraîche</th>
@@ -1435,7 +1435,7 @@ export function WeeklyTracking() {
                         )}
                       >
                         {isFirstOfDay && (
-                          <td rowSpan={4} className="p-2 font-medium border-r align-middle weekly-sticky-column bg-card w-[80px]">
+                          <td rowSpan={4} className="p-2 font-medium border-r align-middle weekly-sticky-column bg-card w-[80px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>
                             <div>{day}</div>
                             <div className="text-[10px] font-normal text-muted-foreground">
                               {dayShort(weekStart, dIdx)}
@@ -1650,10 +1650,10 @@ export function WeeklyTracking() {
           )}
 
           <div className="bg-card rounded-lg border overflow-auto max-h-[70vh] max-w-full">
-            <table className="weekly-sticky-table text-xs">
+            <table className="weekly-sticky-table text-xs" style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", overflow: "visible" }}>
               <thead className="bg-muted sticky top-0 z-30">
                 <tr>
-                  <th className="p-1 text-left weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px] text-[11px]">Article</th>
+                  <th className="p-1 text-left weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px] text-[11px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Article</th>
                   {visibleDays.map(({ day, dIdx, wkStart, iso }) => (
                     <th
                       key={`${wkStart}-${day}`}
@@ -1684,7 +1684,7 @@ export function WeeklyTracking() {
                   ))}
                 </tr>
                 <tr>
-                  <th className="p-1 weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px]"></th>
+                  <th className="p-1 weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 45 }}></th>
                   {visibleDays.map(({ day, wkStart }) => (
                     <Fragment key={`${wkStart}-${day}-h`}>
                       <th className="p-1 border-l text-center font-normal">SI</th>
@@ -1712,6 +1712,7 @@ export function WeeklyTracking() {
                         "p-1 font-medium weekly-sticky-column border-r whitespace-nowrap border-b-2 border-b-primary/10 max-w-[140px] w-[140px] min-w-[140px] truncate text-[11px]",
                         rowI % 2 === 1 ? "bg-muted" : "bg-card",
                       )}
+                      style={{ position: "sticky", left: 0, zIndex: 25 }}
                     >
                       {article}
                     </td>
