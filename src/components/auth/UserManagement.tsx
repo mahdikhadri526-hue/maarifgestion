@@ -27,6 +27,7 @@ const ROLE_PRESETS: Record<AppRole, string[]> = {
     "view_weekly", "edit_weekly",
     "view_temperatures", "edit_temperatures",
     "view_reports",
+    "view_recipes", "edit_recipes",
   ],
   operator: [
     "view_dashboard", "view_movements", "edit_movements",
