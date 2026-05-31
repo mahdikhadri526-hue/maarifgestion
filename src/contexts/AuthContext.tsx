@@ -28,6 +28,8 @@ export const ALL_PERMISSIONS = [
   { key: "edit_temperatures", label: "Modifier les températures frigos" },
   { key: "delete_temperatures", label: "Supprimer des températures frigos" },
   { key: "view_reports", label: "Voir les rapports / stock restant" },
+  { key: "view_recipes", label: "Voir les recettes / produits finis" },
+  { key: "edit_recipes", label: "Modifier les recettes / produits finis" },
 ] as const;
 
 export type PermissionKey = (typeof ALL_PERMISSIONS)[number]["key"];
