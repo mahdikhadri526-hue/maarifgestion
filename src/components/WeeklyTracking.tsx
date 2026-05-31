@@ -947,7 +947,7 @@ export function WeeklyTracking() {
 
   const focusNextSI = (currentArticleIdx: number) => {
     // Find next visible article
-    for (let next = currentArticleIdx + 1; next < ARTICLES_LIST.length; next++) {
+    for (let next = currentArticleIdx + 1; next < ARTICLES.length; next++) {
       const el = document.querySelector<HTMLInputElement>(`input[data-si="0-${next}"]`);
       if (el) {
         el.focus();
@@ -1583,7 +1583,7 @@ export function WeeklyTracking() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les produits</SelectItem>
-                  {ARTICLES_LIST.map((a) => (
+                  {ARTICLES.map((a) => (
                     <SelectItem key={a} value={a}>{a}</SelectItem>
                   ))}
                 </SelectContent>
@@ -1641,7 +1641,7 @@ export function WeeklyTracking() {
                 </SelectContent>
               </Select>
               <PhotoScanEntry
-                articles={t === "glace" ? GLACE_LIST : TARTE_LIST}
+                articles={t === "glace" ? GLACE_ARTICLES : TARTE_ARTICLES}
                 onConfirm={handleScanResults}
                 buttonLabel="📷 Scanner entrée"
               />
