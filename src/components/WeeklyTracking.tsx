@@ -1403,7 +1403,7 @@ export function WeeklyTracking() {
 
         <TabsContent value="creme" className="mt-4 min-w-0">
           <div className="bg-card rounded-lg border overflow-auto max-h-[70vh] max-w-full">
-            <table className="w-full text-sm border-collapse">
+            <table className="w-full text-sm" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
               <thead className="bg-muted sticky top-0 z-30">
                 <tr>
                   <th className="p-2 text-left sticky left-0 bg-muted z-40 border-r w-[80px]">Jour</th>
@@ -1650,7 +1650,7 @@ export function WeeklyTracking() {
           )}
 
           <div className="bg-card rounded-lg border overflow-auto max-h-[70vh] max-w-full">
-            <table className="text-xs border-separate border-spacing-0">
+            <table className="text-xs" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
               <thead className="bg-muted sticky top-0 z-30">
                 <tr>
                   <th className="p-1 text-left sticky left-0 bg-muted z-40 border-r w-[110px] text-[11px]">Article</th>
