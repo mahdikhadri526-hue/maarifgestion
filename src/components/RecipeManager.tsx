@@ -84,14 +84,12 @@ export function RecipeManager() {
     setLoading(true);
     try {
       const [fp, rc, ri] = await Promise.all([
-        fetchAllRows<FinishedProduct>((from, to) =>
-          supabase.from("finished_products").select("*").order("name").range(from, to)
+        fetchAllRows<FinishedProduct>(() =>
+          supabase.from("finished_products").select("*").order("name")
         ),
-        fetchAllRows<Recipe>((from, to) =>
-          supabase.from("recipes").select("*").range(from, to)
-        ),
-        fetchAllRows<{ recipe_id: string }>((from, to) =>
-          supabase.from("recipe_ingredients").select("recipe_id").range(from, to)
+        fetchAllRows<Recipe>(() => supabase.from("recipes").select("*")),
+        fetchAllRows<{ recipe_id: string }>(() =>
+          supabase.from("recipe_ingredients").select("recipe_id")
         ),
       ]);
       setProducts(fp);
