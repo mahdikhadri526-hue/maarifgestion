@@ -352,41 +352,7 @@ export function WeeklyTracking() {
   };
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
-
-  // Articles supplémentaires venant de la table finished_products
-  // (catégories "tartes" / "glaces"), fusionnés avec la liste figée.
-  const [extraTarteArticles, setExtraTarteArticles] = useState<string[]>([]);
-  const [extraGlaceArticles, setExtraGlaceArticles] = useState<string[]>([]);
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data } = await supabase
-          .from("finished_products")
-          .select("name, category, active")
-          .in("category", ["tartes", "glaces"]);
-        if (!data) return;
-        const norm = (s: string) => s.trim().toLowerCase();
-        const baseTarte = new Set(TARTE_ARTICLES.map(norm));
-        const baseGlace = new Set(GLACE_ARTICLES.map(norm));
-        const tarte = data
-          .filter((p: any) => p.active !== false && p.category === "tartes" && !baseTarte.has(norm(p.name)))
-          .map((p: any) => p.name as string);
-        const glace = data
-          .filter((p: any) => p.active !== false && p.category === "glaces" && !baseGlace.has(norm(p.name)))
-          .map((p: any) => p.name as string);
-        setExtraTarteArticles(Array.from(new Set(tarte)));
-        setExtraGlaceArticles(Array.from(new Set(glace)));
-      } catch {
-        /* ignore */
-      }
-    })();
-  }, []);
-
-  const TARTE_LIST = useMemo(() => [...TARTE_ARTICLES, ...extraTarteArticles], [extraTarteArticles]);
-  const GLACE_LIST = useMemo(() => [...GLACE_ARTICLES, ...extraGlaceArticles], [extraGlaceArticles]);
-  const ARTICLES_LIST = useMemo(() => [...TARTE_LIST, ...GLACE_LIST], [TARTE_LIST, GLACE_LIST]);
-
-  const activeArticles = tab === "glace" ? GLACE_LIST : tab === "tarte" ? TARTE_LIST : ARTICLES_LIST;
+  const activeArticles = tab === "glace" ? GLACE_ARTICLES : tab === "tarte" ? TARTE_ARTICLES : ARTICLES;
 
   // Compute the list of week-starts to load (covers period filter)
   const weeksToLoad = useMemo(() => {
