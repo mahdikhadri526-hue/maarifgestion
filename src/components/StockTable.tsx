@@ -9,6 +9,7 @@ import {
   getProductUnitConfigs,
   movementPiecesToDisplay,
   roundStockQuantity,
+  setInitialStock,
 } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { useStockLevels } from "@/hooks/useStockData";
@@ -177,6 +178,33 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [weeklyRows, setWeeklyRows] = useState<Array<{ article: string; sorties: number; stockActuel: number }>>([]);
   const [weeklyLoading, setWeeklyLoading] = useState(false);
   const { can } = useAuth();
+  const [editingStock, setEditingStock] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<string>("");
+
+  const canEditStock = can("edit_stock");
+
+  const saveStockEdit = async (level: typeof filtered[number]) => {
+    const newRestant = Number(editingValue);
+    if (!Number.isFinite(newRestant)) {
+      toast.error("Valeur invalide");
+      setEditingStock(null);
+      return;
+    }
+    const diff = newRestant - level.stockRestant;
+    if (diff === 0) {
+      setEditingStock(null);
+      return;
+    }
+    try {
+      const newInitial = roundStockQuantity(level.stockInitial + diff);
+      await setInitialStock(level.productId, newInitial);
+      toast.success(`Stock ajusté (initial ${level.stockInitial} → ${newInitial})`);
+      setEditingStock(null);
+      refresh();
+    } catch {
+      toast.error("Erreur lors de l'ajustement");
+    }
+  };
 
   const isWeeklyCat = category === "tarte" || category === "glace";
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
@@ -537,7 +565,33 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   <td className={`p-3 text-right font-mono text-sm font-semibold ${
                     v.stockRestant < 0 ? "text-destructive" : v.stockRestant === 0 ? "text-muted-foreground" : ""
                   }`}>
-                    {v.stockRestant}
+                    {mode === "all" && canEditStock && editingStock === level.productId ? (
+                      <input
+                        type="number"
+                        autoFocus
+                        value={editingValue}
+                        onChange={(e) => setEditingValue(e.target.value)}
+                        onBlur={() => saveStockEdit(level)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") saveStockEdit(level);
+                          if (e.key === "Escape") setEditingStock(null);
+                        }}
+                        className="w-20 text-right bg-background border rounded px-2 py-1 text-sm"
+                      />
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={mode !== "all" || !canEditStock}
+                        onClick={() => {
+                          setEditingStock(level.productId);
+                          setEditingValue(String(v.stockRestant));
+                        }}
+                        className={mode === "all" && canEditStock ? "hover:underline cursor-pointer" : "cursor-default"}
+                        title={mode === "all" && canEditStock ? "Cliquer pour ajuster le stock (corrigera le stock initial)" : undefined}
+                      >
+                        {v.stockRestant}
+                      </button>
+                    )}
                   </td>
                 </tr>
                 );
