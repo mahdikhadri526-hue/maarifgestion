@@ -309,6 +309,38 @@ export function WeeklyTracking() {
   // chargées globalement pour afficher leurs lots dans la fiche Suivi crème fraîche.
   const [cremeGlaceRows, setCremeGlaceRows] = useState<Row[]>([]);
 
+  // Grammage par bac pour chaque parfum de glace (g)
+  const [glaceGrammages, setGlaceGrammages] = useState<Record<string, number>>({});
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("glace_grammage")
+          .select("article, grammage_grams");
+        if (error) throw error;
+        const map: Record<string, number> = {};
+        (data || []).forEach((r: any) => {
+          map[r.article] = Number(r.grammage_grams) || 0;
+        });
+        setGlaceGrammages(map);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, []);
+  const saveGrammage = async (article: string, raw: string) => {
+    const value = Math.max(0, Math.round(Number(raw) || 0));
+    setGlaceGrammages((prev) => ({ ...prev, [article]: value }));
+    try {
+      const { error } = await supabase
+        .from("glace_grammage")
+        .upsert({ article, grammage_grams: value }, { onConflict: "article" });
+      if (error) throw error;
+    } catch (err: any) {
+      toast.error("Erreur grammage", { description: err?.message ?? String(err) });
+    }
+  };
+
   // Filters for Mouvement tab
   const [filterArticle, setFilterArticle] = useState<string>("all");
   const [filterDay, setFilterDay] = useState<string>("all"); // index 0..6 or "all"
