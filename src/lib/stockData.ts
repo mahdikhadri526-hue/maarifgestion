@@ -417,7 +417,7 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
-    getGlaceAggregate().catch(() => ({ entrees: 0, sorties: 0, stockInitial: 0 })),
+    getGlaceAggregate().catch(() => ({ entrees: 0, sorties: 0, stockInitial: 0, stockFinal: 0 })),
   ]);
 
   return products.map((product) => {
@@ -441,7 +441,7 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
         stockInitial: roundStockQuantity(si),
         totalEntrees: roundStockQuantity(e),
         totalSorties: roundStockQuantity(s),
-        stockRestant: roundStockQuantity(si + e - s),
+        stockRestant: roundStockQuantity(glaceAgg.stockFinal),
       };
     }
 
