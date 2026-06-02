@@ -412,17 +412,37 @@ export async function setInitialStock(productId: string, quantity: number) {
 
 export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
   const products = getProducts(category);
-  const [movements, initialStocks, units, configs] = await Promise.all([
+  const [movements, initialStocks, units, configs, glaceAgg] = await Promise.all([
     getMovements(),
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
+    getGlaceAggregate().catch(() => ({ entrees: 0, sorties: 0 })),
   ]);
 
   return products.map((product) => {
     const initial = initialStocks[product.id] || 0;
     const unit = units[product.id] || "PIECE";
     const config = configs[product.id];
+
+    // Produit calculé « Glace » : entrées/sorties agrégées depuis le Suivi Hebdo
+    // (Σ bacs × grammage par parfum). Le stock initial reste éditable.
+    if (product.name === "GLACE" && product.category === "alimentaire") {
+      const e = glaceAgg.entrees;
+      const s = glaceAgg.sorties;
+      return {
+        productId: product.id,
+        productName: product.name,
+        conditionnement: product.conditionnement,
+        unit,
+        category: product.category,
+        stockInitial: initial,
+        totalEntrees: roundStockQuantity(e),
+        totalSorties: roundStockQuantity(s),
+        stockRestant: roundStockQuantity(initial + e - s),
+      };
+    }
+
     const productMovements = movements.filter((m) => m.productId === product.id);
     const totalEntrees = productMovements
       .filter((m) => m.type === "entree")
@@ -443,6 +463,37 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
       stockRestant: roundStockQuantity(initial + totalEntrees - totalSorties),
     };
   });
+}
+
+// Agrège les Σ Bacs × Grammage de tous les parfums de glace
+// depuis weekly_tracking (fiche Mouvement glaces & tartes) + glace_grammage.
+// Exclut "Crème fraîche (mousse fouettée)" qui n'est pas un parfum.
+const GLACE_PARFUMS_BLACKLIST = new Set(["Crème fraîche (mousse fouettée)"]);
+
+export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: number }> {
+  const [rows, gramRes] = await Promise.all([
+    fetchAllRows<any>(() =>
+      supabase
+        .from("weekly_tracking")
+        .select("article, entrees, sorties")
+        .eq("fiche_type", "Mouvement glaces & tartes"),
+    ),
+    supabase.from("glace_grammage").select("article, grammage_grams"),
+  ]);
+  const grams: Record<string, number> = {};
+  ((gramRes as any).data || []).forEach((r: any) => {
+    grams[r.article] = Number(r.grammage_grams) || 0;
+  });
+  let entrees = 0;
+  let sorties = 0;
+  (rows || []).forEach((r: any) => {
+    if (!r.article || GLACE_PARFUMS_BLACKLIST.has(r.article)) return;
+    const g = grams[r.article] || 0;
+    if (!g) return;
+    entrees += (Number(r.entrees) || 0) * g;
+    sorties += (Number(r.sorties) || 0) * g;
+  });
+  return { entrees, sorties };
 }
 
 export interface DailyStockRecord {
