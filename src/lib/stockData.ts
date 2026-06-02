@@ -531,6 +531,7 @@ export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: n
   let entrees = 0;
   let sorties = 0;
   let stockInitial = 0;
+  let stockFinalTotal = 0;
   for (const [article, wkMap] of byArticle) {
     const g = grams[article] || 0;
     if (!g) continue;
@@ -561,12 +562,33 @@ export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: n
       if (sortie == null) sortie = c.explicitSortie ?? 0;
       sorties += sortie * g;
     }
+    // Stock final = stock final du dernier jour saisi (SI le plus récent)
+    let lastDay = -1;
+    for (let d = 6; d >= 0; d--) {
+      const c = getCell(weekStart, DAYS[d]);
+      if (c.si != null) { lastDay = d; break; }
+    }
+    if (lastDay >= 0) {
+      const c = getCell(weekStart, DAYS[lastDay]);
+      let sf: number;
+      // Si un jour suivant a un SI, le stock final = SI du jour suivant
+      const nextSi = lastDay < 6
+        ? getCell(weekStart, DAYS[lastDay + 1]).si
+        : getCell(nextWeekStart, "Lundi").si;
+      if (nextSi != null) {
+        sf = nextSi;
+      } else {
+        sf = (c.si ?? 0) + c.entries - (c.explicitSortie ?? 0);
+      }
+      stockFinalTotal += sf * g;
+    }
   }
   // Conversion grammes → kilos
   return {
     entrees: entrees / 1000,
     sorties: sorties / 1000,
     stockInitial: stockInitial / 1000,
+    stockFinal: stockFinalTotal / 1000,
   };
 }
 
