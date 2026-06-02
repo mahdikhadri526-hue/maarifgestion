@@ -329,12 +329,14 @@ export function WeeklyTracking() {
     })();
   }, []);
   const saveGrammage = async (article: string, raw: string) => {
-    const value = Math.max(0, Math.round(Number(raw) || 0));
-    setGlaceGrammages((prev) => ({ ...prev, [article]: value }));
+    // Saisie en Kg/bac → stockée en grammes en base
+    const kg = Math.max(0, Number(raw) || 0);
+    const grams = Math.round(kg * 1000);
+    setGlaceGrammages((prev) => ({ ...prev, [article]: grams }));
     try {
       const { error } = await supabase
         .from("glace_grammage")
-        .upsert({ article, grammage_grams: value }, { onConflict: "article" });
+        .upsert({ article, grammage_grams: grams }, { onConflict: "article" });
       if (error) throw error;
     } catch (err: any) {
       toast.error("Erreur grammage", { description: err?.message ?? String(err) });
