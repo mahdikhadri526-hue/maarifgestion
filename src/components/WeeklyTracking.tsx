@@ -1686,6 +1686,15 @@ export function WeeklyTracking() {
               <thead className="bg-muted sticky top-0 z-30">
                 <tr>
                   <th className="p-1 text-left weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px] text-[11px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Article</th>
+                  {t === "glace" && (
+                    <th
+                      className="p-1 text-center weekly-sticky-column weekly-sticky-head bg-muted border-r w-[110px] min-w-[110px] text-[11px]"
+                      style={{ position: "sticky", left: 140, zIndex: 45 }}
+                      title="Grammage par bac (g) — saisie manuelle par parfum"
+                    >
+                      Grammage<br/>(g/bac)
+                    </th>
+                  )}
                   {visibleDays.map(({ day, dIdx, wkStart, iso }) => (
                     <th
                       key={`${wkStart}-${day}`}
@@ -1717,6 +1726,12 @@ export function WeeklyTracking() {
                 </tr>
                 <tr>
                   <th className="p-1 weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 45 }}></th>
+                  {t === "glace" && (
+                    <th
+                      className="p-1 weekly-sticky-column weekly-sticky-head bg-muted border-r w-[110px] min-w-[110px]"
+                      style={{ position: "sticky", left: 140, zIndex: 45 }}
+                    ></th>
+                  )}
                   {visibleDays.map(({ day, wkStart }) => (
                     <Fragment key={`${wkStart}-${day}-h`}>
                       <th className="p-1 border-l text-center font-normal">SI</th>
