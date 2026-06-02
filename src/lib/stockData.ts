@@ -258,8 +258,8 @@ export function getProducts(category?: Category): Product[] {
 // Détecte l'unité naturelle d'un produit selon son nom (huile→Litre, sucre→Kg, etc.)
 export function detectProductUnit(name: string): string {
   const n = name.toUpperCase();
-  // Produit calculé : Glace agrégée depuis le Suivi Hebdo (g)
-  if (n === "GLACE") return "g";
+  // Produit calculé : Glace agrégée depuis le Suivi Hebdo (kg)
+  if (n === "GLACE") return "Kg";
   // Overrides explicites demandés par l'utilisateur → Pièce
   if (/OREO|SIDI ALI|OULMESS|SULTAN|\bSEL\b|THE NOIR|EAU\s*5\s*L|LEVURE/.test(n)) return "Pièce";
   // Huile → Litre
@@ -493,7 +493,8 @@ export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: n
     entrees += (Number(r.entrees) || 0) * g;
     sorties += (Number(r.sorties) || 0) * g;
   });
-  return { entrees, sorties };
+  // Conversion grammes → kilos
+  return { entrees: entrees / 1000, sorties: sorties / 1000 };
 }
 
 export interface DailyStockRecord {
