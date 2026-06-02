@@ -55,7 +55,7 @@ export function useMovements() {
 export function useStockLevels(category?: Category) {
   return useRealtimeData(
     () => getStockLevels(category),
-    ["stock_movements", "initial_stocks"],
+    ["stock_movements", "initial_stocks", "weekly_tracking", "glace_grammage"],
     [category]
   );
 }
@@ -64,7 +64,7 @@ export function useStockDashboard() {
   return useRealtimeData(async () => {
     const [levels, movements] = await Promise.all([getStockLevels(), getMovements()]);
     return { levels, movements };
-  }, ["stock_movements", "initial_stocks"]);
+  }, ["stock_movements", "initial_stocks", "weekly_tracking", "glace_grammage"]);
 }
 
 export function useProductDailyHistory(productId: string) {
