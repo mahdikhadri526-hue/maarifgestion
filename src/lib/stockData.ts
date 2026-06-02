@@ -486,13 +486,21 @@ function currentMondayISO(): string {
 
 export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number }> {
   const weekStart = currentMondayISO();
+  const nextWeekStart = (() => {
+    const d = new Date(weekStart);
+    d.setDate(d.getDate() + 7);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${dd}`;
+  })();
   const [rows, gramRes] = await Promise.all([
     fetchAllRows<any>(() =>
       supabase
         .from("weekly_tracking")
-        .select("article, entrees, sorties, stock_initial, day_of_week, week_start")
+        .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
         .eq("fiche_type", "Mouvement glaces & tartes")
-        .eq("week_start", weekStart),
+        .in("week_start", [weekStart, nextWeekStart]),
     ),
     supabase.from("glace_grammage").select("article, grammage_grams"),
   ]);
@@ -500,19 +508,60 @@ export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: n
   ((gramRes as any).data || []).forEach((r: any) => {
     grams[r.article] = Number(r.grammage_grams) || 0;
   });
+  const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+  // Index : article -> wkStart -> day -> { si (rowIndex 0), entriesSum, explicitSortie }
+  type DayAgg = { si: number | null; entries: number; explicitSortie: number | null };
+  const byArticle = new Map<string, Map<string, Map<string, DayAgg>>>();
+  (rows || []).forEach((r: any) => {
+    if (!r.article || GLACE_PARFUMS_BLACKLIST.has(r.article)) return;
+    if (!grams[r.article]) return;
+    let wk = byArticle.get(r.article);
+    if (!wk) { wk = new Map(); byArticle.set(r.article, wk); }
+    let days = wk.get(r.week_start);
+    if (!days) { days = new Map(); wk.set(r.week_start, days); }
+    let cell = days.get(r.day_of_week);
+    if (!cell) { cell = { si: null, entries: 0, explicitSortie: null }; days.set(r.day_of_week, cell); }
+    const rowIdx = r.row_index ?? 0;
+    if (rowIdx === 0) {
+      if (r.stock_initial != null) cell.si = Number(r.stock_initial) || 0;
+      if (r.sorties != null) cell.explicitSortie = Number(r.sorties) || 0;
+    }
+    if (r.entrees != null) cell.entries += Number(r.entrees) || 0;
+  });
   let entrees = 0;
   let sorties = 0;
   let stockInitial = 0;
-  (rows || []).forEach((r: any) => {
-    if (!r.article || GLACE_PARFUMS_BLACKLIST.has(r.article)) return;
-    const g = grams[r.article] || 0;
-    if (!g) return;
-    entrees += (Number(r.entrees) || 0) * g;
-    sorties += (Number(r.sorties) || 0) * g;
-    if (r.day_of_week === "Lundi") {
-      stockInitial += (Number(r.stock_initial) || 0) * g;
+  for (const [article, wkMap] of byArticle) {
+    const g = grams[article] || 0;
+    if (!g) continue;
+    const cur = wkMap.get(weekStart);
+    if (!cur) continue;
+    const getCell = (wk: string, day: string): DayAgg =>
+      wkMap.get(wk)?.get(day) ?? { si: null, entries: 0, explicitSortie: null };
+    // Stock initial = SI Lundi
+    const siMon = getCell(weekStart, "Lundi").si ?? 0;
+    stockInitial += siMon * g;
+    // Entrées + Sorties par jour (logique identique à WeeklyTracking.getSortie)
+    for (let d = 0; d < 7; d++) {
+      const day = DAYS[d];
+      const c = getCell(weekStart, day);
+      entrees += c.entries * g;
+      let sortie: number | null = null;
+      if (d < 6) {
+        const next = getCell(weekStart, DAYS[d + 1]);
+        if (c.si != null && next.si != null) {
+          sortie = c.si + c.entries - next.si;
+        }
+      } else {
+        const siNextMon = getCell(nextWeekStart, "Lundi").si;
+        if (c.si != null && siNextMon != null) {
+          sortie = c.si + c.entries - siNextMon;
+        }
+      }
+      if (sortie == null) sortie = c.explicitSortie ?? 0;
+      sorties += sortie * g;
     }
-  });
+  }
   // Conversion grammes → kilos
   return {
     entrees: entrees / 1000,
