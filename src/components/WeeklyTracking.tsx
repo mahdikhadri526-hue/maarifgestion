@@ -1690,9 +1690,9 @@ export function WeeklyTracking() {
                     <th
                       className="p-1 text-center weekly-sticky-column weekly-sticky-head bg-muted border-r w-[110px] min-w-[110px] text-[11px]"
                       style={{ position: "sticky", left: 140, zIndex: 45 }}
-                      title="Grammage par bac (g) — saisie manuelle par parfum"
+                      title="Poids par bac (Kg) — saisie manuelle par parfum"
                     >
-                      Grammage<br/>(g/bac)
+                      Kg/bac
                     </th>
                   )}
                   {visibleDays.map(({ day, dIdx, wkStart, iso }) => (
