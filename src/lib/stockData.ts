@@ -183,6 +183,7 @@ const ALIMENTAIRE_PRODUCTS = [
   "FRAISE",
   "FRUIT POIRE",
   "FRUIT POMME",
+  "GLACE",
 ];
 
 const EMBALLAGE_PRODUCTS = [
@@ -257,6 +258,8 @@ export function getProducts(category?: Category): Product[] {
 // Détecte l'unité naturelle d'un produit selon son nom (huile→Litre, sucre→Kg, etc.)
 export function detectProductUnit(name: string): string {
   const n = name.toUpperCase();
+  // Produit calculé : Glace agrégée depuis le Suivi Hebdo (g)
+  if (n === "GLACE") return "g";
   // Overrides explicites demandés par l'utilisateur → Pièce
   if (/OREO|SIDI ALI|OULMESS|SULTAN|\bSEL\b|THE NOIR|EAU\s*5\s*L|LEVURE/.test(n)) return "Pièce";
   // Huile → Litre
