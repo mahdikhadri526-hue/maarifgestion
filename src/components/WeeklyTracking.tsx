@@ -1763,6 +1763,29 @@ export function WeeklyTracking() {
                     >
                       {article}
                     </td>
+                    {t === "glace" && (
+                      <td
+                        className={cn(
+                          "p-1 weekly-sticky-column border-r text-center",
+                          rowI % 2 === 1 ? "bg-muted" : "bg-card",
+                        )}
+                        style={{ position: "sticky", left: 140, zIndex: 25 }}
+                      >
+                        {article === CREME_ARTICLE ? (
+                          <span className="text-[10px] text-muted-foreground">—</span>
+                        ) : (
+                          <CommittedInput
+                            type="number"
+                            inputMode="numeric"
+                            value={glaceGrammages[article] ?? ""}
+                            onCommit={(v) => saveGrammage(article, v)}
+                            className="h-7 w-20 text-xs px-1 text-center"
+                            placeholder="g"
+                            disabled={!can("edit_weekly")}
+                          />
+                        )}
+                      </td>
+                    )}
                     {visibleDays.map(({ day, dIdx, wkStart }) => {
                       const c = cellAt(wkStart, day, 0, article);
                       const entries = entriesForAt(wkStart, day, article);
