@@ -434,7 +434,7 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
         productId: product.id,
         productName: product.name,
         conditionnement: product.conditionnement,
-        unit,
+        unit: "Kg" as UnitType,
         category: product.category,
         stockInitial: initial,
         totalEntrees: roundStockQuantity(e),
