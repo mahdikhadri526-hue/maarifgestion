@@ -426,20 +426,22 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
     const config = configs[product.id];
 
     // Produit calculé « Glace » : entrées/sorties agrégées depuis le Suivi Hebdo
-    // (Σ bacs × grammage par parfum). Le stock initial reste éditable.
+    // Stock initial = Σ(stock_initial du lundi × grammage). Entrées/Sorties =
+    // Σ sur toute la semaine en cours (× grammage). Tout en kilos.
     if (product.name === "GLACE" && product.category === "alimentaire") {
       const e = glaceAgg.entrees;
       const s = glaceAgg.sorties;
+      const si = glaceAgg.stockInitial;
       return {
         productId: product.id,
         productName: product.name,
         conditionnement: product.conditionnement,
         unit: "Kg" as UnitType,
         category: product.category,
-        stockInitial: initial,
+        stockInitial: roundStockQuantity(si),
         totalEntrees: roundStockQuantity(e),
         totalSorties: roundStockQuantity(s),
-        stockRestant: roundStockQuantity(initial + e - s),
+        stockRestant: roundStockQuantity(si + e - s),
       };
     }
 
@@ -470,13 +472,27 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
 // Exclut "Crème fraîche (mousse fouettée)" qui n'est pas un parfum.
 const GLACE_PARFUMS_BLACKLIST = new Set(["Crème fraîche (mousse fouettée)"]);
 
-export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: number }> {
+function currentMondayISO(): string {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = (day === 0 ? -6 : 1) - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0, 0, 0, 0);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number }> {
+  const weekStart = currentMondayISO();
   const [rows, gramRes] = await Promise.all([
     fetchAllRows<any>(() =>
       supabase
         .from("weekly_tracking")
-        .select("article, entrees, sorties")
-        .eq("fiche_type", "Mouvement glaces & tartes"),
+        .select("article, entrees, sorties, stock_initial, day_of_week, week_start")
+        .eq("fiche_type", "Mouvement glaces & tartes")
+        .eq("week_start", weekStart),
     ),
     supabase.from("glace_grammage").select("article, grammage_grams"),
   ]);
@@ -486,15 +502,23 @@ export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: n
   });
   let entrees = 0;
   let sorties = 0;
+  let stockInitial = 0;
   (rows || []).forEach((r: any) => {
     if (!r.article || GLACE_PARFUMS_BLACKLIST.has(r.article)) return;
     const g = grams[r.article] || 0;
     if (!g) return;
     entrees += (Number(r.entrees) || 0) * g;
     sorties += (Number(r.sorties) || 0) * g;
+    if (r.day_of_week === "Lundi") {
+      stockInitial += (Number(r.stock_initial) || 0) * g;
+    }
   });
   // Conversion grammes → kilos
-  return { entrees: entrees / 1000, sorties: sorties / 1000 };
+  return {
+    entrees: entrees / 1000,
+    sorties: sorties / 1000,
+    stockInitial: stockInitial / 1000,
+  };
 }
 
 export interface DailyStockRecord {
