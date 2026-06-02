@@ -1472,7 +1472,26 @@ export function AutocontrolManager() {
       <div className="bg-card rounded-xl border p-5 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
           <h3 className="text-lg font-semibold">Historique des autocontrôles</h3>
-          <Select value={filterType} onValueChange={setFilterType}>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-2">
+              <Input
+                type="month"
+                value={exportMonth}
+                onChange={(e) => setExportMonth(e.target.value)}
+                className="w-full sm:w-40"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleMonthlyExport}
+                disabled={exportingMonth}
+              >
+                <FileDown className="h-4 w-4 mr-1" />
+                {exportingMonth ? "Génération..." : "PDF du mois"}
+              </Button>
+            </div>
+            <Select value={filterType} onValueChange={setFilterType}>
             <SelectTrigger className="w-full sm:w-64"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__all__">Toutes les fiches</SelectItem>
@@ -1484,7 +1503,8 @@ export function AutocontrolManager() {
                 <SelectItem key={t} value={t}>{t}</SelectItem>
               ))}
             </SelectContent>
-          </Select>
+            </Select>
+          </div>
         </div>
 
         {loading ? (
