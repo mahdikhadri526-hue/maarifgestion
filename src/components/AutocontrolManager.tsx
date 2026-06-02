@@ -371,6 +371,8 @@ export function AutocontrolManager() {
   const [entries, setEntries] = useState<AutocontrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>("__all__");
+  const [exportMonth, setExportMonth] = useState<string>(() => new Date().toISOString().slice(0, 7));
+  const [exportingMonth, setExportingMonth] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -488,6 +490,69 @@ export function AutocontrolManager() {
       await downloadStructuredPdf(buildAutocontrolPdf(viewEntry));
     } catch (err: any) {
       toast.error("Erreur PDF", { description: err?.message ?? String(err) });
+    }
+  };
+
+  const handleMonthlyExport = async () => {
+    if (!exportMonth) {
+      toast.error("Sélectionnez un mois");
+      return;
+    }
+    const monthEntries = entries.filter((e) => (e.controlDate ?? "").slice(0, 7) === exportMonth);
+    if (monthEntries.length === 0) {
+      toast.error("Aucune fiche pour ce mois");
+      return;
+    }
+    setExportingMonth(true);
+    try {
+      const sections: PdfTableSection[] = [];
+      // Group by fiche type, preserving FICHE_TYPES order
+      for (const ficheType of FICHE_TYPES) {
+        const rows = monthEntries
+          .filter((e) => e.ficheType === ficheType)
+          .sort((a, b) => a.controlDate.localeCompare(b.controlDate));
+        if (rows.length === 0) continue;
+        sections.push({
+          title: `${ficheType} (${rows.length})`,
+          columns: [
+            { header: "Date", dataKey: "date", width: 22 },
+            { header: "Collaborateur", dataKey: "collab", width: 34 },
+            { header: "Article", dataKey: "article", width: 50 },
+            { header: "Lot", dataKey: "lot", width: 44, tone: "lot" },
+            { header: "Qté", dataKey: "qte", width: 18, halign: "center" },
+            { header: "DLC", dataKey: "dlc", width: 22 },
+            { header: "Visa manager", dataKey: "visa", width: 36 },
+            { header: "Notes", dataKey: "notes", width: 50 },
+          ],
+          rows: rows.map((e) => ({
+            date: formatDateFR(e.controlDate),
+            collab: e.collaborateur,
+            article: e.article,
+            lot: e.lotNumber || "—",
+            qte: e.quantity ?? "—",
+            dlc: e.dlc ? formatDateFR(e.dlc) : "—",
+            visa: e.visaManager?.trim() || "En attente",
+            notes: e.notes || "—",
+          })),
+        });
+      }
+      const [y, m] = exportMonth.split("-");
+      const monthLabel = new Date(Number(y), Number(m) - 1, 1).toLocaleDateString("fr-FR", {
+        month: "long",
+        year: "numeric",
+      });
+      await downloadStructuredPdf({
+        filename: `autocontroles-${exportMonth}.pdf`,
+        title: "Autocontrôles — Récapitulatif mensuel",
+        subtitle: `Mois : ${monthLabel}`,
+        meta: [`${monthEntries.length} fiche(s)`, `Généré le ${new Date().toLocaleDateString("fr-FR")}`],
+        sections,
+      });
+      toast.success("PDF mensuel généré");
+    } catch (err: any) {
+      toast.error("Erreur PDF", { description: err?.message ?? String(err) });
+    } finally {
+      setExportingMonth(false);
     }
   };
 
