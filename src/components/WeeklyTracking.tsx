@@ -309,6 +309,38 @@ export function WeeklyTracking() {
   // chargées globalement pour afficher leurs lots dans la fiche Suivi crème fraîche.
   const [cremeGlaceRows, setCremeGlaceRows] = useState<Row[]>([]);
 
+  // Grammage par bac pour chaque parfum de glace (g)
+  const [glaceGrammages, setGlaceGrammages] = useState<Record<string, number>>({});
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from("glace_grammage")
+          .select("article, grammage_grams");
+        if (error) throw error;
+        const map: Record<string, number> = {};
+        (data || []).forEach((r: any) => {
+          map[r.article] = Number(r.grammage_grams) || 0;
+        });
+        setGlaceGrammages(map);
+      } catch {
+        /* ignore */
+      }
+    })();
+  }, []);
+  const saveGrammage = async (article: string, raw: string) => {
+    const value = Math.max(0, Math.round(Number(raw) || 0));
+    setGlaceGrammages((prev) => ({ ...prev, [article]: value }));
+    try {
+      const { error } = await supabase
+        .from("glace_grammage")
+        .upsert({ article, grammage_grams: value }, { onConflict: "article" });
+      if (error) throw error;
+    } catch (err: any) {
+      toast.error("Erreur grammage", { description: err?.message ?? String(err) });
+    }
+  };
+
   // Filters for Mouvement tab
   const [filterArticle, setFilterArticle] = useState<string>("all");
   const [filterDay, setFilterDay] = useState<string>("all"); // index 0..6 or "all"
@@ -1654,6 +1686,15 @@ export function WeeklyTracking() {
               <thead className="bg-muted sticky top-0 z-30">
                 <tr>
                   <th className="p-1 text-left weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px] text-[11px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Article</th>
+                  {t === "glace" && (
+                    <th
+                      className="p-1 text-center weekly-sticky-column weekly-sticky-head bg-muted border-r w-[110px] min-w-[110px] text-[11px]"
+                      style={{ position: "sticky", left: 140, zIndex: 45 }}
+                      title="Grammage par bac (g) — saisie manuelle par parfum"
+                    >
+                      Grammage<br/>(g/bac)
+                    </th>
+                  )}
                   {visibleDays.map(({ day, dIdx, wkStart, iso }) => (
                     <th
                       key={`${wkStart}-${day}`}
@@ -1685,6 +1726,12 @@ export function WeeklyTracking() {
                 </tr>
                 <tr>
                   <th className="p-1 weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 45 }}></th>
+                  {t === "glace" && (
+                    <th
+                      className="p-1 weekly-sticky-column weekly-sticky-head bg-muted border-r w-[110px] min-w-[110px]"
+                      style={{ position: "sticky", left: 140, zIndex: 45 }}
+                    ></th>
+                  )}
                   {visibleDays.map(({ day, wkStart }) => (
                     <Fragment key={`${wkStart}-${day}-h`}>
                       <th className="p-1 border-l text-center font-normal">SI</th>
@@ -1716,6 +1763,29 @@ export function WeeklyTracking() {
                     >
                       {article}
                     </td>
+                    {t === "glace" && (
+                      <td
+                        className={cn(
+                          "p-1 weekly-sticky-column border-r text-center",
+                          rowI % 2 === 1 ? "bg-muted" : "bg-card",
+                        )}
+                        style={{ position: "sticky", left: 140, zIndex: 25 }}
+                      >
+                        {article === CREME_ARTICLE ? (
+                          <span className="text-[10px] text-muted-foreground">—</span>
+                        ) : (
+                          <CommittedInput
+                            type="number"
+                            inputMode="numeric"
+                            value={glaceGrammages[article] ?? ""}
+                            onCommit={(v) => saveGrammage(article, v)}
+                            className="h-7 w-20 text-xs px-1 text-center"
+                            placeholder="g"
+                            disabled={!can("edit_weekly")}
+                          />
+                        )}
+                      </td>
+                    )}
                     {visibleDays.map(({ day, dIdx, wkStart }) => {
                       const c = cellAt(wkStart, day, 0, article);
                       const entries = entriesForAt(wkStart, day, article);
