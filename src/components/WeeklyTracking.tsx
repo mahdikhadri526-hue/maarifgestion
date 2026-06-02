@@ -1778,11 +1778,12 @@ export function WeeklyTracking() {
                         ) : (
                           <CommittedInput
                             type="number"
-                            inputMode="numeric"
-                            value={glaceGrammages[article] ?? ""}
+                            inputMode="decimal"
+                            step="0.001"
+                            value={glaceGrammages[article] ? (glaceGrammages[article] / 1000).toString() : ""}
                             onCommit={(v) => saveGrammage(article, v)}
                             className="h-7 w-20 text-xs px-1 text-center"
-                            placeholder="g"
+                            placeholder="Kg"
                             disabled={!can("edit_weekly")}
                           />
                         )}
