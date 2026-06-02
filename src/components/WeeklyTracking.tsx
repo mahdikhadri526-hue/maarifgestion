@@ -329,12 +329,14 @@ export function WeeklyTracking() {
     })();
   }, []);
   const saveGrammage = async (article: string, raw: string) => {
-    const value = Math.max(0, Math.round(Number(raw) || 0));
-    setGlaceGrammages((prev) => ({ ...prev, [article]: value }));
+    // Saisie en Kg/bac → stockée en grammes en base
+    const kg = Math.max(0, Number(raw) || 0);
+    const grams = Math.round(kg * 1000);
+    setGlaceGrammages((prev) => ({ ...prev, [article]: grams }));
     try {
       const { error } = await supabase
         .from("glace_grammage")
-        .upsert({ article, grammage_grams: value }, { onConflict: "article" });
+        .upsert({ article, grammage_grams: grams }, { onConflict: "article" });
       if (error) throw error;
     } catch (err: any) {
       toast.error("Erreur grammage", { description: err?.message ?? String(err) });
@@ -1690,9 +1692,9 @@ export function WeeklyTracking() {
                     <th
                       className="p-1 text-center weekly-sticky-column weekly-sticky-head bg-muted border-r w-[110px] min-w-[110px] text-[11px]"
                       style={{ position: "sticky", left: 140, zIndex: 45 }}
-                      title="Grammage par bac (g) — saisie manuelle par parfum"
+                      title="Poids par bac (Kg) — saisie manuelle par parfum"
                     >
-                      Grammage<br/>(g/bac)
+                      Kg/bac
                     </th>
                   )}
                   {visibleDays.map(({ day, dIdx, wkStart, iso }) => (
@@ -1776,11 +1778,12 @@ export function WeeklyTracking() {
                         ) : (
                           <CommittedInput
                             type="number"
-                            inputMode="numeric"
-                            value={glaceGrammages[article] ?? ""}
+                            inputMode="decimal"
+                            step="0.001"
+                            value={glaceGrammages[article] ? (glaceGrammages[article] / 1000).toString() : ""}
                             onCommit={(v) => saveGrammage(article, v)}
                             className="h-7 w-20 text-xs px-1 text-center"
-                            placeholder="g"
+                            placeholder="Kg"
                             disabled={!can("edit_weekly")}
                           />
                         )}
