@@ -155,6 +155,30 @@ export type Database = {
         }
         Relationships: []
       }
+      glace_grammage: {
+        Row: {
+          article: string
+          created_at: string
+          grammage_grams: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          article: string
+          created_at?: string
+          grammage_grams?: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          article?: string
+          created_at?: string
+          grammage_grams?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       initial_stocks: {
         Row: {
           carton_enabled: boolean
