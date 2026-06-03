@@ -532,6 +532,17 @@ export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: n
   let sorties = 0;
   let stockInitial = 0;
   let stockFinalTotal = 0;
+  let latestStockDayIndex = -1;
+  for (const wkMap of byArticle.values()) {
+    const cur = wkMap.get(weekStart);
+    if (!cur) continue;
+    for (let d = 6; d >= 0; d--) {
+      if (cur.get(DAYS[d])?.si != null) {
+        latestStockDayIndex = Math.max(latestStockDayIndex, d);
+        break;
+      }
+    }
+  }
   for (const [article, wkMap] of byArticle) {
     const g = grams[article] || 0;
     if (!g) continue;
@@ -562,25 +573,12 @@ export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: n
       if (sortie == null) sortie = c.explicitSortie ?? 0;
       sorties += sortie * g;
     }
-    // Stock final = stock final du dernier jour saisi (SI le plus récent)
-    let lastDay = -1;
-    for (let d = 6; d >= 0; d--) {
-      const c = getCell(weekStart, DAYS[d]);
-      if (c.si != null) { lastDay = d; break; }
-    }
-    if (lastDay >= 0) {
-      const c = getCell(weekStart, DAYS[lastDay]);
-      let sf: number;
-      // Si un jour suivant a un SI, le stock final = SI du jour suivant
-      const nextSi = lastDay < 6
-        ? getCell(weekStart, DAYS[lastDay + 1]).si
-        : getCell(nextWeekStart, "Lundi").si;
-      if (nextSi != null) {
-        sf = nextSi;
-      } else {
-        sf = (c.si ?? 0) + c.entries - (c.explicitSortie ?? 0);
-      }
-      stockFinalTotal += sf * g;
+    // Stock final = total saisi dans le SI du dernier jour renseigné globalement.
+    // Ne pas reprendre les jours précédents parfum par parfum : si le dernier total saisi est 20 kg,
+    // la table Stock restant doit afficher exactement ce total converti par grammage.
+    if (latestStockDayIndex >= 0) {
+      const latestSi = getCell(weekStart, DAYS[latestStockDayIndex]).si;
+      if (latestSi != null) stockFinalTotal += latestSi * g;
     }
   }
   // Conversion grammes → kilos
