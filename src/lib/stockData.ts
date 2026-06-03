@@ -590,6 +590,108 @@ export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: n
   };
 }
 
+function trackingDateISO(weekStart: string, dayOfWeek: string): string | null {
+  const dayIdx = DAYS_FOR_GLACE.indexOf(dayOfWeek);
+  if (dayIdx < 0 || !weekStart) return null;
+  const d = new Date(weekStart);
+  d.setDate(d.getDate() + dayIdx + (d.getDay() === 0 ? 1 : 0));
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+function nextDateISO(date: string): string {
+  const d = new Date(date);
+  d.setDate(d.getDate() + 1);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+const DAYS_FOR_GLACE = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+
+export async function getGlaceAggregateForRange(startDate?: string, endDate?: string): Promise<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number }> {
+  const [rows, gramRes] = await Promise.all([
+    fetchAllRows<any>(() =>
+      supabase
+        .from("weekly_tracking")
+        .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
+        .eq("fiche_type", "Mouvement glaces & tartes"),
+    ),
+    supabase.from("glace_grammage").select("article, grammage_grams"),
+  ]);
+
+  const grams: Record<string, number> = {};
+  ((gramRes as any).data || []).forEach((r: any) => {
+    grams[r.article] = Number(r.grammage_grams) || 0;
+  });
+
+  type DayAgg = { si: number | null; entries: number; explicitSortie: number | null };
+  const byArticle = new Map<string, Map<string, DayAgg>>();
+  (rows || []).forEach((r: any) => {
+    if (!r.article || GLACE_PARFUMS_BLACKLIST.has(r.article)) return;
+    if (!grams[r.article]) return;
+    const date = trackingDateISO(r.week_start, r.day_of_week);
+    if (!date) return;
+    let days = byArticle.get(r.article);
+    if (!days) { days = new Map(); byArticle.set(r.article, days); }
+    let cell = days.get(date);
+    if (!cell) { cell = { si: null, entries: 0, explicitSortie: null }; days.set(date, cell); }
+    const rowIdx = r.row_index ?? 0;
+    if (rowIdx === 0) {
+      if (r.stock_initial != null) cell.si = Number(r.stock_initial) || 0;
+      if (r.sorties != null) cell.explicitSortie = Number(r.sorties) || 0;
+    }
+    if (r.entrees != null) cell.entries += Number(r.entrees) || 0;
+  });
+
+  const inRange = (date: string) => (!startDate || date >= startDate) && (!endDate || date <= endDate);
+  let firstStockDate: string | null = null;
+  let lastStockDate: string | null = null;
+  for (const days of byArticle.values()) {
+    for (const [date, cell] of days) {
+      if (!inRange(date) || cell.si == null) continue;
+      if (!firstStockDate || date < firstStockDate) firstStockDate = date;
+      if (!lastStockDate || date > lastStockDate) lastStockDate = date;
+    }
+  }
+
+  let stockInitial = 0;
+  let entrees = 0;
+  let sorties = 0;
+  let stockRestant = 0;
+  for (const [article, days] of byArticle) {
+    const g = grams[article] || 0;
+    if (!g) continue;
+    if (firstStockDate) {
+      const si = days.get(firstStockDate)?.si;
+      if (si != null) stockInitial += si * g;
+    }
+    if (lastStockDate) {
+      const si = days.get(lastStockDate)?.si;
+      if (si != null) stockRestant += si * g;
+    }
+    for (const [date, cell] of days) {
+      if (!inRange(date)) continue;
+      entrees += cell.entries * g;
+      let sortie: number | null = null;
+      const nextSi = days.get(nextDateISO(date))?.si;
+      if (cell.si != null && nextSi != null) sortie = cell.si + cell.entries - nextSi;
+      if (sortie == null) sortie = cell.explicitSortie ?? 0;
+      sorties += sortie * g;
+    }
+  }
+
+  return {
+    stockInitial: stockInitial / 1000,
+    entrees: entrees / 1000,
+    sorties: sorties / 1000,
+    stockRestant: stockRestant / 1000,
+  };
+}
+
 export interface DailyStockRecord {
   date: string;
   stockInitial: number;
