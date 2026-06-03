@@ -4,6 +4,7 @@ import {
   UnitType,
   setProductUnit,
   getMovements,
+  getGlaceAggregateForRange,
   getInitialStocks,
   getProductUnits,
   getProductUnitConfigs,
@@ -164,6 +165,11 @@ function buildWeeklyOrderRows(
 type FilterMode = "all" | "day" | "month" | "period";
 const todayISO = () => new Date().toISOString().split("T")[0];
 const currentMonthISO = () => new Date().toISOString().slice(0, 7);
+const monthEndISO = (month: string) => {
+  if (!month) return "";
+  const [year, monthNumber] = month.split("-").map(Number);
+  return formatISODate(new Date(year, monthNumber, 0));
+};
 
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
   const [category, setCategory] = useState<Category | "all" | "tarte" | "glace">(variant === "order" ? "alimentaire" : "all");
