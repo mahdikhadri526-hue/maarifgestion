@@ -649,12 +649,10 @@ export async function getGlaceAggregateForRange(startDate?: string, endDate?: st
 
   const inRange = (date: string) => (!startDate || date >= startDate) && (!endDate || date <= endDate);
   let firstStockDate: string | null = null;
-  let lastStockDate: string | null = null;
   for (const days of byArticle.values()) {
     for (const [date, cell] of days) {
       if (!inRange(date) || cell.si == null) continue;
       if (!firstStockDate || date < firstStockDate) firstStockDate = date;
-      if (!lastStockDate || date > lastStockDate) lastStockDate = date;
     }
   }
 
@@ -669,8 +667,16 @@ export async function getGlaceAggregateForRange(startDate?: string, endDate?: st
       const si = days.get(firstStockDate)?.si;
       if (si != null) stockInitial += si * g;
     }
-    if (lastStockDate) {
-      const si = days.get(lastStockDate)?.si;
+    // Stock restant : dernier SI saisi à la date <= endDate (ou n'importe quand si pas d'endDate)
+    // pour ce parfum, multiplié par son grammage. Même logique que le stock final hebdo.
+    let latestSiDate: string | null = null;
+    for (const [date, cell] of days) {
+      if (cell.si == null) continue;
+      if (endDate && date > endDate) continue;
+      if (!latestSiDate || date > latestSiDate) latestSiDate = date;
+    }
+    if (latestSiDate) {
+      const si = days.get(latestSiDate)?.si;
       if (si != null) stockRestant += si * g;
     }
     for (const [date, cell] of days) {
