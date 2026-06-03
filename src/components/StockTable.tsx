@@ -345,6 +345,18 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           stockRestant: roundStockQuantity(stockRestantPeriod),
         };
       });
+      const glaceLevel = levels.find((lvl) => lvl.productName === "GLACE" && lvl.category === "alimentaire");
+      if (glaceLevel) {
+        const rangeStart = mode === "day" ? day : mode === "month" ? `${month}-01` : mode === "period" ? start : undefined;
+        const rangeEnd = mode === "day" ? day : mode === "month" ? monthEndISO(month) : mode === "period" ? end : undefined;
+        const glaceAgg = await getGlaceAggregateForRange(rangeStart || undefined, rangeEnd || undefined);
+        results[glaceLevel.productId] = {
+          stockInitial: roundStockQuantity(glaceAgg.stockInitial),
+          entrees: roundStockQuantity(glaceAgg.entrees),
+          sorties: roundStockQuantity(glaceAgg.sorties),
+          stockRestant: roundStockQuantity(glaceAgg.stockRestant),
+        };
+      }
       if (!cancelled) {
         setPeriodTotals(results);
         setPeriodLoading(false);
