@@ -17,7 +17,7 @@ import { useStockLevels } from "@/hooks/useStockData";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Save, History, Trash2 } from "lucide-react";
+import { Search, Save, History, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
@@ -27,6 +27,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { downloadStructuredPdf } from "@/lib/printExport";
 
 const TARTE_ARTICLES = [
   "Tarte 6", "Tarte 8", "Tarte 10", "Tte Sp.", "Tte.Sp 8", "Tte Mac.", "Tte Sor.",
