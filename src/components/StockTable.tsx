@@ -745,6 +745,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             <Button size="sm" variant={mode === "day" ? "default" : "outline"} onClick={() => setMode("day")}>Jour</Button>
             <Button size="sm" variant={mode === "month" ? "default" : "outline"} onClick={() => setMode("month")}>Mois</Button>
             <Button size="sm" variant={mode === "period" ? "default" : "outline"} onClick={() => setMode("period")}>Période</Button>
+            {variant === "order" && (
+              <>
+                <Button size="sm" variant="default" onClick={() => setSaveOpen(true)} className="ml-auto">
+                  <Save className="h-4 w-4" /> Enregistrer la commande
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>
+                  <History className="h-4 w-4" /> Historique ({savedOrders.length})
+                </Button>
+              </>
+            )}
           </div>
           {mode === "day" && (
             <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="w-full sm:w-48" />
