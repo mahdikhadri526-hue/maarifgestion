@@ -847,7 +847,15 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     <td className="p-3 text-sm font-medium weekly-sticky-column border-r bg-card w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>{r.article}</td>
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{r.sorties}</td>
                     <td className="p-3 text-right font-mono text-sm">{r.stockActuel}</td>
-                    <td className="p-3 text-right font-mono text-sm font-semibold text-warning">{Math.max(0, r.sorties - r.stockActuel)}</td>
+                    <td className="p-3 text-right">
+                      <input
+                        type="number"
+                        min="0"
+                        value={orderQtyOverrides[r.article] ?? String(Math.max(0, r.sorties - r.stockActuel))}
+                        onChange={(e) => setOverride(r.article, e.target.value)}
+                        className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono font-semibold text-warning"
+                      />
+                    </td>
                   </tr>
                 ))}
             </tbody>
@@ -882,7 +890,15 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     </td>
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
                     <td className="p-3 text-right font-mono text-sm">{stockActuel}</td>
-                    <td className="p-3 text-right font-mono text-sm font-semibold text-warning">{aCommander}</td>
+                    <td className="p-3 text-right">
+                      <input
+                        type="number"
+                        min="0"
+                        value={orderQtyOverrides[level.productId] ?? String(aCommander)}
+                        onChange={(e) => setOverride(level.productId, e.target.value)}
+                        className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono font-semibold text-warning"
+                      />
+                    </td>
                   </tr>
                 );
               })}
