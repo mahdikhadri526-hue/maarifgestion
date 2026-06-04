@@ -733,6 +733,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             </div>
             {variant === "order" ? "Commande" : "Stock Restant"}
           </h2>
+          {variant === "order" && (
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="default" onClick={() => setSaveOpen(true)}>
+                <Save className="h-4 w-4 mr-1" /> Enregistrer la commande
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>
+                <History className="h-4 w-4 mr-1" /> Historique ({savedOrders.length})
+              </Button>
+            </div>
+          )}
           <div className="flex gap-2 items-center flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
