@@ -618,6 +618,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [savePerformedBy, setSavePerformedBy] = useState("");
   const [saveNotes, setSaveNotes] = useState("");
   const [savingOrder, setSavingOrder] = useState(false);
+  // Overrides manuels de "Qté à commander" (clé = productId ou nom d'article pour glace/tarte)
+  const [orderQtyOverrides, setOrderQtyOverrides] = useState<Record<string, string>>({});
+  const setOverride = (key: string, value: string) => {
+    setOrderQtyOverrides((prev) => ({ ...prev, [key]: value }));
+  };
 
   const loadSavedOrders = async () => {
     const { data, error } = await supabase
@@ -645,13 +650,20 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const buildOrderItems = (): { name: string; quantity: number }[] => {
     if (isWeeklyCat) {
       return weeklyRows
-        .map((r) => ({ name: r.article, quantity: Math.max(0, r.sorties - r.stockActuel) }))
+        .map((r) => {
+          const def = Math.max(0, r.sorties - r.stockActuel);
+          const ov = orderQtyOverrides[r.article];
+          const qty = ov !== undefined && ov !== "" ? Number(ov) : def;
+          return { name: r.article, quantity: isNaN(qty) ? 0 : qty };
+        })
         .filter((x) => x.quantity > 0);
     }
     return filtered
       .map((level) => {
         const v = getRowValues(level);
-        const qty = Math.max(0, v.sorties - level.stockRestant);
+        const def = Math.max(0, v.sorties - level.stockRestant);
+        const ov = orderQtyOverrides[level.productId];
+        const qty = ov !== undefined && ov !== "" ? Number(ov) : def;
         return { name: level.productName, quantity: qty };
       })
       .filter((x) => x.quantity > 0);
@@ -835,7 +847,15 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     <td className="p-3 text-sm font-medium weekly-sticky-column border-r bg-card w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>{r.article}</td>
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{r.sorties}</td>
                     <td className="p-3 text-right font-mono text-sm">{r.stockActuel}</td>
-                    <td className="p-3 text-right font-mono text-sm font-semibold text-warning">{Math.max(0, r.sorties - r.stockActuel)}</td>
+                    <td className="p-3 text-right">
+                      <input
+                        type="number"
+                        min="0"
+                        value={orderQtyOverrides[r.article] ?? String(Math.max(0, r.sorties - r.stockActuel))}
+                        onChange={(e) => setOverride(r.article, e.target.value)}
+                        className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono font-semibold text-warning"
+                      />
+                    </td>
                   </tr>
                 ))}
             </tbody>
@@ -870,7 +890,15 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     </td>
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
                     <td className="p-3 text-right font-mono text-sm">{stockActuel}</td>
-                    <td className="p-3 text-right font-mono text-sm font-semibold text-warning">{aCommander}</td>
+                    <td className="p-3 text-right">
+                      <input
+                        type="number"
+                        min="0"
+                        value={orderQtyOverrides[level.productId] ?? String(aCommander)}
+                        onChange={(e) => setOverride(level.productId, e.target.value)}
+                        className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono font-semibold text-warning"
+                      />
+                    </td>
                   </tr>
                 );
               })}
