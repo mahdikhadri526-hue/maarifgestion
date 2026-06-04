@@ -395,6 +395,47 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     return () => { cancelled = true; };
   }, [variant, category, isWeeklyCat, mode, day, month, start, end]);
 
+  // Load weekly_tracking data for MACARON aggregate row in Stock Restant
+  useEffect(() => {
+    if (variant !== "stock" || category !== "all") {
+      setMacaronAgg(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
+          supabase
+            .from("weekly_tracking")
+            .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
+            .eq("fiche_type", "Mouvement glaces & tartes")
+            .in("article", MACARON_ARTICLES as unknown as string[]),
+        );
+        if (cancelled) return;
+        const isInSelectedPeriod = (date: string) => {
+          if (mode === "day") return day ? date === day : true;
+          if (mode === "month") return month ? date.startsWith(month) : true;
+          if (mode === "period") {
+            if (start && date < start) return false;
+            if (end && date > end) return false;
+            return true;
+          }
+          return true;
+        };
+        const totals = buildWeeklyAggregateTotals(
+          data || [],
+          MACARON_ARTICLES,
+          isInSelectedPeriod,
+          mode === "all",
+        );
+        setMacaronAgg(totals);
+      } catch {
+        if (!cancelled) setMacaronAgg(null);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [variant, category, mode, day, month, start, end]);
+
   // Recalcule les totaux par produit selon le filtre période
   useEffect(() => {
     if (mode === "all" || !levels || isWeeklyCat) {
