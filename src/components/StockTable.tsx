@@ -167,6 +167,103 @@ function buildWeeklyOrderRows(
   }));
 }
 
+function buildWeeklyAggregateTotals(
+  records: WeeklyTrackingOrderRecord[],
+  articles: readonly string[],
+  isInSelectedPeriod: (date: string) => boolean,
+  matchAll: boolean,
+) {
+  type DayBucket = { si: number | null; entrees: number; explicitSorties: number };
+  const articleSet = new Set(articles);
+  const byArticle = new Map<string, Map<string, DayBucket>>();
+  const ensureBucket = (article: string, date: string) => {
+    if (!byArticle.has(article)) byArticle.set(article, new Map());
+    const days = byArticle.get(article)!;
+    if (!days.has(date)) days.set(date, { si: null, entrees: 0, explicitSorties: 0 });
+    return days.get(date)!;
+  };
+  records.forEach((r) => {
+    const article = (r.article ?? "").trim();
+    if (!articleSet.has(article)) return;
+    const dayIdx = DAYS.indexOf(r.day_of_week as typeof DAYS[number]);
+    if (dayIdx < 0 || !r.week_start) return;
+    const bucket = ensureBucket(article, trackingDate(r.week_start, dayIdx));
+    if (r.stock_initial !== "" && r.stock_initial != null) bucket.si = numericValue(r.stock_initial);
+    bucket.entrees += numericValue(r.entrees);
+    if (r.sorties !== "" && r.sorties != null) bucket.explicitSorties += numericValue(r.sorties);
+  });
+
+  let aggStockInitial = 0;
+  let aggEntrees = 0;
+  let aggSorties = 0;
+  let aggRestant = 0;
+
+  articles.forEach((article) => {
+    const days = byArticle.get(article);
+    if (!days) return;
+    const entries = Array.from(days.entries()).sort(([a], [b]) => a.localeCompare(b));
+    const closedDates = new Set<string>();
+    let prevSI: number | null = null;
+    let spanStart: string | null = null;
+    let pendingEntries = 0;
+    let totalSortiesArt = 0;
+    let latestStock = 0;
+    let stockInitialPeriod: number | null = null;
+    let lastSIBeforePeriod = 0;
+    let entreesPeriodArt = 0;
+
+    for (const [date, bucket] of entries) {
+      if (bucket.si != null) {
+        if (prevSI != null && spanStart) {
+          const sortie = Math.max(0, prevSI + pendingEntries - bucket.si);
+          if (isInSelectedPeriod(spanStart)) totalSortiesArt += sortie;
+          for (let d = parseISODate(spanStart); formatISODate(d) < date; d.setDate(d.getDate() + 1)) {
+            closedDates.add(formatISODate(d));
+          }
+        }
+        prevSI = bucket.si;
+        spanStart = date;
+        pendingEntries = bucket.entrees;
+        latestStock = bucket.si;
+        if (isInSelectedPeriod(date)) {
+          if (stockInitialPeriod === null) stockInitialPeriod = bucket.si;
+        } else {
+          lastSIBeforePeriod = bucket.si;
+        }
+      } else {
+        pendingEntries += bucket.entrees;
+      }
+      if (isInSelectedPeriod(date)) entreesPeriodArt += bucket.entrees;
+    }
+
+    entries.forEach(([date, bucket]) => {
+      if (bucket.explicitSorties > 0 && !closedDates.has(date) && isInSelectedPeriod(date)) {
+        totalSortiesArt += bucket.explicitSorties;
+      }
+    });
+
+    if (prevSI != null) {
+      const openExplicit = entries.reduce((sum, [date, bucket]) => (
+        !closedDates.has(date) && bucket.explicitSorties > 0 ? sum + bucket.explicitSorties : sum
+      ), 0);
+      latestStock = Math.max(0, prevSI + pendingEntries - openExplicit);
+    }
+
+    if (stockInitialPeriod === null) stockInitialPeriod = lastSIBeforePeriod;
+    aggStockInitial += stockInitialPeriod;
+    aggEntrees += entreesPeriodArt;
+    aggSorties += totalSortiesArt;
+    aggRestant += matchAll ? latestStock : (stockInitialPeriod + entreesPeriodArt - totalSortiesArt);
+  });
+
+  return {
+    stockInitial: roundStockQuantity(aggStockInitial),
+    entrees: roundStockQuantity(aggEntrees),
+    sorties: roundStockQuantity(aggSorties),
+    stockRestant: roundStockQuantity(aggRestant),
+  };
+}
+
 type FilterMode = "all" | "day" | "month" | "period";
 const todayISO = () => new Date().toISOString().split("T")[0];
 const currentMonthISO = () => new Date().toISOString().slice(0, 7);
