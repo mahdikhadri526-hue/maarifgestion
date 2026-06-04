@@ -773,16 +773,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             <Button size="sm" variant={mode === "day" ? "default" : "outline"} onClick={() => setMode("day")}>Jour</Button>
             <Button size="sm" variant={mode === "month" ? "default" : "outline"} onClick={() => setMode("month")}>Mois</Button>
             <Button size="sm" variant={mode === "period" ? "default" : "outline"} onClick={() => setMode("period")}>Période</Button>
-            {variant === "order" && (
-              <>
-                <Button size="sm" variant="default" onClick={() => setSaveOpen(true)} className="ml-auto">
-                  <Save className="h-4 w-4" /> Enregistrer la commande
-                </Button>
-                <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>
-                  <History className="h-4 w-4" /> Historique ({savedOrders.length})
-                </Button>
-              </>
-            )}
           </div>
           {mode === "day" && (
             <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="w-full sm:w-48" />
@@ -800,6 +790,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <span className="text-xs text-muted-foreground w-8">Au</span>
                 <Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="w-full sm:w-44" />
               </div>
+            </div>
+          )}
+          {variant === "order" && (
+            <div className="flex flex-wrap gap-2 mt-1">
+              <Button size="sm" variant="default" onClick={() => setSaveOpen(true)}>
+                <Save className="h-4 w-4 mr-1" /> Enregistrer la commande
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>
+                <History className="h-4 w-4 mr-1" /> Historique ({savedOrders.length})
+              </Button>
             </div>
           )}
         </div>
