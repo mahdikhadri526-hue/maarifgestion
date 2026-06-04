@@ -696,6 +696,33 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     loadSavedOrders();
   };
 
+  const exportOrderPdf = (
+    items: { name: string; quantity: number }[],
+    meta: { date: string; category: string; performedBy?: string | null; notes?: string | null },
+  ) => {
+    if (!items.length) { toast.error("Aucun produit à exporter"); return; }
+    downloadStructuredPdf({
+      filename: `commande-${meta.category}-${meta.date}.pdf`,
+      title: "Bon de commande",
+      subtitle: `${meta.category.toUpperCase()} — ${meta.date}`,
+      meta: [
+        meta.performedBy ? `Effectué par : ${meta.performedBy}` : "",
+        meta.notes ? `Notes : ${meta.notes}` : "",
+      ].filter(Boolean),
+      sections: [
+        {
+          title: "Articles à commander",
+          columns: [
+            { header: "Article", dataKey: "name", halign: "left" },
+            { header: "Quantité", dataKey: "qty", halign: "center", width: 30 },
+            { header: "N° de lot", dataKey: "lot", halign: "left", width: 70 },
+          ],
+          rows: items.map((it) => ({ name: it.name, qty: it.quantity, lot: " " })),
+        },
+      ],
+    });
+  };
+
   return (
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
