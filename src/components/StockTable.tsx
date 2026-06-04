@@ -600,6 +600,101 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     return periodTotals[level.productId] ?? { stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 };
   };
 
+  // ===== Historique des commandes (variant === "order") =====
+  type SavedOrder = {
+    id: string;
+    order_date: string;
+    category: string;
+    performed_by: string | null;
+    notes: string | null;
+    items: { name: string; quantity: number }[];
+    total_items: number;
+    created_at: string;
+  };
+  const [savedOrders, setSavedOrders] = useState<SavedOrder[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [savePerformedBy, setSavePerformedBy] = useState("");
+  const [saveNotes, setSaveNotes] = useState("");
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  const loadSavedOrders = async () => {
+    const { data, error } = await supabase
+      .from("saved_orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) {
+      toast.error("Erreur de chargement de l'historique");
+      return;
+    }
+    setSavedOrders((data || []) as any);
+  };
+
+  useEffect(() => {
+    if (variant !== "order") return;
+    loadSavedOrders();
+    const ch = supabase
+      .channel("saved_orders_rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "saved_orders" }, () => loadSavedOrders())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [variant]);
+
+  const buildOrderItems = (): { name: string; quantity: number }[] => {
+    if (isWeeklyCat) {
+      return weeklyRows
+        .map((r) => ({ name: r.article, quantity: Math.max(0, r.sorties - r.stockActuel) }))
+        .filter((x) => x.quantity > 0);
+    }
+    return filtered
+      .map((level) => {
+        const v = getRowValues(level);
+        const qty = Math.max(0, v.sorties - level.stockRestant);
+        return { name: level.productName, quantity: qty };
+      })
+      .filter((x) => x.quantity > 0);
+  };
+
+  const handleSaveOrder = async () => {
+    if (!savePerformedBy.trim()) {
+      toast.error("Prénom obligatoire");
+      return;
+    }
+    const items = buildOrderItems();
+    if (items.length === 0) {
+      toast.error("Aucun produit à commander");
+      return;
+    }
+    setSavingOrder(true);
+    const total = items.reduce((a, b) => a + b.quantity, 0);
+    const { error } = await supabase.from("saved_orders").insert({
+      order_date: new Date().toISOString().slice(0, 10),
+      category: String(category),
+      performed_by: savePerformedBy.trim(),
+      notes: saveNotes.trim() || null,
+      items: items as any,
+      total_items: total,
+    });
+    setSavingOrder(false);
+    if (error) {
+      toast.error("Erreur lors de l'enregistrement");
+      return;
+    }
+    toast.success("Commande enregistrée");
+    setSaveOpen(false);
+    setSaveNotes("");
+    loadSavedOrders();
+  };
+
+  const deleteSavedOrder = async (id: string) => {
+    if (!confirm("Supprimer cette commande de l'historique ?")) return;
+    const { error } = await supabase.from("saved_orders").delete().eq("id", id);
+    if (error) { toast.error("Suppression impossible"); return; }
+    toast.success("Commande supprimée");
+    loadSavedOrders();
+  };
+
   return (
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
