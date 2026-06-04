@@ -1,0 +1,1 @@
+ALTER TABLE public.saved_orders ALTER COLUMN total_items TYPE numeric USING total_items::numeric;
