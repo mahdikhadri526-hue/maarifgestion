@@ -17,7 +17,7 @@ import { useStockLevels } from "@/hooks/useStockData";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Save, History, Trash2 } from "lucide-react";
+import { Search, Save, History, Trash2, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
@@ -27,6 +27,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { downloadStructuredPdf } from "@/lib/printExport";
 
 const TARTE_ARTICLES = [
   "Tarte 6", "Tarte 8", "Tarte 10", "Tte Sp.", "Tte.Sp 8", "Tte Mac.", "Tte Sor.",
@@ -695,6 +696,33 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     loadSavedOrders();
   };
 
+  const exportOrderPdf = (
+    items: { name: string; quantity: number }[],
+    meta: { date: string; category: string; performedBy?: string | null; notes?: string | null },
+  ) => {
+    if (!items.length) { toast.error("Aucun produit à exporter"); return; }
+    downloadStructuredPdf({
+      filename: `commande-${meta.category}-${meta.date}.pdf`,
+      title: "Bon de commande",
+      subtitle: `${meta.category.toUpperCase()} — ${meta.date}`,
+      meta: [
+        meta.performedBy ? `Effectué par : ${meta.performedBy}` : "",
+        meta.notes ? `Notes : ${meta.notes}` : "",
+      ].filter(Boolean),
+      sections: [
+        {
+          title: "Articles à commander",
+          columns: [
+            { header: "Article", dataKey: "name", halign: "left" },
+            { header: "Quantité", dataKey: "qty", halign: "center", width: 30 },
+            { header: "N° de lot", dataKey: "lot", halign: "left", width: 70 },
+          ],
+          rows: items.map((it) => ({ name: it.name, qty: it.quantity, lot: " " })),
+        },
+      ],
+    });
+  };
+
   return (
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
@@ -969,6 +997,19 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setSaveOpen(false)}>Annuler</Button>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    exportOrderPdf(buildOrderItems(), {
+                      date: new Date().toISOString().slice(0, 10),
+                      category: String(category),
+                      performedBy: savePerformedBy.trim() || null,
+                      notes: saveNotes.trim() || null,
+                    })
+                  }
+                >
+                  <FileDown className="h-4 w-4 mr-1" /> PDF
+                </Button>
                 <Button onClick={handleSaveOrder} disabled={savingOrder}>
                   {savingOrder ? "Enregistrement..." : "Enregistrer"}
                 </Button>
@@ -999,6 +1040,22 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       </div>
                       <Button size="sm" variant="ghost" onClick={() => deleteSavedOrder(o.id)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                    <div className="flex justify-end mb-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          exportOrderPdf(o.items || [], {
+                            date: o.order_date,
+                            category: o.category,
+                            performedBy: o.performed_by,
+                            notes: o.notes,
+                          })
+                        }
+                      >
+                        <FileDown className="h-4 w-4 mr-1" /> Exporter PDF
                       </Button>
                     </div>
                     <div className="text-xs grid grid-cols-2 gap-x-4 gap-y-0.5 max-h-40 overflow-auto">
