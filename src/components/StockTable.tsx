@@ -36,6 +36,11 @@ const TARTE_ARTICLES = [
   "Amandes.Top", "Noix.Top", "Tulipes", "Cornet", "Gaufrette",
   "Orange fruits", "Citron fruits", "POMME fruits", "POIRE fruits", "Ananas fruits", "Kiwi fruits",
 ];
+const MACARON_ARTICLES = [
+  "Mac.Chocolat P", "Mac.Pistache P", "Mac.Caramel P", "Mac.Cfé P", "Mac.Mng P", "Mac.Cit P",
+  "Mac.Chocolat N", "Mac.Pistache N", "Mac.Caramel N", "Mac.Cfé N", "Mac.Mng N", "Mac.Cit N",
+];
+const MACARON_AGG_ID = "__macaron_agg__";
 const GLACE_ARTICLES = [
   "Sicilienne vanille", "Sicilienne chocolat", "Sicilienne fraise", "Sicilienne mangue",
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
