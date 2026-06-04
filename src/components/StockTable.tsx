@@ -1069,7 +1069,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         <div className="text-xs text-muted-foreground">
                           Par {o.performed_by || "—"} · {o.total_items} unité(s) · {new Date(o.created_at).toLocaleString("fr-FR")}
                         </div>
-                        {o.notes && <div className="text-xs italic mt-1">{o.notes}</div>}
+                        
                       </div>
                       <Button size="sm" variant="ghost" onClick={() => deleteSavedOrder(o.id)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
