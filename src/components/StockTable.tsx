@@ -1042,6 +1042,22 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
+                    <div className="flex justify-end mb-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          exportOrderPdf(o.items || [], {
+                            date: o.order_date,
+                            category: o.category,
+                            performedBy: o.performed_by,
+                            notes: o.notes,
+                          })
+                        }
+                      >
+                        <FileDown className="h-4 w-4 mr-1" /> Exporter PDF
+                      </Button>
+                    </div>
                     <div className="text-xs grid grid-cols-2 gap-x-4 gap-y-0.5 max-h-40 overflow-auto">
                       {(o.items || []).map((it, i) => (
                         <div key={i} className="flex justify-between border-b last:border-0 py-0.5">
