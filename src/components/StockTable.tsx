@@ -670,11 +670,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       {(loading || periodLoading || weeklyLoading) ? (
         <p className="text-center text-muted-foreground py-8">Chargement...</p>
       ) : isWeeklyCat ? (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
+        <div className="bg-card rounded-lg border overflow-x-auto max-w-full">
+          <table className="weekly-sticky-table text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", overflow: "visible" }}>
+            <thead className="bg-muted sticky top-0 z-30">
               <tr className="border-b bg-muted/50">
-                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Article</th>
+                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Article</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties période</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock actuel</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté à commander</th>
@@ -683,9 +683,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             <tbody>
               {weeklyRows
                 .filter((r) => r.article.toLowerCase().includes(search.toLowerCase()))
-                .map((r) => (
-                  <tr key={r.article} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="p-3 text-sm font-medium">{r.article}</td>
+                .map((r, rowI) => (
+                  <tr key={r.article} className={cn("border-b last:border-0 hover:bg-muted/30 transition-colors", rowI % 2 === 1 && "bg-muted/30")}>
+                    <td className="p-3 text-sm font-medium weekly-sticky-column border-r bg-card w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>{r.article}</td>
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{r.sorties}</td>
                     <td className="p-3 text-right font-mono text-sm">{r.stockActuel}</td>
                     <td className="p-3 text-right font-mono text-sm font-semibold text-warning">{Math.max(0, r.sorties - r.stockActuel)}</td>
