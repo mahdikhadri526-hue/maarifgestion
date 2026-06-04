@@ -997,6 +997,19 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={() => setSaveOpen(false)}>Annuler</Button>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    exportOrderPdf(buildOrderItems(), {
+                      date: new Date().toISOString().slice(0, 10),
+                      category: String(category),
+                      performedBy: savePerformedBy.trim() || null,
+                      notes: saveNotes.trim() || null,
+                    })
+                  }
+                >
+                  <FileDown className="h-4 w-4 mr-1" /> PDF
+                </Button>
                 <Button onClick={handleSaveOrder} disabled={savingOrder}>
                   {savingOrder ? "Enregistrement..." : "Enregistrer"}
                 </Button>
