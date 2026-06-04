@@ -17,8 +17,11 @@ import { useStockLevels } from "@/hooks/useStockData";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
+import { Search, Save, History, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
+} from "@/components/ui/dialog";
 import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/contexts/AuthContext";
 import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
@@ -597,6 +600,101 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     return periodTotals[level.productId] ?? { stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 };
   };
 
+  // ===== Historique des commandes (variant === "order") =====
+  type SavedOrder = {
+    id: string;
+    order_date: string;
+    category: string;
+    performed_by: string | null;
+    notes: string | null;
+    items: { name: string; quantity: number }[];
+    total_items: number;
+    created_at: string;
+  };
+  const [savedOrders, setSavedOrders] = useState<SavedOrder[]>([]);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [saveOpen, setSaveOpen] = useState(false);
+  const [savePerformedBy, setSavePerformedBy] = useState("");
+  const [saveNotes, setSaveNotes] = useState("");
+  const [savingOrder, setSavingOrder] = useState(false);
+
+  const loadSavedOrders = async () => {
+    const { data, error } = await supabase
+      .from("saved_orders")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(200);
+    if (error) {
+      toast.error("Erreur de chargement de l'historique");
+      return;
+    }
+    setSavedOrders((data || []) as any);
+  };
+
+  useEffect(() => {
+    if (variant !== "order") return;
+    loadSavedOrders();
+    const ch = supabase
+      .channel("saved_orders_rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "saved_orders" }, () => loadSavedOrders())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [variant]);
+
+  const buildOrderItems = (): { name: string; quantity: number }[] => {
+    if (isWeeklyCat) {
+      return weeklyRows
+        .map((r) => ({ name: r.article, quantity: Math.max(0, r.sorties - r.stockActuel) }))
+        .filter((x) => x.quantity > 0);
+    }
+    return filtered
+      .map((level) => {
+        const v = getRowValues(level);
+        const qty = Math.max(0, v.sorties - level.stockRestant);
+        return { name: level.productName, quantity: qty };
+      })
+      .filter((x) => x.quantity > 0);
+  };
+
+  const handleSaveOrder = async () => {
+    if (!savePerformedBy.trim()) {
+      toast.error("Prénom obligatoire");
+      return;
+    }
+    const items = buildOrderItems();
+    if (items.length === 0) {
+      toast.error("Aucun produit à commander");
+      return;
+    }
+    setSavingOrder(true);
+    const total = items.reduce((a, b) => a + b.quantity, 0);
+    const { error } = await supabase.from("saved_orders").insert({
+      order_date: new Date().toISOString().slice(0, 10),
+      category: String(category),
+      performed_by: savePerformedBy.trim(),
+      notes: saveNotes.trim() || null,
+      items: items as any,
+      total_items: total,
+    });
+    setSavingOrder(false);
+    if (error) {
+      toast.error("Erreur lors de l'enregistrement");
+      return;
+    }
+    toast.success("Commande enregistrée");
+    setSaveOpen(false);
+    setSaveNotes("");
+    loadSavedOrders();
+  };
+
+  const deleteSavedOrder = async (id: string) => {
+    if (!confirm("Supprimer cette commande de l'historique ?")) return;
+    const { error } = await supabase.from("saved_orders").delete().eq("id", id);
+    if (error) { toast.error("Suppression impossible"); return; }
+    toast.success("Commande supprimée");
+    loadSavedOrders();
+  };
+
   return (
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
@@ -647,6 +745,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             <Button size="sm" variant={mode === "day" ? "default" : "outline"} onClick={() => setMode("day")}>Jour</Button>
             <Button size="sm" variant={mode === "month" ? "default" : "outline"} onClick={() => setMode("month")}>Mois</Button>
             <Button size="sm" variant={mode === "period" ? "default" : "outline"} onClick={() => setMode("period")}>Période</Button>
+            {variant === "order" && (
+              <>
+                <Button size="sm" variant="default" onClick={() => setSaveOpen(true)} className="ml-auto">
+                  <Save className="h-4 w-4" /> Enregistrer la commande
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>
+                  <History className="h-4 w-4" /> Historique ({savedOrders.length})
+                </Button>
+              </>
+            )}
           </div>
           {mode === "day" && (
             <Input type="date" value={day} onChange={(e) => setDay(e.target.value)} className="w-full sm:w-48" />
@@ -826,6 +934,87 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             <p className="text-center text-muted-foreground py-8">Aucun produit trouvé</p>
           )}
         </div>
+      )}
+
+      {variant === "order" && (
+        <>
+          <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Enregistrer la commande</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  {buildOrderItems().length} article(s) à commander seront enregistrés avec la date du jour.
+                </p>
+                <div>
+                  <label className="text-xs font-medium">Effectué par *</label>
+                  <Input value={savePerformedBy} onChange={(e) => setSavePerformedBy(e.target.value)} placeholder="Prénom" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium">Notes (optionnel)</label>
+                  <Input value={saveNotes} onChange={(e) => setSaveNotes(e.target.value)} placeholder="Ex: fournisseur, urgence..." />
+                </div>
+                <div className="max-h-48 overflow-auto border rounded-md p-2 text-xs">
+                  {buildOrderItems().map((it) => (
+                    <div key={it.name} className="flex justify-between py-0.5">
+                      <span>{it.name}</span>
+                      <span className="font-mono font-semibold">{it.quantity}</span>
+                    </div>
+                  ))}
+                  {buildOrderItems().length === 0 && (
+                    <p className="text-muted-foreground text-center py-2">Aucun produit à commander</p>
+                  )}
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setSaveOpen(false)}>Annuler</Button>
+                <Button onClick={handleSaveOrder} disabled={savingOrder}>
+                  {savingOrder ? "Enregistrement..." : "Enregistrer"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Historique des commandes</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                {savedOrders.length === 0 && (
+                  <p className="text-center text-muted-foreground py-6 text-sm">Aucune commande enregistrée</p>
+                )}
+                {savedOrders.map((o) => (
+                  <div key={o.id} className="border rounded-lg p-3">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div>
+                        <div className="font-semibold text-sm">
+                          {o.order_date} — <span className="capitalize">{o.category}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Par {o.performed_by || "—"} · {o.total_items} unité(s) · {new Date(o.created_at).toLocaleString("fr-FR")}
+                        </div>
+                        {o.notes && <div className="text-xs italic mt-1">{o.notes}</div>}
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={() => deleteSavedOrder(o.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                    <div className="text-xs grid grid-cols-2 gap-x-4 gap-y-0.5 max-h-40 overflow-auto">
+                      {(o.items || []).map((it, i) => (
+                        <div key={i} className="flex justify-between border-b last:border-0 py-0.5">
+                          <span>{it.name}</span>
+                          <span className="font-mono font-semibold">{it.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
       )}
     </div>
   );

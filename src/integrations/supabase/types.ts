@@ -447,6 +447,39 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_orders: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          items: Json
+          notes: string | null
+          order_date: string
+          performed_by: string | null
+          total_items: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          order_date: string
+          performed_by?: string | null
+          total_items?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          items?: Json
+          notes?: string | null
+          order_date?: string
+          performed_by?: string | null
+          total_items?: number
+        }
+        Relationships: []
+      }
       stock_movements: {
         Row: {
           category: string
