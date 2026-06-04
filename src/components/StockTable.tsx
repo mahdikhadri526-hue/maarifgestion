@@ -618,6 +618,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [savePerformedBy, setSavePerformedBy] = useState("");
   const [saveNotes, setSaveNotes] = useState("");
   const [savingOrder, setSavingOrder] = useState(false);
+  // Overrides manuels de "Qté à commander" (clé = productId ou nom d'article pour glace/tarte)
+  const [orderQtyOverrides, setOrderQtyOverrides] = useState<Record<string, string>>({});
+  const setOverride = (key: string, value: string) => {
+    setOrderQtyOverrides((prev) => ({ ...prev, [key]: value }));
+  };
 
   const loadSavedOrders = async () => {
     const { data, error } = await supabase
@@ -645,13 +650,20 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const buildOrderItems = (): { name: string; quantity: number }[] => {
     if (isWeeklyCat) {
       return weeklyRows
-        .map((r) => ({ name: r.article, quantity: Math.max(0, r.sorties - r.stockActuel) }))
+        .map((r) => {
+          const def = Math.max(0, r.sorties - r.stockActuel);
+          const ov = orderQtyOverrides[r.article];
+          const qty = ov !== undefined && ov !== "" ? Number(ov) : def;
+          return { name: r.article, quantity: isNaN(qty) ? 0 : qty };
+        })
         .filter((x) => x.quantity > 0);
     }
     return filtered
       .map((level) => {
         const v = getRowValues(level);
-        const qty = Math.max(0, v.sorties - level.stockRestant);
+        const def = Math.max(0, v.sorties - level.stockRestant);
+        const ov = orderQtyOverrides[level.productId];
+        const qty = ov !== undefined && ov !== "" ? Number(ov) : def;
         return { name: level.productName, quantity: qty };
       })
       .filter((x) => x.quantity > 0);
