@@ -935,6 +935,87 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           )}
         </div>
       )}
+
+      {variant === "order" && (
+        <>
+          <Dialog open={saveOpen} onOpenChange={setSaveOpen}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Enregistrer la commande</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground">
+                  {buildOrderItems().length} article(s) à commander seront enregistrés avec la date du jour.
+                </p>
+                <div>
+                  <label className="text-xs font-medium">Effectué par *</label>
+                  <Input value={savePerformedBy} onChange={(e) => setSavePerformedBy(e.target.value)} placeholder="Prénom" />
+                </div>
+                <div>
+                  <label className="text-xs font-medium">Notes (optionnel)</label>
+                  <Input value={saveNotes} onChange={(e) => setSaveNotes(e.target.value)} placeholder="Ex: fournisseur, urgence..." />
+                </div>
+                <div className="max-h-48 overflow-auto border rounded-md p-2 text-xs">
+                  {buildOrderItems().map((it) => (
+                    <div key={it.name} className="flex justify-between py-0.5">
+                      <span>{it.name}</span>
+                      <span className="font-mono font-semibold">{it.quantity}</span>
+                    </div>
+                  ))}
+                  {buildOrderItems().length === 0 && (
+                    <p className="text-muted-foreground text-center py-2">Aucun produit à commander</p>
+                  )}
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setSaveOpen(false)}>Annuler</Button>
+                <Button onClick={handleSaveOrder} disabled={savingOrder}>
+                  {savingOrder ? "Enregistrement..." : "Enregistrer"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Historique des commandes</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                {savedOrders.length === 0 && (
+                  <p className="text-center text-muted-foreground py-6 text-sm">Aucune commande enregistrée</p>
+                )}
+                {savedOrders.map((o) => (
+                  <div key={o.id} className="border rounded-lg p-3">
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div>
+                        <div className="font-semibold text-sm">
+                          {o.order_date} — <span className="capitalize">{o.category}</span>
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Par {o.performed_by || "—"} · {o.total_items} unité(s) · {new Date(o.created_at).toLocaleString("fr-FR")}
+                        </div>
+                        {o.notes && <div className="text-xs italic mt-1">{o.notes}</div>}
+                      </div>
+                      <Button size="sm" variant="ghost" onClick={() => deleteSavedOrder(o.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                    <div className="text-xs grid grid-cols-2 gap-x-4 gap-y-0.5 max-h-40 overflow-auto">
+                      {(o.items || []).map((it, i) => (
+                        <div key={i} className="flex justify-between border-b last:border-0 py-0.5">
+                          <span>{it.name}</span>
+                          <span className="font-mono font-semibold">{it.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+        </>
+      )}
     </div>
   );
 }
