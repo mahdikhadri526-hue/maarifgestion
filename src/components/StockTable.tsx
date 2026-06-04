@@ -1084,7 +1084,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                             date: o.order_date,
                             category: o.category,
                             performedBy: o.performed_by,
-                            notes: o.notes,
                           })
                         }
                       >
