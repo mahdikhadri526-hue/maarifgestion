@@ -285,6 +285,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [periodLoading, setPeriodLoading] = useState(false);
   const [weeklyRows, setWeeklyRows] = useState<Array<{ article: string; sorties: number; stockActuel: number }>>([]);
   const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const [macaronAgg, setMacaronAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const { can } = useAuth();
   const [editingStock, setEditingStock] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
@@ -335,6 +336,19 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       stockRestant: roundStockQuantity(nespressoSources.reduce((s, l) => s + l.stockRestant, 0)),
     };
     withAgg = [...baseLevels, agg];
+  }
+  if (variant === "stock" && category === "all" && macaronAgg) {
+    withAgg = [...withAgg, {
+      productId: MACARON_AGG_ID,
+      productName: "MACARON (tous parfums)",
+      conditionnement: "",
+      unit: "PIECE" as UnitType,
+      category: "alimentaire" as Category,
+      stockInitial: macaronAgg.stockInitial,
+      totalEntrees: macaronAgg.entrees,
+      totalSorties: macaronAgg.sorties,
+      stockRestant: macaronAgg.stockRestant,
+    }];
   }
   const filtered = withAgg.filter((l) =>
     l.productName.toLowerCase().includes(search.toLowerCase())
