@@ -25,6 +25,8 @@ export const OPERATORS: string[] = [
   "MED ABID",
   "MOUNIR KARTOUBI",
   "ABDEWAHAD BELAAZIZ",
+  "Mr Mahdi Khadri",
+  "Mr Hamza Fadlou",
 ];
 
 export function getOperators(): string[] {

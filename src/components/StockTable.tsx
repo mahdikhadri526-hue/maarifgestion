@@ -18,6 +18,7 @@ import { fetchAllRows } from "@/lib/supabasePaginate";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Save, History, Trash2, FileDown } from "lucide-react";
+import { getOperators } from "@/lib/operators";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
@@ -745,16 +746,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             </div>
             {variant === "order" ? "Commande" : "Stock Restant"}
           </h2>
-          {variant === "order" && (
-            <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="default" onClick={() => setSaveOpen(true)}>
-                <Save className="h-4 w-4 mr-1" /> Enregistrer la commande
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>
-                <History className="h-4 w-4 mr-1" /> Historique ({savedOrders.length})
-              </Button>
-            </div>
-          )}
           <div className="flex gap-2 items-center flex-wrap">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1015,11 +1006,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 </p>
                 <div>
                   <label className="text-xs font-medium">Effectué par *</label>
-                  <Input value={savePerformedBy} onChange={(e) => setSavePerformedBy(e.target.value)} placeholder="Prénom" />
-                </div>
-                <div>
-                  <label className="text-xs font-medium">Notes (optionnel)</label>
-                  <Input value={saveNotes} onChange={(e) => setSaveNotes(e.target.value)} placeholder="Ex: fournisseur, urgence..." />
+                  <select
+                    value={savePerformedBy}
+                    onChange={(e) => setSavePerformedBy(e.target.value)}
+                    className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  >
+                    <option value="">Choisir...</option>
+                    {getOperators().map((op) => (
+                      <option key={op} value={op}>{op}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="max-h-48 overflow-auto border rounded-md p-2 text-xs">
                   {buildOrderItems().map((it) => (
@@ -1042,7 +1038,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       date: new Date().toISOString().slice(0, 10),
                       category: String(category),
                       performedBy: savePerformedBy.trim() || null,
-                      notes: saveNotes.trim() || null,
                     })
                   }
                 >
@@ -1074,7 +1069,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         <div className="text-xs text-muted-foreground">
                           Par {o.performed_by || "—"} · {o.total_items} unité(s) · {new Date(o.created_at).toLocaleString("fr-FR")}
                         </div>
-                        {o.notes && <div className="text-xs italic mt-1">{o.notes}</div>}
+                        
                       </div>
                       <Button size="sm" variant="ghost" onClick={() => deleteSavedOrder(o.id)}>
                         <Trash2 className="h-4 w-4 text-destructive" />
@@ -1089,7 +1084,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                             date: o.order_date,
                             category: o.category,
                             performedBy: o.performed_by,
-                            notes: o.notes,
                           })
                         }
                       >
