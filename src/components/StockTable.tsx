@@ -215,7 +215,26 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const isWeeklyCat = category === "tarte" || category === "glace";
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
   const { data: levels, loading, refresh } = useStockLevels(stockCategory);
-  const filtered = (isWeeklyCat ? [] : (levels || [])).filter((l) =>
+  const NESPRESSO_IDS = ["ali-29", "ali-30", "ali-31", "ali-32"];
+  const NESPRESSO_AGG_ID = "__nespresso_agg__";
+  const baseLevels = isWeeklyCat ? [] : (levels || []);
+  const nespressoSources = baseLevels.filter((l) => NESPRESSO_IDS.includes(l.productId));
+  let withAgg = baseLevels;
+  if ((category === "all" || category === "alimentaire") && nespressoSources.length > 0) {
+    const agg = {
+      productId: NESPRESSO_AGG_ID,
+      productName: "NESPRESSO (Total)",
+      conditionnement: "",
+      unit: nespressoSources[0].unit,
+      category: "alimentaire" as Category,
+      stockInitial: roundStockQuantity(nespressoSources.reduce((s, l) => s + l.stockInitial, 0)),
+      totalEntrees: roundStockQuantity(nespressoSources.reduce((s, l) => s + l.totalEntrees, 0)),
+      totalSorties: roundStockQuantity(nespressoSources.reduce((s, l) => s + l.totalSorties, 0)),
+      stockRestant: roundStockQuantity(nespressoSources.reduce((s, l) => s + l.stockRestant, 0)),
+    };
+    withAgg = [...baseLevels, agg];
+  }
+  const filtered = withAgg.filter((l) =>
     l.productName.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -386,6 +405,27 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         entrees: level.totalEntrees,
         sorties: level.totalSorties,
         stockRestant: level.stockRestant,
+      };
+    }
+    if (level.productId === NESPRESSO_AGG_ID) {
+      const sum = NESPRESSO_IDS.reduce(
+        (acc, id) => {
+          const t = periodTotals[id];
+          if (!t) return acc;
+          return {
+            stockInitial: acc.stockInitial + t.stockInitial,
+            entrees: acc.entrees + t.entrees,
+            sorties: acc.sorties + t.sorties,
+            stockRestant: acc.stockRestant + t.stockRestant,
+          };
+        },
+        { stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 },
+      );
+      return {
+        stockInitial: roundStockQuantity(sum.stockInitial),
+        entrees: roundStockQuantity(sum.entrees),
+        sorties: roundStockQuantity(sum.sorties),
+        stockRestant: roundStockQuantity(sum.stockRestant),
       };
     }
     return periodTotals[level.productId] ?? { stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 };
