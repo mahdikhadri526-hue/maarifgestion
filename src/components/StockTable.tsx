@@ -1038,7 +1038,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       date: new Date().toISOString().slice(0, 10),
                       category: String(category),
                       performedBy: savePerformedBy.trim() || null,
-                      notes: saveNotes.trim() || null,
                     })
                   }
                 >
