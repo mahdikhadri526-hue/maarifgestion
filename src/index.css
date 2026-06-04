@@ -113,7 +113,6 @@
 
   .weekly-sticky-table .weekly-sticky-column {
     position: sticky !important;
-    left: 0 !important;
     z-index: 25;
     box-shadow: 2px 0 4px -2px hsl(var(--border));
   }
