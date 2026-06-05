@@ -298,6 +298,25 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   const canEditStock = can("edit_stock");
 
+  // Conversion + Unité Réf. par produit (persistées en local, sans impacter la base)
+  const REF_STORAGE_KEY = "stock_ref_conversions_v1";
+  type RefRow = { conversion: string; unitRef: string };
+  const [refMap, setRefMap] = useState<Record<string, RefRow>>(() => {
+    try {
+      const raw = localStorage.getItem(REF_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  const updateRef = (productId: string, patch: Partial<RefRow>) => {
+    setRefMap((prev) => {
+      const next = { ...prev, [productId]: { conversion: "", unitRef: "", ...prev[productId], ...patch } };
+      try { localStorage.setItem(REF_STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
   const saveStockEdit = async (level: typeof filtered[number]) => {
     const newRestant = Number(editingValue);
     if (!Number.isFinite(newRestant)) {
@@ -910,10 +929,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Conversion</th>
+                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité Réf.</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Réf.</th>
               </tr>
             </thead>
             <tbody>
@@ -942,6 +964,25 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     >
                       {UNIT_LABELS[level.unit] || "Pièce"}
                     </button>
+                  </td>
+                  <td className="p-3 text-right">
+                    <input
+                      type="number"
+                      step="any"
+                      value={refMap[level.productId]?.conversion ?? ""}
+                      onChange={(e) => updateRef(level.productId, { conversion: e.target.value })}
+                      placeholder="—"
+                      className="w-20 text-right bg-background border rounded px-2 py-1 text-xs font-mono"
+                    />
+                  </td>
+                  <td className="p-3">
+                    <input
+                      type="text"
+                      value={refMap[level.productId]?.unitRef ?? ""}
+                      onChange={(e) => updateRef(level.productId, { unitRef: e.target.value })}
+                      placeholder="—"
+                      className="w-20 bg-background border rounded px-2 py-1 text-xs"
+                    />
                   </td>
                   <td className="p-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
@@ -985,6 +1026,15 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         {v.stockRestant}
                       </button>
                     )}
+                  </td>
+                  <td className="p-3 text-right font-mono text-sm font-semibold">
+                    {(() => {
+                      const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
+                      if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
+                      const val = v.stockRestant * conv;
+                      const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
+                      return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
+                    })()}
                   </td>
                 </tr>
                 );
