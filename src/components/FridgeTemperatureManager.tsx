@@ -352,7 +352,8 @@ export function FridgeTemperatureManager() {
               )}
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
-            <Table>
+            {/* Desktop / tablet table */}
+            <Table className="hidden md:table">
               <TableHeader>
                 <TableRow>
                   <TableHead className="min-w-[110px]">Code</TableHead>
@@ -433,6 +434,96 @@ export function FridgeTemperatureManager() {
                 })}
               </TableBody>
             </Table>
+
+            {/* Mobile card list */}
+            <div className="md:hidden divide-y">
+              {sortedEquips.map((eq) => {
+                const row = rows[eq.code] ?? emptyRow();
+                const locked = !!row.id;
+                const editable = canEdit && !locked;
+                const status = row.conformite;
+                const borderClass =
+                  status === "non_conforme"
+                    ? "border-l-4 border-l-destructive"
+                    : status === "conforme"
+                    ? "border-l-4 border-l-success"
+                    : locked
+                    ? "border-l-4 border-l-success/60"
+                    : "border-l-4 border-l-muted";
+                return (
+                  <div key={eq.code} className={`p-3 ${borderClass} ${locked ? "bg-success/5" : ""}`}>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0">
+                        <div className="font-semibold text-sm leading-tight truncate">{eq.name}</div>
+                        <div className="text-[11px] text-muted-foreground font-mono">{eq.code} · {eq.type}</div>
+                      </div>
+                      {status === "conforme" && (
+                        <Badge className="bg-success text-success-foreground shrink-0"><CheckCircle2 className="h-3 w-3 mr-1" />OK</Badge>
+                      )}
+                      {status === "non_conforme" && (
+                        <Badge variant="destructive" className="shrink-0"><AlertTriangle className="h-3 w-3 mr-1" />Non conforme</Badge>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground">Température (°C)</Label>
+                        <Input
+                          type="text" inputMode="decimal"
+                          value={row.temperature}
+                          onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
+                          onBlur={() => {
+                            const formatted = formatDisplayTemp(row.temperature, eq.type);
+                            if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
+                          }}
+                          disabled={!editable}
+                          className="h-10 text-base font-semibold"
+                        />
+                      </div>
+                      <div>
+                        <Label className="text-[11px] text-muted-foreground">Conforme</Label>
+                        <Select
+                          value={row.conformite || "__none"}
+                          onValueChange={(v) => updateRow(eq.code, { conformite: v === "__none" ? "" : (v as RowState["conformite"]) })}
+                          disabled={!editable}
+                        >
+                          <SelectTrigger className="h-10"><SelectValue placeholder="—" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none">—</SelectItem>
+                            <SelectItem value="conforme">Conforme</SelectItem>
+                            <SelectItem value="non_conforme">Non conforme</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <Label className="text-[11px] text-muted-foreground">Commentaire</Label>
+                      <Textarea
+                        rows={1}
+                        value={row.commentaire}
+                        onChange={(e) => updateRow(eq.code, { commentaire: e.target.value })}
+                        disabled={!editable}
+                        placeholder="Observations…"
+                        className="min-h-9 text-sm"
+                      />
+                    </div>
+                    {status === "non_conforme" && (
+                      <div className="mt-2">
+                        <Label className="text-[11px] text-destructive">Action corrective</Label>
+                        <Textarea
+                          rows={1}
+                          value={row.action_corrective}
+                          onChange={(e) => updateRow(eq.code, { action_corrective: e.target.value })}
+                          disabled={!editable}
+                          placeholder="Action corrective…"
+                          className="min-h-9 text-sm"
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="flex flex-col sm:flex-row gap-2 sm:items-end justify-end p-4 border-t">
               <div className="min-w-[200px]">
                 <Label className="text-xs">Visa manager (zone)</Label>
