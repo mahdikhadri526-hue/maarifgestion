@@ -184,6 +184,7 @@ const ALIMENTAIRE_PRODUCTS = [
   "FRUIT POIRE",
   "FRUIT POMME",
   "GLACE",
+  "TOPPINGS",
 ];
 
 const EMBALLAGE_PRODUCTS = [
@@ -410,14 +411,104 @@ export async function setInitialStock(productId: string, quantity: number) {
   if (error) throw error;
 }
 
+// Agrégat « TOPPINGS » : SMARTIES TOPPING + OREO TOPPING (table alimentaire)
+// + ingrédients tartes saisis dans le Suivi Hebdo « Mouvement glaces & tartes ».
+const TOPPINGS_ALI_PRODUCT_IDS = ["ali-1", "ali-2"]; // SMARTIES TOPPING, OREO TOPPING
+const TOPPINGS_WEEKLY_ARTICLES = [
+  "Biscuit",
+  "Brownies.Top",
+  "Noix.Top",
+  "Amandes.Top",
+  "Ananas fruits",
+  "Kiwi fruits",
+];
+
+export async function getToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
+  const [movements, initialStocks, units, configs, weeklyRes] = await Promise.all([
+    getMovements(),
+    getInitialStocks(),
+    getProductUnits(),
+    getProductUnitConfigs(),
+    supabase
+      .from("weekly_tracking")
+      .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
+      .eq("fiche_type", "Mouvement glaces & tartes")
+      .in("article", TOPPINGS_WEEKLY_ARTICLES),
+  ]);
+
+  let stockInitial = 0;
+  let entrees = 0;
+  let sorties = 0;
+  let stockRestant = 0;
+
+  // 1) Source : table alimentaire (SMARTIES + OREO)
+  for (const pid of TOPPINGS_ALI_PRODUCT_IDS) {
+    const init = initialStocks[pid] || 0;
+    const unit = units[pid] || "PIECE";
+    const config = configs[pid];
+    const ms = movements.filter((m) => m.productId === pid);
+    const e = ms
+      .filter((m) => m.type === "entree")
+      .reduce((s, m) => s + movementPiecesToDisplay(m.quantity, unit, config, pid), 0);
+    const s = ms
+      .filter((m) => m.type === "sortie")
+      .reduce((acc, m) => acc + movementPiecesToDisplay(m.quantity, unit, config, pid), 0);
+    stockInitial += init;
+    entrees += e;
+    sorties += s;
+    stockRestant += init + e - s;
+  }
+
+  // 2) Source : Suivi Hebdo — somme directe des colonnes saisies pour chaque article ciblé.
+  // stockInitial = dernier SI saisi par article ; entrées/sorties = somme de toute l'historique.
+  type DayAgg = { date: string; si: number | null; entries: number; sortieCol: number };
+  const byArticle = new Map<string, DayAgg[]>();
+  ((weeklyRes as any).data || []).forEach((r: any) => {
+    if (!r.article) return;
+    const key = `${r.week_start}__${r.day_of_week}__${r.article}`;
+    let list = byArticle.get(r.article);
+    if (!list) { list = []; byArticle.set(r.article, list); }
+    list.push({
+      date: `${r.week_start}__${r.day_of_week}__${r.row_index ?? 0}`,
+      si: (r.row_index ?? 0) === 0 && r.stock_initial != null ? Number(r.stock_initial) : null,
+      entries: r.entrees != null ? Number(r.entrees) : 0,
+      sortieCol: r.sorties != null ? Number(r.sorties) : 0,
+    });
+    void key;
+  });
+  for (const [, rows] of byArticle) {
+    let lastSi: number | null = null;
+    let lastSiKey = "";
+    let articleEntries = 0;
+    let articleSorties = 0;
+    let firstSi: number | null = null;
+    let firstSiKey = "";
+    for (const r of rows) {
+      articleEntries += r.entries;
+      articleSorties += r.sortieCol;
+      if (r.si != null) {
+        if (firstSi == null || r.date < firstSiKey) { firstSi = r.si; firstSiKey = r.date; }
+        if (lastSi == null || r.date > lastSiKey) { lastSi = r.si; lastSiKey = r.date; }
+      }
+    }
+    if (firstSi != null) stockInitial += firstSi;
+    entrees += articleEntries;
+    sorties += articleSorties;
+    if (lastSi != null) stockRestant += lastSi;
+  }
+
+  return { stockInitial, entrees, sorties, stockRestant };
+}
+
 export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
   const products = getProducts(category);
-  const [movements, initialStocks, units, configs, glaceAgg] = await Promise.all([
+  const [movements, initialStocks, units, configs, glaceAgg, toppingsAgg] = await Promise.all([
     getMovements(),
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
     getGlaceAggregate().catch(() => ({ entrees: 0, sorties: 0, stockInitial: 0, stockFinal: 0 })),
+    getToppingsAggregate().catch(() => ({ entrees: 0, sorties: 0, stockInitial: 0, stockRestant: 0 })),
   ]);
 
   return products.map((product) => {
@@ -442,6 +533,23 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
         totalEntrees: roundStockQuantity(e),
         totalSorties: roundStockQuantity(s),
         stockRestant: roundStockQuantity(glaceAgg.stockFinal),
+      };
+    }
+
+    // Produit calculé « TOPPINGS » : agrégation de SMARTIES + OREO (table alimentaire)
+    // + ingrédients tartes du Suivi Hebdo (Biscuit, Brownies.Top, Noix.Top,
+    // Amandes.Top, Ananas fruits, Kiwi fruits).
+    if (product.name === "TOPPINGS" && product.category === "alimentaire") {
+      return {
+        productId: product.id,
+        productName: product.name,
+        conditionnement: product.conditionnement,
+        unit: "PIECE" as UnitType,
+        category: product.category,
+        stockInitial: roundStockQuantity(toppingsAgg.stockInitial),
+        totalEntrees: roundStockQuantity(toppingsAgg.entrees),
+        totalSorties: roundStockQuantity(toppingsAgg.sorties),
+        stockRestant: roundStockQuantity(toppingsAgg.stockRestant),
       };
     }
 
