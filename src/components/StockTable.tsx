@@ -965,6 +965,25 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       {UNIT_LABELS[level.unit] || "Pièce"}
                     </button>
                   </td>
+                  <td className="p-3 text-right">
+                    <input
+                      type="number"
+                      step="any"
+                      value={refMap[level.productId]?.conversion ?? ""}
+                      onChange={(e) => updateRef(level.productId, { conversion: e.target.value })}
+                      placeholder="—"
+                      className="w-20 text-right bg-background border rounded px-2 py-1 text-xs font-mono"
+                    />
+                  </td>
+                  <td className="p-3">
+                    <input
+                      type="text"
+                      value={refMap[level.productId]?.unitRef ?? ""}
+                      onChange={(e) => updateRef(level.productId, { unitRef: e.target.value })}
+                      placeholder="—"
+                      className="w-20 bg-background border rounded px-2 py-1 text-xs"
+                    />
+                  </td>
                   <td className="p-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       level.category === "alimentaire"
@@ -1007,6 +1026,15 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         {v.stockRestant}
                       </button>
                     )}
+                  </td>
+                  <td className="p-3 text-right font-mono text-sm font-semibold">
+                    {(() => {
+                      const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
+                      if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
+                      const val = v.stockRestant * conv;
+                      const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
+                      return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
+                    })()}
                   </td>
                 </tr>
                 );
