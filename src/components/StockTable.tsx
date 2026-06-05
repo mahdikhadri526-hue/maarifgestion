@@ -298,6 +298,25 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   const canEditStock = can("edit_stock");
 
+  // Conversion + Unité Réf. par produit (persistées en local, sans impacter la base)
+  const REF_STORAGE_KEY = "stock_ref_conversions_v1";
+  type RefRow = { conversion: string; unitRef: string };
+  const [refMap, setRefMap] = useState<Record<string, RefRow>>(() => {
+    try {
+      const raw = localStorage.getItem(REF_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  const updateRef = (productId: string, patch: Partial<RefRow>) => {
+    setRefMap((prev) => {
+      const next = { ...prev, [productId]: { conversion: "", unitRef: "", ...prev[productId], ...patch } };
+      try { localStorage.setItem(REF_STORAGE_KEY, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  };
+
   const saveStockEdit = async (level: typeof filtered[number]) => {
     const newRestant = Number(editingValue);
     if (!Number.isFinite(newRestant)) {
