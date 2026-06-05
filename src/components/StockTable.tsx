@@ -718,6 +718,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       filename: `commande-${meta.category}-${meta.date}.pdf`,
       title: "Bon de commande",
       subtitle: `${meta.category.toUpperCase()} — ${meta.date}`,
+      orientation: "portrait",
+      singlePage: true,
       meta: [
         meta.performedBy ? `Effectué par : ${meta.performedBy}` : "",
         meta.notes ? `Notes : ${meta.notes}` : "",
@@ -727,10 +729,12 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           title: "Articles à commander",
           columns: [
             { header: "Article", dataKey: "name", halign: "left" },
-            { header: "Quantité", dataKey: "qty", halign: "center", width: 30 },
-            { header: "N° de lot", dataKey: "lot", halign: "left", width: 70 },
+            { header: "Qté", dataKey: "qty", halign: "center", width: 18 },
+            { header: "Lot 1", dataKey: "lot", halign: "left", width: 38 },
+            { header: "Lot 2", dataKey: "lot2", halign: "left", width: 38 },
+            { header: "Lot 3", dataKey: "lot3", halign: "left", width: 38 },
           ],
-          rows: items.map((it) => ({ name: it.name, qty: it.quantity, lot: " " })),
+          rows: items.map((it) => ({ name: it.name, qty: it.quantity, lot: " ", lot2: " ", lot3: " " })),
         },
       ],
     });

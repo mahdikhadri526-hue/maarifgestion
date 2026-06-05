@@ -23,6 +23,8 @@ export type StructuredPdfOptions = {
   subtitle?: string;
   meta?: string[];
   sections: PdfTableSection[];
+  orientation?: "landscape" | "portrait";
+  singlePage?: boolean;
 };
 
 const BRAND_BLUE: [number, number, number] = [30, 64, 124];
@@ -62,7 +64,8 @@ function addHeaderAndFooter(doc: jsPDF, title: string, subtitle?: string) {
  * This is fully vector-based: selectable text, real paginated tables, no screenshots.
  */
 function createStructuredPdf(options: StructuredPdfOptions) {
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const orientation = options.orientation ?? "landscape";
+  const doc = new jsPDF({ orientation, unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 10;
@@ -115,6 +118,19 @@ function createStructuredPdf(options: StructuredPdfOptions) {
     }, {});
     const tones = new Map(section.columns.map((col) => [col.dataKey, col.tone]));
 
+    // For single-page output, scale the font/padding to fit all rows on one page.
+    let dynFont = 7.2;
+    let dynPad = 1.3;
+    let dynMin = 5.2;
+    if (options.singlePage) {
+      const available = pageHeight - y - 14; // leave room for footer
+      const totalRows = section.rows.length + 1; // + header
+      const targetRowH = Math.max(3.2, Math.min(5.2, available / totalRows));
+      dynMin = targetRowH;
+      dynFont = Math.max(5, Math.min(7.2, targetRowH * 1.35));
+      dynPad = Math.max(0.4, Math.min(1.3, (targetRowH - dynFont * 0.6) / 2));
+    }
+
     autoTable(doc, {
       columns: section.columns.map((col) => ({ header: col.header, dataKey: col.dataKey })),
       body: section.rows.map((row) =>
@@ -124,14 +140,14 @@ function createStructuredPdf(options: StructuredPdfOptions) {
       margin: { left: margin, right: margin, top: 22, bottom: 12 },
       styles: {
         font: "helvetica",
-        fontSize: 7.2,
-        cellPadding: { top: 1.3, right: 1.3, bottom: 1.3, left: 1.3 },
+        fontSize: dynFont,
+        cellPadding: { top: dynPad, right: 1.3, bottom: dynPad, left: 1.3 },
         overflow: "linebreak",
         valign: "middle",
         lineColor: GRID,
         lineWidth: 0.15,
         textColor: [15, 23, 42],
-        minCellHeight: 5.2,
+        minCellHeight: dynMin,
       },
       headStyles: {
         fillColor: BRAND_BLUE,
