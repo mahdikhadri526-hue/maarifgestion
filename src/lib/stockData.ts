@@ -413,12 +413,13 @@ export async function setInitialStock(productId: string, quantity: number) {
 
 export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
   const products = getProducts(category);
-  const [movements, initialStocks, units, configs, glaceAgg] = await Promise.all([
+  const [movements, initialStocks, units, configs, glaceAgg, toppingsAgg] = await Promise.all([
     getMovements(),
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
     getGlaceAggregate().catch(() => ({ entrees: 0, sorties: 0, stockInitial: 0, stockFinal: 0 })),
+    getToppingsAggregate().catch(() => ({ entrees: 0, sorties: 0, stockInitial: 0, stockRestant: 0 })),
   ]);
 
   return products.map((product) => {
@@ -443,6 +444,23 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
         totalEntrees: roundStockQuantity(e),
         totalSorties: roundStockQuantity(s),
         stockRestant: roundStockQuantity(glaceAgg.stockFinal),
+      };
+    }
+
+    // Produit calculé « TOPPINGS » : agrégation de SMARTIES + OREO (table alimentaire)
+    // + ingrédients tartes du Suivi Hebdo (Biscuit, Brownies.Top, Noix.Top,
+    // Amandes.Top, Ananas fruits, Kiwi fruits).
+    if (product.name === "TOPPINGS" && product.category === "alimentaire") {
+      return {
+        productId: product.id,
+        productName: product.name,
+        conditionnement: product.conditionnement,
+        unit: "PIECE" as UnitType,
+        category: product.category,
+        stockInitial: roundStockQuantity(toppingsAgg.stockInitial),
+        totalEntrees: roundStockQuantity(toppingsAgg.entrees),
+        totalSorties: roundStockQuantity(toppingsAgg.sorties),
+        stockRestant: roundStockQuantity(toppingsAgg.stockRestant),
       };
     }
 
