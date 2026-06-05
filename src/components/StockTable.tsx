@@ -976,13 +976,25 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     />
                   </td>
                   <td className="p-3">
-                    <input
-                      type="text"
+                    <select
                       value={refMap[level.productId]?.unitRef ?? ""}
                       onChange={(e) => updateRef(level.productId, { unitRef: e.target.value })}
-                      placeholder="—"
-                      className="w-20 bg-background border rounded px-2 py-1 text-xs"
-                    />
+                      className="w-24 bg-background border rounded px-2 py-1 text-xs"
+                    >
+                      <option value="">—</option>
+                      <option value="kg">kg</option>
+                      <option value="g">g</option>
+                      <option value="L">L</option>
+                      <option value="ml">ml</option>
+                      <option value="pièce">pièce</option>
+                      <option value="paquet">paquet</option>
+                      <option value="carton">carton</option>
+                      <option value="bac">bac</option>
+                      <option value="boîte">boîte</option>
+                      <option value="sachet">sachet</option>
+                      <option value="bouteille">bouteille</option>
+                      <option value="rouleau">rouleau</option>
+                    </select>
                   </td>
                   <td className="p-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
