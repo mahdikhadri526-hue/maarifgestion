@@ -1187,7 +1187,18 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 }`}>
                   <td className="p-3 text-sm font-medium flex items-center gap-1.5">
                     {isRequisitionProduct(level.productId) && <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />}
-                    {level.productName}
+                    {isAggregateLevel(level) ? (
+                      <button
+                        type="button"
+                        onClick={() => openDetails(level)}
+                        className="text-left hover:underline text-primary font-semibold"
+                        title="Voir le détail du calcul"
+                      >
+                        {level.productName}
+                      </button>
+                    ) : (
+                      level.productName
+                    )}
                   </td>
                   <td className="p-3">
                     <button
