@@ -1022,14 +1022,6 @@ export async function getGlaceBreakdownForRange(
     if (r.entrees != null) cell.entries += Number(r.entrees) || 0;
   });
   const inRange = (date: string) => (!startDate || date >= startDate) && (!endDate || date <= endDate);
-  // Première date de stock saisi dans la plage (commune à tous les parfums)
-  let firstStockDate: string | null = null;
-  for (const days of byArticle.values()) {
-    for (const [date, cell] of days) {
-      if (!inRange(date) || cell.si == null) continue;
-      if (!firstStockDate || date < firstStockDate) firstStockDate = date;
-    }
-  }
   const out: AggregateBreakdownRow[] = [];
   for (const [article, days] of byArticle) {
     const g = grams[article] || 0;
@@ -1037,21 +1029,27 @@ export async function getGlaceBreakdownForRange(
     let stockInitial = 0;
     let entrees = 0;
     let sorties = 0;
-    let stockRestant = 0;
-    if (firstStockDate) {
-      const si = days.get(firstStockDate)?.si;
-      if (si != null) stockInitial = si * g;
+    // Stock initial du parfum sur la période :
+    // — dernier SI saisi STRICTEMENT avant startDate (état au début de la période),
+    // — sinon premier SI saisi dans la période.
+    let initialBacs: number | null = null;
+    if (startDate) {
+      let bestBefore: string | null = null;
+      for (const [date, cell] of days) {
+        if (cell.si == null || date >= startDate) continue;
+        if (!bestBefore || date > bestBefore) bestBefore = date;
+      }
+      if (bestBefore) initialBacs = days.get(bestBefore)?.si ?? null;
     }
-    let latestSiDate: string | null = null;
-    for (const [date, cell] of days) {
-      if (cell.si == null) continue;
-      if (endDate && date > endDate) continue;
-      if (!latestSiDate || date > latestSiDate) latestSiDate = date;
+    if (initialBacs == null) {
+      let firstIn: string | null = null;
+      for (const [date, cell] of days) {
+        if (cell.si == null || !inRange(date)) continue;
+        if (!firstIn || date < firstIn) firstIn = date;
+      }
+      if (firstIn) initialBacs = days.get(firstIn)?.si ?? null;
     }
-    if (latestSiDate) {
-      const si = days.get(latestSiDate)?.si;
-      if (si != null) stockRestant = si * g;
-    }
+    if (initialBacs != null) stockInitial = initialBacs * g;
     for (const [date, cell] of days) {
       if (!inRange(date)) continue;
       entrees += cell.entries * g;
@@ -1061,6 +1059,8 @@ export async function getGlaceBreakdownForRange(
       if (sortie == null) sortie = cell.explicitSortie ?? 0;
       sorties += sortie * g;
     }
+    // Stock restant cohérent : SI + entrées − sorties sur la période.
+    const stockRestant = stockInitial + entrees - sorties;
     if (stockInitial === 0 && entrees === 0 && sorties === 0 && stockRestant === 0) continue;
     out.push({
       name: article,
