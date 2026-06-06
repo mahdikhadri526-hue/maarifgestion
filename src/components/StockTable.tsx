@@ -951,26 +951,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
                     <td className="p-3 text-right font-mono text-sm">{stockActuel}</td>
                     <td className="p-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <select
-                          value=""
-                          onChange={(e) => { if (e.target.value) setLivraison(level.productId, e.target.value); }}
-                          className="bg-background border rounded px-1 py-1 text-xs max-w-[110px]"
-                          title="Choisir depuis une commande enregistrée"
-                        >
-                          <option value="">Choisir…</option>
-                          {ordersForArticle(level.productName).map((m, i) => (
-                            <option key={i} value={String(m.qty)}>{m.date} — {m.qty}</option>
-                          ))}
-                        </select>
-                        <input
-                          type="number"
-                          min="0"
-                          value={livraisonOverrides[level.productId] ?? ""}
-                          onChange={(e) => setLivraison(level.productId, e.target.value)}
-                          className="w-16 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
-                        />
-                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        value={livraisonOverrides[level.productId] ?? ""}
+                        onChange={(e) => setLivraison(level.productId, e.target.value)}
+                        className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
+                      />
                     </td>
                     <td className="p-3 text-right">
                       <input
