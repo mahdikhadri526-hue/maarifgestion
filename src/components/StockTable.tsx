@@ -12,6 +12,10 @@ import {
   movementPiecesToDisplay,
   roundStockQuantity,
   setInitialStock,
+  getGlaceBreakdownForRange,
+  TOPPINGS_ALI_PRODUCT_IDS,
+  TOPPINGS_WEEKLY_ARTICLES,
+  type AggregateBreakdownRow,
 } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { useStockLevels } from "@/hooks/useStockData";
