@@ -134,15 +134,29 @@ const DECORATION_TARTE_ARTICLE: Record<string, string> = {
 };
 
 async function fetchFifoLotForProduct(productId: string): Promise<string | null> {
-  const { data, error } = await supabase
+  // 1) Priorité FIFO sur les lots encore en stock (remaining_quantity > 0)
+  const { data: avail, error: availErr } = await supabase
     .from("lot_entries")
-    .select("lot_number, expiry_date, remaining_quantity")
+    .select("lot_number, expiry_date")
     .eq("product_id", productId)
     .gt("remaining_quantity", 0)
     .order("expiry_date", { ascending: true })
     .limit(1);
-  if (error) return null;
-  return data?.[0]?.lot_number ?? null;
+  if (!availErr && avail && avail.length > 0 && avail[0].lot_number?.trim()) {
+    return avail[0].lot_number;
+  }
+  // 2) Fallback : dernier lot enregistré pour ce produit (même si remaining_quantity=0
+  //    car le stock réel peut être présent sans synchro lot)
+  const { data: latest, error: latestErr } = await supabase
+    .from("lot_entries")
+    .select("lot_number, entry_date, created_at")
+    .eq("product_id", productId)
+    .order("entry_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (latestErr) return null;
+  const lot = latest?.[0]?.lot_number;
+  return lot && lot.trim().length > 0 ? lot : null;
 }
 
 async function fetchLatestGlaceLot(article: string): Promise<string | null> {
