@@ -643,6 +643,24 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const setOverride = (key: string, value: string) => {
     setOrderQtyOverrides((prev) => ({ ...prev, [key]: value }));
   };
+  // Livraison en cours par article (clé = nom d'article pour weekly, productId sinon)
+  const [livraisonOverrides, setLivraisonOverrides] = useState<Record<string, string>>({});
+  const setLivraison = (key: string, value: string) => {
+    setLivraisonOverrides((prev) => ({ ...prev, [key]: value }));
+  };
+  // Retourne les commandes enregistrées qui contiennent un article (match exact insensible à la casse)
+  const ordersForArticle = (name: string) => {
+    const n = name.trim().toLowerCase();
+    const matches: { orderId: string; date: string; qty: number }[] = [];
+    for (const o of savedOrders) {
+      for (const it of o.items || []) {
+        if ((it.name || "").trim().toLowerCase() === n) {
+          matches.push({ orderId: o.id, date: o.order_date, qty: it.quantity });
+        }
+      }
+    }
+    return matches;
+  };
 
   const loadSavedOrders = async () => {
     const { data, error } = await supabase
@@ -671,7 +689,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     if (isWeeklyCat) {
       return weeklyRows
         .map((r) => {
-          const def = Math.max(0, r.sorties - r.stockActuel);
+          const liv = Number(livraisonOverrides[r.article] || 0) || 0;
+          const def = category === "glace"
+            ? Math.max(0, r.sorties - r.stockActuel - liv)
+            : Math.max(0, r.sorties - r.stockActuel);
           const ov = orderQtyOverrides[r.article];
           const qty = ov !== undefined && ov !== "" ? Number(ov) : def;
           return { name: r.article, quantity: isNaN(qty) ? 0 : qty };
