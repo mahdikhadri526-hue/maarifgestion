@@ -865,7 +865,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <History className="h-4 w-4 mr-1" /> Historique ({savedOrders.length})
               </Button>
               <Button size="sm" variant="secondary" onClick={() => setPickOrderOpen(true)}>
-                Choisir une commande
+                Livraison en cours
               </Button>
             </div>
           )}
@@ -1228,7 +1228,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           <Dialog open={pickOrderOpen} onOpenChange={setPickOrderOpen}>
             <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Choisir une commande à appliquer en livraison</DialogTitle>
+                <DialogTitle>Livraison en cours</DialogTitle>
               </DialogHeader>
               <div className="space-y-3">
                 {savedOrders.length === 0 && (
