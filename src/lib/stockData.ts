@@ -500,6 +500,105 @@ export async function getToppingsAggregate(): Promise<{ entrees: number; sorties
   return { stockInitial, entrees, sorties, stockRestant };
 }
 
+const WEEKLY_DAY_INDEX: Record<string, number> = {
+  Lundi: 0, Mardi: 1, Mercredi: 2, Jeudi: 3, Vendredi: 4, Samedi: 5, Dimanche: 6,
+};
+
+function addDaysISO(iso: string, days: number): string {
+  const d = new Date(`${iso}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+// Historique quotidien agrégé pour le produit calculé TOPPINGS.
+export async function getToppingsDailyHistory(): Promise<DailyStockRecord[]> {
+  const [allMovements, initialStocks, units, configs, weeklyRes] = await Promise.all([
+    getMovements(),
+    getInitialStocks(),
+    getProductUnits(),
+    getProductUnitConfigs(),
+    supabase
+      .from("weekly_tracking")
+      .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
+      .eq("fiche_type", "Mouvement glaces & tartes")
+      .in("article", TOPPINGS_WEEKLY_ARTICLES),
+  ]);
+
+  // Stock initial global = somme des stocks initiaux SMARTIES + OREO
+  // + 1er stock_initial saisi (par article) dans le Suivi Hebdo.
+  let totalInitial = 0;
+  for (const pid of TOPPINGS_ALI_PRODUCT_IDS) {
+    totalInitial += initialStocks[pid] || 0;
+  }
+
+  const byDate: Record<string, { entrees: number; sorties: number }> = {};
+
+  // 1) Mouvements alimentaires SMARTIES + OREO
+  for (const pid of TOPPINGS_ALI_PRODUCT_IDS) {
+    const unit = units[pid] || "PIECE";
+    const config = configs[pid];
+    allMovements
+      .filter((m) => m.productId === pid)
+      .forEach((m) => {
+        const d = m.date.split("T")[0];
+        if (!byDate[d]) byDate[d] = { entrees: 0, sorties: 0 };
+        const q = movementPiecesToDisplay(m.quantity, unit, config, pid);
+        if (m.type === "entree") byDate[d].entrees += q;
+        else byDate[d].sorties += q;
+      });
+  }
+
+  // 2) Suivi Hebdo : entrées/sorties par jour ; 1er SI saisi (par article) ajouté à l'initial global.
+  type WRow = { article: string; date: string; rowIndex: number; si: number | null; e: number; s: number };
+  const rows: WRow[] = ((weeklyRes as any).data || [])
+    .map((r: any) => {
+      const dayIdx = WEEKLY_DAY_INDEX[r.day_of_week];
+      if (r.week_start == null || dayIdx == null) return null;
+      return {
+        article: r.article,
+        date: addDaysISO(r.week_start, dayIdx),
+        rowIndex: r.row_index ?? 0,
+        si: r.stock_initial != null ? Number(r.stock_initial) : null,
+        e: r.entrees != null ? Number(r.entrees) : 0,
+        s: r.sorties != null ? Number(r.sorties) : 0,
+      } as WRow;
+    })
+    .filter(Boolean) as WRow[];
+
+  // 1er SI par article (ajouté au stockInitial global)
+  const firstSiByArticle = new Map<string, { date: string; rowIndex: number; si: number }>();
+  for (const r of rows) {
+    if (r.si == null) continue;
+    const cur = firstSiByArticle.get(r.article);
+    const key = `${r.date}__${r.rowIndex}`;
+    const curKey = cur ? `${cur.date}__${cur.rowIndex}` : "";
+    if (!cur || key < curKey) firstSiByArticle.set(r.article, { date: r.date, rowIndex: r.rowIndex, si: r.si });
+  }
+  for (const v of firstSiByArticle.values()) totalInitial += v.si;
+
+  // E/S quotidiennes
+  for (const r of rows) {
+    if (!byDate[r.date]) byDate[r.date] = { entrees: 0, sorties: 0 };
+    byDate[r.date].entrees += r.e;
+    byDate[r.date].sorties += r.s;
+  }
+
+  const dates = Object.keys(byDate).sort();
+  let cumul = totalInitial;
+  return dates.map((date) => {
+    const stockInitial = cumul;
+    const { entrees, sorties } = byDate[date];
+    cumul = stockInitial + entrees - sorties;
+    return {
+      date,
+      stockInitial: roundStockQuantity(stockInitial),
+      entrees: roundStockQuantity(entrees),
+      sorties: roundStockQuantity(sorties),
+      stockRestant: roundStockQuantity(cumul),
+    };
+  });
+}
+
 export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
   const products = getProducts(category);
   const [movements, initialStocks, units, configs, glaceAgg, toppingsAgg] = await Promise.all([
@@ -815,6 +914,12 @@ export interface DailyStockRecord {
 }
 
 export async function getProductDailyHistory(productId: string): Promise<DailyStockRecord[]> {
+  // Cas spécial : produit calculé « TOPPINGS » (agrégat SMARTIES + OREO + Suivi Hebdo)
+  const productName = getProducts().find((p) => p.id === productId)?.name;
+  if (productName === "TOPPINGS") {
+    return getToppingsDailyHistory();
+  }
+
   const [allMovements, initialStocks, units, configs] = await Promise.all([
     getMovements(),
     getInitialStocks(),
