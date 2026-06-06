@@ -643,6 +643,24 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const setOverride = (key: string, value: string) => {
     setOrderQtyOverrides((prev) => ({ ...prev, [key]: value }));
   };
+  // Livraison en cours par article (clé = nom d'article pour weekly, productId sinon)
+  const [livraisonOverrides, setLivraisonOverrides] = useState<Record<string, string>>({});
+  const setLivraison = (key: string, value: string) => {
+    setLivraisonOverrides((prev) => ({ ...prev, [key]: value }));
+  };
+  // Retourne les commandes enregistrées qui contiennent un article (match exact insensible à la casse)
+  const ordersForArticle = (name: string) => {
+    const n = name.trim().toLowerCase();
+    const matches: { orderId: string; date: string; qty: number }[] = [];
+    for (const o of savedOrders) {
+      for (const it of o.items || []) {
+        if ((it.name || "").trim().toLowerCase() === n) {
+          matches.push({ orderId: o.id, date: o.order_date, qty: it.quantity });
+        }
+      }
+    }
+    return matches;
+  };
 
   const loadSavedOrders = async () => {
     const { data, error } = await supabase
@@ -671,7 +689,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     if (isWeeklyCat) {
       return weeklyRows
         .map((r) => {
-          const def = Math.max(0, r.sorties - r.stockActuel);
+          const liv = Number(livraisonOverrides[r.article] || 0) || 0;
+          const def = category === "glace"
+            ? Math.max(0, r.sorties - r.stockActuel - liv)
+            : Math.max(0, r.sorties - r.stockActuel);
           const ov = orderQtyOverrides[r.article];
           const qty = ov !== undefined && ov !== "" ? Number(ov) : def;
           return { name: r.article, quantity: isNaN(qty) ? 0 : qty };
@@ -850,6 +871,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Article</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties période</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock actuel</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Livraison en cours</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté à commander</th>
               </tr>
             </thead>
@@ -862,10 +884,36 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{r.sorties}</td>
                     <td className="p-3 text-right font-mono text-sm">{r.stockActuel}</td>
                     <td className="p-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <select
+                          value=""
+                          onChange={(e) => { if (e.target.value) setLivraison(r.article, e.target.value); }}
+                          className="bg-background border rounded px-1 py-1 text-xs max-w-[110px]"
+                          title="Choisir depuis une commande enregistrée"
+                        >
+                          <option value="">Choisir…</option>
+                          {ordersForArticle(r.article).map((m, i) => (
+                            <option key={i} value={String(m.qty)}>{m.date} — {m.qty}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          min="0"
+                          value={livraisonOverrides[r.article] ?? ""}
+                          onChange={(e) => setLivraison(r.article, e.target.value)}
+                          className="w-16 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
+                        />
+                      </div>
+                    </td>
+                    <td className="p-3 text-right">
                       <input
                         type="number"
                         min="0"
-                        value={orderQtyOverrides[r.article] ?? String(Math.max(0, r.sorties - r.stockActuel))}
+                        value={orderQtyOverrides[r.article] ?? String(
+                          category === "glace"
+                            ? Math.max(0, r.sorties - r.stockActuel - (Number(livraisonOverrides[r.article] || 0) || 0))
+                            : Math.max(0, r.sorties - r.stockActuel)
+                        )}
                         onChange={(e) => setOverride(r.article, e.target.value)}
                         className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono font-semibold text-warning"
                       />
@@ -886,6 +934,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties période</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock actuel</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Livraison en cours</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté à commander</th>
               </tr>
             </thead>
@@ -904,6 +953,28 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     </td>
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
                     <td className="p-3 text-right font-mono text-sm">{stockActuel}</td>
+                    <td className="p-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <select
+                          value=""
+                          onChange={(e) => { if (e.target.value) setLivraison(level.productId, e.target.value); }}
+                          className="bg-background border rounded px-1 py-1 text-xs max-w-[110px]"
+                          title="Choisir depuis une commande enregistrée"
+                        >
+                          <option value="">Choisir…</option>
+                          {ordersForArticle(level.productName).map((m, i) => (
+                            <option key={i} value={String(m.qty)}>{m.date} — {m.qty}</option>
+                          ))}
+                        </select>
+                        <input
+                          type="number"
+                          min="0"
+                          value={livraisonOverrides[level.productId] ?? ""}
+                          onChange={(e) => setLivraison(level.productId, e.target.value)}
+                          className="w-16 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
+                        />
+                      </div>
+                    </td>
                     <td className="p-3 text-right">
                       <input
                         type="number"
