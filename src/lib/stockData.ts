@@ -1023,9 +1023,10 @@ export async function getGlaceBreakdownForRange(
   });
   const inRange = (date: string) => (!startDate || date >= startDate) && (!endDate || date <= endDate);
   const out: AggregateBreakdownRow[] = [];
-  for (const [article, days] of byArticle) {
+  const allArticles = Object.keys(grams).filter((a) => !GLACE_PARFUMS_BLACKLIST.has(a));
+  for (const article of allArticles) {
     const g = grams[article] || 0;
-    if (!g) continue;
+    const days = byArticle.get(article) ?? new Map<string, DayAgg>();
     let stockInitial = 0;
     let entrees = 0;
     let sorties = 0;
@@ -1077,7 +1078,6 @@ export async function getGlaceBreakdownForRange(
       const si = days.get(latestSiDate)?.si;
       if (si != null) stockRestant = si * g;
     }
-    if (stockInitial === 0 && entrees === 0 && sorties === 0 && stockRestant === 0) continue;
     out.push({
       name: article,
       stockInitial: roundStockQuantity(stockInitial / 1000),
