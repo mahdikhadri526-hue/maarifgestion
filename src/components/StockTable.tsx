@@ -985,14 +985,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Conversion</th>
-                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité Réf.</th>
+                <th className="text-left p-3 text-xs font-semibold uppercase tracking-wider bg-cyan-50/60 text-cyan-800 border-b border-cyan-200">Unité Réf.</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées Réf.</th>
+                <th className="text-right p-3 text-xs font-semibold uppercase tracking-wider bg-emerald-50/60 text-emerald-800 border-b border-emerald-200">Entrées Réf.</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties Réf.</th>
+                <th className="text-right p-3 text-xs font-semibold uppercase tracking-wider bg-amber-50/60 text-amber-800 border-b border-amber-200">Sorties Réf.</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Réf.</th>
+                <th className="text-right p-3 text-xs font-semibold uppercase tracking-wider bg-indigo-50/60 text-indigo-800 border-b border-indigo-200">Stock Réf.</th>
               </tr>
             </thead>
             <tbody>
