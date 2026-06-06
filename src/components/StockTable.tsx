@@ -648,18 +648,25 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const setLivraison = (key: string, value: string) => {
     setLivraisonOverrides((prev) => ({ ...prev, [key]: value }));
   };
-  // Retourne les commandes enregistrées qui contiennent un article (match exact insensible à la casse)
-  const ordersForArticle = (name: string) => {
-    const n = name.trim().toLowerCase();
-    const matches: { orderId: string; date: string; qty: number }[] = [];
-    for (const o of savedOrders) {
-      for (const it of o.items || []) {
-        if ((it.name || "").trim().toLowerCase() === n) {
-          matches.push({ orderId: o.id, date: o.order_date, qty: it.quantity });
-        }
+  // Dialogue "Choisir une commande" — applique une commande enregistrée à toutes les lignes
+  const [pickOrderOpen, setPickOrderOpen] = useState(false);
+  const applyOrderAsLivraison = (o: SavedOrder) => {
+    const next: Record<string, string> = { ...livraisonOverrides };
+    for (const it of o.items || []) {
+      const nm = (it.name || "").trim().toLowerCase();
+      if (!nm) continue;
+      if (isWeeklyCat) {
+        // clé = nom d'article (recherche insensible à la casse dans la liste affichée)
+        const match = weeklyRows.find((r) => r.article.trim().toLowerCase() === nm);
+        if (match) next[match.article] = String(it.quantity);
+      } else {
+        const match = filtered.find((l) => l.productName.trim().toLowerCase() === nm);
+        if (match) next[match.productId] = String(it.quantity);
       }
     }
-    return matches;
+    setLivraisonOverrides(next);
+    setPickOrderOpen(false);
+    toast.success(`Livraison appliquée depuis la commande du ${o.order_date}`);
   };
 
   const loadSavedOrders = async () => {
@@ -857,6 +864,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               <Button size="sm" variant="outline" onClick={() => setHistoryOpen(true)}>
                 <History className="h-4 w-4 mr-1" /> Historique ({savedOrders.length})
               </Button>
+              <Button size="sm" variant="secondary" onClick={() => setPickOrderOpen(true)}>
+                Choisir une commande
+              </Button>
             </div>
           )}
         </div>
@@ -884,26 +894,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{r.sorties}</td>
                     <td className="p-3 text-right font-mono text-sm">{r.stockActuel}</td>
                     <td className="p-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <select
-                          value=""
-                          onChange={(e) => { if (e.target.value) setLivraison(r.article, e.target.value); }}
-                          className="bg-background border rounded px-1 py-1 text-xs max-w-[110px]"
-                          title="Choisir depuis une commande enregistrée"
-                        >
-                          <option value="">Choisir…</option>
-                          {ordersForArticle(r.article).map((m, i) => (
-                            <option key={i} value={String(m.qty)}>{m.date} — {m.qty}</option>
-                          ))}
-                        </select>
-                        <input
-                          type="number"
-                          min="0"
-                          value={livraisonOverrides[r.article] ?? ""}
-                          onChange={(e) => setLivraison(r.article, e.target.value)}
-                          className="w-16 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
-                        />
-                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        value={livraisonOverrides[r.article] ?? ""}
+                        onChange={(e) => setLivraison(r.article, e.target.value)}
+                        className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
+                      />
                     </td>
                     <td className="p-3 text-right">
                       <input
@@ -954,26 +951,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
                     <td className="p-3 text-right font-mono text-sm">{stockActuel}</td>
                     <td className="p-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <select
-                          value=""
-                          onChange={(e) => { if (e.target.value) setLivraison(level.productId, e.target.value); }}
-                          className="bg-background border rounded px-1 py-1 text-xs max-w-[110px]"
-                          title="Choisir depuis une commande enregistrée"
-                        >
-                          <option value="">Choisir…</option>
-                          {ordersForArticle(level.productName).map((m, i) => (
-                            <option key={i} value={String(m.qty)}>{m.date} — {m.qty}</option>
-                          ))}
-                        </select>
-                        <input
-                          type="number"
-                          min="0"
-                          value={livraisonOverrides[level.productId] ?? ""}
-                          onChange={(e) => setLivraison(level.productId, e.target.value)}
-                          className="w-16 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
-                        />
-                      </div>
+                      <input
+                        type="number"
+                        min="0"
+                        value={livraisonOverrides[level.productId] ?? ""}
+                        onChange={(e) => setLivraison(level.productId, e.target.value)}
+                        className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
+                      />
                     </td>
                     <td className="p-3 text-right">
                       <input
@@ -1236,6 +1220,42 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       ))}
                     </div>
                   </div>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={pickOrderOpen} onOpenChange={setPickOrderOpen}>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Choisir une commande à appliquer en livraison</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                {savedOrders.length === 0 && (
+                  <p className="text-center text-muted-foreground py-6 text-sm">Aucune commande enregistrée</p>
+                )}
+                {savedOrders.map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => applyOrderAsLivraison(o)}
+                    className="w-full text-left border rounded-lg p-3 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="font-semibold text-sm">
+                      {o.order_date} — <span className="capitalize">{o.category}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Par {o.performed_by || "—"} · {o.total_items} unité(s) · {(o.items || []).length} article(s)
+                    </div>
+                    <div className="text-xs grid grid-cols-2 gap-x-4 gap-y-0.5 max-h-32 overflow-auto">
+                      {(o.items || []).map((it, i) => (
+                        <div key={i} className="flex justify-between border-b last:border-0 py-0.5">
+                          <span className="truncate">{it.name}</span>
+                          <span className="font-mono font-semibold">{it.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </button>
                 ))}
               </div>
             </DialogContent>
