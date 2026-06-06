@@ -5,6 +5,7 @@ import {
   setProductUnit,
   getMovements,
   getGlaceAggregateForRange,
+  getToppingsDailyHistory,
   getInitialStocks,
   getProductUnits,
   getProductUnitConfigs,
@@ -557,6 +558,38 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           entrees: roundStockQuantity(glaceAgg.entrees),
           sorties: roundStockQuantity(glaceAgg.sorties),
           stockRestant: roundStockQuantity(glaceAgg.stockRestant),
+        };
+      }
+      const toppingsLevel = levels.find((lvl) => lvl.productName === "TOPPINGS" && lvl.category === "alimentaire");
+      if (toppingsLevel) {
+        const rows = await getToppingsDailyHistory();
+        let stockInitialPeriod: number | null = null;
+        let stockRestantPeriod = rows[0]?.stockInitial ?? 0;
+        let entreesPeriod = 0;
+        let sortiesPeriod = 0;
+        let lastBeforeRestant = rows[0]?.stockInitial ?? 0;
+
+        for (const row of rows) {
+          if (matchDate(row.date)) {
+            if (stockInitialPeriod === null) stockInitialPeriod = row.stockInitial;
+            entreesPeriod += row.entrees;
+            sortiesPeriod += row.sorties;
+            stockRestantPeriod = row.stockRestant;
+          } else if (isBefore(row.date)) {
+            lastBeforeRestant = row.stockRestant;
+          }
+        }
+
+        if (stockInitialPeriod === null) {
+          stockInitialPeriod = lastBeforeRestant;
+          stockRestantPeriod = lastBeforeRestant;
+        }
+
+        results[toppingsLevel.productId] = {
+          stockInitial: roundStockQuantity(stockInitialPeriod),
+          entrees: roundStockQuantity(entreesPeriod),
+          sorties: roundStockQuantity(sortiesPeriod),
+          stockRestant: roundStockQuantity(stockRestantPeriod),
         };
       }
       if (!cancelled) {
