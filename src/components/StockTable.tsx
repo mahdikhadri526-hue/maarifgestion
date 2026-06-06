@@ -17,7 +17,7 @@ import { useStockLevels } from "@/hooks/useStockData";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Save, History, Trash2, FileDown } from "lucide-react";
+import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
 import { getOperators } from "@/lib/operators";
 import { toast } from "sonner";
 import {
@@ -295,6 +295,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const { can } = useAuth();
   const [editingStock, setEditingStock] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
+  const [showRefCols, setShowRefCols] = useState<boolean>(false);
 
   const canEditStock = can("edit_stock");
 
@@ -866,6 +867,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               </Button>
               <Button size="sm" variant="secondary" onClick={() => setPickOrderOpen(true)}>
                 Livraison en cours
+              </Button>
+            </div>
+          )}
+          {variant !== "order" && (
+            <div className="flex flex-wrap gap-2 mt-1">
+              <Button size="sm" variant="outline" onClick={() => setShowRefCols((s) => !s)}>
+                {showRefCols ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
+                {showRefCols ? "Masquer colonnes Réf." : "Afficher colonnes Réf."}
               </Button>
             </div>
           )}
