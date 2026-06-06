@@ -1032,7 +1032,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       className="w-20 text-right bg-background border rounded px-2 py-1 text-xs font-mono"
                     />
                   </td>
-                  <td className="p-3">
+                  <td className="p-3 bg-cyan-50/30">
                     <select
                       value={refMap[level.productId]?.unitRef ?? ""}
                       onChange={(e) => updateRef(level.productId, { unitRef: e.target.value })}
