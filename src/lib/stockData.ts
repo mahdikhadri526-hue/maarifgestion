@@ -1029,17 +1029,20 @@ export async function getGlaceBreakdownForRange(
     let stockInitial = 0;
     let entrees = 0;
     let sorties = 0;
-    // Stock initial du parfum sur la période :
-    // — dernier SI saisi STRICTEMENT avant startDate (état au début de la période),
-    // — sinon premier SI saisi dans la période.
+    // Stock initial du parfum sur la période : si un SI existe au début exact
+    // de la période (cas filtre jour), il est prioritaire. Sinon on reprend
+    // le dernier SI connu avant la période, puis à défaut le premier SI dedans.
     let initialBacs: number | null = null;
     if (startDate) {
+      const exactStartSi = days.get(startDate)?.si;
+      if (exactStartSi != null) initialBacs = exactStartSi;
+
       let bestBefore: string | null = null;
       for (const [date, cell] of days) {
         if (cell.si == null || date >= startDate) continue;
         if (!bestBefore || date > bestBefore) bestBefore = date;
       }
-      if (bestBefore) initialBacs = days.get(bestBefore)?.si ?? null;
+      if (initialBacs == null && bestBefore) initialBacs = days.get(bestBefore)?.si ?? null;
     }
     if (initialBacs == null) {
       let firstIn: string | null = null;
