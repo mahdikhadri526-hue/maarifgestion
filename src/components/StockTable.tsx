@@ -304,6 +304,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   const canEditStock = can("edit_stock");
 
+  // Détails du calcul pour les articles agrégés (GLACE / TOPPINGS / NESPRESSO / MACARON)
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsTitle, setDetailsTitle] = useState("");
+  const [detailsRows, setDetailsRows] = useState<AggregateBreakdownRow[]>([]);
+  const [detailsUnit, setDetailsUnit] = useState<string>("");
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
   // Conversion + Unité Réf. par produit (persistées en local, sans impacter la base)
   const REF_STORAGE_KEY = "stock_ref_conversions_v1";
   type RefRow = { conversion: string; unitRef: string };
