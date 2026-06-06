@@ -17,7 +17,7 @@ import { useStockLevels } from "@/hooks/useStockData";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Save, History, Trash2, FileDown } from "lucide-react";
+import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
 import { getOperators } from "@/lib/operators";
 import { toast } from "sonner";
 import {
@@ -295,6 +295,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const { can } = useAuth();
   const [editingStock, setEditingStock] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
+  const [showRefCols, setShowRefCols] = useState<boolean>(false);
 
   const canEditStock = can("edit_stock");
 
@@ -869,6 +870,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               </Button>
             </div>
           )}
+          {variant !== "order" && (
+            <div className="flex flex-wrap gap-2 mt-1">
+              <Button size="sm" variant="outline" onClick={() => setShowRefCols((s) => !s)}>
+                {showRefCols ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
+                {showRefCols ? "Masquer colonnes Réf." : "Afficher colonnes Réf."}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
       {(loading || periodLoading || weeklyLoading) ? (
@@ -985,14 +994,20 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Conversion</th>
-                <th className="text-left p-3 text-xs font-semibold uppercase tracking-wider bg-cyan-50/60 text-cyan-800 border-b border-cyan-200">Unité Réf.</th>
+                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité Réf.</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
-                <th className="text-right p-3 text-xs font-semibold uppercase tracking-wider bg-emerald-50/60 text-emerald-800 border-b border-emerald-200">Entrées Réf.</th>
+                {showRefCols && (
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées Réf.</th>
+                )}
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
-                <th className="text-right p-3 text-xs font-semibold uppercase tracking-wider bg-amber-50/60 text-amber-800 border-b border-amber-200">Sorties Réf.</th>
+                {showRefCols && (
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties Réf.</th>
+                )}
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock</th>
-                <th className="text-right p-3 text-xs font-semibold uppercase tracking-wider bg-indigo-50/60 text-indigo-800 border-b border-indigo-200">Stock Réf.</th>
+                {showRefCols && (
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Réf.</th>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -1032,7 +1047,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       className="w-20 text-right bg-background border rounded px-2 py-1 text-xs font-mono"
                     />
                   </td>
-                  <td className="p-3 bg-cyan-50/30">
+                  <td className="p-3">
                     <select
                       value={refMap[level.productId]?.unitRef ?? ""}
                       onChange={(e) => updateRef(level.productId, { unitRef: e.target.value })}
@@ -1063,25 +1078,29 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     </span>
                   </td>
                   <td className="p-3 text-right font-mono text-sm text-success">{v.entrees}</td>
-                  <td className="p-3 text-right font-mono text-sm text-emerald-700 bg-emerald-50/30">
-                    {(() => {
-                      const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
-                      if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
-                      const val = v.entrees * conv;
-                      const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
-                      return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
-                    })()}
-                  </td>
+                  {showRefCols && (
+                    <td className="p-3 text-right font-mono text-sm text-muted-foreground">
+                      {(() => {
+                        const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
+                        if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
+                        const val = v.entrees * conv;
+                        const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
+                        return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
+                      })()}
+                    </td>
+                  )}
                   <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
-                  <td className="p-3 text-right font-mono text-sm text-amber-700 bg-amber-50/30">
-                    {(() => {
-                      const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
-                      if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
-                      const val = v.sorties * conv;
-                      const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
-                      return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
-                    })()}
-                  </td>
+                  {showRefCols && (
+                    <td className="p-3 text-right font-mono text-sm text-muted-foreground">
+                      {(() => {
+                        const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
+                        if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
+                        const val = v.sorties * conv;
+                        const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
+                        return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
+                      })()}
+                    </td>
+                  )}
                   <td className={`p-3 text-right font-mono text-sm font-semibold ${
                     v.stockRestant < 0 ? "text-destructive" : v.stockRestant === 0 ? "text-muted-foreground" : ""
                   }`}>
@@ -1114,15 +1133,17 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       </button>
                     )}
                   </td>
-                  <td className="p-3 text-right font-mono text-sm font-semibold text-indigo-700 bg-indigo-50/30">
-                    {(() => {
-                      const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
-                      if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
-                      const val = v.stockRestant * conv;
-                      const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
-                      return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
-                    })()}
-                  </td>
+                  {showRefCols && (
+                    <td className="p-3 text-right font-mono text-sm font-semibold text-muted-foreground">
+                      {(() => {
+                        const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
+                        if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
+                        const val = v.stockRestant * conv;
+                        const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
+                        return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
+                      })()}
+                    </td>
+                  )}
                 </tr>
                 );
               })}
