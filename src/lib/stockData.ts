@@ -413,8 +413,8 @@ export async function setInitialStock(productId: string, quantity: number) {
 
 // Agrégat « TOPPINGS » : SMARTIES TOPPING + OREO TOPPING (table alimentaire)
 // + ingrédients tartes saisis dans le Suivi Hebdo « Mouvement glaces & tartes ».
-const TOPPINGS_ALI_PRODUCT_IDS = ["ali-1", "ali-2"]; // SMARTIES TOPPING, OREO TOPPING
-const TOPPINGS_WEEKLY_ARTICLES = [
+export const TOPPINGS_ALI_PRODUCT_IDS = ["ali-1", "ali-2"]; // SMARTIES TOPPING, OREO TOPPING
+export const TOPPINGS_WEEKLY_ARTICLES = [
   "Biscuit",
   "Brownies.Top",
   "Noix.Top",
