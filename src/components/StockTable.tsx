@@ -12,6 +12,10 @@ import {
   movementPiecesToDisplay,
   roundStockQuantity,
   setInitialStock,
+  getGlaceBreakdownForRange,
+  TOPPINGS_ALI_PRODUCT_IDS,
+  TOPPINGS_WEEKLY_ARTICLES,
+  type AggregateBreakdownRow,
 } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { useStockLevels } from "@/hooks/useStockData";
@@ -299,6 +303,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
 
   const canEditStock = can("edit_stock");
+
+  // Détails du calcul pour les articles agrégés (GLACE / TOPPINGS / NESPRESSO / MACARON)
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [detailsTitle, setDetailsTitle] = useState("");
+  const [detailsRows, setDetailsRows] = useState<AggregateBreakdownRow[]>([]);
+  const [detailsUnit, setDetailsUnit] = useState<string>("");
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   // Conversion + Unité Réf. par produit (persistées en local, sans impacter la base)
   const REF_STORAGE_KEY = "stock_ref_conversions_v1";
@@ -821,7 +832,131 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     });
   };
 
+  // Calcul de la période courante (utilisé pour les détails d'agrégat)
+  const currentRange = (): { start?: string; end?: string; matchAll: boolean } => {
+    if (mode === "all") return { matchAll: true };
+    if (mode === "day") return { start: day, end: day, matchAll: false };
+    if (mode === "month") return { start: `${month}-01`, end: monthEndISO(month), matchAll: false };
+    return { start: start || undefined, end: end || undefined, matchAll: false };
+  };
+
+  const openDetails = async (level: typeof filtered[number]) => {
+    const isNespresso = level.productId === NESPRESSO_AGG_ID;
+    const isMacaron = level.productId === MACARON_AGG_ID;
+    const isGlace = level.productName === "GLACE" && level.category === "alimentaire";
+    const isToppings = level.productName === "TOPPINGS" && level.category === "alimentaire";
+    if (!isNespresso && !isMacaron && !isGlace && !isToppings) return;
+
+    setDetailsTitle(level.productName);
+    setDetailsUnit(isGlace ? "Kg" : "");
+    setDetailsRows([]);
+    setDetailsOpen(true);
+    setDetailsLoading(true);
+    try {
+      const range = currentRange();
+      if (isNespresso) {
+        const rows: AggregateBreakdownRow[] = NESPRESSO_IDS.map((id) => {
+          const src = (levels || []).find((l) => l.productId === id);
+          if (!src) return null;
+          if (mode === "all") {
+            return {
+              name: src.productName,
+              stockInitial: src.stockInitial,
+              entrees: src.totalEntrees,
+              sorties: src.totalSorties,
+              stockRestant: src.stockRestant,
+            };
+          }
+          const t = periodTotals[id];
+          if (!t) return { name: src.productName, stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 };
+          return { name: src.productName, ...t };
+        }).filter(Boolean) as AggregateBreakdownRow[];
+        setDetailsRows(rows);
+      } else if (isGlace) {
+        const breakdown = await getGlaceBreakdownForRange(range.start, range.end);
+        setDetailsRows(breakdown);
+      } else if (isMacaron) {
+        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
+          supabase
+            .from("weekly_tracking")
+            .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
+            .eq("fiche_type", "Mouvement glaces & tartes")
+            .in("article", MACARON_ARTICLES as unknown as string[]),
+        );
+        const isInPeriod = (d: string) => {
+          if (mode === "all") return true;
+          if (mode === "day") return day ? d === day : true;
+          if (mode === "month") return month ? d.startsWith(month) : true;
+          if (mode === "period") {
+            if (range.start && d < range.start) return false;
+            if (range.end && d > range.end) return false;
+            return true;
+          }
+          return true;
+        };
+        const rows: AggregateBreakdownRow[] = MACARON_ARTICLES.map((art) => {
+          const t = buildWeeklyAggregateTotals(data || [], [art], isInPeriod, mode === "all");
+          return { name: art, ...t };
+        }).filter((r) => r.stockInitial || r.entrees || r.sorties || r.stockRestant);
+        setDetailsRows(rows);
+      } else if (isToppings) {
+        // 1) SMARTIES + OREO via levels / periodTotals
+        const sourceRows: AggregateBreakdownRow[] = TOPPINGS_ALI_PRODUCT_IDS.map((id) => {
+          const src = (levels || []).find((l) => l.productId === id);
+          const label = src?.productName || id;
+          if (mode === "all") {
+            return {
+              name: label,
+              stockInitial: src?.stockInitial || 0,
+              entrees: src?.totalEntrees || 0,
+              sorties: src?.totalSorties || 0,
+              stockRestant: src?.stockRestant || 0,
+            };
+          }
+          const t = periodTotals[id];
+          if (!t) return { name: label, stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 };
+          return { name: label, ...t };
+        });
+        // 2) Articles Suivi Hebdo
+        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
+          supabase
+            .from("weekly_tracking")
+            .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
+            .eq("fiche_type", "Mouvement glaces & tartes")
+            .in("article", TOPPINGS_WEEKLY_ARTICLES as unknown as string[]),
+        );
+        const isInPeriod = (d: string) => {
+          if (mode === "all") return true;
+          if (mode === "day") return day ? d === day : true;
+          if (mode === "month") return month ? d.startsWith(month) : true;
+          if (mode === "period") {
+            if (range.start && d < range.start) return false;
+            if (range.end && d > range.end) return false;
+            return true;
+          }
+          return true;
+        };
+        const weeklyRowsBd: AggregateBreakdownRow[] = TOPPINGS_WEEKLY_ARTICLES.map((art) => {
+          const t = buildWeeklyAggregateTotals(data || [], [art], isInPeriod, mode === "all");
+          return { name: `${art} (Suivi Hebdo)`, ...t };
+        }).filter((r) => r.stockInitial || r.entrees || r.sorties || r.stockRestant);
+        setDetailsRows([...sourceRows, ...weeklyRowsBd]);
+      }
+    } catch (e) {
+      toast.error("Erreur lors du chargement des détails");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const isAggregateLevel = (level: typeof filtered[number]) =>
+    level.productId === NESPRESSO_AGG_ID ||
+    level.productId === MACARON_AGG_ID ||
+    (level.productName === "GLACE" && level.category === "alimentaire") ||
+    (level.productName === "TOPPINGS" && level.category === "alimentaire");
+
   return (
+    <>
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
@@ -1052,7 +1187,18 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 }`}>
                   <td className="p-3 text-sm font-medium flex items-center gap-1.5">
                     {isRequisitionProduct(level.productId) && <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />}
-                    {level.productName}
+                    {isAggregateLevel(level) ? (
+                      <button
+                        type="button"
+                        onClick={() => openDetails(level)}
+                        className="text-left hover:underline text-primary font-semibold"
+                        title="Voir le détail du calcul"
+                      >
+                        {level.productName}
+                      </button>
+                    ) : (
+                      level.productName
+                    )}
                   </td>
                   <td className="p-3">
                     <button
@@ -1337,5 +1483,64 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         </>
       )}
     </div>
+
+    <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Détails du calcul — {detailsTitle}</DialogTitle>
+        </DialogHeader>
+        {detailsLoading ? (
+          <p className="text-center text-muted-foreground py-6 text-sm">Chargement...</p>
+        ) : detailsRows.length === 0 ? (
+          <p className="text-center text-muted-foreground py-6 text-sm">Aucune donnée pour la période</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left p-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
+                  <th className="text-right p-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
+                  <th className="text-right p-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
+                  <th className="text-right p-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
+                  <th className="text-right p-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Restant</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailsRows.map((r, i) => (
+                  <tr key={`${r.name}-${i}`} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="p-2 font-medium">{r.name}</td>
+                    <td className="p-2 text-right font-mono text-primary">{r.stockInitial}</td>
+                    <td className="p-2 text-right font-mono text-success">{r.entrees}</td>
+                    <td className="p-2 text-right font-mono text-accent-foreground">{r.sorties}</td>
+                    <td className={`p-2 text-right font-mono font-semibold ${r.stockRestant < 0 ? "text-destructive" : ""}`}>{r.stockRestant}</td>
+                  </tr>
+                ))}
+                {(() => {
+                  const tot = detailsRows.reduce(
+                    (acc, r) => ({
+                      stockInitial: acc.stockInitial + r.stockInitial,
+                      entrees: acc.entrees + r.entrees,
+                      sorties: acc.sorties + r.sorties,
+                      stockRestant: acc.stockRestant + r.stockRestant,
+                    }),
+                    { stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 },
+                  );
+                  return (
+                    <tr className="bg-muted/40 font-semibold">
+                      <td className="p-2">TOTAL{detailsUnit ? ` (${detailsUnit})` : ""}</td>
+                      <td className="p-2 text-right font-mono">{roundStockQuantity(tot.stockInitial)}</td>
+                      <td className="p-2 text-right font-mono">{roundStockQuantity(tot.entrees)}</td>
+                      <td className="p-2 text-right font-mono">{roundStockQuantity(tot.sorties)}</td>
+                      <td className="p-2 text-right font-mono">{roundStockQuantity(tot.stockRestant)}</td>
+                    </tr>
+                  );
+                })()}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

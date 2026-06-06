@@ -413,8 +413,8 @@ export async function setInitialStock(productId: string, quantity: number) {
 
 // Agrégat « TOPPINGS » : SMARTIES TOPPING + OREO TOPPING (table alimentaire)
 // + ingrédients tartes saisis dans le Suivi Hebdo « Mouvement glaces & tartes ».
-const TOPPINGS_ALI_PRODUCT_IDS = ["ali-1", "ali-2"]; // SMARTIES TOPPING, OREO TOPPING
-const TOPPINGS_WEEKLY_ARTICLES = [
+export const TOPPINGS_ALI_PRODUCT_IDS = ["ali-1", "ali-2"]; // SMARTIES TOPPING, OREO TOPPING
+export const TOPPINGS_WEEKLY_ARTICLES = [
   "Biscuit",
   "Brownies.Top",
   "Noix.Top",
@@ -975,4 +975,101 @@ export async function getProductAvailableStockInBasePieces(productId: string): P
     .filter((m) => m.type === "sortie")
     .reduce((sum, m) => sum + m.quantity, 0);
   return roundStockQuantity(initialBase + totalEntreesBase - totalSortiesBase);
+}
+
+// Détail par parfum du calcul agrégé « GLACE » (en kg).
+export interface AggregateBreakdownRow {
+  name: string;
+  stockInitial: number;
+  entrees: number;
+  sorties: number;
+  stockRestant: number;
+}
+
+export async function getGlaceBreakdownForRange(
+  startDate?: string,
+  endDate?: string,
+): Promise<AggregateBreakdownRow[]> {
+  const [rows, gramRes] = await Promise.all([
+    fetchAllRows<any>(() =>
+      supabase
+        .from("weekly_tracking")
+        .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
+        .eq("fiche_type", "Mouvement glaces & tartes"),
+    ),
+    supabase.from("glace_grammage").select("article, grammage_grams"),
+  ]);
+  const grams: Record<string, number> = {};
+  ((gramRes as any).data || []).forEach((r: any) => {
+    grams[r.article] = Number(r.grammage_grams) || 0;
+  });
+  type DayAgg = { si: number | null; entries: number; explicitSortie: number | null };
+  const byArticle = new Map<string, Map<string, DayAgg>>();
+  (rows || []).forEach((r: any) => {
+    if (!r.article || GLACE_PARFUMS_BLACKLIST.has(r.article)) return;
+    if (!grams[r.article]) return;
+    const date = trackingDateISO(r.week_start, r.day_of_week);
+    if (!date) return;
+    let days = byArticle.get(r.article);
+    if (!days) { days = new Map(); byArticle.set(r.article, days); }
+    let cell = days.get(date);
+    if (!cell) { cell = { si: null, entries: 0, explicitSortie: null }; days.set(date, cell); }
+    const rowIdx = r.row_index ?? 0;
+    if (rowIdx === 0) {
+      if (r.stock_initial != null) cell.si = Number(r.stock_initial) || 0;
+      if (r.sorties != null) cell.explicitSortie = Number(r.sorties) || 0;
+    }
+    if (r.entrees != null) cell.entries += Number(r.entrees) || 0;
+  });
+  const inRange = (date: string) => (!startDate || date >= startDate) && (!endDate || date <= endDate);
+  // Première date de stock saisi dans la plage (commune à tous les parfums)
+  let firstStockDate: string | null = null;
+  for (const days of byArticle.values()) {
+    for (const [date, cell] of days) {
+      if (!inRange(date) || cell.si == null) continue;
+      if (!firstStockDate || date < firstStockDate) firstStockDate = date;
+    }
+  }
+  const out: AggregateBreakdownRow[] = [];
+  for (const [article, days] of byArticle) {
+    const g = grams[article] || 0;
+    if (!g) continue;
+    let stockInitial = 0;
+    let entrees = 0;
+    let sorties = 0;
+    let stockRestant = 0;
+    if (firstStockDate) {
+      const si = days.get(firstStockDate)?.si;
+      if (si != null) stockInitial = si * g;
+    }
+    let latestSiDate: string | null = null;
+    for (const [date, cell] of days) {
+      if (cell.si == null) continue;
+      if (endDate && date > endDate) continue;
+      if (!latestSiDate || date > latestSiDate) latestSiDate = date;
+    }
+    if (latestSiDate) {
+      const si = days.get(latestSiDate)?.si;
+      if (si != null) stockRestant = si * g;
+    }
+    for (const [date, cell] of days) {
+      if (!inRange(date)) continue;
+      entrees += cell.entries * g;
+      let sortie: number | null = null;
+      const nextSi = days.get(nextDateISO(date))?.si;
+      if (cell.si != null && nextSi != null) sortie = cell.si + cell.entries - nextSi;
+      if (sortie == null) sortie = cell.explicitSortie ?? 0;
+      sorties += sortie * g;
+    }
+    if (stockInitial === 0 && entrees === 0 && sorties === 0 && stockRestant === 0) continue;
+    out.push({
+      name: article,
+      stockInitial: roundStockQuantity(stockInitial / 1000),
+      entrees: roundStockQuantity(entrees / 1000),
+      sorties: roundStockQuantity(sorties / 1000),
+      stockRestant: roundStockQuantity(stockRestant / 1000),
+    });
+  }
+  out.sort((a, b) => a.name.localeCompare(b.name, "fr"));
+  return out;
 }
