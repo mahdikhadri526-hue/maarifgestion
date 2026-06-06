@@ -648,18 +648,25 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const setLivraison = (key: string, value: string) => {
     setLivraisonOverrides((prev) => ({ ...prev, [key]: value }));
   };
-  // Retourne les commandes enregistrées qui contiennent un article (match exact insensible à la casse)
-  const ordersForArticle = (name: string) => {
-    const n = name.trim().toLowerCase();
-    const matches: { orderId: string; date: string; qty: number }[] = [];
-    for (const o of savedOrders) {
-      for (const it of o.items || []) {
-        if ((it.name || "").trim().toLowerCase() === n) {
-          matches.push({ orderId: o.id, date: o.order_date, qty: it.quantity });
-        }
+  // Dialogue "Choisir une commande" — applique une commande enregistrée à toutes les lignes
+  const [pickOrderOpen, setPickOrderOpen] = useState(false);
+  const applyOrderAsLivraison = (o: SavedOrder) => {
+    const next: Record<string, string> = { ...livraisonOverrides };
+    for (const it of o.items || []) {
+      const nm = (it.name || "").trim().toLowerCase();
+      if (!nm) continue;
+      if (isWeeklyCat) {
+        // clé = nom d'article (recherche insensible à la casse dans la liste affichée)
+        const match = weeklyRows.find((r) => r.article.trim().toLowerCase() === nm);
+        if (match) next[match.article] = String(it.quantity);
+      } else {
+        const match = filtered.find((l) => l.productName.trim().toLowerCase() === nm);
+        if (match) next[match.productId] = String(it.quantity);
       }
     }
-    return matches;
+    setLivraisonOverrides(next);
+    setPickOrderOpen(false);
+    toast.success(`Livraison appliquée depuis la commande du ${o.order_date}`);
   };
 
   const loadSavedOrders = async () => {
