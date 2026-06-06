@@ -833,6 +833,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   };
 
   return (
+    <>
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
         <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
