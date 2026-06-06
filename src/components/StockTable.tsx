@@ -1349,5 +1349,64 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         </>
       )}
     </div>
+
+    <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Détails du calcul — {detailsTitle}</DialogTitle>
+        </DialogHeader>
+        {detailsLoading ? (
+          <p className="text-center text-muted-foreground py-6 text-sm">Chargement...</p>
+        ) : detailsRows.length === 0 ? (
+          <p className="text-center text-muted-foreground py-6 text-sm">Aucune donnée pour la période</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left p-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Source</th>
+                  <th className="text-right p-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
+                  <th className="text-right p-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
+                  <th className="text-right p-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
+                  <th className="text-right p-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Restant</th>
+                </tr>
+              </thead>
+              <tbody>
+                {detailsRows.map((r, i) => (
+                  <tr key={`${r.name}-${i}`} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="p-2 font-medium">{r.name}</td>
+                    <td className="p-2 text-right font-mono text-primary">{r.stockInitial}</td>
+                    <td className="p-2 text-right font-mono text-success">{r.entrees}</td>
+                    <td className="p-2 text-right font-mono text-accent-foreground">{r.sorties}</td>
+                    <td className={`p-2 text-right font-mono font-semibold ${r.stockRestant < 0 ? "text-destructive" : ""}`}>{r.stockRestant}</td>
+                  </tr>
+                ))}
+                {(() => {
+                  const tot = detailsRows.reduce(
+                    (acc, r) => ({
+                      stockInitial: acc.stockInitial + r.stockInitial,
+                      entrees: acc.entrees + r.entrees,
+                      sorties: acc.sorties + r.sorties,
+                      stockRestant: acc.stockRestant + r.stockRestant,
+                    }),
+                    { stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 },
+                  );
+                  return (
+                    <tr className="bg-muted/40 font-semibold">
+                      <td className="p-2">TOTAL{detailsUnit ? ` (${detailsUnit})` : ""}</td>
+                      <td className="p-2 text-right font-mono">{roundStockQuantity(tot.stockInitial)}</td>
+                      <td className="p-2 text-right font-mono">{roundStockQuantity(tot.entrees)}</td>
+                      <td className="p-2 text-right font-mono">{roundStockQuantity(tot.sorties)}</td>
+                      <td className="p-2 text-right font-mono">{roundStockQuantity(tot.stockRestant)}</td>
+                    </tr>
+                  );
+                })()}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
