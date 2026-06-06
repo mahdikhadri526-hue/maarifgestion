@@ -832,6 +832,129 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     });
   };
 
+  // Calcul de la période courante (utilisé pour les détails d'agrégat)
+  const currentRange = (): { start?: string; end?: string; matchAll: boolean } => {
+    if (mode === "all") return { matchAll: true };
+    if (mode === "day") return { start: day, end: day, matchAll: false };
+    if (mode === "month") return { start: `${month}-01`, end: monthEndISO(month), matchAll: false };
+    return { start: start || undefined, end: end || undefined, matchAll: false };
+  };
+
+  const openDetails = async (level: typeof filtered[number]) => {
+    const isNespresso = level.productId === NESPRESSO_AGG_ID;
+    const isMacaron = level.productId === MACARON_AGG_ID;
+    const isGlace = level.productName === "GLACE" && level.category === "alimentaire";
+    const isToppings = level.productName === "TOPPINGS" && level.category === "alimentaire";
+    if (!isNespresso && !isMacaron && !isGlace && !isToppings) return;
+
+    setDetailsTitle(level.productName);
+    setDetailsUnit(isGlace ? "Kg" : "");
+    setDetailsRows([]);
+    setDetailsOpen(true);
+    setDetailsLoading(true);
+    try {
+      const range = currentRange();
+      if (isNespresso) {
+        const rows: AggregateBreakdownRow[] = NESPRESSO_IDS.map((id) => {
+          const src = (levels || []).find((l) => l.productId === id);
+          if (!src) return null;
+          if (mode === "all") {
+            return {
+              name: src.productName,
+              stockInitial: src.stockInitial,
+              entrees: src.totalEntrees,
+              sorties: src.totalSorties,
+              stockRestant: src.stockRestant,
+            };
+          }
+          const t = periodTotals[id];
+          if (!t) return { name: src.productName, stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 };
+          return { name: src.productName, ...t };
+        }).filter(Boolean) as AggregateBreakdownRow[];
+        setDetailsRows(rows);
+      } else if (isGlace) {
+        const breakdown = await getGlaceBreakdownForRange(range.start, range.end);
+        setDetailsRows(breakdown);
+      } else if (isMacaron) {
+        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
+          supabase
+            .from("weekly_tracking")
+            .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
+            .eq("fiche_type", "Mouvement glaces & tartes")
+            .in("article", MACARON_ARTICLES as unknown as string[]),
+        );
+        const isInPeriod = (d: string) => {
+          if (mode === "all") return true;
+          if (mode === "day") return day ? d === day : true;
+          if (mode === "month") return month ? d.startsWith(month) : true;
+          if (mode === "period") {
+            if (range.start && d < range.start) return false;
+            if (range.end && d > range.end) return false;
+            return true;
+          }
+          return true;
+        };
+        const rows: AggregateBreakdownRow[] = MACARON_ARTICLES.map((art) => {
+          const t = buildWeeklyAggregateTotals(data || [], [art], isInPeriod, mode === "all");
+          return { name: art, ...t };
+        }).filter((r) => r.stockInitial || r.entrees || r.sorties || r.stockRestant);
+        setDetailsRows(rows);
+      } else if (isToppings) {
+        // 1) SMARTIES + OREO via levels / periodTotals
+        const sourceRows: AggregateBreakdownRow[] = TOPPINGS_ALI_PRODUCT_IDS.map((id) => {
+          const src = (levels || []).find((l) => l.productId === id);
+          const label = src?.productName || id;
+          if (mode === "all") {
+            return {
+              name: label,
+              stockInitial: src?.stockInitial || 0,
+              entrees: src?.totalEntrees || 0,
+              sorties: src?.totalSorties || 0,
+              stockRestant: src?.stockRestant || 0,
+            };
+          }
+          const t = periodTotals[id];
+          if (!t) return { name: label, stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 };
+          return { name: label, ...t };
+        });
+        // 2) Articles Suivi Hebdo
+        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
+          supabase
+            .from("weekly_tracking")
+            .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
+            .eq("fiche_type", "Mouvement glaces & tartes")
+            .in("article", TOPPINGS_WEEKLY_ARTICLES as unknown as string[]),
+        );
+        const isInPeriod = (d: string) => {
+          if (mode === "all") return true;
+          if (mode === "day") return day ? d === day : true;
+          if (mode === "month") return month ? d.startsWith(month) : true;
+          if (mode === "period") {
+            if (range.start && d < range.start) return false;
+            if (range.end && d > range.end) return false;
+            return true;
+          }
+          return true;
+        };
+        const weeklyRowsBd: AggregateBreakdownRow[] = TOPPINGS_WEEKLY_ARTICLES.map((art) => {
+          const t = buildWeeklyAggregateTotals(data || [], [art], isInPeriod, mode === "all");
+          return { name: `${art} (Suivi Hebdo)`, ...t };
+        }).filter((r) => r.stockInitial || r.entrees || r.sorties || r.stockRestant);
+        setDetailsRows([...sourceRows, ...weeklyRowsBd]);
+      }
+    } catch (e) {
+      toast.error("Erreur lors du chargement des détails");
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
+
+  const isAggregateLevel = (level: typeof filtered[number]) =>
+    level.productId === NESPRESSO_AGG_ID ||
+    level.productId === MACARON_AGG_ID ||
+    (level.productName === "GLACE" && level.category === "alimentaire") ||
+    (level.productName === "TOPPINGS" && level.category === "alimentaire");
+
   return (
     <>
     <div className="bg-card rounded-lg border animate-fade-in">
