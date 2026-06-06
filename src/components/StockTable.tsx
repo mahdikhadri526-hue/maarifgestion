@@ -988,7 +988,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité Réf.</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées Réf.</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties Réf.</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Réf.</th>
               </tr>
@@ -1061,7 +1063,25 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     </span>
                   </td>
                   <td className="p-3 text-right font-mono text-sm text-success">{v.entrees}</td>
+                  <td className="p-3 text-right font-mono text-sm text-success">
+                    {(() => {
+                      const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
+                      if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
+                      const val = v.entrees * conv;
+                      const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
+                      return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
+                    })()}
+                  </td>
                   <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
+                  <td className="p-3 text-right font-mono text-sm text-accent-foreground">
+                    {(() => {
+                      const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
+                      if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
+                      const val = v.sorties * conv;
+                      const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
+                      return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
+                    })()}
+                  </td>
                   <td className={`p-3 text-right font-mono text-sm font-semibold ${
                     v.stockRestant < 0 ? "text-destructive" : v.stockRestant === 0 ? "text-muted-foreground" : ""
                   }`}>
