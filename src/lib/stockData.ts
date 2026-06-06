@@ -815,6 +815,12 @@ export interface DailyStockRecord {
 }
 
 export async function getProductDailyHistory(productId: string): Promise<DailyStockRecord[]> {
+  // Cas spécial : produit calculé « TOPPINGS » (agrégat SMARTIES + OREO + Suivi Hebdo)
+  const productName = getProducts().find((p) => p.id === productId)?.name;
+  if (productName === "TOPPINGS") {
+    return getToppingsDailyHistory();
+  }
+
   const [allMovements, initialStocks, units, configs] = await Promise.all([
     getMovements(),
     getInitialStocks(),
