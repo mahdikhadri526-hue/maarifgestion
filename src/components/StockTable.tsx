@@ -1063,7 +1063,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     </span>
                   </td>
                   <td className="p-3 text-right font-mono text-sm text-success">{v.entrees}</td>
-                  <td className="p-3 text-right font-mono text-sm text-success">
+                  <td className="p-3 text-right font-mono text-sm text-emerald-700 bg-emerald-50/30">
                     {(() => {
                       const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
                       if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
@@ -1073,7 +1073,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     })()}
                   </td>
                   <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
-                  <td className="p-3 text-right font-mono text-sm text-accent-foreground">
+                  <td className="p-3 text-right font-mono text-sm text-amber-700 bg-amber-50/30">
                     {(() => {
                       const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
                       if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
@@ -1114,7 +1114,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       </button>
                     )}
                   </td>
-                  <td className="p-3 text-right font-mono text-sm font-semibold">
+                  <td className="p-3 text-right font-mono text-sm font-semibold text-indigo-700 bg-indigo-50/30">
                     {(() => {
                       const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
                       if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
