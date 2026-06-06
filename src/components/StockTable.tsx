@@ -1224,6 +1224,42 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               </div>
             </DialogContent>
           </Dialog>
+
+          <Dialog open={pickOrderOpen} onOpenChange={setPickOrderOpen}>
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Choisir une commande à appliquer en livraison</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3">
+                {savedOrders.length === 0 && (
+                  <p className="text-center text-muted-foreground py-6 text-sm">Aucune commande enregistrée</p>
+                )}
+                {savedOrders.map((o) => (
+                  <button
+                    key={o.id}
+                    type="button"
+                    onClick={() => applyOrderAsLivraison(o)}
+                    className="w-full text-left border rounded-lg p-3 hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="font-semibold text-sm">
+                      {o.order_date} — <span className="capitalize">{o.category}</span>
+                    </div>
+                    <div className="text-xs text-muted-foreground mb-2">
+                      Par {o.performed_by || "—"} · {o.total_items} unité(s) · {(o.items || []).length} article(s)
+                    </div>
+                    <div className="text-xs grid grid-cols-2 gap-x-4 gap-y-0.5 max-h-32 overflow-auto">
+                      {(o.items || []).map((it, i) => (
+                        <div key={i} className="flex justify-between border-b last:border-0 py-0.5">
+                          <span className="truncate">{it.name}</span>
+                          <span className="font-mono font-semibold">{it.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </DialogContent>
+          </Dialog>
         </>
       )}
     </div>
