@@ -1059,8 +1059,21 @@ export async function getGlaceBreakdownForRange(
       if (sortie == null) sortie = cell.explicitSortie ?? 0;
       sorties += sortie * g;
     }
-    // Stock restant cohérent : SI + entrées − sorties sur la période.
-    const stockRestant = stockInitial + entrees - sorties;
+    // Stock restant = dernier SI saisi <= endDate pour ce parfum (même logique
+    // que l'agrégat GLACE affiché dans la table). Si rien n'a été saisi dans
+    // la période, on retombe sur SI + entrées − sorties.
+    let stockRestant = stockInitial + entrees - sorties;
+    let latestSiDate: string | null = null;
+    for (const [date, cell] of days) {
+      if (cell.si == null) continue;
+      if (endDate && date > endDate) continue;
+      if (startDate && date < startDate) continue;
+      if (!latestSiDate || date > latestSiDate) latestSiDate = date;
+    }
+    if (latestSiDate) {
+      const si = days.get(latestSiDate)?.si;
+      if (si != null) stockRestant = si * g;
+    }
     if (stockInitial === 0 && entrees === 0 && sorties === 0 && stockRestant === 0) continue;
     out.push({
       name: article,
