@@ -897,7 +897,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         const rows: AggregateBreakdownRow[] = MACARON_ARTICLES.map((art) => {
           const t = buildWeeklyAggregateTotals(data || [], [art], isInPeriod, mode === "all");
           return { name: art, ...t };
-        }).filter((r) => r.stockInitial || r.entrees || r.sorties || r.stockRestant);
+        });
         setDetailsRows(rows);
       } else if (isToppings) {
         // 1) SMARTIES + OREO via levels / periodTotals
@@ -939,7 +939,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         const weeklyRowsBd: AggregateBreakdownRow[] = TOPPINGS_WEEKLY_ARTICLES.map((art) => {
           const t = buildWeeklyAggregateTotals(data || [], [art], isInPeriod, mode === "all");
           return { name: `${art} (Suivi Hebdo)`, ...t };
-        }).filter((r) => r.stockInitial || r.entrees || r.sorties || r.stockRestant);
+        });
         setDetailsRows([...sourceRows, ...weeklyRowsBd]);
       }
     } catch (e) {
