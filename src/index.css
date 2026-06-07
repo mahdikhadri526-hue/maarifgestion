@@ -79,10 +79,10 @@
     @apply w-full border-collapse text-sm rounded-md overflow-hidden;
   }
   thead {
-    @apply bg-primary text-primary-foreground;
+    @apply bg-muted text-foreground;
   }
   thead th {
-    @apply px-3 py-2.5 text-left font-semibold tracking-wide uppercase text-xs border-b border-primary/40;
+    @apply px-3 py-2.5 text-left font-semibold tracking-wide uppercase text-xs border-b border-border;
   }
   tbody tr {
     @apply border-b border-border/60 transition-colors;
