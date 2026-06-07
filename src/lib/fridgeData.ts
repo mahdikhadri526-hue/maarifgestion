@@ -19,7 +19,7 @@ export const EQUIPMENTS: FridgeEquipment[] = [
   { code: "SAL-N02", name: "Frigo négatif 2", type: "Frigo négatif", zone: "Salle" },
   { code: "SAL-P01", name: "Frigo positif 1", type: "Frigo positif", zone: "Salle" },
   { code: "SAL-P02", name: "Frigo positif 2", type: "Frigo positif", zone: "Salle" },
-  { code: "SAL-P03", name: "Frigo positif 3", type: "Frigo positif", zone: "Salle" },
+  { code: "SAL-P03", name: "Frigo négatif 3", type: "Frigo négatif", zone: "Salle" },
   { code: "EMP-N01", name: "Frigo négatif 1", type: "Frigo négatif", zone: "Emporter" },
   { code: "EMP-N02", name: "Frigo négatif 2", type: "Frigo négatif", zone: "Emporter" },
   { code: "EMP-N03", name: "Frigo négatif 3", type: "Frigo négatif", zone: "Emporter" },
