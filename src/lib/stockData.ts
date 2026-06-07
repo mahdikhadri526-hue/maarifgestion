@@ -180,7 +180,7 @@ const ALIMENTAIRE_PRODUCTS = [
   "__HIDDEN__",
   "__HIDDEN__",
   "__HIDDEN__",
-  "FRAISE",
+  "__HIDDEN__",
   "__HIDDEN__",
   "__HIDDEN__",
   "GLACE",
