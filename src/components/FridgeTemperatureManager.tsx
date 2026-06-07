@@ -328,13 +328,9 @@ export function FridgeTemperatureManager() {
         <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Chargement…</CardContent></Card>
       ) : (
         Object.entries(equipmentsByZone).map(([zone, equips], zoneIndex) => {
-          const sortedEquips = [...equips].sort((a, b) => {
-            const ra = rows[a.code] ?? emptyRow();
-            const rb = rows[b.code] ?? emptyRow();
-            const pa = ra.conformite === "non_conforme" ? 0 : ra.temperature === "" ? 1 : 2;
-            const pb = rb.conformite === "non_conforme" ? 0 : rb.temperature === "" ? 1 : 2;
-            return pa - pb;
-          });
+          // Conserver l'ordre fixe des équipements pour éviter que les lignes
+          // ne se déplacent pendant la saisie.
+          const sortedEquips = equips;
           return (
           <Card key={zone}>
             <CardHeader className="pb-3">
