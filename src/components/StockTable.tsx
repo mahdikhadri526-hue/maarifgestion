@@ -311,21 +311,74 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [detailsUnit, setDetailsUnit] = useState<string>("");
   const [detailsLoading, setDetailsLoading] = useState(false);
 
-  // Conversion + Unité Réf. par produit (persistées en local, sans impacter la base)
+  // Conversion + Unité Réf. par produit (partagées via Supabase, synchronisées en temps réel)
   const REF_STORAGE_KEY = "stock_ref_conversions_v1";
   type RefRow = { conversion: string; unitRef: string };
-  const [refMap, setRefMap] = useState<Record<string, RefRow>>(() => {
-    try {
-      const raw = localStorage.getItem(REF_STORAGE_KEY);
-      return raw ? JSON.parse(raw) : {};
-    } catch {
-      return {};
-    }
-  });
+  const [refMap, setRefMap] = useState<Record<string, RefRow>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const { data, error } = await supabase
+        .from("stock_ref_conversions")
+        .select("product_id, conversion, unit_ref");
+      if (cancelled) return;
+      const next: Record<string, RefRow> = {};
+      if (!error && data) {
+        for (const r of data as any[]) {
+          next[r.product_id] = { conversion: r.conversion ?? "", unitRef: r.unit_ref ?? "" };
+        }
+      }
+      // Migration unique depuis localStorage si la base est vide
+      try {
+        const raw = localStorage.getItem(REF_STORAGE_KEY);
+        if (raw && Object.keys(next).length === 0) {
+          const local = JSON.parse(raw) as Record<string, RefRow>;
+          const rows = Object.entries(local)
+            .filter(([, v]) => v && (v.conversion || v.unitRef))
+            .map(([product_id, v]) => ({ product_id, conversion: v.conversion ?? "", unit_ref: v.unitRef ?? "" }));
+          if (rows.length) {
+            await supabase.from("stock_ref_conversions").upsert(rows, { onConflict: "product_id" });
+            for (const r of rows) next[r.product_id] = { conversion: r.conversion, unitRef: r.unit_ref };
+          }
+          localStorage.removeItem(REF_STORAGE_KEY);
+        }
+      } catch {}
+      setRefMap(next);
+    };
+    load();
+    const ch = supabase
+      .channel("stock_ref_conversions_sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "stock_ref_conversions" }, (payload: any) => {
+        setRefMap((prev) => {
+          const next = { ...prev };
+          if (payload.eventType === "DELETE") {
+            const id = payload.old?.product_id;
+            if (id) delete next[id];
+          } else {
+            const r = payload.new;
+            if (r?.product_id) next[r.product_id] = { conversion: r.conversion ?? "", unitRef: r.unit_ref ?? "" };
+          }
+          return next;
+        });
+      })
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(ch);
+    };
+  }, []);
+
   const updateRef = (productId: string, patch: Partial<RefRow>) => {
     setRefMap((prev) => {
-      const next = { ...prev, [productId]: { conversion: "", unitRef: "", ...prev[productId], ...patch } };
-      try { localStorage.setItem(REF_STORAGE_KEY, JSON.stringify(next)); } catch {}
+      const merged = { conversion: "", unitRef: "", ...prev[productId], ...patch };
+      const next = { ...prev, [productId]: merged };
+      void supabase
+        .from("stock_ref_conversions")
+        .upsert(
+          { product_id: productId, conversion: merged.conversion, unit_ref: merged.unitRef, updated_at: new Date().toISOString() },
+          { onConflict: "product_id" },
+        );
       return next;
     });
   };

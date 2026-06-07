@@ -525,6 +525,27 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_ref_conversions: {
+        Row: {
+          conversion: string
+          product_id: string
+          unit_ref: string
+          updated_at: string
+        }
+        Insert: {
+          conversion?: string
+          product_id: string
+          unit_ref?: string
+          updated_at?: string
+        }
+        Update: {
+          conversion?: string
+          product_id?: string
+          unit_ref?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_permissions: {
         Row: {
           allowed: boolean
