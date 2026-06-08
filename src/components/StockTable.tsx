@@ -1352,7 +1352,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   <td className="p-3">
                     <button
                       onClick={() => {
-                        if (level.productId === NESPRESSO_AGG_ID || level.productId === MACARON_AGG_ID) return;
+                        if (isReadOnlyAggId(level.productId)) return;
                         if (can("edit_stock")) {
                           cycleUnit(level.productId, level.unit);
                         } else {
@@ -1448,13 +1448,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     ) : (
                       <button
                         type="button"
-                        disabled={mode !== "all" || !canEditStock || level.productId === NESPRESSO_AGG_ID || level.productId === MACARON_AGG_ID}
+                        disabled={mode !== "all" || !canEditStock || isReadOnlyAggId(level.productId)}
                         onClick={() => {
-                          if (level.productId === NESPRESSO_AGG_ID || level.productId === MACARON_AGG_ID) return;
+                          if (isReadOnlyAggId(level.productId)) return;
                           setEditingStock(level.productId);
                           setEditingValue(String(v.stockRestant));
                         }}
-                        className={mode === "all" && canEditStock && level.productId !== NESPRESSO_AGG_ID && level.productId !== MACARON_AGG_ID ? "hover:underline cursor-pointer" : "cursor-default"}
+                        className={mode === "all" && canEditStock && !isReadOnlyAggId(level.productId) ? "hover:underline cursor-pointer" : "cursor-default"}
                         title={mode === "all" && canEditStock ? "Cliquer pour ajuster le stock (corrigera le stock initial)" : undefined}
                       >
                         {v.stockRestant}
