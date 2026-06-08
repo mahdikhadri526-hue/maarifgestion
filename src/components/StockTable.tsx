@@ -804,6 +804,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         stockRestant: level.stockRestant,
       };
     }
+    if (EXTRA_AGG_IDS.includes(level.productId)) {
+      return {
+        stockInitial: level.stockInitial,
+        entrees: level.totalEntrees,
+        sorties: level.totalSorties,
+        stockRestant: level.stockRestant,
+      };
+    }
     return periodTotals[level.productId] ?? { stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 };
   };
 
