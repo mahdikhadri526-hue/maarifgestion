@@ -455,6 +455,58 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       stockRestant: macaronAgg.stockRestant,
     }];
   }
+  if (variant === "stock" && category === "all") {
+    const extras: typeof withAgg = [];
+    if (siropWeekly) {
+      const aliSrc = baseLevels.find((l) => l.productId === SIROP_CHOCOLAT_ALI_ID);
+      const aliPart = mode === "all"
+        ? {
+            stockInitial: aliSrc?.stockInitial ?? 0,
+            entrees: aliSrc?.totalEntrees ?? 0,
+            sorties: aliSrc?.totalSorties ?? 0,
+            stockRestant: aliSrc?.stockRestant ?? 0,
+          }
+        : (periodTotals[SIROP_CHOCOLAT_ALI_ID] ?? { stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 });
+      extras.push({
+        productId: SIROP_AGG_ID,
+        productName: "Sirop caramel/chocolat",
+        conditionnement: "",
+        unit: "KILO" as UnitType,
+        category: "alimentaire" as Category,
+        stockInitial: roundStockQuantity(aliPart.stockInitial + siropWeekly.stockInitial),
+        totalEntrees: roundStockQuantity(aliPart.entrees + siropWeekly.entrees),
+        totalSorties: roundStockQuantity(aliPart.sorties + siropWeekly.sorties),
+        stockRestant: roundStockQuantity(aliPart.stockRestant + siropWeekly.stockRestant),
+      });
+    }
+    if (chantillyAgg) {
+      extras.push({
+        productId: CHANTILLY_AGG_ID,
+        productName: "Crème chantilly",
+        conditionnement: "",
+        unit: "KILO" as UnitType,
+        category: "alimentaire" as Category,
+        stockInitial: chantillyAgg.stockInitial,
+        totalEntrees: chantillyAgg.entrees,
+        totalSorties: chantillyAgg.sorties,
+        stockRestant: chantillyAgg.stockRestant,
+      });
+    }
+    if (amandesAgg) {
+      extras.push({
+        productId: AMANDES_AGG_ID,
+        productName: "Amandes caramélisées",
+        conditionnement: "",
+        unit: "KILO" as UnitType,
+        category: "alimentaire" as Category,
+        stockInitial: amandesAgg.stockInitial,
+        totalEntrees: amandesAgg.entrees,
+        totalSorties: amandesAgg.sorties,
+        stockRestant: amandesAgg.stockRestant,
+      });
+    }
+    if (extras.length) withAgg = [...withAgg, ...extras];
+  }
   const filtered = withAgg.filter((l) =>
     l.productName.toLowerCase().includes(search.toLowerCase())
   );
