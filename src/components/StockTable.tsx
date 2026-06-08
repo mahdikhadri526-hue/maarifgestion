@@ -56,11 +56,15 @@ const SIROP_AGG_ID = "__sirop_agg__";
 const CHANTILLY_AGG_ID = "__chantilly_agg__";
 const AMANDES_AGG_ID = "__amandes_agg__";
 const NESPRESSO_AGG_ID_CONST = "__nespresso_agg__";
+const NUTELLA_NESTLE_AGG_ID = "__nutella_nestle_agg__";
+const THE_AROMATISE_AGG_ID = "__the_aromatise_agg__";
 const SIROP_CHOCOLAT_ALI_ID = "ali-9";
+const NUTELLA_ALI_ID = "ali-21";
+const NESTLE_CARAMEL_ALI_ID = "ali-15";
 const SIROP_CARAMEL_WEEKLY_ARTICLE = "Sirop.Crml";
 const CHANTILLY_WEEKLY_ARTICLE = "Crème fraîche (mousse fouettée)";
 const AMANDES_WEEKLY_ARTICLE = "Amd.Crml";
-const EXTRA_AGG_IDS = [SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID];
+const EXTRA_AGG_IDS = [SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID, NUTELLA_NESTLE_AGG_ID, THE_AROMATISE_AGG_ID];
 const isReadOnlyAggId = (id: string) =>
   id === NESPRESSO_AGG_ID_CONST || id === MACARON_AGG_ID || EXTRA_AGG_IDS.includes(id);
 const GLACE_ARTICLES = [
@@ -441,6 +445,38 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       stockRestant: roundStockQuantity(nespressoSources.reduce((s, l) => s + l.stockRestant, 0)),
     };
     withAgg = [...baseLevels, agg];
+  }
+  if (category === "all" || category === "alimentaire") {
+    const nutellaSources = baseLevels.filter(
+      (l) => l.productId === NUTELLA_ALI_ID || l.productId === NESTLE_CARAMEL_ALI_ID,
+    );
+    if (nutellaSources.length > 0) {
+      withAgg = [...withAgg, {
+        productId: NUTELLA_NESTLE_AGG_ID,
+        productName: "Nutella/Nestlé caramel",
+        conditionnement: "",
+        unit: nutellaSources[0].unit,
+        category: "alimentaire" as Category,
+        stockInitial: roundStockQuantity(nutellaSources.reduce((s, l) => s + l.stockInitial, 0)),
+        totalEntrees: roundStockQuantity(nutellaSources.reduce((s, l) => s + l.totalEntrees, 0)),
+        totalSorties: roundStockQuantity(nutellaSources.reduce((s, l) => s + l.totalSorties, 0)),
+        stockRestant: roundStockQuantity(nutellaSources.reduce((s, l) => s + l.stockRestant, 0)),
+      }];
+    }
+    const tchabaSources = baseLevels.filter((l) => /tchaba/i.test(l.productName));
+    if (tchabaSources.length > 0) {
+      withAgg = [...withAgg, {
+        productId: THE_AROMATISE_AGG_ID,
+        productName: "Thé aromatisé (Tchaba)",
+        conditionnement: "",
+        unit: tchabaSources[0].unit,
+        category: "alimentaire" as Category,
+        stockInitial: roundStockQuantity(tchabaSources.reduce((s, l) => s + l.stockInitial, 0)),
+        totalEntrees: roundStockQuantity(tchabaSources.reduce((s, l) => s + l.totalEntrees, 0)),
+        totalSorties: roundStockQuantity(tchabaSources.reduce((s, l) => s + l.totalSorties, 0)),
+        stockRestant: roundStockQuantity(tchabaSources.reduce((s, l) => s + l.stockRestant, 0)),
+      }];
+    }
   }
   if (variant === "stock" && category === "all" && macaronAgg) {
     withAgg = [...withAgg, {
