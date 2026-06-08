@@ -52,6 +52,18 @@ const MACARON_ARTICLES = [
   "Mac.Chocolat N", "Mac.Pistache N", "Mac.Caramel N", "Mac.Cfé N", "Mac.Mng N", "Mac.Cit N",
 ];
 const MACARON_AGG_ID = "__macaron_agg__";
+const SIROP_AGG_ID = "__sirop_agg__";
+const CHANTILLY_AGG_ID = "__chantilly_agg__";
+const AMANDES_AGG_ID = "__amandes_agg__";
+const SIROP_CHOCOLAT_ALI_ID = "ali-9";
+const SIROP_CARAMEL_WEEKLY_ARTICLE = "Sirop.Crml";
+const CHANTILLY_WEEKLY_ARTICLE = "Crème fraîche (mousse fouettée)";
+const AMANDES_WEEKLY_ARTICLE = "Amd.Crml";
+const EXTRA_AGG_IDS = [SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID];
+const isReadOnlyAggId = (id: string) =>
+  id === NESPRESSO_AGG_ID_CONST || id === MACARON_AGG_ID || EXTRA_AGG_IDS.includes(id);
+// NESPRESSO_AGG_ID is declared inside the component; mirror it here for the helper.
+const NESPRESSO_AGG_ID_CONST = "__nespresso_agg__";
 const GLACE_ARTICLES = [
   "Sicilienne vanille", "Sicilienne chocolat", "Sicilienne fraise", "Sicilienne mangue",
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
