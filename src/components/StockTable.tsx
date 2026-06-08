@@ -446,6 +446,38 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     };
     withAgg = [...baseLevels, agg];
   }
+  if (category === "all" || category === "alimentaire") {
+    const nutellaSources = baseLevels.filter(
+      (l) => l.productId === NUTELLA_ALI_ID || l.productId === NESTLE_CARAMEL_ALI_ID,
+    );
+    if (nutellaSources.length > 0) {
+      withAgg = [...withAgg, {
+        productId: NUTELLA_NESTLE_AGG_ID,
+        productName: "Nutella/Nestlé caramel",
+        conditionnement: "",
+        unit: nutellaSources[0].unit,
+        category: "alimentaire" as Category,
+        stockInitial: roundStockQuantity(nutellaSources.reduce((s, l) => s + l.stockInitial, 0)),
+        totalEntrees: roundStockQuantity(nutellaSources.reduce((s, l) => s + l.totalEntrees, 0)),
+        totalSorties: roundStockQuantity(nutellaSources.reduce((s, l) => s + l.totalSorties, 0)),
+        stockRestant: roundStockQuantity(nutellaSources.reduce((s, l) => s + l.stockRestant, 0)),
+      }];
+    }
+    const tchabaSources = baseLevels.filter((l) => /tchaba/i.test(l.productName));
+    if (tchabaSources.length > 0) {
+      withAgg = [...withAgg, {
+        productId: THE_AROMATISE_AGG_ID,
+        productName: "Thé aromatisé (Tchaba)",
+        conditionnement: "",
+        unit: tchabaSources[0].unit,
+        category: "alimentaire" as Category,
+        stockInitial: roundStockQuantity(tchabaSources.reduce((s, l) => s + l.stockInitial, 0)),
+        totalEntrees: roundStockQuantity(tchabaSources.reduce((s, l) => s + l.totalEntrees, 0)),
+        totalSorties: roundStockQuantity(tchabaSources.reduce((s, l) => s + l.totalSorties, 0)),
+        stockRestant: roundStockQuantity(tchabaSources.reduce((s, l) => s + l.stockRestant, 0)),
+      }];
+    }
+  }
   if (variant === "stock" && category === "all" && macaronAgg) {
     withAgg = [...withAgg, {
       productId: MACARON_AGG_ID,
