@@ -556,17 +556,25 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   useEffect(() => {
     if (variant !== "stock" || category !== "all") {
       setMacaronAgg(null);
+      setSiropWeekly(null);
+      setChantillyAgg(null);
+      setAmandesAgg(null);
       return;
     }
     let cancelled = false;
     (async () => {
       try {
+        const extraArticles = [
+          SIROP_CARAMEL_WEEKLY_ARTICLE,
+          CHANTILLY_WEEKLY_ARTICLE,
+          AMANDES_WEEKLY_ARTICLE,
+        ];
         const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
           supabase
             .from("weekly_tracking")
             .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
             .eq("fiche_type", "Mouvement glaces & tartes")
-            .in("article", MACARON_ARTICLES as unknown as string[]),
+            .in("article", [...MACARON_ARTICLES, ...extraArticles] as unknown as string[]),
         );
         if (cancelled) return;
         const isInSelectedPeriod = (date: string) => {
@@ -586,8 +594,22 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           mode === "all",
         );
         setMacaronAgg(totals);
+        setSiropWeekly(buildWeeklyAggregateTotals(
+          data || [], [SIROP_CARAMEL_WEEKLY_ARTICLE], isInSelectedPeriod, mode === "all",
+        ));
+        setChantillyAgg(buildWeeklyAggregateTotals(
+          data || [], [CHANTILLY_WEEKLY_ARTICLE], isInSelectedPeriod, mode === "all",
+        ));
+        setAmandesAgg(buildWeeklyAggregateTotals(
+          data || [], [AMANDES_WEEKLY_ARTICLE], isInSelectedPeriod, mode === "all",
+        ));
       } catch {
-        if (!cancelled) setMacaronAgg(null);
+        if (!cancelled) {
+          setMacaronAgg(null);
+          setSiropWeekly(null);
+          setChantillyAgg(null);
+          setAmandesAgg(null);
+        }
       }
     })();
     return () => { cancelled = true; };
