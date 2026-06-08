@@ -52,6 +52,17 @@ const MACARON_ARTICLES = [
   "Mac.Chocolat N", "Mac.Pistache N", "Mac.Caramel N", "Mac.Cfé N", "Mac.Mng N", "Mac.Cit N",
 ];
 const MACARON_AGG_ID = "__macaron_agg__";
+const SIROP_AGG_ID = "__sirop_agg__";
+const CHANTILLY_AGG_ID = "__chantilly_agg__";
+const AMANDES_AGG_ID = "__amandes_agg__";
+const NESPRESSO_AGG_ID_CONST = "__nespresso_agg__";
+const SIROP_CHOCOLAT_ALI_ID = "ali-9";
+const SIROP_CARAMEL_WEEKLY_ARTICLE = "Sirop.Crml";
+const CHANTILLY_WEEKLY_ARTICLE = "Crème fraîche (mousse fouettée)";
+const AMANDES_WEEKLY_ARTICLE = "Amd.Crml";
+const EXTRA_AGG_IDS = [SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID];
+const isReadOnlyAggId = (id: string) =>
+  id === NESPRESSO_AGG_ID_CONST || id === MACARON_AGG_ID || EXTRA_AGG_IDS.includes(id);
 const GLACE_ARTICLES = [
   "Sicilienne vanille", "Sicilienne chocolat", "Sicilienne fraise", "Sicilienne mangue",
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
@@ -297,6 +308,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [weeklyRows, setWeeklyRows] = useState<Array<{ article: string; sorties: number; stockActuel: number }>>([]);
   const [weeklyLoading, setWeeklyLoading] = useState(false);
   const [macaronAgg, setMacaronAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
+  const [siropWeekly, setSiropWeekly] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
+  const [chantillyAgg, setChantillyAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
+  const [amandesAgg, setAmandesAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const { can } = useAuth();
   const [editingStock, setEditingStock] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
@@ -441,6 +455,58 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       stockRestant: macaronAgg.stockRestant,
     }];
   }
+  if (variant === "stock" && category === "all") {
+    const extras: typeof withAgg = [];
+    if (siropWeekly) {
+      const aliSrc = baseLevels.find((l) => l.productId === SIROP_CHOCOLAT_ALI_ID);
+      const aliPart = mode === "all"
+        ? {
+            stockInitial: aliSrc?.stockInitial ?? 0,
+            entrees: aliSrc?.totalEntrees ?? 0,
+            sorties: aliSrc?.totalSorties ?? 0,
+            stockRestant: aliSrc?.stockRestant ?? 0,
+          }
+        : (periodTotals[SIROP_CHOCOLAT_ALI_ID] ?? { stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 });
+      extras.push({
+        productId: SIROP_AGG_ID,
+        productName: "Sirop caramel/chocolat",
+        conditionnement: "",
+        unit: "KILO" as UnitType,
+        category: "alimentaire" as Category,
+        stockInitial: roundStockQuantity(aliPart.stockInitial + siropWeekly.stockInitial),
+        totalEntrees: roundStockQuantity(aliPart.entrees + siropWeekly.entrees),
+        totalSorties: roundStockQuantity(aliPart.sorties + siropWeekly.sorties),
+        stockRestant: roundStockQuantity(aliPart.stockRestant + siropWeekly.stockRestant),
+      });
+    }
+    if (chantillyAgg) {
+      extras.push({
+        productId: CHANTILLY_AGG_ID,
+        productName: "Crème chantilly",
+        conditionnement: "",
+        unit: "KILO" as UnitType,
+        category: "alimentaire" as Category,
+        stockInitial: chantillyAgg.stockInitial,
+        totalEntrees: chantillyAgg.entrees,
+        totalSorties: chantillyAgg.sorties,
+        stockRestant: chantillyAgg.stockRestant,
+      });
+    }
+    if (amandesAgg) {
+      extras.push({
+        productId: AMANDES_AGG_ID,
+        productName: "Amandes caramélisées",
+        conditionnement: "",
+        unit: "KILO" as UnitType,
+        category: "alimentaire" as Category,
+        stockInitial: amandesAgg.stockInitial,
+        totalEntrees: amandesAgg.entrees,
+        totalSorties: amandesAgg.sorties,
+        stockRestant: amandesAgg.stockRestant,
+      });
+    }
+    if (extras.length) withAgg = [...withAgg, ...extras];
+  }
   const filtered = withAgg.filter((l) =>
     l.productName.toLowerCase().includes(search.toLowerCase())
   );
@@ -490,17 +556,25 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   useEffect(() => {
     if (variant !== "stock" || category !== "all") {
       setMacaronAgg(null);
+      setSiropWeekly(null);
+      setChantillyAgg(null);
+      setAmandesAgg(null);
       return;
     }
     let cancelled = false;
     (async () => {
       try {
+        const extraArticles = [
+          SIROP_CARAMEL_WEEKLY_ARTICLE,
+          CHANTILLY_WEEKLY_ARTICLE,
+          AMANDES_WEEKLY_ARTICLE,
+        ];
         const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
           supabase
             .from("weekly_tracking")
             .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
             .eq("fiche_type", "Mouvement glaces & tartes")
-            .in("article", MACARON_ARTICLES as unknown as string[]),
+            .in("article", [...MACARON_ARTICLES, ...extraArticles] as unknown as string[]),
         );
         if (cancelled) return;
         const isInSelectedPeriod = (date: string) => {
@@ -520,8 +594,22 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           mode === "all",
         );
         setMacaronAgg(totals);
+        setSiropWeekly(buildWeeklyAggregateTotals(
+          data || [], [SIROP_CARAMEL_WEEKLY_ARTICLE], isInSelectedPeriod, mode === "all",
+        ));
+        setChantillyAgg(buildWeeklyAggregateTotals(
+          data || [], [CHANTILLY_WEEKLY_ARTICLE], isInSelectedPeriod, mode === "all",
+        ));
+        setAmandesAgg(buildWeeklyAggregateTotals(
+          data || [], [AMANDES_WEEKLY_ARTICLE], isInSelectedPeriod, mode === "all",
+        ));
       } catch {
-        if (!cancelled) setMacaronAgg(null);
+        if (!cancelled) {
+          setMacaronAgg(null);
+          setSiropWeekly(null);
+          setChantillyAgg(null);
+          setAmandesAgg(null);
+        }
       }
     })();
     return () => { cancelled = true; };
@@ -709,6 +797,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       };
     }
     if (level.productId === MACARON_AGG_ID) {
+      return {
+        stockInitial: level.stockInitial,
+        entrees: level.totalEntrees,
+        sorties: level.totalSorties,
+        stockRestant: level.stockRestant,
+      };
+    }
+    if (EXTRA_AGG_IDS.includes(level.productId)) {
       return {
         stockInitial: level.stockInitial,
         entrees: level.totalEntrees,
@@ -1256,7 +1352,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   <td className="p-3">
                     <button
                       onClick={() => {
-                        if (level.productId === NESPRESSO_AGG_ID || level.productId === MACARON_AGG_ID) return;
+                        if (isReadOnlyAggId(level.productId)) return;
                         if (can("edit_stock")) {
                           cycleUnit(level.productId, level.unit);
                         } else {
@@ -1352,13 +1448,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     ) : (
                       <button
                         type="button"
-                        disabled={mode !== "all" || !canEditStock || level.productId === NESPRESSO_AGG_ID || level.productId === MACARON_AGG_ID}
+                        disabled={mode !== "all" || !canEditStock || isReadOnlyAggId(level.productId)}
                         onClick={() => {
-                          if (level.productId === NESPRESSO_AGG_ID || level.productId === MACARON_AGG_ID) return;
+                          if (isReadOnlyAggId(level.productId)) return;
                           setEditingStock(level.productId);
                           setEditingValue(String(v.stockRestant));
                         }}
-                        className={mode === "all" && canEditStock && level.productId !== NESPRESSO_AGG_ID && level.productId !== MACARON_AGG_ID ? "hover:underline cursor-pointer" : "cursor-default"}
+                        className={mode === "all" && canEditStock && !isReadOnlyAggId(level.productId) ? "hover:underline cursor-pointer" : "cursor-default"}
                         title={mode === "all" && canEditStock ? "Cliquer pour ajuster le stock (corrigera le stock initial)" : undefined}
                       >
                         {v.stockRestant}
