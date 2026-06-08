@@ -56,11 +56,15 @@ const SIROP_AGG_ID = "__sirop_agg__";
 const CHANTILLY_AGG_ID = "__chantilly_agg__";
 const AMANDES_AGG_ID = "__amandes_agg__";
 const NESPRESSO_AGG_ID_CONST = "__nespresso_agg__";
+const NUTELLA_NESTLE_AGG_ID = "__nutella_nestle_agg__";
+const THE_AROMATISE_AGG_ID = "__the_aromatise_agg__";
 const SIROP_CHOCOLAT_ALI_ID = "ali-9";
+const NUTELLA_ALI_ID = "ali-21";
+const NESTLE_CARAMEL_ALI_ID = "ali-15";
 const SIROP_CARAMEL_WEEKLY_ARTICLE = "Sirop.Crml";
 const CHANTILLY_WEEKLY_ARTICLE = "Crème fraîche (mousse fouettée)";
 const AMANDES_WEEKLY_ARTICLE = "Amd.Crml";
-const EXTRA_AGG_IDS = [SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID];
+const EXTRA_AGG_IDS = [SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID, NUTELLA_NESTLE_AGG_ID, THE_AROMATISE_AGG_ID];
 const isReadOnlyAggId = (id: string) =>
   id === NESPRESSO_AGG_ID_CONST || id === MACARON_AGG_ID || EXTRA_AGG_IDS.includes(id);
 const GLACE_ARTICLES = [
