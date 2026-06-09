@@ -249,21 +249,11 @@ export function getProducts(category?: Category): Product[] {
     const { name, conditionnement } = parseProduct(raw);
     return { id: `emb-${i}`, name, conditionnement, category: "emballage" as Category, initialStock: 0 };
   }).filter((p) => p.name !== "__HIDDEN__");
-  // Articles agrégés (virtuels) — exposés pour pouvoir être sélectionnés dans les recettes
-  const aggregates: Product[] = [
-    { id: "__sirop_agg__", name: "Sirop caramel/chocolat", conditionnement: "", category: "alimentaire" as Category, initialStock: 0 },
-    { id: "__chantilly_agg__", name: "Crème chantilly", conditionnement: "", category: "alimentaire" as Category, initialStock: 0 },
-    { id: "__amandes_agg__", name: "Amandes caramélisées", conditionnement: "", category: "alimentaire" as Category, initialStock: 0 },
-    { id: "__nutella_nestle_agg__", name: "Nutella/Nestlé caramel", conditionnement: "", category: "alimentaire" as Category, initialStock: 0 },
-    { id: "__the_aromatise_agg__", name: "Thé aromatisé (Tchaba)", conditionnement: "", category: "alimentaire" as Category, initialStock: 0 },
-    { id: "__nespresso_agg__", name: "NESPRESSO (Total)", conditionnement: "", category: "alimentaire" as Category, initialStock: 0 },
-    { id: "__macaron_agg__", name: "MACARON (tous parfums)", conditionnement: "", category: "alimentaire" as Category, initialStock: 0 },
-  ];
   const sortByName = (a: Product, b: Product) =>
     a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
-  if (category === "alimentaire") return [...ali, ...aggregates].sort(sortByName);
+  if (category === "alimentaire") return ali.sort(sortByName);
   if (category === "emballage") return emb.sort(sortByName);
-  return [...[...ali, ...aggregates].sort(sortByName), ...emb.sort(sortByName)];
+  return [...ali.sort(sortByName), ...emb.sort(sortByName)];
 }
 
 // Détecte l'unité naturelle d'un produit selon son nom (huile→Litre, sucre→Kg, etc.)
