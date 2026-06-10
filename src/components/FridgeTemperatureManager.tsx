@@ -43,6 +43,27 @@ function currentSlot(): FridgeSlot {
   return "00h";
 }
 
+function getSign(value: string, type: string): "+" | "-" {
+  const v = value.trim();
+  if (v.startsWith("+")) return "+";
+  if (v.startsWith("-")) return "-";
+  if (type.startsWith("Frigo négatif") || type.startsWith("Congélateur") || type === "Chambre négative") return "-";
+  return "+";
+}
+
+function applySign(value: string, sign: "+" | "-"): string {
+  const cleaned = value.trim().replace(/^[+-]/, "");
+  return `${sign}${cleaned}`;
+}
+
+function formatWithSign(value: string, sign: "+" | "-"): string {
+  const cleaned = value.trim().replace(/^[+-]/, "").replace(",", ".");
+  if (cleaned === "") return "";
+  const num = Number(cleaned);
+  if (Number.isNaN(num)) return value;
+  return `${sign}${Math.abs(num)}`;
+}
+
 export function FridgeTemperatureManager() {
   const { can } = useAuth();
   const canEdit = can("edit_temperatures");
