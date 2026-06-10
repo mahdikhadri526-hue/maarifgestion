@@ -385,7 +385,7 @@ export function FridgeTemperatureManager() {
                 {sortedEquips.map((eq) => {
                   const row = rows[eq.code] ?? emptyRow();
                   const locked = !!row.id;
-                  const editable = canEdit && !locked;
+                  const editable = canEdit;
                   return (
                     <TableRow key={eq.code} className={row.id ? "bg-success/5" : ""}>
                       <TableCell className="font-mono text-xs">{eq.code}</TableCell>
@@ -404,7 +404,7 @@ export function FridgeTemperatureManager() {
                             const formatted = formatWithSign(row.temperature, sign);
                             if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
                           }}
-                          disabled={!canEdit}
+                          disabled={!editable}
                           className="h-9 w-28"
                           placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
                         />
@@ -460,7 +460,7 @@ export function FridgeTemperatureManager() {
               {sortedEquips.map((eq) => {
                 const row = rows[eq.code] ?? emptyRow();
                 const locked = !!row.id;
-                const editable = canEdit && !locked;
+                const editable = canEdit;
                 const status = row.conformite;
                 const borderClass =
                   status === "non_conforme"
@@ -497,7 +497,7 @@ export function FridgeTemperatureManager() {
                             const formatted = formatWithSign(row.temperature, sign);
                             if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
                           }}
-                          disabled={!canEdit}
+                          disabled={!editable}
                           className="h-10 text-base font-semibold w-full"
                           placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
                         />
