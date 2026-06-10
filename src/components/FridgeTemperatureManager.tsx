@@ -394,20 +394,40 @@ export function FridgeTemperatureManager() {
                         <div className="text-xs text-muted-foreground">{eq.type}</div>
                       </TableCell>
                       <TableCell>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          value={row.temperature}
-                          onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
-                          onBlur={() => {
-                            const sign = getSign(row.temperature, eq.type);
-                            const formatted = formatWithSign(row.temperature, sign);
-                            if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
-                          }}
-                          disabled={!editable}
-                          className="h-9 w-28"
-                          placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
-                        />
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const cleaned = row.temperature.trim().replace(/^[+-]/, "");
+                              updateRow(eq.code, { temperature: `+${cleaned}` });
+                            }}
+                            className={`h-9 w-7 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("+") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                            disabled={!editable}
+                          >+</button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const cleaned = row.temperature.trim().replace(/^[+-]/, "");
+                              updateRow(eq.code, { temperature: `-${cleaned}` });
+                            }}
+                            className={`h-9 w-7 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("-") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                            disabled={!editable}
+                          >-</button>
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={row.temperature}
+                            onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
+                            onBlur={() => {
+                              const sign = getSign(row.temperature, eq.type);
+                              const formatted = formatWithSign(row.temperature, sign);
+                              if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
+                            }}
+                            disabled={!editable}
+                            className="h-9 w-20"
+                            placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
+                          />
+                        </div>
                       </TableCell>
                       <TableCell>
                         <Select
@@ -487,20 +507,40 @@ export function FridgeTemperatureManager() {
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <Label className="text-[11px] text-muted-foreground">Température (°C)</Label>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          value={row.temperature}
-                          onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
-                          onBlur={() => {
-                            const sign = getSign(row.temperature, eq.type);
-                            const formatted = formatWithSign(row.temperature, sign);
-                            if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
-                          }}
-                          disabled={!editable}
-                          className="h-10 text-base font-semibold w-full"
-                          placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
-                        />
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const cleaned = row.temperature.trim().replace(/^[+-]/, "");
+                              updateRow(eq.code, { temperature: `+${cleaned}` });
+                            }}
+                            className={`h-10 w-8 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("+") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                            disabled={!editable}
+                          >+</button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const cleaned = row.temperature.trim().replace(/^[+-]/, "");
+                              updateRow(eq.code, { temperature: `-${cleaned}` });
+                            }}
+                            className={`h-10 w-8 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("-") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                            disabled={!editable}
+                          >-</button>
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            value={row.temperature}
+                            onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
+                            onBlur={() => {
+                              const sign = getSign(row.temperature, eq.type);
+                              const formatted = formatWithSign(row.temperature, sign);
+                              if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
+                            }}
+                            disabled={!editable}
+                            className="h-10 text-base font-semibold flex-1"
+                            placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
+                          />
+                        </div>
                       </div>
                       <div>
                         <Label className="text-[11px] text-muted-foreground">Conforme</Label>
