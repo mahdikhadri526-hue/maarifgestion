@@ -394,28 +394,20 @@ export function FridgeTemperatureManager() {
                         <div className="text-xs text-muted-foreground">{eq.type}</div>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1">
-                          <div className="flex rounded-md border overflow-hidden h-9">
-                            <button type="button" disabled={!editable}
-                              onClick={() => updateRow(eq.code, { temperature: applySign(row.temperature, "+") })}
-                              className={`px-2 text-sm font-semibold ${getSign(row.temperature, eq.type) === "+" ? "bg-primary text-primary-foreground" : "bg-background"}`}>+</button>
-                            <button type="button" disabled={!editable}
-                              onClick={() => updateRow(eq.code, { temperature: applySign(row.temperature, "-") })}
-                              className={`px-2 text-sm font-semibold border-l ${getSign(row.temperature, eq.type) === "-" ? "bg-primary text-primary-foreground" : "bg-background"}`}>−</button>
-                          </div>
-                          <Input
-                            type="text" inputMode="decimal"
-                            value={row.temperature}
-                            onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
-                            onBlur={() => {
-                              const sign = getSign(row.temperature, eq.type);
-                              const formatted = formatWithSign(row.temperature, sign);
-                              if (formatted && formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
-                            }}
-                            disabled={!editable}
-                            className="h-9 w-20"
-                          />
-                        </div>
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          value={row.temperature}
+                          onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
+                          onBlur={() => {
+                            const sign = getSign(row.temperature, eq.type);
+                            const formatted = formatWithSign(row.temperature, sign);
+                            if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
+                          }}
+                          disabled={!editable}
+                          className="h-9 w-28"
+                          placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
+                        />
                       </TableCell>
                       <TableCell>
                         <Select
