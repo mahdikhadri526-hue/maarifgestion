@@ -385,7 +385,7 @@ export function FridgeTemperatureManager() {
                 {sortedEquips.map((eq) => {
                   const row = rows[eq.code] ?? emptyRow();
                   const locked = !!row.id;
-                  const editable = canEdit && !locked;
+                  const editable = canEdit;
                   return (
                     <TableRow key={eq.code} className={row.id ? "bg-success/5" : ""}>
                       <TableCell className="font-mono text-xs">{eq.code}</TableCell>
@@ -460,7 +460,7 @@ export function FridgeTemperatureManager() {
               {sortedEquips.map((eq) => {
                 const row = rows[eq.code] ?? emptyRow();
                 const locked = !!row.id;
-                const editable = canEdit && !locked;
+                const editable = canEdit;
                 const status = row.conformite;
                 const borderClass =
                   status === "non_conforme"
