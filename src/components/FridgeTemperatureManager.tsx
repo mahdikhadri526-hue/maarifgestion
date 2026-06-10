@@ -404,7 +404,7 @@ export function FridgeTemperatureManager() {
                             const formatted = formatWithSign(row.temperature, sign);
                             if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
                           }}
-                          disabled={!editable}
+                          disabled={!canEdit}
                           className="h-9 w-28"
                           placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
                         />
@@ -497,7 +497,7 @@ export function FridgeTemperatureManager() {
                             const formatted = formatWithSign(row.temperature, sign);
                             if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
                           }}
-                          disabled={!editable}
+                          disabled={!canEdit}
                           className="h-10 text-base font-semibold w-full"
                           placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
                         />
