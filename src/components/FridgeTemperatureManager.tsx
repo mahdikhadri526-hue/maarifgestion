@@ -122,7 +122,7 @@ export function FridgeTemperatureManager() {
       const rawTemp = r.temperature_haut ?? r.temperature_bas;
       map[r.equipment_code] = {
         id: r.id,
-        temperature: rawTemp !== null && rawTemp !== undefined ? formatDisplayTemp(rawTemp, eq?.type) : "",
+        temperature: rawTemp !== null && rawTemp !== undefined ? formatDisplayTemp(rawTemp, eq?.type) : (r.commentaire === "OFF" ? "OFF" : ""),
         conformite: (r.conformite as RowState["conformite"]) ?? "",
         commentaire: r.commentaire ?? "",
         action_corrective: r.action_corrective ?? "",
@@ -172,10 +172,10 @@ export function FridgeTemperatureManager() {
       equipment_code: eq.code,
       equipment_name: eq.name,
       equipment_type: eq.type,
-      temperature_haut: tVal,
+      temperature_haut: isOff ? null : tVal,
       temperature_bas: null,
       conformite: row.conformite || null,
-      commentaire: row.commentaire?.trim() ? row.commentaire : "RAS",
+      commentaire: isOff ? "OFF" : (row.commentaire?.trim() ? row.commentaire : "RAS"),
       action_corrective: row.action_corrective?.trim() ? row.action_corrective : "RAS",
       performed_by: operator,
       visa_manager: row.visa_manager || null,
@@ -217,14 +217,15 @@ export function FridgeTemperatureManager() {
     let ok = 0, ko = 0;
     for (const eq of zoneEquips) {
       const r = rows[eq.code];
-      const tVal = parseDisplayTemp(r.temperature);
-      if (tVal === null) { ko++; continue; }
+      const isOff = r.temperature.trim().toUpperCase() === "OFF";
+      const tVal = isOff ? null : parseDisplayTemp(r.temperature);
+      if (!isOff && tVal === null) { ko++; continue; }
       const payload = {
         control_date: date, slot, zone: eq.zone,
         equipment_code: eq.code, equipment_name: eq.name, equipment_type: eq.type,
-        temperature_haut: tVal, temperature_bas: null,
+        temperature_haut: isOff ? null : tVal, temperature_bas: null,
         conformite: r.conformite || null,
-        commentaire: r.commentaire?.trim() ? r.commentaire : "RAS",
+        commentaire: isOff ? "OFF" : (r.commentaire?.trim() ? r.commentaire : "RAS"),
         action_corrective: r.action_corrective?.trim() ? r.action_corrective : "RAS",
         performed_by: slotOperator,
         visa_manager: visa || null,
@@ -260,7 +261,7 @@ export function FridgeTemperatureManager() {
         eq.code,
         `${eq.name}\n${eq.type}`,
         eq.zone,
-        r.temperature || "—",
+        r.temperature === "OFF" ? "OFF" : (r.temperature || "—"),
         r.conformite === "conforme" ? "Conforme" : r.conformite === "non_conforme" ? "Non conforme" : "—",
         r.action_corrective || "—",
         r.commentaire || "—",
@@ -398,32 +399,47 @@ export function FridgeTemperatureManager() {
                           <button
                             type="button"
                             onClick={() => {
+                              if (row.temperature === "OFF") return;
                               const cleaned = row.temperature.trim().replace(/^[+-]/, "");
                               updateRow(eq.code, { temperature: `+${cleaned}` });
                             }}
                             className={`h-9 w-7 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("+") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
-                            disabled={!editable}
+                            disabled={!editable || row.temperature === "OFF"}
                           >+</button>
                           <button
                             type="button"
                             onClick={() => {
+                              if (row.temperature === "OFF") return;
                               const cleaned = row.temperature.trim().replace(/^[+-]/, "");
                               updateRow(eq.code, { temperature: `-${cleaned}` });
                             }}
                             className={`h-9 w-7 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("-") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
-                            disabled={!editable}
+                            disabled={!editable || row.temperature === "OFF"}
                           >-</button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (row.temperature === "OFF") {
+                                updateRow(eq.code, { temperature: "", conformite: "", commentaire: "", action_corrective: "" });
+                              } else {
+                                updateRow(eq.code, { temperature: "OFF", conformite: "", commentaire: row.commentaire || "Matériel arrêté", action_corrective: "RAS" });
+                              }
+                            }}
+                            className={`h-9 w-10 rounded-md border text-[10px] font-bold flex items-center justify-center transition-colors ${row.temperature === "OFF" ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                            disabled={!editable}
+                          >OFF</button>
                           <Input
                             type="text"
                             inputMode="decimal"
                             value={row.temperature}
                             onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
                             onBlur={() => {
+                              if (row.temperature.trim().toUpperCase() === "OFF") return;
                               const sign = getSign(row.temperature, eq.type);
                               const formatted = formatWithSign(row.temperature, sign);
                               if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
                             }}
-                            disabled={!editable}
+                            disabled={!editable || row.temperature === "OFF"}
                             className="h-9 w-20"
                             placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
                           />
@@ -511,32 +527,47 @@ export function FridgeTemperatureManager() {
                           <button
                             type="button"
                             onClick={() => {
+                              if (row.temperature === "OFF") return;
                               const cleaned = row.temperature.trim().replace(/^[+-]/, "");
                               updateRow(eq.code, { temperature: `+${cleaned}` });
                             }}
                             className={`h-10 w-8 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("+") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
-                            disabled={!editable}
+                            disabled={!editable || row.temperature === "OFF"}
                           >+</button>
                           <button
                             type="button"
                             onClick={() => {
+                              if (row.temperature === "OFF") return;
                               const cleaned = row.temperature.trim().replace(/^[+-]/, "");
                               updateRow(eq.code, { temperature: `-${cleaned}` });
                             }}
                             className={`h-10 w-8 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("-") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
-                            disabled={!editable}
+                            disabled={!editable || row.temperature === "OFF"}
                           >-</button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (row.temperature === "OFF") {
+                                updateRow(eq.code, { temperature: "", conformite: "", commentaire: "", action_corrective: "" });
+                              } else {
+                                updateRow(eq.code, { temperature: "OFF", conformite: "", commentaire: row.commentaire || "Matériel arrêté", action_corrective: "RAS" });
+                              }
+                            }}
+                            className={`h-10 w-10 rounded-md border text-[10px] font-bold flex items-center justify-center transition-colors ${row.temperature === "OFF" ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                            disabled={!editable}
+                          >OFF</button>
                           <Input
                             type="text"
                             inputMode="decimal"
                             value={row.temperature}
                             onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
                             onBlur={() => {
+                              if (row.temperature.trim().toUpperCase() === "OFF") return;
                               const sign = getSign(row.temperature, eq.type);
                               const formatted = formatWithSign(row.temperature, sign);
                               if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
                             }}
-                            disabled={!editable}
+                            disabled={!editable || row.temperature === "OFF"}
                             className="h-10 text-base font-semibold flex-1"
                             placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
                           />
