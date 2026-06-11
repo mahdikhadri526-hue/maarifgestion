@@ -42,6 +42,7 @@ export const EQUIPMENTS: FridgeEquipment[] = [
   { code: "PAS-CN01", name: "Chambre négative", type: "Chambre négative", zone: "Passe" },
   { code: "PAS-CT01", name: "Congélateur tranches", type: "Congélateur", zone: "Passe" },
   { code: "PAS-CV01", name: "La cuve", type: "Congélateur", zone: "Passe" },
+  { code: "PAS-CD01", name: "Congélateur décoration", type: "Congélateur", zone: "Passe" },
 ];
 
 // Plages de température recommandées (HACCP)
