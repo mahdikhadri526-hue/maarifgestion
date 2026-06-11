@@ -61,6 +61,7 @@ export function isTemperatureOk(type: string, temp: number | null | undefined): 
 }
 
 export function formatDisplayTemp(value: number | string, type?: string): string {
+  if (typeof value === "string" && value.trim().toUpperCase() === "OFF") return "OFF";
   const num = typeof value === "string" ? Number(value.replace(/^\+/, "").replace(",", ".")) : value;
   if (Number.isNaN(num)) return String(value);
   if (type && (type.startsWith("Frigo positif") || type === "Chambre positive")) {
