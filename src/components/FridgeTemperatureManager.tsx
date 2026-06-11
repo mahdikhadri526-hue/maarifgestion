@@ -156,7 +156,7 @@ export function FridgeTemperatureManager() {
     const row = rows[code] ?? emptyRow();
     const isOff = row.temperature.trim().toUpperCase() === "OFF";
     const tVal = isOff ? null : parseDisplayTemp(row.temperature);
-    if (tVal === null) {
+    if (!isOff && tVal === null) {
       toast({ title: "Saisir la température", variant: "destructive" });
       return;
     }
