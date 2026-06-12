@@ -41,7 +41,7 @@ const Index = () => {
     { id: "hebdo" as Tab, label: "Suivi hebdomadaire", icon: CalendarDays, perm: "view_weekly" },
     { id: "temperatures" as Tab, label: "Températures frigos", icon: Thermometer, perm: "view_temperatures" },
     { id: "recettes" as Tab, label: "Recettes", icon: ChefHat, perm: "view_recipes" },
-    { id: "nettoyage" as Tab, label: "Nettoyage", icon: Sparkles, perm: "view_temperatures" },
+    { id: "nettoyage" as Tab, label: "Nettoyage", icon: Sparkles, perm: "view_cleaning" },
   ];
   const tabs = allTabs.filter((t) => can(t.perm));
 
