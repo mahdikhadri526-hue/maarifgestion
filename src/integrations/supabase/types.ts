@@ -62,6 +62,42 @@ export type Database = {
         }
         Relationships: []
       }
+      cleaning_logs: {
+        Row: {
+          collaborateur: string
+          created_at: string
+          id: string
+          log_date: string
+          notes: string | null
+          tasks: Json
+          updated_at: string
+          visa_manager: string | null
+          zone: string
+        }
+        Insert: {
+          collaborateur: string
+          created_at?: string
+          id?: string
+          log_date: string
+          notes?: string | null
+          tasks?: Json
+          updated_at?: string
+          visa_manager?: string | null
+          zone: string
+        }
+        Update: {
+          collaborateur?: string
+          created_at?: string
+          id?: string
+          log_date?: string
+          notes?: string | null
+          tasks?: Json
+          updated_at?: string
+          visa_manager?: string | null
+          zone?: string
+        }
+        Relationships: []
+      }
       finished_products: {
         Row: {
           active: boolean
