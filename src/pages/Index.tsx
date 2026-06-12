@@ -10,14 +10,15 @@ import { AutocontrolManager } from "@/components/AutocontrolManager";
 import { WeeklyTracking } from "@/components/WeeklyTracking";
 import { FridgeTemperatureManager } from "@/components/FridgeTemperatureManager";
 import { RecipeManager } from "@/components/RecipeManager";
-import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat } from "lucide-react";
+import { CleaningManager } from "@/components/CleaningManager";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { UserManagement } from "@/components/auth/UserManagement";
 
-type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "hebdo" | "temperatures" | "recettes";
+type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "hebdo" | "temperatures" | "recettes" | "nettoyage";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -40,6 +41,7 @@ const Index = () => {
     { id: "hebdo" as Tab, label: "Suivi hebdomadaire", icon: CalendarDays, perm: "view_weekly" },
     { id: "temperatures" as Tab, label: "Températures frigos", icon: Thermometer, perm: "view_temperatures" },
     { id: "recettes" as Tab, label: "Recettes", icon: ChefHat, perm: "view_recipes" },
+    { id: "nettoyage" as Tab, label: "Nettoyage", icon: Sparkles, perm: "view_temperatures" },
   ];
   const tabs = allTabs.filter((t) => can(t.perm));
 
@@ -192,6 +194,8 @@ const Index = () => {
         {tab === "temperatures" && <FridgeTemperatureManager />}
 
         {tab === "recettes" && <RecipeManager />}
+
+        {tab === "nettoyage" && <CleaningManager />}
       </main>
       </>
       )}
