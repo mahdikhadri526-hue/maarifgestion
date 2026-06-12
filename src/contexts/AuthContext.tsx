@@ -30,6 +30,9 @@ export const ALL_PERMISSIONS = [
   { key: "view_reports", label: "Voir les rapports / stock restant" },
   { key: "view_recipes", label: "Voir les recettes / produits finis" },
   { key: "edit_recipes", label: "Modifier les recettes / produits finis" },
+  { key: "view_cleaning", label: "Voir le suivi de nettoyage quotidien" },
+  { key: "edit_cleaning", label: "Modifier le suivi de nettoyage quotidien" },
+  { key: "delete_cleaning", label: "Supprimer du suivi de nettoyage quotidien" },
 ] as const;
 
 export type PermissionKey = (typeof ALL_PERMISSIONS)[number]["key"];
