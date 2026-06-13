@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { CLEANING_ZONES, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs } from "@/lib/cleaningData";
 import { OPERATORS } from "@/lib/operators";
 import { Button } from "@/components/ui/button";
