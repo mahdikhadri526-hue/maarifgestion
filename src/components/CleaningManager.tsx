@@ -48,10 +48,10 @@ export function CleaningManager() {
   const [visa, setVisa] = useState("");
   const [notes, setNotes] = useState("");
   const [tasks, setTasks] = useState<Record<string, CleaningStatus>>({});
+  const [historyDate, setHistoryDate] = useState<string>("");
   const [logs, setLogs] = useState<CleaningLog[]>([]);
   const [saving, setSaving] = useState(false);
   const { user } = useAuth();
-
 
   const refresh = async () => {
     try {
