@@ -9,6 +9,29 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trash2, Check, X, Save, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
+const CLEANING_EXTRA_OPERATORS = [
+  "ANNINY HASSANIA",
+  "HACHEM",
+  "OUSSAMA BELGHZAL",
+  "OTHMAN GHALMI",
+  "KHADIJA AMROUG",
+  "AYA EL BASTI",
+  "SOUAD MOUBTASSIM",
+  "ANASS ZNIBI",
+  "HAMZA LAMRAMI",
+  "ISSAM GRIMEJ",
+  "ITRI HASNAA",
+  "SAFAA SADIKI",
+  "BOUIRANE MOHAMED",
+  "MADIH SAID",
+  "BADOU HAMID",
+  "ADIL EL HANI",
+  "OUSSAMA MOUBTASSIM",
+  "MEHDI BAYN",
+];
+
+const CLEANING_OPERATORS = Array.from(new Set([...OPERATORS, ...CLEANING_EXTRA_OPERATORS]));
+
 function todayISO() {
   const d = new Date();
   const tz = d.getTimezoneOffset() * 60000;
@@ -56,6 +79,8 @@ export function CleaningManager() {
     if (!notes.trim()) return toast.error("Saisissez une note");
     const filled = zone.tasks.filter((t) => tasks[t] === "C" || tasks[t] === "NC").length;
     if (filled === 0) return toast.error("Cochez au moins une tâche");
+    const exists = logs.some((l) => l.zone === zoneKey && l.logDate === date);
+    if (exists) return toast.error("Une fiche est déjà enregistrée pour cette zone et cette date");
     setSaving(true);
     try {
       await addCleaningLog({
@@ -118,7 +143,7 @@ export function CleaningManager() {
             <Select value={collaborateur} onValueChange={setCollaborateur}>
               <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
               <SelectContent>
-                {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                {CLEANING_OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -170,7 +195,7 @@ export function CleaningManager() {
           <Select value={visa} onValueChange={setVisa}>
             <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
             <SelectContent>
-              {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+              {CLEANING_OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
