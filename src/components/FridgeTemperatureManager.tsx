@@ -372,27 +372,12 @@ export function FridgeTemperatureManager() {
       {loading ? (
         <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Chargement…</CardContent></Card>
       ) : (
-        Object.entries(equipmentsByZone).map(([zone, equips], zoneIndex) => {
-          // Conserver l'ordre fixe des équipements pour éviter que les lignes
-          // ne se déplacent pendant la saisie.
-          const sortedEquips = equips;
-          return (
-          <Card key={zone}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Zone : {zone}</CardTitle>
-              {zoneIndex === 0 && zonesMissingVisa.length > 0 && (
-                <div className="mt-2 flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-                  <div>
-                    <div className="font-medium">Visa manager manquant</div>
-                    <div className="text-xs opacity-90">
-                      Aucun visa enregistré pour&nbsp;: {zonesMissingVisa.join(", ")}
-                    </div>
-                  </div>
-                </div>
-              )}
-              {zoneIndex === 0 && missingTempEquipments.length > 0 && (
-                <div className="mt-2 flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+        <>
+        {(zonesMissingVisa.length > 0 || missingTempEquipments.length > 0) && (
+          <Card>
+            <CardContent className="p-4 space-y-2">
+              {missingTempEquipments.length > 0 && (
+                <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
                   <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                   <div>
                     <div className="font-medium">
@@ -404,6 +389,28 @@ export function FridgeTemperatureManager() {
                   </div>
                 </div>
               )}
+              {zonesMissingVisa.length > 0 && (
+                <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-medium">Visa manager manquant</div>
+                    <div className="text-xs opacity-90">
+                      Aucun visa enregistré pour&nbsp;: {zonesMissingVisa.join(", ")}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+        {Object.entries(equipmentsByZone).map(([zone, equips], zoneIndex) => {
+          // Conserver l'ordre fixe des équipements pour éviter que les lignes
+          // ne se déplacent pendant la saisie.
+          const sortedEquips = equips;
+          return (
+          <Card key={zone}>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Zone : {zone}</CardTitle>
             </CardHeader>
             <CardContent className="p-0 overflow-x-auto">
             {/* Desktop / tablet table */}
