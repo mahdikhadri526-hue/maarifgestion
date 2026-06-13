@@ -193,17 +193,45 @@ export function CleaningManager() {
               const conf = zoneTasks.filter((t) => l.tasks[t] === "C").length;
               const nc = zoneTasks.filter((t) => l.tasks[t] === "NC").length;
               return (
-                <div key={l.id} className="flex items-center gap-3 p-3 rounded-lg border bg-background flex-wrap">
-                  <div className="flex-1 min-w-[180px]">
-                    <div className="font-medium text-sm">{l.logDate} — {z?.label ?? l.zone} — {l.collaborateur}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {conf}/{total} conformes · {nc} NC{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
+                <div key={l.id} className="p-3 rounded-lg border bg-background space-y-2">
+                  <div className="flex items-start gap-3 flex-wrap">
+                    <div className="flex-1 min-w-[180px]">
+                      <div className="font-medium text-sm">{l.logDate} — {z?.label ?? l.zone} — {l.collaborateur}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {conf}/{total} conformes · {nc} NC{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
+                      </div>
                     </div>
-                    {l.notes && <div className="text-xs italic mt-1">{l.notes}</div>}
+                    <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
                   </div>
-                  <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                  <div className="space-y-1 border-t pt-2">
+                    {zoneTasks.map((t) => {
+                      const v = l.tasks[t];
+                      return (
+                        <div key={t} className="flex items-center justify-between gap-2 text-xs">
+                          <span className="flex-1">{t}</span>
+                          <span
+                            className={`px-2 py-0.5 rounded font-semibold border ${
+                              v === "C"
+                                ? "bg-green-600 text-white border-green-600"
+                                : v === "NC"
+                                ? "bg-red-600 text-white border-red-600"
+                                : "bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {v ?? "—"}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  {l.notes && (
+                    <div className="text-xs italic border-t pt-2"><span className="font-semibold not-italic">Notes :</span> {l.notes}</div>
+                  )}
+                  {l.visaManager && (
+                    <div className="text-xs"><span className="font-semibold">Visa Manager :</span> {l.visaManager}</div>
+                  )}
                 </div>
               );
             })}
