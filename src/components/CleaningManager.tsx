@@ -50,6 +50,8 @@ export function CleaningManager() {
   const [tasks, setTasks] = useState<Record<string, CleaningStatus>>({});
   const [logs, setLogs] = useState<CleaningLog[]>([]);
   const [saving, setSaving] = useState(false);
+  const { user } = useAuth();
+
 
   const refresh = async () => {
     try {
@@ -227,9 +229,11 @@ export function CleaningManager() {
                         {conf}/{total} conformes · {nc} NC{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
                       </div>
                     </div>
-                    <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    {user?.email !== "gestionmaarif1@gmail.com" && (
+                      <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                   </div>
                   <div className="space-y-1 border-t pt-2">
                     {zoneTasks.map((t) => {
