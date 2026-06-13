@@ -29,7 +29,7 @@ export function CleaningManager() {
 
   const refresh = async () => {
     try {
-      setLogs(await getCleaningLogs(zoneKey));
+      setLogs(await getCleaningLogs());
     } catch (e: any) {
       toast.error(e.message ?? "Erreur de chargement");
     }
@@ -181,19 +181,21 @@ export function CleaningManager() {
       </div>
 
       <div className="bg-card border rounded-xl p-4 sm:p-6 shadow-sm">
-        <h3 className="font-semibold mb-3">Historique — {zone.label}</h3>
+        <h3 className="font-semibold mb-3">Historique — toutes les zones</h3>
         {logs.length === 0 ? (
           <p className="text-sm text-muted-foreground">Aucune fiche enregistrée.</p>
         ) : (
           <div className="space-y-2">
             {logs.map((l) => {
-              const total = zone.tasks.length;
-              const conf = zone.tasks.filter((t) => l.tasks[t] === "C").length;
-              const nc = zone.tasks.filter((t) => l.tasks[t] === "NC").length;
+              const z = CLEANING_ZONES.find((x) => x.key === l.zone);
+              const zoneTasks = z?.tasks ?? Object.keys(l.tasks);
+              const total = zoneTasks.length;
+              const conf = zoneTasks.filter((t) => l.tasks[t] === "C").length;
+              const nc = zoneTasks.filter((t) => l.tasks[t] === "NC").length;
               return (
                 <div key={l.id} className="flex items-center gap-3 p-3 rounded-lg border bg-background flex-wrap">
                   <div className="flex-1 min-w-[180px]">
-                    <div className="font-medium text-sm">{l.logDate} — {l.collaborateur}</div>
+                    <div className="font-medium text-sm">{l.logDate} — {z?.label ?? l.zone} — {l.collaborateur}</div>
                     <div className="text-xs text-muted-foreground">
                       {conf}/{total} conformes · {nc} NC{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
                     </div>
