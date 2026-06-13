@@ -102,6 +102,28 @@ export function FridgeTemperatureManager() {
     return Array.from(missing);
   }, [equipmentsByZone, rows, zoneVisa]);
 
+  // Alerte: températures non remplies 30 min après le créneau programmé
+  const [now, setNow] = useState<Date>(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(t);
+  }, []);
+
+  const missingTempEquipments = useMemo(() => {
+    if (date !== todayStr()) return [] as typeof EQUIPMENTS;
+    const slotHour = slot === "07h" ? 7 : slot === "16h" ? 16 : 0;
+    const slotStart = new Date();
+    slotStart.setHours(slotHour, 0, 0, 0);
+    // Le créneau 00h correspond à la nuit suivante: si l'heure actuelle est >= 5h, on considère le 00h du jour suivant
+    if (slot === "00h" && now.getHours() >= 5) return [];
+    const diffMin = (now.getTime() - slotStart.getTime()) / 60000;
+    if (diffMin < 30) return [];
+    return EQUIPMENTS.filter((eq) => {
+      const r = rows[eq.code];
+      return !r || (!r.id && r.temperature.trim() === "");
+    });
+  }, [date, slot, rows, now]);
+
   async function load() {
     setLoading(true);
     const { data, error } = await supabase
@@ -365,6 +387,19 @@ export function FridgeTemperatureManager() {
                     <div className="font-medium">Visa manager manquant</div>
                     <div className="text-xs opacity-90">
                       Aucun visa enregistré pour&nbsp;: {zonesMissingVisa.join(", ")}
+                    </div>
+                  </div>
+                </div>
+              )}
+              {zoneIndex === 0 && missingTempEquipments.length > 0 && (
+                <div className="mt-2 flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                  <div>
+                    <div className="font-medium">
+                      Températures non saisies (créneau {slot} dépassé de plus de 30 min)
+                    </div>
+                    <div className="text-xs opacity-90 mt-1">
+                      {missingTempEquipments.length} équipement(s) en attente&nbsp;: {missingTempEquipments.map((e) => `${e.zone} – ${e.name}`).join(", ")}
                     </div>
                   </div>
                 </div>
