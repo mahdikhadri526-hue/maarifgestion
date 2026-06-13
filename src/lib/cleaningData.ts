@@ -95,6 +95,17 @@ export const CLEANING_ZONES: CleaningZone[] = [
       "Lavage des Torchons microfibres",
     ],
   },
+  {
+    key: "serveurs",
+    label: "Serveurs",
+    tasks: [
+      "Dépoussiérage des Chaises et Tables",
+      "Dépoussiérage du Bois",
+      "Dépoussiérage de Garde à chaud Viennoiserie et présentoir macarons",
+      "Dépoussiérage du marbre du comptoir",
+      "Dépoussiérage de l'emplacement de matériels de la salle",
+    ],
+  },
 ];
 
 export interface CleaningLog {
