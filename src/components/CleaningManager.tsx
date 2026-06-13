@@ -52,6 +52,8 @@ export function CleaningManager() {
 
   const save = async () => {
     if (!collaborateur) return toast.error("Sélectionnez un collaborateur");
+    if (!visa) return toast.error("Sélectionnez un visa manager");
+    if (!notes.trim()) return toast.error("Saisissez une note");
     const filled = zone.tasks.filter((t) => tasks[t] === "C" || tasks[t] === "NC").length;
     if (filled === 0) return toast.error("Cochez au moins une tâche");
     setSaving(true);
@@ -61,8 +63,8 @@ export function CleaningManager() {
         logDate: date,
         collaborateur,
         tasks,
-        visaManager: visa || null,
-        notes: notes || null,
+        visaManager: visa,
+        notes: notes.trim(),
       });
       toast.success("Fiche enregistrée");
       setTasks({});
@@ -95,7 +97,7 @@ export function CleaningManager() {
           <h2 className="text-lg font-bold">Suivi de nettoyage quotidien</h2>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <div>
             <Label>Zone</Label>
             <Select value={zoneKey} onValueChange={setZoneKey}>
@@ -114,15 +116,6 @@ export function CleaningManager() {
           <div>
             <Label>Collaborateur</Label>
             <Select value={collaborateur} onValueChange={setCollaborateur}>
-              <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
-              <SelectContent>
-                {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div>
-            <Label>Visa Manager (optionnel)</Label>
-            <Select value={visa} onValueChange={setVisa}>
               <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
               <SelectContent>
                 {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
@@ -168,8 +161,18 @@ export function CleaningManager() {
         </div>
 
         <div>
-          <Label>Notes (optionnel)</Label>
+          <Label>Notes</Label>
           <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+        </div>
+
+        <div>
+          <Label>Visa Manager</Label>
+          <Select value={visa} onValueChange={setVisa}>
+            <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+            <SelectContent>
+              {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
 
         <Button onClick={save} disabled={saving} className="w-full sm:w-auto">
