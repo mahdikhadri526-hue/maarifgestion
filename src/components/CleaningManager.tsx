@@ -48,10 +48,10 @@ export function CleaningManager() {
   const [visa, setVisa] = useState("");
   const [notes, setNotes] = useState("");
   const [tasks, setTasks] = useState<Record<string, CleaningStatus>>({});
+  const [historyDate, setHistoryDate] = useState<string>("");
   const [logs, setLogs] = useState<CleaningLog[]>([]);
   const [saving, setSaving] = useState(false);
   const { user } = useAuth();
-
 
   const refresh = async () => {
     try {
@@ -209,64 +209,160 @@ export function CleaningManager() {
       </div>
 
       <div className="bg-card border rounded-xl p-4 sm:p-6 shadow-sm">
-        <h3 className="font-semibold mb-3">Historique — toutes les zones</h3>
-        {logs.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aucune fiche enregistrée.</p>
-        ) : (
-          <div className="space-y-2">
-            {logs.map((l) => {
-              const z = CLEANING_ZONES.find((x) => x.key === l.zone);
-              const zoneTasks = z?.tasks ?? Object.keys(l.tasks);
-              const total = zoneTasks.length;
-              const conf = zoneTasks.filter((t) => l.tasks[t] === "C").length;
-              const nc = zoneTasks.filter((t) => l.tasks[t] === "NC").length;
-              return (
-                <div key={l.id} className="p-3 rounded-lg border bg-background space-y-2">
-                  <div className="flex items-start gap-3 flex-wrap">
-                    <div className="flex-1 min-w-[180px]">
-                      <div className="font-medium text-sm">{l.logDate} — {z?.label ?? l.zone} — {l.collaborateur}</div>
-                      <div className="text-xs text-muted-foreground">
-                        {conf}/{total} conformes · {nc} NC{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3">
+          <h3 className="font-semibold">Historique — toutes les zones</h3>
+          <div className="flex items-center gap-2">
+            <Label className="whitespace-nowrap text-sm">Filtrer par jour</Label>
+            <Input type="date" value={historyDate} onChange={(e) => setHistoryDate(e.target.value)} className="w-auto" />
+            {historyDate && (
+              <Button size="sm" variant="ghost" onClick={() => setHistoryDate("")}>
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+        {(() => {
+          const displayedLogs = historyDate
+            ? logs.filter((l) => l.logDate === historyDate)
+            : logs;
+
+          if (displayedLogs.length === 0 && !historyDate) {
+            return <p className="text-sm text-muted-foreground">Aucune fiche enregistrée.</p>;
+          }
+
+          if (historyDate) {
+            const zonesDone = new Set(displayedLogs.map((l) => l.zone));
+            const missingZones = CLEANING_ZONES.filter((z) => !zonesDone.has(z.key));
+            return (
+              <div className="space-y-2">
+                {displayedLogs.map((l) => {
+                  const z = CLEANING_ZONES.find((x) => x.key === l.zone);
+                  const zoneTasks = z?.tasks ?? Object.keys(l.tasks);
+                  const total = zoneTasks.length;
+                  const conf = zoneTasks.filter((t) => l.tasks[t] === "C").length;
+                  const nc = zoneTasks.filter((t) => l.tasks[t] === "NC").length;
+                  return (
+                    <div key={l.id} className="p-3 rounded-lg border bg-background space-y-2">
+                      <div className="flex items-start gap-3 flex-wrap">
+                        <div className="flex-1 min-w-[180px]">
+                          <div className="font-medium text-sm">{z?.label ?? l.zone} — {l.collaborateur}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {conf}/{total} conformes · {nc} NC{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
+                          </div>
+                        </div>
+                        {user?.email !== "gestionmaarif1@gmail.com" && (
+                          <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        )}
                       </div>
+                      <div className="space-y-1 border-t pt-2">
+                        {zoneTasks.map((t) => {
+                          const v = l.tasks[t];
+                          return (
+                            <div key={t} className="flex items-center justify-between gap-2 text-xs">
+                              <span className="flex-1">{t}</span>
+                              <span
+                                className={`px-2 py-0.5 rounded font-semibold border ${
+                                  v === "C"
+                                    ? "bg-green-600 text-white border-green-600"
+                                    : v === "NC"
+                                    ? "bg-red-600 text-white border-red-600"
+                                    : "bg-muted text-muted-foreground"
+                                }`}
+                              >
+                                {v ?? "—"}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      {l.notes && (
+                        <div className="text-xs italic border-t pt-2"><span className="font-semibold not-italic">Notes :</span> {l.notes}</div>
+                      )}
+                      {l.visaManager && (
+                        <div className="text-xs"><span className="font-semibold">Visa Manager :</span> {l.visaManager}</div>
+                      )}
                     </div>
-                    {user?.email !== "gestionmaarif1@gmail.com" && (
-                      <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                  );
+                })}
+                {missingZones.map((z) => (
+                  <div key={z.key} className="p-3 rounded-lg border border-dashed bg-muted/30 space-y-2">
+                    <div className="font-medium text-sm text-muted-foreground">{z.label}</div>
+                    <div className="text-xs text-orange-600 font-semibold">Non remplie</div>
+                    <div className="space-y-1 border-t pt-2">
+                      {z.tasks.map((t) => (
+                        <div key={t} className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                          <span className="flex-1">{t}</span>
+                          <span className="px-2 py-0.5 rounded font-semibold border bg-muted">—</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                {displayedLogs.length === 0 && missingZones.length === 0 && (
+                  <p className="text-sm text-muted-foreground">Aucune fiche pour cette date.</p>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <div className="space-y-2">
+              {displayedLogs.map((l) => {
+                const z = CLEANING_ZONES.find((x) => x.key === l.zone);
+                const zoneTasks = z?.tasks ?? Object.keys(l.tasks);
+                const total = zoneTasks.length;
+                const conf = zoneTasks.filter((t) => l.tasks[t] === "C").length;
+                const nc = zoneTasks.filter((t) => l.tasks[t] === "NC").length;
+                return (
+                  <div key={l.id} className="p-3 rounded-lg border bg-background space-y-2">
+                    <div className="flex items-start gap-3 flex-wrap">
+                      <div className="flex-1 min-w-[180px]">
+                        <div className="font-medium text-sm">{l.logDate} — {z?.label ?? l.zone} — {l.collaborateur}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {conf}/{total} conformes · {nc} NC{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
+                        </div>
+                      </div>
+                      {user?.email !== "gestionmaarif1@gmail.com" && (
+                        <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
+                    </div>
+                    <div className="space-y-1 border-t pt-2">
+                      {zoneTasks.map((t) => {
+                        const v = l.tasks[t];
+                        return (
+                          <div key={t} className="flex items-center justify-between gap-2 text-xs">
+                            <span className="flex-1">{t}</span>
+                            <span
+                              className={`px-2 py-0.5 rounded font-semibold border ${
+                                v === "C"
+                                  ? "bg-green-600 text-white border-green-600"
+                                  : v === "NC"
+                                  ? "bg-red-600 text-white border-red-600"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {v ?? "—"}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {l.notes && (
+                      <div className="text-xs italic border-t pt-2"><span className="font-semibold not-italic">Notes :</span> {l.notes}</div>
+                    )}
+                    {l.visaManager && (
+                      <div className="text-xs"><span className="font-semibold">Visa Manager :</span> {l.visaManager}</div>
                     )}
                   </div>
-                  <div className="space-y-1 border-t pt-2">
-                    {zoneTasks.map((t) => {
-                      const v = l.tasks[t];
-                      return (
-                        <div key={t} className="flex items-center justify-between gap-2 text-xs">
-                          <span className="flex-1">{t}</span>
-                          <span
-                            className={`px-2 py-0.5 rounded font-semibold border ${
-                              v === "C"
-                                ? "bg-green-600 text-white border-green-600"
-                                : v === "NC"
-                                ? "bg-red-600 text-white border-red-600"
-                                : "bg-muted text-muted-foreground"
-                            }`}
-                          >
-                            {v ?? "—"}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  {l.notes && (
-                    <div className="text-xs italic border-t pt-2"><span className="font-semibold not-italic">Notes :</span> {l.notes}</div>
-                  )}
-                  {l.visaManager && (
-                    <div className="text-xs"><span className="font-semibold">Visa Manager :</span> {l.visaManager}</div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          );
+        })()}
       </div>
     </div>
   );
