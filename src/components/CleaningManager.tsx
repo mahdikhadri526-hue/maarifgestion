@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { CLEANING_ZONES, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs } from "@/lib/cleaningData";
 import { OPERATORS } from "@/lib/operators";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -165,28 +166,34 @@ export function CleaningManager() {
         <div className="space-y-2">
           {zone.tasks.map((t) => {
             const v = tasks[t];
+            const isDone = v === "F" || v === "C" || v === "NC";
             return (
               <div key={t} className="flex items-center gap-2 p-2 rounded-lg border bg-background">
+                <Checkbox
+                  checked={isDone}
+                  onCheckedChange={(checked) => {
+                    setTasks((prev) => ({ ...prev, [t]: checked ? "F" : null }));
+                  }}
+                />
                 <div className="flex-1 text-sm">{t}</div>
                 <div className="flex gap-1">
                   <button
                     type="button"
-                    onClick={() => setTask(t, "F")}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${v === "F" ? "bg-blue-600 text-white border-blue-600" : "bg-background hover:bg-blue-50"}`}
-                  >
-                    Fait
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTask(t, "C")}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${v === "C" ? "bg-green-600 text-white border-green-600" : "bg-background hover:bg-green-50"}`}
+                    onClick={() =>
+                      setTasks((prev) => ({ ...prev, [t]: prev[t] === "C" ? "F" : "C" }))
+                    }
+                    disabled={!isDone}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${v === "C" ? "bg-green-600 text-white border-green-600" : "bg-background hover:bg-green-50"}`}
                   >
                     C
                   </button>
                   <button
                     type="button"
-                    onClick={() => setTask(t, "NC")}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${v === "NC" ? "bg-red-600 text-white border-red-600" : "bg-background hover:bg-red-50"}`}
+                    onClick={() =>
+                      setTasks((prev) => ({ ...prev, [t]: prev[t] === "NC" ? "F" : "NC" }))
+                    }
+                    disabled={!isDone}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${v === "NC" ? "bg-red-600 text-white border-red-600" : "bg-background hover:bg-red-50"}`}
                   >
                     NC
                   </button>
@@ -255,13 +262,14 @@ export function CleaningManager() {
                 const conf = zoneTasks.filter((t) => l.tasks[t] === "C").length;
                 const nc = zoneTasks.filter((t) => l.tasks[t] === "NC").length;
                 const fait = zoneTasks.filter((t) => l.tasks[t] === "F").length;
+                const done = conf + nc + fait;
                 return (
                   <div key={l.id} className="p-3 rounded-lg border bg-background space-y-2">
                     <div className="flex items-start gap-3 flex-wrap">
                       <div className="flex-1 min-w-[180px]">
                         <div className="font-medium text-sm">{z?.label ?? l.zone} — {l.collaborateur}</div>
                         <div className="text-xs text-muted-foreground">
-                          {fait} fait · {conf}/{total} conformes · {nc} NC{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
+                          {done}/{total} tâches · {conf} conformes · {nc} NC · {fait} fait{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
                         </div>
                       </div>
                       {user?.email !== "gestionmaarif1@gmail.com" && (
@@ -287,7 +295,7 @@ export function CleaningManager() {
                                   : "bg-muted text-muted-foreground"
                               }`}
                             >
-                              {v ?? "—"}
+                              {v === "F" ? "Fait" : v ?? "—"}
                             </span>
                           </div>
                         );
