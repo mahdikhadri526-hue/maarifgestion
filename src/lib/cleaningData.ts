@@ -1,6 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export type CleaningStatus = "C" | "NC" | null;
+export type CleaningStatus = "F" | "C" | "NC" | null;
 
 export interface CleaningZone {
   key: string;
