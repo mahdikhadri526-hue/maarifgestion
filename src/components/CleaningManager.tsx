@@ -81,7 +81,7 @@ export function CleaningManager() {
     if (!collaborateur) return toast.error("Sélectionnez un collaborateur");
     if (!visa) return toast.error("Sélectionnez un visa manager");
     if (!notes.trim()) return toast.error("Saisissez une note");
-    const filled = zone.tasks.filter((t) => tasks[t] === "C" || tasks[t] === "NC").length;
+    const filled = zone.tasks.filter((t) => tasks[t] === "F" || tasks[t] === "C" || tasks[t] === "NC").length;
     if (filled === 0) return toast.error("Cochez au moins une tâche");
     const exists = logs.some((l) => l.zone === zoneKey && l.logDate === date);
     if (exists) return toast.error("Une fiche est déjà enregistrée pour cette zone et cette date");
@@ -171,6 +171,13 @@ export function CleaningManager() {
                 <div className="flex gap-1">
                   <button
                     type="button"
+                    onClick={() => setTask(t, "F")}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${v === "F" ? "bg-blue-600 text-white border-blue-600" : "bg-background hover:bg-blue-50"}`}
+                  >
+                    Fait
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => setTask(t, "C")}
                     className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors ${v === "C" ? "bg-green-600 text-white border-green-600" : "bg-background hover:bg-green-50"}`}
                   >
@@ -247,13 +254,14 @@ export function CleaningManager() {
                 const total = zoneTasks.length;
                 const conf = zoneTasks.filter((t) => l.tasks[t] === "C").length;
                 const nc = zoneTasks.filter((t) => l.tasks[t] === "NC").length;
+                const fait = zoneTasks.filter((t) => l.tasks[t] === "F").length;
                 return (
                   <div key={l.id} className="p-3 rounded-lg border bg-background space-y-2">
                     <div className="flex items-start gap-3 flex-wrap">
                       <div className="flex-1 min-w-[180px]">
                         <div className="font-medium text-sm">{z?.label ?? l.zone} — {l.collaborateur}</div>
                         <div className="text-xs text-muted-foreground">
-                          {conf}/{total} conformes · {nc} NC{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
+                          {fait} fait · {conf}/{total} conformes · {nc} NC{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
                         </div>
                       </div>
                       {user?.email !== "gestionmaarif1@gmail.com" && (
@@ -270,7 +278,9 @@ export function CleaningManager() {
                             <span className="flex-1">{t}</span>
                             <span
                               className={`px-2 py-0.5 rounded font-semibold border ${
-                                v === "C"
+                                v === "F"
+                                  ? "bg-blue-600 text-white border-blue-600"
+                                  : v === "C"
                                   ? "bg-green-600 text-white border-green-600"
                                   : v === "NC"
                                   ? "bg-red-600 text-white border-red-600"
