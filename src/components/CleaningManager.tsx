@@ -310,12 +310,69 @@ export function CleaningManager() {
                           {done}/{total} tâches · {conf} conformes · {nc} NC · {fait} fait{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
                         </div>
                       </div>
-                      {user?.email !== "gestionmaarif1@gmail.com" && (
+                      {editingId !== l.id && (
+                        <Button size="sm" variant="ghost" onClick={() => startEdit(l)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {user?.email !== "gestionmaarif1@gmail.com" && editingId !== l.id && (
                         <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       )}
                     </div>
+                    {editingId === l.id ? (
+                      <div className="space-y-2 border-t pt-2">
+                        {zoneTasks.map((t) => {
+                          const v = editTasks[t];
+                          const isDone = v === "F" || v === "C" || v === "NC";
+                          return (
+                            <div key={t} className="flex items-center gap-2 p-2 rounded-md border bg-background">
+                              <Checkbox
+                                checked={isDone}
+                                onCheckedChange={(checked) =>
+                                  setEditTasks((p) => ({ ...p, [t]: checked ? "F" : null }))
+                                }
+                              />
+                              <div className="flex-1 text-xs">{t}</div>
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditTasks((p) => ({ ...p, [t]: p[t] === "C" ? "F" : "C" }))}
+                                  disabled={!isDone}
+                                  className={`px-2 py-1 text-xs font-semibold rounded-md border disabled:opacity-40 ${v === "C" ? "bg-green-600 text-white border-green-600" : "bg-background"}`}
+                                >C</button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditTasks((p) => ({ ...p, [t]: p[t] === "NC" ? "F" : "NC" }))}
+                                  disabled={!isDone}
+                                  className={`px-2 py-1 text-xs font-semibold rounded-md border disabled:opacity-40 ${v === "NC" ? "bg-red-600 text-white border-red-600" : "bg-background"}`}
+                                >NC</button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div>
+                          <Label className="text-xs">Notes</Label>
+                          <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Visa Manager</Label>
+                          <Select value={editVisa} onValueChange={setEditVisa}>
+                            <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                            <SelectContent>
+                              {CLEANING_MANAGERS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={saveEdit} disabled={savingEdit}>
+                            <Save className="h-4 w-4 mr-1" /> Enregistrer
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={cancelEdit}>Annuler</Button>
+                        </div>
+                      </div>
+                    ) : (
                     <div className="space-y-1 border-t pt-2">
                       {zoneTasks.map((t) => {
                         const v = l.tasks[t];
@@ -339,10 +396,11 @@ export function CleaningManager() {
                         );
                       })}
                     </div>
-                    {l.notes && (
+                    )}
+                    {editingId !== l.id && l.notes && (
                       <div className="text-xs italic border-t pt-2"><span className="font-semibold not-italic">Notes :</span> {l.notes}</div>
                     )}
-                    {l.visaManager && (
+                    {editingId !== l.id && l.visaManager && (
                       <div className="text-xs"><span className="font-semibold">Visa Manager :</span> {l.visaManager}</div>
                     )}
                   </div>
