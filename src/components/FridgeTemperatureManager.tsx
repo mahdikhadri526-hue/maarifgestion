@@ -79,6 +79,13 @@ export function FridgeTemperatureManager() {
   const [slotOperator, setSlotOperator] = useState<string>("");
   const [savingZone, setSavingZone] = useState<FridgeZone | null>(null);
   const [zoneVisa, setZoneVisa] = useState<Record<string, string>>({});
+  const [zoneOperator, setZoneOperator] = useState<Record<string, string>>({});
+
+  // Historique
+  const [historyDate, setHistoryDate] = useState<string>("");
+  const [historyZone, setHistoryZone] = useState<FridgeZone | "Toutes">("Toutes");
+  const [historyRows, setHistoryRows] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const visibleEquipments = useMemo(
     () => EQUIPMENTS.filter((e) => zoneFilter === "Toutes" || e.zone === zoneFilter),
@@ -157,16 +164,42 @@ export function FridgeTemperatureManager() {
     setSlotOperator(detectedOperator);
     // Pré-remplir le visa par zone à partir des saisies existantes
     const visaByZone: Record<string, string> = {};
+    const opByZone: Record<string, string> = {};
     (data ?? []).forEach((r: any) => {
       if (r.visa_manager && !visaByZone[r.zone]) visaByZone[r.zone] = r.visa_manager;
+      if (r.performed_by && !opByZone[r.zone]) opByZone[r.zone] = r.performed_by;
     });
     setZoneVisa(visaByZone);
+    setZoneOperator(opByZone);
   }
 
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date, slot]);
+
+  async function loadHistory() {
+    if (!historyDate) { setHistoryRows([]); return; }
+    setHistoryLoading(true);
+    let q = supabase
+      .from("fridge_temperatures")
+      .select("*")
+      .eq("control_date", historyDate)
+      .order("zone", { ascending: true })
+      .order("slot", { ascending: true })
+      .order("equipment_code", { ascending: true });
+    if (historyZone !== "Toutes") q = q.eq("zone", historyZone);
+    const { data, error } = await q;
+    setHistoryLoading(false);
+    if (error) {
+      toast({ title: "Erreur historique", description: error.message, variant: "destructive" });
+      return;
+    }
+    setHistoryRows(data ?? []);
+  }
+
+  useEffect(() => { loadHistory(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historyDate, historyZone]);
 
   function updateRow(code: string, patch: Partial<RowState>) {
     setRows((prev) => ({ ...prev, [code]: { ...(prev[code] ?? emptyRow()), ...patch } }));
@@ -182,7 +215,7 @@ export function FridgeTemperatureManager() {
       toast({ title: "Saisir la température", variant: "destructive" });
       return;
     }
-    const operator = slotOperator || row.performed_by;
+    const operator = zoneOperator[eq.zone] || slotOperator || row.performed_by;
     if (!operator) {
       toast({ title: "Opérateur requis", description: "Sélectionnez l'opérateur (Effectué par)", variant: "destructive" });
       return;
@@ -223,8 +256,9 @@ export function FridgeTemperatureManager() {
   }
 
   async function saveZone(zone: FridgeZone) {
-    if (!slotOperator) {
-      toast({ title: "Opérateur requis", description: "Sélectionnez « Effectué par » pour ce créneau", variant: "destructive" });
+    const operator = zoneOperator[zone] || slotOperator;
+    if (!operator) {
+      toast({ title: "Opérateur requis", description: `Sélectionnez « Effectué par » pour la zone ${zone}`, variant: "destructive" });
       return;
     }
     const visa = zoneVisa[zone] || "";
@@ -250,7 +284,7 @@ export function FridgeTemperatureManager() {
         conformite: r.conformite || null,
         commentaire: isOff ? "OFF" : (r.commentaire?.trim() ? r.commentaire : "RAS"),
         action_corrective: r.action_corrective?.trim() ? r.action_corrective : "RAS",
-        performed_by: slotOperator,
+        performed_by: operator,
         visa_manager: visa || null,
       } as any;
       const { data, error } = await supabase
@@ -261,7 +295,7 @@ export function FridgeTemperatureManager() {
         ok++;
         updateRow(eq.code, {
           id: data.id,
-          performed_by: slotOperator,
+          performed_by: operator,
           visa_manager: visa,
           commentaire: payload.commentaire,
           action_corrective: payload.action_corrective,
