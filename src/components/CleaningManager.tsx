@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { CLEANING_ZONES, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs } from "@/lib/cleaningData";
+import { CLEANING_ZONES, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs, updateCleaningLog } from "@/lib/cleaningData";
 import { OPERATORS } from "@/lib/operators";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Check, X, Save, Sparkles } from "lucide-react";
+import { Trash2, Check, X, Save, Sparkles, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 const CLEANING_EXTRA_OPERATORS = [
@@ -35,6 +35,8 @@ const CLEANING_EXTRA_OPERATORS = [
 
 const CLEANING_OPERATORS = Array.from(new Set([...OPERATORS, ...CLEANING_EXTRA_OPERATORS]));
 
+const CLEANING_MANAGERS = ["Mr Mahdi Khadri", "Mr Hamza Fadlou"] as const;
+
 function todayISO() {
   const d = new Date();
   const tz = d.getTimezoneOffset() * 60000;
@@ -53,6 +55,11 @@ export function CleaningManager() {
   const [historyDate, setHistoryDate] = useState<string>("");
   const [logs, setLogs] = useState<CleaningLog[]>([]);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTasks, setEditTasks] = useState<Record<string, CleaningStatus>>({});
+  const [editNotes, setEditNotes] = useState("");
+  const [editVisa, setEditVisa] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   const { user } = useAuth();
 
   const refresh = async () => {
@@ -80,8 +87,6 @@ export function CleaningManager() {
 
   const save = async () => {
     if (!collaborateur) return toast.error("Sélectionnez un collaborateur");
-    if (!visa) return toast.error("Sélectionnez un visa manager");
-    if (!notes.trim()) return toast.error("Saisissez une note");
     const filled = zone.tasks.filter((t) => tasks[t] === "F" || tasks[t] === "C" || tasks[t] === "NC").length;
     if (filled === 0) return toast.error("Cochez au moins une tâche");
     const exists = logs.some((l) => l.zone === zoneKey && l.logDate === date);
@@ -93,8 +98,8 @@ export function CleaningManager() {
         logDate: date,
         collaborateur,
         tasks,
-        visaManager: visa,
-        notes: notes.trim(),
+        visaManager: visa || null,
+        notes: notes.trim() || null,
       });
       toast.success("Fiche enregistrée");
       setTasks({});
@@ -116,6 +121,39 @@ export function CleaningManager() {
       refresh();
     } catch (e: any) {
       toast.error(e.message ?? "Erreur");
+    }
+  };
+
+  const startEdit = (l: CleaningLog) => {
+    setEditingId(l.id);
+    setEditTasks({ ...l.tasks });
+    setEditNotes(l.notes ?? "");
+    setEditVisa(l.visaManager ?? "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditTasks({});
+    setEditNotes("");
+    setEditVisa("");
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    setSavingEdit(true);
+    try {
+      await updateCleaningLog(editingId, {
+        tasks: editTasks,
+        notes: editNotes.trim() || null,
+        visaManager: editVisa || null,
+      });
+      toast.success("Fiche mise à jour");
+      cancelEdit();
+      refresh();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur");
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -213,7 +251,7 @@ export function CleaningManager() {
           <Select value={visa} onValueChange={setVisa}>
             <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
             <SelectContent>
-              {CLEANING_OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+              {CLEANING_MANAGERS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -272,12 +310,69 @@ export function CleaningManager() {
                           {done}/{total} tâches · {conf} conformes · {nc} NC · {fait} fait{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
                         </div>
                       </div>
-                      {user?.email !== "gestionmaarif1@gmail.com" && (
+                      {editingId !== l.id && (
+                        <Button size="sm" variant="ghost" onClick={() => startEdit(l)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {user?.email !== "gestionmaarif1@gmail.com" && editingId !== l.id && (
                         <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       )}
                     </div>
+                    {editingId === l.id ? (
+                      <div className="space-y-2 border-t pt-2">
+                        {zoneTasks.map((t) => {
+                          const v = editTasks[t];
+                          const isDone = v === "F" || v === "C" || v === "NC";
+                          return (
+                            <div key={t} className="flex items-center gap-2 p-2 rounded-md border bg-background">
+                              <Checkbox
+                                checked={isDone}
+                                onCheckedChange={(checked) =>
+                                  setEditTasks((p) => ({ ...p, [t]: checked ? "F" : null }))
+                                }
+                              />
+                              <div className="flex-1 text-xs">{t}</div>
+                              <div className="flex gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditTasks((p) => ({ ...p, [t]: p[t] === "C" ? "F" : "C" }))}
+                                  disabled={!isDone}
+                                  className={`px-2 py-1 text-xs font-semibold rounded-md border disabled:opacity-40 ${v === "C" ? "bg-green-600 text-white border-green-600" : "bg-background"}`}
+                                >C</button>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditTasks((p) => ({ ...p, [t]: p[t] === "NC" ? "F" : "NC" }))}
+                                  disabled={!isDone}
+                                  className={`px-2 py-1 text-xs font-semibold rounded-md border disabled:opacity-40 ${v === "NC" ? "bg-red-600 text-white border-red-600" : "bg-background"}`}
+                                >NC</button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        <div>
+                          <Label className="text-xs">Notes</Label>
+                          <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Visa Manager</Label>
+                          <Select value={editVisa} onValueChange={setEditVisa}>
+                            <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                            <SelectContent>
+                              {CLEANING_MANAGERS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={saveEdit} disabled={savingEdit}>
+                            <Save className="h-4 w-4 mr-1" /> Enregistrer
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={cancelEdit}>Annuler</Button>
+                        </div>
+                      </div>
+                    ) : (
                     <div className="space-y-1 border-t pt-2">
                       {zoneTasks.map((t) => {
                         const v = l.tasks[t];
@@ -301,10 +396,11 @@ export function CleaningManager() {
                         );
                       })}
                     </div>
-                    {l.notes && (
+                    )}
+                    {editingId !== l.id && l.notes && (
                       <div className="text-xs italic border-t pt-2"><span className="font-semibold not-italic">Notes :</span> {l.notes}</div>
                     )}
-                    {l.visaManager && (
+                    {editingId !== l.id && l.visaManager && (
                       <div className="text-xs"><span className="font-semibold">Visa Manager :</span> {l.visaManager}</div>
                     )}
                   </div>
