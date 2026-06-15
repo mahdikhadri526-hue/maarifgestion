@@ -35,6 +35,8 @@ const CLEANING_EXTRA_OPERATORS = [
 
 const CLEANING_OPERATORS = Array.from(new Set([...OPERATORS, ...CLEANING_EXTRA_OPERATORS]));
 
+const CLEANING_MANAGERS = ["Mr Mahdi Khadri", "Mr Hamza Fadlou"] as const;
+
 function todayISO() {
   const d = new Date();
   const tz = d.getTimezoneOffset() * 60000;
@@ -80,8 +82,6 @@ export function CleaningManager() {
 
   const save = async () => {
     if (!collaborateur) return toast.error("Sélectionnez un collaborateur");
-    if (!visa) return toast.error("Sélectionnez un visa manager");
-    if (!notes.trim()) return toast.error("Saisissez une note");
     const filled = zone.tasks.filter((t) => tasks[t] === "F" || tasks[t] === "C" || tasks[t] === "NC").length;
     if (filled === 0) return toast.error("Cochez au moins une tâche");
     const exists = logs.some((l) => l.zone === zoneKey && l.logDate === date);
@@ -93,8 +93,8 @@ export function CleaningManager() {
         logDate: date,
         collaborateur,
         tasks,
-        visaManager: visa,
-        notes: notes.trim(),
+        visaManager: visa || null,
+        notes: notes.trim() || null,
       });
       toast.success("Fiche enregistrée");
       setTasks({});
@@ -213,7 +213,7 @@ export function CleaningManager() {
           <Select value={visa} onValueChange={setVisa}>
             <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
             <SelectContent>
-              {CLEANING_OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+              {CLEANING_MANAGERS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
