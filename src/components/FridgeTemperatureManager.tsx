@@ -79,6 +79,13 @@ export function FridgeTemperatureManager() {
   const [slotOperator, setSlotOperator] = useState<string>("");
   const [savingZone, setSavingZone] = useState<FridgeZone | null>(null);
   const [zoneVisa, setZoneVisa] = useState<Record<string, string>>({});
+  const [zoneOperator, setZoneOperator] = useState<Record<string, string>>({});
+
+  // Historique
+  const [historyDate, setHistoryDate] = useState<string>("");
+  const [historyZone, setHistoryZone] = useState<FridgeZone | "Toutes">("Toutes");
+  const [historyRows, setHistoryRows] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   const visibleEquipments = useMemo(
     () => EQUIPMENTS.filter((e) => zoneFilter === "Toutes" || e.zone === zoneFilter),
@@ -157,16 +164,42 @@ export function FridgeTemperatureManager() {
     setSlotOperator(detectedOperator);
     // Pré-remplir le visa par zone à partir des saisies existantes
     const visaByZone: Record<string, string> = {};
+    const opByZone: Record<string, string> = {};
     (data ?? []).forEach((r: any) => {
       if (r.visa_manager && !visaByZone[r.zone]) visaByZone[r.zone] = r.visa_manager;
+      if (r.performed_by && !opByZone[r.zone]) opByZone[r.zone] = r.performed_by;
     });
     setZoneVisa(visaByZone);
+    setZoneOperator(opByZone);
   }
 
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [date, slot]);
+
+  async function loadHistory() {
+    if (!historyDate) { setHistoryRows([]); return; }
+    setHistoryLoading(true);
+    let q = supabase
+      .from("fridge_temperatures")
+      .select("*")
+      .eq("control_date", historyDate)
+      .order("zone", { ascending: true })
+      .order("slot", { ascending: true })
+      .order("equipment_code", { ascending: true });
+    if (historyZone !== "Toutes") q = q.eq("zone", historyZone);
+    const { data, error } = await q;
+    setHistoryLoading(false);
+    if (error) {
+      toast({ title: "Erreur historique", description: error.message, variant: "destructive" });
+      return;
+    }
+    setHistoryRows(data ?? []);
+  }
+
+  useEffect(() => { loadHistory(); // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historyDate, historyZone]);
 
   function updateRow(code: string, patch: Partial<RowState>) {
     setRows((prev) => ({ ...prev, [code]: { ...(prev[code] ?? emptyRow()), ...patch } }));
@@ -182,7 +215,7 @@ export function FridgeTemperatureManager() {
       toast({ title: "Saisir la température", variant: "destructive" });
       return;
     }
-    const operator = slotOperator || row.performed_by;
+    const operator = zoneOperator[eq.zone] || slotOperator || row.performed_by;
     if (!operator) {
       toast({ title: "Opérateur requis", description: "Sélectionnez l'opérateur (Effectué par)", variant: "destructive" });
       return;
@@ -223,8 +256,9 @@ export function FridgeTemperatureManager() {
   }
 
   async function saveZone(zone: FridgeZone) {
-    if (!slotOperator) {
-      toast({ title: "Opérateur requis", description: "Sélectionnez « Effectué par » pour ce créneau", variant: "destructive" });
+    const operator = zoneOperator[zone] || slotOperator;
+    if (!operator) {
+      toast({ title: "Opérateur requis", description: `Sélectionnez « Effectué par » pour la zone ${zone}`, variant: "destructive" });
       return;
     }
     const visa = zoneVisa[zone] || "";
@@ -250,7 +284,7 @@ export function FridgeTemperatureManager() {
         conformite: r.conformite || null,
         commentaire: isOff ? "OFF" : (r.commentaire?.trim() ? r.commentaire : "RAS"),
         action_corrective: r.action_corrective?.trim() ? r.action_corrective : "RAS",
-        performed_by: slotOperator,
+        performed_by: operator,
         visa_manager: visa || null,
       } as any;
       const { data, error } = await supabase
@@ -261,7 +295,7 @@ export function FridgeTemperatureManager() {
         ok++;
         updateRow(eq.code, {
           id: data.id,
-          performed_by: slotOperator,
+          performed_by: operator,
           visa_manager: visa,
           commentaire: payload.commentaire,
           action_corrective: payload.action_corrective,
@@ -663,6 +697,20 @@ export function FridgeTemperatureManager() {
 
             <div className="flex flex-col sm:flex-row gap-2 sm:items-end justify-end p-4 border-t">
               <div className="min-w-[200px]">
+                <Label className="text-xs">Effectué par (zone) *</Label>
+                <Select
+                  value={zoneOperator[zone] || "__none"}
+                  onValueChange={(v) => setZoneOperator((p) => ({ ...p, [zone]: v === "__none" ? "" : v }))}
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Opérateur" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">—</SelectItem>
+                    {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="min-w-[200px]">
                 <Label className="text-xs">Visa manager (zone)</Label>
                 <Select
                   value={zoneVisa[zone] || "__none"}
@@ -689,6 +737,77 @@ export function FridgeTemperatureManager() {
       })}
         </>
       )}
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Historique des températures</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label>Filtrer par date</Label>
+              <Input type="date" value={historyDate} onChange={(e) => setHistoryDate(e.target.value)} />
+            </div>
+            <div>
+              <Label>Zone</Label>
+              <Select value={historyZone} onValueChange={(v) => setHistoryZone(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Toutes">Toutes les zones</SelectItem>
+                  {ZONES.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {!historyDate ? (
+            <p className="text-sm text-muted-foreground">Sélectionnez une date pour afficher l'historique.</p>
+          ) : historyLoading ? (
+            <p className="text-sm text-muted-foreground">Chargement…</p>
+          ) : historyRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucune saisie pour ces filtres.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Zone</TableHead>
+                    <TableHead>Créneau</TableHead>
+                    <TableHead>Équipement</TableHead>
+                    <TableHead>Temp.</TableHead>
+                    <TableHead>Conforme</TableHead>
+                    <TableHead>Effectué par</TableHead>
+                    <TableHead>Visa</TableHead>
+                    <TableHead>Commentaire</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {historyRows.map((r: any) => {
+                    const t = r.temperature_haut ?? r.temperature_bas;
+                    const temp = t !== null && t !== undefined ? formatDisplayTemp(t, r.equipment_type) : (r.commentaire === "OFF" ? "OFF" : "—");
+                    return (
+                      <TableRow key={r.id}>
+                        <TableCell className="text-xs">{r.zone}</TableCell>
+                        <TableCell className="text-xs">{r.slot}</TableCell>
+                        <TableCell className="text-xs">
+                          <div className="font-medium">{r.equipment_name}</div>
+                          <div className="text-muted-foreground font-mono">{r.equipment_code}</div>
+                        </TableCell>
+                        <TableCell className="text-xs font-semibold">{temp}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.conformite === "conforme" ? "✓" : r.conformite === "non_conforme" ? "✗" : "—"}
+                        </TableCell>
+                        <TableCell className="text-xs">{r.performed_by || "—"}</TableCell>
+                        <TableCell className="text-xs">{r.visa_manager || "—"}</TableCell>
+                        <TableCell className="text-xs max-w-[200px] truncate">{r.commentaire || "—"}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
