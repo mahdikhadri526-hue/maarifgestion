@@ -697,6 +697,20 @@ export function FridgeTemperatureManager() {
 
             <div className="flex flex-col sm:flex-row gap-2 sm:items-end justify-end p-4 border-t">
               <div className="min-w-[200px]">
+                <Label className="text-xs">Effectué par (zone) *</Label>
+                <Select
+                  value={zoneOperator[zone] || "__none"}
+                  onValueChange={(v) => setZoneOperator((p) => ({ ...p, [zone]: v === "__none" ? "" : v }))}
+                  disabled={!canEdit}
+                >
+                  <SelectTrigger className="h-9"><SelectValue placeholder="Opérateur" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__none">—</SelectItem>
+                    {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="min-w-[200px]">
                 <Label className="text-xs">Visa manager (zone)</Label>
                 <Select
                   value={zoneVisa[zone] || "__none"}
@@ -723,6 +737,77 @@ export function FridgeTemperatureManager() {
       })}
         </>
       )}
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Historique des températures</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label>Filtrer par date</Label>
+              <Input type="date" value={historyDate} onChange={(e) => setHistoryDate(e.target.value)} />
+            </div>
+            <div>
+              <Label>Zone</Label>
+              <Select value={historyZone} onValueChange={(v) => setHistoryZone(v as any)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Toutes">Toutes les zones</SelectItem>
+                  {ZONES.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          {!historyDate ? (
+            <p className="text-sm text-muted-foreground">Sélectionnez une date pour afficher l'historique.</p>
+          ) : historyLoading ? (
+            <p className="text-sm text-muted-foreground">Chargement…</p>
+          ) : historyRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucune saisie pour ces filtres.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Zone</TableHead>
+                    <TableHead>Créneau</TableHead>
+                    <TableHead>Équipement</TableHead>
+                    <TableHead>Temp.</TableHead>
+                    <TableHead>Conforme</TableHead>
+                    <TableHead>Effectué par</TableHead>
+                    <TableHead>Visa</TableHead>
+                    <TableHead>Commentaire</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {historyRows.map((r: any) => {
+                    const t = r.temperature_haut ?? r.temperature_bas;
+                    const temp = t !== null && t !== undefined ? formatDisplayTemp(t, r.equipment_type) : (r.commentaire === "OFF" ? "OFF" : "—");
+                    return (
+                      <TableRow key={r.id}>
+                        <TableCell className="text-xs">{r.zone}</TableCell>
+                        <TableCell className="text-xs">{r.slot}</TableCell>
+                        <TableCell className="text-xs">
+                          <div className="font-medium">{r.equipment_name}</div>
+                          <div className="text-muted-foreground font-mono">{r.equipment_code}</div>
+                        </TableCell>
+                        <TableCell className="text-xs font-semibold">{temp}</TableCell>
+                        <TableCell className="text-xs">
+                          {r.conformite === "conforme" ? "✓" : r.conformite === "non_conforme" ? "✗" : "—"}
+                        </TableCell>
+                        <TableCell className="text-xs">{r.performed_by || "—"}</TableCell>
+                        <TableCell className="text-xs">{r.visa_manager || "—"}</TableCell>
+                        <TableCell className="text-xs max-w-[200px] truncate">{r.commentaire || "—"}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
