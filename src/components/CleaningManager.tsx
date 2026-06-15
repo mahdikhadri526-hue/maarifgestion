@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { CLEANING_ZONES, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs } from "@/lib/cleaningData";
+import { CLEANING_ZONES, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs, updateCleaningLog } from "@/lib/cleaningData";
 import { OPERATORS } from "@/lib/operators";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Check, X, Save, Sparkles } from "lucide-react";
+import { Trash2, Check, X, Save, Sparkles, Pencil } from "lucide-react";
 import { toast } from "sonner";
 
 const CLEANING_EXTRA_OPERATORS = [
@@ -55,6 +55,11 @@ export function CleaningManager() {
   const [historyDate, setHistoryDate] = useState<string>("");
   const [logs, setLogs] = useState<CleaningLog[]>([]);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTasks, setEditTasks] = useState<Record<string, CleaningStatus>>({});
+  const [editNotes, setEditNotes] = useState("");
+  const [editVisa, setEditVisa] = useState("");
+  const [savingEdit, setSavingEdit] = useState(false);
   const { user } = useAuth();
 
   const refresh = async () => {
@@ -116,6 +121,39 @@ export function CleaningManager() {
       refresh();
     } catch (e: any) {
       toast.error(e.message ?? "Erreur");
+    }
+  };
+
+  const startEdit = (l: CleaningLog) => {
+    setEditingId(l.id);
+    setEditTasks({ ...l.tasks });
+    setEditNotes(l.notes ?? "");
+    setEditVisa(l.visaManager ?? "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditTasks({});
+    setEditNotes("");
+    setEditVisa("");
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    setSavingEdit(true);
+    try {
+      await updateCleaningLog(editingId, {
+        tasks: editTasks,
+        notes: editNotes.trim() || null,
+        visaManager: editVisa || null,
+      });
+      toast.success("Fiche mise à jour");
+      cancelEdit();
+      refresh();
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur");
+    } finally {
+      setSavingEdit(false);
     }
   };
 
