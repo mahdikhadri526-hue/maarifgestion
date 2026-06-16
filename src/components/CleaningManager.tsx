@@ -87,6 +87,7 @@ export function CleaningManager() {
   };
 
   const save = async () => {
+    if (!zone) return toast.error("Sélectionnez une zone");
     if (!collaborateur) return toast.error("Sélectionnez un collaborateur");
     const filled = zone.tasks.filter((t) => tasks[t] === "F" || tasks[t] === "C" || tasks[t] === "NC").length;
     if (filled === 0) return toast.error("Cochez au moins une tâche");
