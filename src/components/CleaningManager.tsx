@@ -80,6 +80,7 @@ export function CleaningManager() {
     setTasks((prev) => ({ ...prev, [t]: prev[t] === v ? null : v }));
 
   const setAll = (v: CleaningStatus) => {
+    if (!zone) return;
     const next: Record<string, CleaningStatus> = {};
     for (const t of zone.tasks) next[t] = v;
     setTasks(next);
