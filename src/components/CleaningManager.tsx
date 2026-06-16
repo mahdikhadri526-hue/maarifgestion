@@ -44,8 +44,8 @@ function todayISO() {
 }
 
 export function CleaningManager() {
-  const [zoneKey, setZoneKey] = useState(CLEANING_ZONES[0].key);
-  const zone = useMemo(() => CLEANING_ZONES.find((z) => z.key === zoneKey)!, [zoneKey]);
+  const [zoneKey, setZoneKey] = useState("");
+  const zone = useMemo(() => CLEANING_ZONES.find((z) => z.key === zoneKey), [zoneKey]);
 
   const [date, setDate] = useState(todayISO());
   const [collaborateur, setCollaborateur] = useState("");
@@ -80,12 +80,14 @@ export function CleaningManager() {
     setTasks((prev) => ({ ...prev, [t]: prev[t] === v ? null : v }));
 
   const setAll = (v: CleaningStatus) => {
+    if (!zone) return;
     const next: Record<string, CleaningStatus> = {};
     for (const t of zone.tasks) next[t] = v;
     setTasks(next);
   };
 
   const save = async () => {
+    if (!zone) return toast.error("Sélectionnez une zone");
     if (!collaborateur) return toast.error("Sélectionnez un collaborateur");
     const filled = zone.tasks.filter((t) => tasks[t] === "F" || tasks[t] === "C" || tasks[t] === "NC").length;
     if (filled === 0) return toast.error("Cochez au moins une tâche");
@@ -169,7 +171,7 @@ export function CleaningManager() {
           <div>
             <Label>Zone</Label>
             <Select value={zoneKey} onValueChange={setZoneKey}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Choisir une zone..." /></SelectTrigger>
               <SelectContent>
                 {CLEANING_ZONES.map((z) => (
                   <SelectItem key={z.key} value={z.key}>{z.label}</SelectItem>
@@ -192,73 +194,77 @@ export function CleaningManager() {
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" size="sm" variant="outline" onClick={() => setAll("C")}>
-            <Check className="h-4 w-4 mr-1" /> Tout Conforme
-          </Button>
-          <Button type="button" size="sm" variant="outline" onClick={() => setAll(null)}>
-            Réinitialiser
-          </Button>
-        </div>
+        {zone && (
+          <>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={() => setAll("C")}>
+                <Check className="h-4 w-4 mr-1" /> Tout Conforme
+              </Button>
+              <Button type="button" size="sm" variant="outline" onClick={() => setAll(null)}>
+                Réinitialiser
+              </Button>
+            </div>
 
-        <div className="space-y-2">
-          {zone.tasks.map((t) => {
-            const v = tasks[t];
-            const isDone = v === "F" || v === "C" || v === "NC";
-            return (
-              <div key={t} className="flex items-center gap-2 p-2 rounded-lg border bg-background">
-                <Checkbox
-                  checked={isDone}
-                  onCheckedChange={(checked) => {
-                    setTasks((prev) => ({ ...prev, [t]: checked ? "F" : null }));
-                  }}
-                />
-                <div className="flex-1 text-sm">{t}</div>
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setTasks((prev) => ({ ...prev, [t]: prev[t] === "C" ? "F" : "C" }))
-                    }
-                    disabled={!isDone}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${v === "C" ? "bg-green-600 text-white border-green-600" : "bg-background hover:bg-green-50"}`}
-                  >
-                    C
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setTasks((prev) => ({ ...prev, [t]: prev[t] === "NC" ? "F" : "NC" }))
-                    }
-                    disabled={!isDone}
-                    className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${v === "NC" ? "bg-red-600 text-white border-red-600" : "bg-background hover:bg-red-50"}`}
-                  >
-                    NC
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+            <div className="space-y-2">
+              {zone.tasks.map((t) => {
+                const v = tasks[t];
+                const isDone = v === "F" || v === "C" || v === "NC";
+                return (
+                  <div key={t} className="flex items-center gap-2 p-2 rounded-lg border bg-background">
+                    <Checkbox
+                      checked={isDone}
+                      onCheckedChange={(checked) => {
+                        setTasks((prev) => ({ ...prev, [t]: checked ? "F" : null }));
+                      }}
+                    />
+                    <div className="flex-1 text-sm">{t}</div>
+                    <div className="flex gap-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setTasks((prev) => ({ ...prev, [t]: prev[t] === "C" ? "F" : "C" }))
+                        }
+                        disabled={!isDone}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${v === "C" ? "bg-green-600 text-white border-green-600" : "bg-background hover:bg-green-50"}`}
+                      >
+                        C
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setTasks((prev) => ({ ...prev, [t]: prev[t] === "NC" ? "F" : "NC" }))
+                        }
+                        disabled={!isDone}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-md border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${v === "NC" ? "bg-red-600 text-white border-red-600" : "bg-background hover:bg-red-50"}`}
+                      >
+                        NC
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
 
-        <div>
-          <Label>Notes</Label>
-          <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
-        </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
+            </div>
 
-        <div>
-          <Label>Visa Manager</Label>
-          <Select value={visa} onValueChange={setVisa}>
-            <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
-            <SelectContent>
-              {CLEANING_MANAGERS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
+            <div>
+              <Label>Visa Manager</Label>
+              <Select value={visa} onValueChange={setVisa}>
+                <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                <SelectContent>
+                  {CLEANING_MANAGERS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <Button onClick={save} disabled={saving} className="w-full sm:w-auto">
-          <Save className="h-4 w-4 mr-2" /> Enregistrer la fiche
-        </Button>
+            <Button onClick={save} disabled={saving} className="w-full sm:w-auto">
+              <Save className="h-4 w-4 mr-2" /> Enregistrer la fiche
+            </Button>
+          </>
+        )}
       </div>
 
       <div className="bg-card border rounded-xl p-4 sm:p-6 shadow-sm">
