@@ -77,9 +77,10 @@ function formatWithSign(value: string, sign: "+" | "-"): string {
 }
 
 export function FridgeTemperatureManager() {
-  const { can } = useAuth();
-  const canEdit = can("edit_temperatures");
-  const canDelete = can("delete_temperatures");
+  const { can, user } = useAuth();
+  const isReadOnlyUser = user?.email === "gestionmaarif1@gmail.com";
+  const canEdit = can("edit_temperatures") && !isReadOnlyUser;
+  const canDelete = can("delete_temperatures") && !isReadOnlyUser;
   const { toast } = useToast();
 
   const [date, setDate] = useState<string>(serviceDateStr());

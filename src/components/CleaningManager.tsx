@@ -316,7 +316,7 @@ export function CleaningManager() {
                           {done}/{total} tâches · {conf} conformes · {nc} NC · {fait} fait{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
                         </div>
                       </div>
-                      {editingId !== l.id && (
+                      {user?.email !== "gestionmaarif1@gmail.com" && editingId !== l.id && (
                         <Button size="sm" variant="ghost" onClick={() => startEdit(l)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
