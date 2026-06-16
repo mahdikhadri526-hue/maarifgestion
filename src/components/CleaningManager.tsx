@@ -44,8 +44,8 @@ function todayISO() {
 }
 
 export function CleaningManager() {
-  const [zoneKey, setZoneKey] = useState(CLEANING_ZONES[0].key);
-  const zone = useMemo(() => CLEANING_ZONES.find((z) => z.key === zoneKey)!, [zoneKey]);
+  const [zoneKey, setZoneKey] = useState("");
+  const zone = useMemo(() => CLEANING_ZONES.find((z) => z.key === zoneKey), [zoneKey]);
 
   const [date, setDate] = useState(todayISO());
   const [collaborateur, setCollaborateur] = useState("");
