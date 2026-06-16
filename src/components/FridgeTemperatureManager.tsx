@@ -36,6 +36,18 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Date du « service » : entre 00h et 04h59, on rattache à la journée de travail
+// précédente (le créneau 00h correspond à la fin du service de la veille).
+function serviceDateStr(d: Date = new Date()) {
+  const ref = new Date(d);
+  if (ref.getHours() < 5) ref.setDate(ref.getDate() - 1);
+  // format YYYY-MM-DD en local
+  const y = ref.getFullYear();
+  const m = String(ref.getMonth() + 1).padStart(2, "0");
+  const day = String(ref.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function currentSlot(): FridgeSlot {
   const h = new Date().getHours();
   if (h >= 5 && h < 12) return "07h";
@@ -70,7 +82,7 @@ export function FridgeTemperatureManager() {
   const canDelete = can("delete_temperatures");
   const { toast } = useToast();
 
-  const [date, setDate] = useState<string>(todayStr());
+  const [date, setDate] = useState<string>(serviceDateStr());
   const [slot, setSlot] = useState<FridgeSlot>(currentSlot());
   const [zoneFilter, setZoneFilter] = useState<FridgeZone | "Toutes">("Toutes");
   const [rows, setRows] = useState<Record<string, RowState>>({});
@@ -117,12 +129,14 @@ export function FridgeTemperatureManager() {
   }, []);
 
   const missingTempEquipments = useMemo(() => {
-    if (date !== todayStr()) return [] as typeof EQUIPMENTS;
+    if (date !== serviceDateStr(now)) return [] as typeof EQUIPMENTS;
     const slotHour = slot === "07h" ? 7 : slot === "16h" ? 16 : 0;
-    const slotStart = new Date();
+    const slotStart = new Date(now);
     slotStart.setHours(slotHour, 0, 0, 0);
-    // Le créneau 00h correspond à la nuit suivante: si l'heure actuelle est >= 5h, on considère le 00h du jour suivant
-    if (slot === "00h" && now.getHours() >= 5) return [];
+    // Pour le créneau 00h, l'heure de référence est minuit du jour civil suivant la date de service
+    if (slot === "00h") {
+      slotStart.setDate(slotStart.getDate() + 1);
+    }
     const diffMin = (now.getTime() - slotStart.getTime()) / 60000;
     if (diffMin < 30) return [];
     return EQUIPMENTS.filter((eq) => {
