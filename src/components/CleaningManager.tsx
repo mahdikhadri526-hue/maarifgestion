@@ -169,7 +169,7 @@ export function CleaningManager() {
           <div>
             <Label>Zone</Label>
             <Select value={zoneKey} onValueChange={setZoneKey}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Choisir une zone..." /></SelectTrigger>
               <SelectContent>
                 {CLEANING_ZONES.map((z) => (
                   <SelectItem key={z.key} value={z.key}>{z.label}</SelectItem>
