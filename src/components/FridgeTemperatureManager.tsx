@@ -85,7 +85,8 @@ export function FridgeTemperatureManager() {
 
   const [date, setDate] = useState<string>(serviceDateStr());
   const [slot, setSlot] = useState<FridgeSlot>(currentSlot());
-  const [zoneFilter, setZoneFilter] = useState<FridgeZone | "Toutes">("Toutes");
+  const [zoneFilter, setZoneFilter] = useState<FridgeZone | "">("");
+
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState<string | null>(null);
@@ -101,9 +102,10 @@ export function FridgeTemperatureManager() {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   const visibleEquipments = useMemo(
-    () => EQUIPMENTS.filter((e) => zoneFilter === "Toutes" || e.zone === zoneFilter),
+    () => (zoneFilter === "" ? [] : EQUIPMENTS.filter((e) => e.zone === zoneFilter)),
     [zoneFilter]
   );
+
 
   const equipmentsByZone = useMemo(() => {
     const groups: Record<string, typeof EQUIPMENTS> = {};
@@ -326,7 +328,8 @@ export function FridgeTemperatureManager() {
     doc.setFontSize(14);
     doc.text("Prise de température des frigos (HACCP)", 14, 14);
     doc.setFontSize(10);
-    doc.text(`Date : ${date}   Créneau : ${slot}   Zone : ${zoneFilter}   Effectué par : ${slotOperator || "—"}`, 14, 21);
+    doc.text(`Date : ${date}   Créneau : ${slot}   Zone : ${zoneFilter || "—"}   Effectué par : ${slotOperator || "—"}`, 14, 21);
+
     const body = visibleEquipments.map((eq) => {
       const r = rows[eq.code] ?? emptyRow();
       return [
