@@ -455,7 +455,15 @@ export function FridgeTemperatureManager() {
             </CardContent>
           </Card>
         )}
-        {Object.entries(equipmentsByZone).map(([zone, equips], zoneIndex) => {
+        {zoneFilter === "" ? (
+          <Card>
+            <CardContent className="p-6 text-center text-sm text-muted-foreground">
+              Sélectionnez une zone dans le filtre ci-dessus pour afficher la check-list des équipements.
+            </CardContent>
+          </Card>
+        ) : (
+        Object.entries(equipmentsByZone).map(([zone, equips], zoneIndex) => {
+
           // Conserver l'ordre fixe des équipements pour éviter que les lignes
           // ne se déplacent pendant la saisie.
           const sortedEquips = equips;
