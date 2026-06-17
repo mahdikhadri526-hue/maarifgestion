@@ -395,14 +395,14 @@ export function FridgeTemperatureManager() {
             </div>
             <div>
               <Label>Zone</Label>
-              <Select value={zoneFilter} onValueChange={(v) => setZoneFilter(v as any)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select value={zoneFilter} onValueChange={(v) => setZoneFilter(v as FridgeZone)}>
+                <SelectTrigger><SelectValue placeholder="Choisir une zone..." /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Toutes">Toutes les zones</SelectItem>
                   {ZONES.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
+
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3 mt-3 items-end">
             <div>
