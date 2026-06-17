@@ -462,305 +462,302 @@ export function FridgeTemperatureManager() {
             </CardContent>
           </Card>
         ) : (
-        Object.entries(equipmentsByZone).map(([zone, equips], zoneIndex) => {
+          Object.entries(equipmentsByZone).map(([zone, equips]) => {
+            const sortedEquips = equips;
+            return (
+              <Card key={zone}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Zone : {zone}</CardTitle>
+                </CardHeader>
+                <CardContent className="p-0 overflow-x-auto">
+                  {/* Desktop / tablet table */}
+                  <Table className="hidden md:table">
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="min-w-[110px]">Code</TableHead>
+                        <TableHead className="min-w-[180px] sticky left-0 z-20 bg-background shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">Équipement</TableHead>
+                        <TableHead className="min-w-[120px]">Température (°C)</TableHead>
+                        <TableHead className="min-w-[100px]">Conforme</TableHead>
+                        <TableHead className="min-w-[200px]">Commentaire</TableHead>
+                        <TableHead className="min-w-[220px]">Action en cas non conforme</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {sortedEquips.map((eq) => {
+                        const row = rows[eq.code] ?? emptyRow();
+                        const locked = !!row.id;
+                        const editable = canEdit;
+                        return (
+                          <TableRow key={eq.code} className={row.id ? "bg-success/5" : ""}>
+                            <TableCell className="font-mono text-xs">{eq.code}</TableCell>
+                            <TableCell className={`sticky left-0 z-10 bg-card ${row.id ? "border-l-4 border-l-success" : ""} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]`}>
+                              <div className="font-medium">{eq.name}</div>
+                              <div className="text-xs text-muted-foreground">{eq.type}</div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (row.temperature === "OFF") return;
+                                    const cleaned = row.temperature.trim().replace(/^[+-]/, "");
+                                    updateRow(eq.code, { temperature: `+${cleaned}` });
+                                  }}
+                                  className={`h-9 w-7 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("+") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                                  disabled={!editable || row.temperature === "OFF"}
+                                >+</button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (row.temperature === "OFF") return;
+                                    const cleaned = row.temperature.trim().replace(/^[+-]/, "");
+                                    updateRow(eq.code, { temperature: `-${cleaned}` });
+                                  }}
+                                  className={`h-9 w-7 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("-") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                                  disabled={!editable || row.temperature === "OFF"}
+                                >-</button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (row.temperature === "OFF") {
+                                      updateRow(eq.code, { temperature: "", conformite: "", commentaire: "", action_corrective: "" });
+                                    } else {
+                                      updateRow(eq.code, { temperature: "OFF", conformite: "", commentaire: row.commentaire || "Matériel arrêté", action_corrective: "RAS" });
+                                    }
+                                  }}
+                                  className={`h-9 w-10 rounded-md border text-[10px] font-bold flex items-center justify-center transition-colors ${row.temperature === "OFF" ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                                  disabled={!editable}
+                                >OFF</button>
+                                <Input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={row.temperature}
+                                  onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
+                                  onBlur={() => {
+                                    if (row.temperature.trim().toUpperCase() === "OFF") return;
+                                    const sign = getSign(row.temperature, eq.type);
+                                    const formatted = formatWithSign(row.temperature, sign);
+                                    if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
+                                  }}
+                                  disabled={!editable || row.temperature === "OFF"}
+                                  className="h-9 w-20"
+                                  placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
+                                />
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Select
+                                value={row.conformite || "__none"}
+                                onValueChange={(v) => updateRow(eq.code, { conformite: v === "__none" ? "" : (v as RowState["conformite"]) })}
+                                disabled={!editable}
+                              >
+                                <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none">—</SelectItem>
+                                  <SelectItem value="conforme">Conforme</SelectItem>
+                                  <SelectItem value="non_conforme">Non conforme</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              {row.conformite === "conforme" && (
+                                <Badge className="mt-1 bg-success text-success-foreground"><CheckCircle2 className="h-3 w-3 mr-1" />OK</Badge>
+                              )}
+                              {row.conformite === "non_conforme" && (
+                                <Badge className="mt-1" variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Non conforme</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Textarea
+                                rows={1}
+                                value={row.commentaire}
+                                onChange={(e) => updateRow(eq.code, { commentaire: e.target.value })}
+                                disabled={!editable}
+                                placeholder="Observations…"
+                                className="min-h-9"
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Textarea
+                                rows={1}
+                                value={row.action_corrective}
+                                onChange={(e) => updateRow(eq.code, { action_corrective: e.target.value })}
+                                disabled={!editable}
+                                placeholder={row.conformite === "non_conforme" ? "Action corrective…" : "—"}
+                                className="min-h-9 w-full"
+                              />
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
 
-          // Conserver l'ordre fixe des équipements pour éviter que les lignes
-          // ne se déplacent pendant la saisie.
-          const sortedEquips = equips;
-          return (
-          <Card key={zone}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Zone : {zone}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0 overflow-x-auto">
-            {/* Desktop / tablet table */}
-            <Table className="hidden md:table">
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="min-w-[110px]">Code</TableHead>
-                  <TableHead className="min-w-[180px] sticky left-0 z-20 bg-background shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]">Équipement</TableHead>
-                  <TableHead className="min-w-[120px]">Température (°C)</TableHead>
-                  <TableHead className="min-w-[100px]">Conforme</TableHead>
-                  <TableHead className="min-w-[200px]">Commentaire</TableHead>
-                  <TableHead className="min-w-[220px]">Action en cas non conforme</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sortedEquips.map((eq) => {
-                  const row = rows[eq.code] ?? emptyRow();
-                  const locked = !!row.id;
-                  const editable = canEdit;
-                  return (
-                    <TableRow key={eq.code} className={row.id ? "bg-success/5" : ""}>
-                      <TableCell className="font-mono text-xs">{eq.code}</TableCell>
-                      <TableCell className={`sticky left-0 z-10 bg-card ${row.id ? "border-l-4 border-l-success" : ""} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]`}>
-                        <div className="font-medium">{eq.name}</div>
-                        <div className="text-xs text-muted-foreground">{eq.type}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (row.temperature === "OFF") return;
-                              const cleaned = row.temperature.trim().replace(/^[+-]/, "");
-                              updateRow(eq.code, { temperature: `+${cleaned}` });
-                            }}
-                            className={`h-9 w-7 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("+") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
-                            disabled={!editable || row.temperature === "OFF"}
-                          >+</button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (row.temperature === "OFF") return;
-                              const cleaned = row.temperature.trim().replace(/^[+-]/, "");
-                              updateRow(eq.code, { temperature: `-${cleaned}` });
-                            }}
-                            className={`h-9 w-7 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("-") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
-                            disabled={!editable || row.temperature === "OFF"}
-                          >-</button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (row.temperature === "OFF") {
-                                updateRow(eq.code, { temperature: "", conformite: "", commentaire: "", action_corrective: "" });
-                              } else {
-                                updateRow(eq.code, { temperature: "OFF", conformite: "", commentaire: row.commentaire || "Matériel arrêté", action_corrective: "RAS" });
-                              }
-                            }}
-                            className={`h-9 w-10 rounded-md border text-[10px] font-bold flex items-center justify-center transition-colors ${row.temperature === "OFF" ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
-                            disabled={!editable}
-                          >OFF</button>
-                          <Input
-                            type="text"
-                            inputMode="decimal"
-                            value={row.temperature}
-                            onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
-                            onBlur={() => {
-                              if (row.temperature.trim().toUpperCase() === "OFF") return;
-                              const sign = getSign(row.temperature, eq.type);
-                              const formatted = formatWithSign(row.temperature, sign);
-                              if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
-                            }}
-                            disabled={!editable || row.temperature === "OFF"}
-                            className="h-9 w-20"
-                            placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
-                          />
+                  {/* Mobile card list */}
+                  <div className="md:hidden divide-y">
+                    {sortedEquips.map((eq) => {
+                      const row = rows[eq.code] ?? emptyRow();
+                      const locked = !!row.id;
+                      const editable = canEdit;
+                      const status = row.conformite;
+                      const borderClass =
+                        status === "non_conforme"
+                          ? "border-l-4 border-l-destructive"
+                          : status === "conforme"
+                          ? "border-l-4 border-l-success"
+                          : locked
+                          ? "border-l-4 border-l-success/60"
+                          : "border-l-4 border-l-muted";
+                      return (
+                        <div key={eq.code} className={`p-3 ${borderClass} ${locked ? "bg-success/5" : ""}`}>
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="min-w-0">
+                              <div className="font-semibold text-sm leading-tight truncate">{eq.name}</div>
+                              <div className="text-[11px] text-muted-foreground font-mono">{eq.code} · {eq.type}</div>
+                            </div>
+                            {status === "conforme" && (
+                              <Badge className="bg-success text-success-foreground shrink-0"><CheckCircle2 className="h-3 w-3 mr-1" />OK</Badge>
+                            )}
+                            {status === "non_conforme" && (
+                              <Badge variant="destructive" className="shrink-0"><AlertTriangle className="h-3 w-3 mr-1" />Non conforme</Badge>
+                            )}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <Label className="text-[11px] text-muted-foreground">Température (°C)</Label>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (row.temperature === "OFF") return;
+                                    const cleaned = row.temperature.trim().replace(/^[+-]/, "");
+                                    updateRow(eq.code, { temperature: `+${cleaned}` });
+                                  }}
+                                  className={`h-10 w-8 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("+") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                                  disabled={!editable || row.temperature === "OFF"}
+                                >+</button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (row.temperature === "OFF") return;
+                                    const cleaned = row.temperature.trim().replace(/^[+-]/, "");
+                                    updateRow(eq.code, { temperature: `-${cleaned}` });
+                                  }}
+                                  className={`h-10 w-8 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("-") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                                  disabled={!editable || row.temperature === "OFF"}
+                                >-</button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (row.temperature === "OFF") {
+                                      updateRow(eq.code, { temperature: "", conformite: "", commentaire: "", action_corrective: "" });
+                                    } else {
+                                      updateRow(eq.code, { temperature: "OFF", conformite: "", commentaire: row.commentaire || "Matériel arrêté", action_corrective: "RAS" });
+                                    }
+                                  }}
+                                  className={`h-10 w-10 rounded-md border text-[10px] font-bold flex items-center justify-center transition-colors ${row.temperature === "OFF" ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                                  disabled={!editable}
+                                >OFF</button>
+                                <Input
+                                  type="text"
+                                  inputMode="decimal"
+                                  value={row.temperature}
+                                  onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
+                                  onBlur={() => {
+                                    if (row.temperature.trim().toUpperCase() === "OFF") return;
+                                    const sign = getSign(row.temperature, eq.type);
+                                    const formatted = formatWithSign(row.temperature, sign);
+                                    if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
+                                  }}
+                                  disabled={!editable || row.temperature === "OFF"}
+                                  className="h-10 text-base font-semibold flex-1"
+                                  placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-[11px] text-muted-foreground">Conforme</Label>
+                              <Select
+                                value={row.conformite || "__none"}
+                                onValueChange={(v) => updateRow(eq.code, { conformite: v === "__none" ? "" : (v as RowState["conformite"]) })}
+                                disabled={!editable}
+                              >
+                                <SelectTrigger className="h-10"><SelectValue placeholder="—" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="__none">—</SelectItem>
+                                  <SelectItem value="conforme">Conforme</SelectItem>
+                                  <SelectItem value="non_conforme">Non conforme</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <div className="mt-2">
+                            <Label className="text-[11px] text-muted-foreground">Commentaire</Label>
+                            <Textarea
+                              rows={1}
+                              value={row.commentaire}
+                              onChange={(e) => updateRow(eq.code, { commentaire: e.target.value })}
+                              disabled={!editable}
+                              placeholder="Observations…"
+                              className="min-h-9 text-sm"
+                            />
+                          </div>
+                          {status === "non_conforme" && (
+                            <div className="mt-2">
+                              <Label className="text-[11px] text-destructive">Action corrective</Label>
+                              <Textarea
+                                rows={1}
+                                value={row.action_corrective}
+                                onChange={(e) => updateRow(eq.code, { action_corrective: e.target.value })}
+                                disabled={!editable}
+                                placeholder="Action corrective…"
+                                className="min-h-9 text-sm"
+                              />
+                            </div>
+                          )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Select
-                          value={row.conformite || "__none"}
-                          onValueChange={(v) => updateRow(eq.code, { conformite: v === "__none" ? "" : (v as RowState["conformite"]) })}
-                          disabled={!editable}
-                        >
-                          <SelectTrigger className="h-9"><SelectValue placeholder="—" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none">—</SelectItem>
-                            <SelectItem value="conforme">Conforme</SelectItem>
-                            <SelectItem value="non_conforme">Non conforme</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {row.conformite === "conforme" && (
-                          <Badge className="mt-1 bg-success text-success-foreground"><CheckCircle2 className="h-3 w-3 mr-1" />OK</Badge>
-                        )}
-                        {row.conformite === "non_conforme" && (
-                          <Badge className="mt-1" variant="destructive"><AlertTriangle className="h-3 w-3 mr-1" />Non conforme</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Textarea
-                          rows={1}
-                          value={row.commentaire}
-                          onChange={(e) => updateRow(eq.code, { commentaire: e.target.value })}
-                          disabled={!editable}
-                          placeholder="Observations…"
-                          className="min-h-9"
-                        />
-                      </TableCell>
-                      <TableCell>
-                          <Textarea
-                            rows={1}
-                            value={row.action_corrective}
-                            onChange={(e) => updateRow(eq.code, { action_corrective: e.target.value })}
-                            disabled={!editable}
-                            placeholder={row.conformite === "non_conforme" ? "Action corrective…" : "—"}
-                            className="min-h-9 w-full"
-                          />
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                      );
+                    })}
+                  </div>
 
-            {/* Mobile card list */}
-            <div className="md:hidden divide-y">
-              {sortedEquips.map((eq) => {
-                const row = rows[eq.code] ?? emptyRow();
-                const locked = !!row.id;
-                const editable = canEdit;
-                const status = row.conformite;
-                const borderClass =
-                  status === "non_conforme"
-                    ? "border-l-4 border-l-destructive"
-                    : status === "conforme"
-                    ? "border-l-4 border-l-success"
-                    : locked
-                    ? "border-l-4 border-l-success/60"
-                    : "border-l-4 border-l-muted";
-                return (
-                  <div key={eq.code} className={`p-3 ${borderClass} ${locked ? "bg-success/5" : ""}`}>
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <div className="min-w-0">
-                        <div className="font-semibold text-sm leading-tight truncate">{eq.name}</div>
-                        <div className="text-[11px] text-muted-foreground font-mono">{eq.code} · {eq.type}</div>
-                      </div>
-                      {status === "conforme" && (
-                        <Badge className="bg-success text-success-foreground shrink-0"><CheckCircle2 className="h-3 w-3 mr-1" />OK</Badge>
-                      )}
-                      {status === "non_conforme" && (
-                        <Badge variant="destructive" className="shrink-0"><AlertTriangle className="h-3 w-3 mr-1" />Non conforme</Badge>
-                      )}
+                  <div className="flex flex-col sm:flex-row gap-2 sm:items-end justify-end p-4 border-t">
+                    <div className="min-w-[200px]">
+                      <Label className="text-xs">Effectué par (zone) *</Label>
+                      <Select
+                        value={zoneOperator[zone] || "__none"}
+                        onValueChange={(v) => setZoneOperator((p) => ({ ...p, [zone]: v === "__none" ? "" : v }))}
+                        disabled={!canEdit}
+                      >
+                        <SelectTrigger className="h-9"><SelectValue placeholder="Opérateur" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none">—</SelectItem>
+                          {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label className="text-[11px] text-muted-foreground">Température (°C)</Label>
-                        <div className="flex items-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (row.temperature === "OFF") return;
-                              const cleaned = row.temperature.trim().replace(/^[+-]/, "");
-                              updateRow(eq.code, { temperature: `+${cleaned}` });
-                            }}
-                            className={`h-10 w-8 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("+") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
-                            disabled={!editable || row.temperature === "OFF"}
-                          >+</button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (row.temperature === "OFF") return;
-                              const cleaned = row.temperature.trim().replace(/^[+-]/, "");
-                              updateRow(eq.code, { temperature: `-${cleaned}` });
-                            }}
-                            className={`h-10 w-8 rounded-md border text-sm font-bold flex items-center justify-center transition-colors ${row.temperature.startsWith("-") ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
-                            disabled={!editable || row.temperature === "OFF"}
-                          >-</button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              if (row.temperature === "OFF") {
-                                updateRow(eq.code, { temperature: "", conformite: "", commentaire: "", action_corrective: "" });
-                              } else {
-                                updateRow(eq.code, { temperature: "OFF", conformite: "", commentaire: row.commentaire || "Matériel arrêté", action_corrective: "RAS" });
-                              }
-                            }}
-                            className={`h-10 w-10 rounded-md border text-[10px] font-bold flex items-center justify-center transition-colors ${row.temperature === "OFF" ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
-                            disabled={!editable}
-                          >OFF</button>
-                          <Input
-                            type="text"
-                            inputMode="decimal"
-                            value={row.temperature}
-                            onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
-                            onBlur={() => {
-                              if (row.temperature.trim().toUpperCase() === "OFF") return;
-                              const sign = getSign(row.temperature, eq.type);
-                              const formatted = formatWithSign(row.temperature, sign);
-                              if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
-                            }}
-                            disabled={!editable || row.temperature === "OFF"}
-                            className="h-10 text-base font-semibold flex-1"
-                            placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label className="text-[11px] text-muted-foreground">Conforme</Label>
-                        <Select
-                          value={row.conformite || "__none"}
-                          onValueChange={(v) => updateRow(eq.code, { conformite: v === "__none" ? "" : (v as RowState["conformite"]) })}
-                          disabled={!editable}
-                        >
-                          <SelectTrigger className="h-10"><SelectValue placeholder="—" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none">—</SelectItem>
-                            <SelectItem value="conforme">Conforme</SelectItem>
-                            <SelectItem value="non_conforme">Non conforme</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    <div className="min-w-[200px]">
+                      <Label className="text-xs">Visa manager (zone)</Label>
+                      <Select
+                        value={zoneVisa[zone] || "__none"}
+                        onValueChange={(v) => setZoneVisa((p) => ({ ...p, [zone]: v === "__none" ? "" : v }))}
+                        disabled={!canEdit}
+                      >
+                        <SelectTrigger className="h-9"><SelectValue placeholder="Manager" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none">—</SelectItem>
+                          {MANAGERS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="mt-2">
-                      <Label className="text-[11px] text-muted-foreground">Commentaire</Label>
-                      <Textarea
-                        rows={1}
-                        value={row.commentaire}
-                        onChange={(e) => updateRow(eq.code, { commentaire: e.target.value })}
-                        disabled={!editable}
-                        placeholder="Observations…"
-                        className="min-h-9 text-sm"
-                      />
-                    </div>
-                    {status === "non_conforme" && (
-                      <div className="mt-2">
-                        <Label className="text-[11px] text-destructive">Action corrective</Label>
-                        <Textarea
-                          rows={1}
-                          value={row.action_corrective}
-                          onChange={(e) => updateRow(eq.code, { action_corrective: e.target.value })}
-                          disabled={!editable}
-                          placeholder="Action corrective…"
-                          className="min-h-9 text-sm"
-                        />
-                      </div>
+                    {canEdit && (
+                      <Button onClick={() => saveZone(zone as FridgeZone)} disabled={savingZone === zone}>
+                        <Save className="h-4 w-4 mr-1" />
+                        {savingZone === zone ? "Enregistrement…" : "Enregistrer la zone"}
+                      </Button>
                     )}
                   </div>
-                );
-              })}
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2 sm:items-end justify-end p-4 border-t">
-              <div className="min-w-[200px]">
-                <Label className="text-xs">Effectué par (zone) *</Label>
-                <Select
-                  value={zoneOperator[zone] || "__none"}
-                  onValueChange={(v) => setZoneOperator((p) => ({ ...p, [zone]: v === "__none" ? "" : v }))}
-                  disabled={!canEdit}
-                >
-                  <SelectTrigger className="h-9"><SelectValue placeholder="Opérateur" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none">—</SelectItem>
-                    {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="min-w-[200px]">
-                <Label className="text-xs">Visa manager (zone)</Label>
-                <Select
-                  value={zoneVisa[zone] || "__none"}
-                  onValueChange={(v) => setZoneVisa((p) => ({ ...p, [zone]: v === "__none" ? "" : v }))}
-                  disabled={!canEdit}
-                >
-                  <SelectTrigger className="h-9"><SelectValue placeholder="Manager" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="__none">—</SelectItem>
-                    {MANAGERS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              {canEdit && (
-                <Button onClick={() => saveZone(zone as FridgeZone)} disabled={savingZone === zone}>
-                  <Save className="h-4 w-4 mr-1" />
-                  {savingZone === zone ? "Enregistrement…" : "Enregistrer la zone"}
-                </Button>
-              )}
-            </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+                </CardContent>
+              </Card>
+            );
+          })
         )}
         </>
       )}
