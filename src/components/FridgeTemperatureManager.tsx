@@ -761,8 +761,10 @@ export function FridgeTemperatureManager() {
           </Card>
         );
       })}
+        )}
         </>
       )}
+
 
       <Card>
         <CardHeader className="pb-3">
