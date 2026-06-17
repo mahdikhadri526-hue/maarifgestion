@@ -160,7 +160,7 @@ Si une donnée est illisible, mets-la à null.`;
   } catch (e) {
     console.error("scan-stock-entry error:", e);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Erreur inconnue" }),
+      JSON.stringify({ error: "Erreur interne du serveur" }),
       { status: 500, headers: { ...CORS, "Content-Type": "application/json" } },
     );
   }
