@@ -26,6 +26,7 @@ interface RowState {
   action_corrective: string;
   performed_by: string;
   visa_manager: string;
+  created_at?: string;
 }
 
 function emptyRow(): RowState {
@@ -174,6 +175,7 @@ export function FridgeTemperatureManager() {
         action_corrective: r.action_corrective ?? "",
         performed_by: r.performed_by ?? "",
         visa_manager: r.visa_manager ?? "",
+        created_at: r.created_at,
       };
       if (!detectedOperator && r.performed_by) detectedOperator = r.performed_by;
     });
@@ -268,6 +270,7 @@ export function FridgeTemperatureManager() {
       performed_by: operator,
       commentaire: payload.commentaire,
       action_corrective: payload.action_corrective,
+      created_at: data.created_at,
     });
     toast({ title: "Enregistré", description: `${eq.name} (${slot})` });
   }
@@ -316,6 +319,7 @@ export function FridgeTemperatureManager() {
           visa_manager: visa,
           commentaire: payload.commentaire,
           action_corrective: payload.action_corrective,
+          created_at: data.created_at,
         });
       }
     }
