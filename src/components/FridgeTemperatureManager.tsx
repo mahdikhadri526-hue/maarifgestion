@@ -77,7 +77,12 @@ function formatWithSign(value: string, sign: "+" | "-"): string {
   return `${sign}${Math.abs(num)}`;
 }
 
-export function FridgeTemperatureManager() {
+function formatTime(ts?: string): string {
+  if (!ts) return "";
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
   const { can, user } = useAuth();
   const isNoDeleteUser = user?.email === "gestionmaarif1@gmail.com";
   const canEdit = can("edit_temperatures");
