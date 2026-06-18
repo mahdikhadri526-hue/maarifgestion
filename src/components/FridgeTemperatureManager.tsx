@@ -85,7 +85,7 @@ export function FridgeTemperatureManager() {
 
   const [date, setDate] = useState<string>(serviceDateStr());
   const [slot, setSlot] = useState<FridgeSlot>(currentSlot());
-  const [zoneFilter, setZoneFilter] = useState<FridgeZone | "">("");
+  const [zoneFilter, setZoneFilter] = useState<FridgeZone | "">("Salle");
 
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [loading, setLoading] = useState(false);
