@@ -725,8 +725,13 @@ export function FridgeTemperatureManager() {
                                 onChange={(e) => updateRow(eq.code, { action_corrective: e.target.value })}
                                 disabled={!editable}
                                 placeholder="Action corrective…"
-                                className="min-h-9 text-sm"
-                              />
+                              className="min-h-9 text-sm"
+                            />
+                          </div>
+                          )}
+                          {row.created_at && (
+                            <div className="mt-2 text-[10px] text-muted-foreground">
+                              Prise à {formatTime(row.created_at)}
                             </div>
                           )}
                         </div>
