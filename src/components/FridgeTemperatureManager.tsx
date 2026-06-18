@@ -83,7 +83,8 @@ function formatTime(ts?: string): string {
   if (Number.isNaN(d.getTime())) return "";
   return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
-  const { can, user } = useAuth();
+
+export function FridgeTemperatureManager() {
   const isNoDeleteUser = user?.email === "gestionmaarif1@gmail.com";
   const canEdit = can("edit_temperatures");
   const canDelete = can("delete_temperatures") && !isNoDeleteUser;
