@@ -85,6 +85,7 @@ function formatTime(ts?: string): string {
 }
 
 export function FridgeTemperatureManager() {
+  const { can, user } = useAuth();
   const isNoDeleteUser = user?.email === "gestionmaarif1@gmail.com";
   const canEdit = can("edit_temperatures");
   const canDelete = can("delete_temperatures") && !isNoDeleteUser;
