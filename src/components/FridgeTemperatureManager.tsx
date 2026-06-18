@@ -26,6 +26,7 @@ interface RowState {
   action_corrective: string;
   performed_by: string;
   visa_manager: string;
+  created_at?: string;
 }
 
 function emptyRow(): RowState {
@@ -74,6 +75,13 @@ function formatWithSign(value: string, sign: "+" | "-"): string {
   const num = Number(cleaned);
   if (Number.isNaN(num)) return value;
   return `${sign}${Math.abs(num)}`;
+}
+
+function formatTime(ts?: string): string {
+  if (!ts) return "";
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 }
 
 export function FridgeTemperatureManager() {
@@ -174,6 +182,7 @@ export function FridgeTemperatureManager() {
         action_corrective: r.action_corrective ?? "",
         performed_by: r.performed_by ?? "",
         visa_manager: r.visa_manager ?? "",
+        created_at: r.created_at,
       };
       if (!detectedOperator && r.performed_by) detectedOperator = r.performed_by;
     });
@@ -268,6 +277,7 @@ export function FridgeTemperatureManager() {
       performed_by: operator,
       commentaire: payload.commentaire,
       action_corrective: payload.action_corrective,
+      created_at: data.created_at,
     });
     toast({ title: "Enregistré", description: `${eq.name} (${slot})` });
   }
@@ -316,6 +326,7 @@ export function FridgeTemperatureManager() {
           visa_manager: visa,
           commentaire: payload.commentaire,
           action_corrective: payload.action_corrective,
+          created_at: data.created_at,
         });
       }
     }
@@ -489,7 +500,12 @@ export function FridgeTemperatureManager() {
                         const editable = canEdit;
                         return (
                           <TableRow key={eq.code} className={row.id ? "bg-success/5" : ""}>
-                            <TableCell className="font-mono text-xs">{eq.code}</TableCell>
+                            <TableCell className="font-mono text-xs">
+                              {eq.code}
+                              {row.created_at && (
+                                <div className="text-[10px] text-muted-foreground mt-0.5">{formatTime(row.created_at)}</div>
+                              )}
+                            </TableCell>
                             <TableCell className={`sticky left-0 z-10 bg-card ${row.id ? "border-l-4 border-l-success" : ""} shadow-[2px_0_4px_-2px_rgba(0,0,0,0.1)]`}>
                               <div className="font-medium">{eq.name}</div>
                               <div className="text-xs text-muted-foreground">{eq.type}</div>
@@ -709,8 +725,13 @@ export function FridgeTemperatureManager() {
                                 onChange={(e) => updateRow(eq.code, { action_corrective: e.target.value })}
                                 disabled={!editable}
                                 placeholder="Action corrective…"
-                                className="min-h-9 text-sm"
-                              />
+                              className="min-h-9 text-sm"
+                            />
+                          </div>
+                          )}
+                          {row.created_at && (
+                            <div className="mt-2 text-[10px] text-muted-foreground">
+                              Prise à {formatTime(row.created_at)}
                             </div>
                           )}
                         </div>
