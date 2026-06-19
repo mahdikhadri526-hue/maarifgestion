@@ -1283,19 +1283,31 @@ export function WeeklyTracking() {
     const useCurrentWeek = scanDay === "today";
     const finalWeek = useCurrentWeek ? targetWeek : weekStart;
 
-    // Build inserts with computed row_index per article based on current rows
+    // Query DB for actual max row_index per (article, day) to avoid duplicate-key
+    // collisions with rows not present in local state.
+    const uniqueArticles = Array.from(new Set(scanned.map((e) => e.article)));
+    const { data: existingRows, error: existingErr } = await supabase
+      .from("weekly_tracking")
+      .select("article, row_index")
+      .eq("fiche_type", ficheType)
+      .eq("week_start", finalWeek)
+      .eq("day_of_week", dayName)
+      .in("article", uniqueArticles);
+    if (existingErr) {
+      console.error("scan lookup error", existingErr);
+      toast.error("Erreur lors de la vérification des lignes existantes");
+      throw existingErr;
+    }
+    const maxByArticle = new Map<string, number>();
+    (existingRows || []).forEach((r: any) => {
+      const cur = maxByArticle.get(r.article) ?? 0;
+      if ((r.row_index ?? 0) > cur) maxByArticle.set(r.article, r.row_index ?? 0);
+    });
+
     const indexTracker = new Map<string, number>();
     const inserts = scanned.map((e) => {
       const key = `${e.article}`;
-      const existing = rows.filter(
-        (r) =>
-          r.week_start === finalWeek &&
-          r.day_of_week === dayName &&
-          r.article === e.article &&
-          (r.entrees != null || r.lot_number),
-      );
-      const baseIdx =
-        existing.length > 0 ? Math.max(...existing.map((r) => r.row_index ?? 0)) : 0;
+      const baseIdx = maxByArticle.get(e.article) ?? 0;
       const offset = indexTracker.get(key) ?? 0;
       indexTracker.set(key, offset + 1);
       return {
