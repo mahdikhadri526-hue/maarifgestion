@@ -823,6 +823,7 @@ export function FridgeTemperatureManager() {
                     <TableHead>Conforme</TableHead>
                     <TableHead>Effectué par</TableHead>
                     <TableHead>Visa</TableHead>
+                    <TableHead>Heure</TableHead>
                     <TableHead>Commentaire</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -844,6 +845,7 @@ export function FridgeTemperatureManager() {
                         </TableCell>
                         <TableCell className="text-xs">{r.performed_by || "—"}</TableCell>
                         <TableCell className="text-xs">{r.visa_manager || "—"}</TableCell>
+                        <TableCell className="text-xs">{formatTime(r.created_at) || "—"}</TableCell>
                         <TableCell className="text-xs max-w-[200px] truncate">{r.commentaire || "—"}</TableCell>
                       </TableRow>
                     );
