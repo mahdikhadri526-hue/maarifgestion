@@ -963,6 +963,154 @@ export function WeeklyTracking() {
     return out.filter((b) => b.remaining > 0);
   };
 
+  // PRECALCUL FIFO : évite la récursion O(N_weeks²) par cellule à chaque
+  // re-render. On construit en une seule passe (mémoïsée sur `rows`) la
+  // carte des lots restants en fin de journée pour chaque (semaine, jour,
+  // article). Toutes les cellules de l'onglet glaces/tartes lisent cette
+  // carte en O(1), ce qui rend la saisie instantanée même sur des mois
+  // de données accumulées.
+  const lotsOfDayMap = useMemo(() => {
+    type Batch = { lot: string; remaining: number; entryDate: string };
+    const map = new Map<string, Batch[]>();
+
+    // Regroupement par article -> semaine -> jour
+    const byArticle = new Map<string, Map<string, Map<string, Row[]>>>();
+    for (const r of rows) {
+      if (r.fiche_type !== ficheType) continue;
+      if (!r.article || !r.week_start || !r.day_of_week) continue;
+      let weekMap = byArticle.get(r.article);
+      if (!weekMap) { weekMap = new Map(); byArticle.set(r.article, weekMap); }
+      let dayMap = weekMap.get(r.week_start);
+      if (!dayMap) { dayMap = new Map(); weekMap.set(r.week_start, dayMap); }
+      let dayRows = dayMap.get(r.day_of_week);
+      if (!dayRows) { dayRows = []; dayMap.set(r.day_of_week, dayRows); }
+      dayRows.push(r);
+    }
+
+    const numL = (v: any) => {
+      if (v === "" || v == null) return 0;
+      const n = Number(v);
+      return isNaN(n) ? 0 : n;
+    };
+
+    for (const [article, weekMap] of byArticle) {
+      const weeks = Array.from(weekMap.keys()).sort();
+      let carry: Batch[] = [];
+      for (const wk of weeks) {
+        const dayMap = weekMap.get(wk)!;
+
+        const siOf = (dIdx: number, w: string): number | "" => {
+          const dm = w === wk ? dayMap : weekMap.get(w);
+          if (!dm) return "";
+          const dr = dm.get(DAYS[dIdx]);
+          if (!dr) return "";
+          const root = dr.find((r) => (r.row_index ?? 0) === 0);
+          const v = root?.stock_initial;
+          return v === "" || v == null ? "" : Number(v);
+        };
+
+        let batches: Batch[] = carry.map((b) => ({ ...b }));
+
+        for (let d = 0; d < DAYS.length; d++) {
+          const day = DAYS[d];
+          const dayRows = dayMap.get(day) ?? [];
+          const root = dayRows.find((r) => (r.row_index ?? 0) === 0);
+
+          if (d === 0) {
+            const siMon = numL(root?.stock_initial);
+            if (siMon > 0) {
+              if (batches.length === 0) {
+                batches.push({ lot: "", remaining: siMon, entryDate: wk });
+              } else {
+                const total = batches.reduce((s, b) => s + b.remaining, 0);
+                if (total > siMon) {
+                  let excess = total - siMon;
+                  for (const b of batches) {
+                    if (excess <= 0) break;
+                    const take = Math.min(b.remaining, excess);
+                    b.remaining -= take;
+                    excess -= take;
+                  }
+                } else if (total < siMon) {
+                  batches.unshift({ lot: "", remaining: siMon - total, entryDate: "" });
+                }
+              }
+            }
+          }
+
+          const dayDate = (() => {
+            const dt = parseISO(wk);
+            dt.setDate(dt.getDate() + d);
+            return fmt(dt);
+          })();
+
+          const entries = dayRows
+            .filter((r) => r.entrees != null || r.lot_number)
+            .sort((a, b) => (a.row_index ?? 0) - (b.row_index ?? 0));
+
+          let entriesSum = 0;
+          for (const e of entries) {
+            const q = numL(e.entrees);
+            if (q > 0) {
+              entriesSum += q;
+              const lotStr = (e.lot_number ?? "").toString().trim();
+              if (!lotStr) {
+                const target = batches.find((b) => b.remaining > 0) ?? batches[0];
+                if (target) target.remaining += q;
+                else batches.push({ lot: "", remaining: q, entryDate: dayDate });
+              } else {
+                batches.push({ lot: lotStr, remaining: q, entryDate: dayDate });
+              }
+            }
+          }
+
+          // Sortie : explicite, sinon auto = SI(j) + entrées - SI(j+1)
+          let sortie = numL(root?.sorties);
+          if (!sortie) {
+            const siCur = siOf(d, wk);
+            let siNext: number | "" = "";
+            if (d < DAYS.length - 1) {
+              siNext = siOf(d + 1, wk);
+            } else {
+              const nextWk = (() => {
+                const dt = parseISO(wk);
+                dt.setDate(dt.getDate() + 7);
+                return fmt(dt);
+              })();
+              const dmNext = weekMap.get(nextWk);
+              if (dmNext) {
+                const drNext = dmNext.get(DAYS[0]);
+                const rootNext = drNext?.find((r) => (r.row_index ?? 0) === 0);
+                const v = rootNext?.stock_initial;
+                siNext = v === "" || v == null ? "" : Number(v);
+              }
+            }
+            if (siCur !== "" && siNext !== "") {
+              const auto = Number(siCur) + entriesSum - Number(siNext);
+              if (typeof auto === "number" && !isNaN(auto)) sortie = auto;
+            }
+          }
+
+          let need = sortie;
+          for (const b of batches) {
+            if (need <= 0) break;
+            if (b.remaining <= 0) continue;
+            const take = Math.min(b.remaining, need);
+            b.remaining -= take;
+            need -= take;
+          }
+
+          map.set(
+            `${wk}|${d}|${article}`,
+            batches.filter((b) => b.remaining > 0).map((b) => ({ ...b })),
+          );
+        }
+        carry = batches.filter((b) => b.remaining > 0);
+      }
+    }
+    return map;
+  }, [rows, ficheType]);
+
   const addEntryRow = (day: string, article: string) => {
     const existing = entriesFor(day, article);
     const nextIdx = existing.length > 0 ? Math.max(...existing.map((e) => e.rowIndex)) + 1 : 1;
