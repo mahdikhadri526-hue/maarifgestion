@@ -2056,7 +2056,7 @@ export function WeeklyTracking() {
                               <LotExistantCell
                                 dayIdx={dIdx}
                                 article={article}
-                                getBalances={(d, a) => getLotsOfDay(d, a, wkStart)}
+                                getBalances={(d, a) => lotsOfDayMap.get(`${wkStart}|${d}|${a}`) ?? []}
                               />
                             </td>
                           )}
