@@ -710,7 +710,7 @@ export function WeeklyTracking() {
       }
     }
     return map;
-  }, [cellMap, movementCremeRows, movementCremeCellMap, weekStart, weeksToLoad, rows]);
+  }, [cellMap, movementCremeRows, movementCremeCellMap, weekStart, weeksToLoad, rows, ficheType]);
 
   // Persiste automatiquement le lot transféré dans le champ lot_number
   // des lignes Suivi crème fraîche dès qu'une quantité est saisie.
