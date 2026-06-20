@@ -578,6 +578,10 @@ export function WeeklyTracking() {
   // glaces, en consommant réellement les quantités en FIFO sur plusieurs jours.
   const cremeAutoLotMap = useMemo(() => {
     const map = new Map<string, string>();
+    // Calcul uniquement pertinent pour la fiche Crème fraîche : on évite
+    // ainsi de scanner toutes les semaines à chaque keystroke sur les
+    // onglets glaces / tartes (qui n'utilisent pas cette carte).
+    if (ficheType !== "Crème fraîche") return map;
     type Batch = { lot: string; remaining: number };
     type Allocation = { lot: string; quantity: number };
     const batches: Batch[] = [];
