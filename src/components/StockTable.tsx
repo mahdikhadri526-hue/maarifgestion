@@ -321,6 +321,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
 
   const canEditStock = can("edit_stock");
+  const canEditRemaining = can("edit_remaining_stock") || can("edit_stock");
 
   // Détails du calcul pour les articles agrégés (GLACE / TOPPINGS / NESPRESSO / MACARON)
   const [detailsOpen, setDetailsOpen] = useState(false);
