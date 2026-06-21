@@ -15,6 +15,8 @@ import {
   getGlaceBreakdownForRange,
   TOPPINGS_ALI_PRODUCT_IDS,
   TOPPINGS_WEEKLY_ARTICLES,
+  HIDE_PIECE_PRODUCTS,
+  type ProductUnitConfig,
   type AggregateBreakdownRow,
 } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
@@ -334,6 +336,44 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const REF_STORAGE_KEY = "stock_ref_conversions_v1";
   type RefRow = { conversion: string; unitRef: string };
   const [refMap, setRefMap] = useState<Record<string, RefRow>>({});
+
+  // Configurations (paquet/carton) par produit — utilisé pour afficher MASQUE/GANT en paquets
+  const [unitConfigs, setUnitConfigs] = useState<Record<string, ProductUnitConfig>>({});
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const cfgs = await getProductUnitConfigs();
+        if (!cancelled) setUnitConfigs(cfgs);
+      } catch {
+        /* ignore */
+      }
+    };
+    load();
+    const channel = supabase
+      .channel("stock_table_unit_configs")
+      .on("postgres_changes", { event: "*", schema: "public", table: "initial_stocks" }, () => load())
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Affiche la valeur en paquets pour les produits MASQUE/GANT, sinon brute
+  const fmtQty = (productId: string, value: number): string => {
+    const cfg = unitConfigs[productId];
+    if (
+      HIDE_PIECE_PRODUCTS.has(productId) &&
+      cfg?.paquetEnabled &&
+      cfg.piecesPerPaquet > 0
+    ) {
+      const paq = value / cfg.piecesPerPaquet;
+      const rounded = Number.isInteger(paq) ? paq : Math.round(paq * 100) / 100;
+      return `${rounded} paq.`;
+    }
+    return String(value);
+  };
 
   useEffect(() => {
     let cancelled = false;
