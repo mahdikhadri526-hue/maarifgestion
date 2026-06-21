@@ -321,6 +321,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
 
   const canEditStock = can("edit_stock");
+  const canEditRemaining = can("edit_remaining_stock") || can("edit_stock");
 
   // Détails du calcul pour les articles agrégés (GLACE / TOPPINGS / NESPRESSO / MACARON)
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -1468,7 +1469,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   <td className={`p-3 text-right font-mono text-sm font-semibold ${
                     v.stockRestant < 0 ? "text-destructive" : v.stockRestant === 0 ? "text-muted-foreground" : ""
                   }`}>
-                    {mode === "all" && canEditStock && editingStock === level.productId ? (
+                    {mode === "all" && canEditRemaining && editingStock === level.productId ? (
                       <input
                         type="number"
                         autoFocus
@@ -1484,14 +1485,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     ) : (
                       <button
                         type="button"
-                        disabled={mode !== "all" || !canEditStock || isReadOnlyAggId(level.productId)}
+                        disabled={mode !== "all" || !canEditRemaining || isReadOnlyAggId(level.productId)}
                         onClick={() => {
                           if (isReadOnlyAggId(level.productId)) return;
                           setEditingStock(level.productId);
                           setEditingValue(String(v.stockRestant));
                         }}
-                        className={mode === "all" && canEditStock && !isReadOnlyAggId(level.productId) ? "hover:underline cursor-pointer" : "cursor-default"}
-                        title={mode === "all" && canEditStock ? "Cliquer pour ajuster le stock (corrigera le stock initial)" : undefined}
+                        className={mode === "all" && canEditRemaining && !isReadOnlyAggId(level.productId) ? "hover:underline cursor-pointer" : "cursor-default"}
+                        title={mode === "all" && canEditRemaining ? "Cliquer pour ajuster le stock (corrigera le stock initial)" : undefined}
                       >
                         {v.stockRestant}
                       </button>
