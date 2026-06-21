@@ -1351,8 +1351,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       {isRequisitionProduct(level.productId) && <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />}
                       {level.productName}
                     </td>
-                    <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
-                    <td className="p-3 text-right font-mono text-sm">{stockActuel}</td>
+                    <td className="p-3 text-right font-mono text-sm text-accent-foreground">{fmtQty(level.productId, v.sorties)}</td>
+                    <td className="p-3 text-right font-mono text-sm">{fmtQty(level.productId, stockActuel)}</td>
                     <td className="p-3 text-right">
                       <input
                         type="number"
@@ -1482,7 +1482,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       {level.category === "alimentaire" ? "Alimentaire" : "Emballage"}
                     </span>
                   </td>
-                  <td className="p-3 text-right font-mono text-sm text-success">{v.entrees}</td>
+                  <td className="p-3 text-right font-mono text-sm text-success">{fmtQty(level.productId, v.entrees)}</td>
                   {showRefCols && (
                     <td className="p-3 text-right font-mono text-sm text-muted-foreground">
                       {(() => {
@@ -1494,7 +1494,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       })()}
                     </td>
                   )}
-                  <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
+                  <td className="p-3 text-right font-mono text-sm text-accent-foreground">{fmtQty(level.productId, v.sorties)}</td>
                   {showRefCols && (
                     <td className="p-3 text-right font-mono text-sm text-muted-foreground">
                       {(() => {
@@ -1534,7 +1534,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         className={mode === "all" && canEditRemaining && !isReadOnlyAggId(level.productId) ? "hover:underline cursor-pointer" : "cursor-default"}
                         title={mode === "all" && canEditRemaining ? "Cliquer pour ajuster le stock (corrigera le stock initial)" : undefined}
                       >
-                        {v.stockRestant}
+                        {fmtQty(level.productId, v.stockRestant)}
                       </button>
                     )}
                   </td>
