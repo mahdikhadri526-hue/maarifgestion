@@ -15,6 +15,8 @@ import {
   getGlaceBreakdownForRange,
   TOPPINGS_ALI_PRODUCT_IDS,
   TOPPINGS_WEEKLY_ARTICLES,
+  HIDE_PIECE_PRODUCTS,
+  type ProductUnitConfig,
   type AggregateBreakdownRow,
 } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
@@ -334,6 +336,44 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const REF_STORAGE_KEY = "stock_ref_conversions_v1";
   type RefRow = { conversion: string; unitRef: string };
   const [refMap, setRefMap] = useState<Record<string, RefRow>>({});
+
+  // Configurations (paquet/carton) par produit — utilisé pour afficher MASQUE/GANT en paquets
+  const [unitConfigs, setUnitConfigs] = useState<Record<string, ProductUnitConfig>>({});
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const cfgs = await getProductUnitConfigs();
+        if (!cancelled) setUnitConfigs(cfgs);
+      } catch {
+        /* ignore */
+      }
+    };
+    load();
+    const channel = supabase
+      .channel("stock_table_unit_configs")
+      .on("postgres_changes", { event: "*", schema: "public", table: "initial_stocks" }, () => load())
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  // Affiche la valeur en paquets pour les produits MASQUE/GANT, sinon brute
+  const fmtQty = (productId: string, value: number): string => {
+    const cfg = unitConfigs[productId];
+    if (
+      HIDE_PIECE_PRODUCTS.has(productId) &&
+      cfg?.paquetEnabled &&
+      cfg.piecesPerPaquet > 0
+    ) {
+      const paq = value / cfg.piecesPerPaquet;
+      const rounded = Number.isInteger(paq) ? paq : Math.round(paq * 100) / 100;
+      return `${rounded} paq.`;
+    }
+    return String(value);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -1311,8 +1351,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       {isRequisitionProduct(level.productId) && <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />}
                       {level.productName}
                     </td>
-                    <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
-                    <td className="p-3 text-right font-mono text-sm">{stockActuel}</td>
+                    <td className="p-3 text-right font-mono text-sm text-accent-foreground">{fmtQty(level.productId, v.sorties)}</td>
+                    <td className="p-3 text-right font-mono text-sm">{fmtQty(level.productId, stockActuel)}</td>
                     <td className="p-3 text-right">
                       <input
                         type="number"
@@ -1442,7 +1482,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       {level.category === "alimentaire" ? "Alimentaire" : "Emballage"}
                     </span>
                   </td>
-                  <td className="p-3 text-right font-mono text-sm text-success">{v.entrees}</td>
+                  <td className="p-3 text-right font-mono text-sm text-success">{fmtQty(level.productId, v.entrees)}</td>
                   {showRefCols && (
                     <td className="p-3 text-right font-mono text-sm text-muted-foreground">
                       {(() => {
@@ -1454,7 +1494,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       })()}
                     </td>
                   )}
-                  <td className="p-3 text-right font-mono text-sm text-accent-foreground">{v.sorties}</td>
+                  <td className="p-3 text-right font-mono text-sm text-accent-foreground">{fmtQty(level.productId, v.sorties)}</td>
                   {showRefCols && (
                     <td className="p-3 text-right font-mono text-sm text-muted-foreground">
                       {(() => {
@@ -1494,7 +1534,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         className={mode === "all" && canEditRemaining && !isReadOnlyAggId(level.productId) ? "hover:underline cursor-pointer" : "cursor-default"}
                         title={mode === "all" && canEditRemaining ? "Cliquer pour ajuster le stock (corrigera le stock initial)" : undefined}
                       >
-                        {v.stockRestant}
+                        {fmtQty(level.productId, v.stockRestant)}
                       </button>
                     )}
                   </td>
