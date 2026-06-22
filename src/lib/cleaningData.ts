@@ -119,6 +119,61 @@ export interface CleaningLog {
   createdAt: string;
 }
 
+// Traductions arabes des tâches (clé = libellé français)
+export const CLEANING_TASK_AR: Record<string, string> = {
+  "Nettoyage du Sol du comptoir de la salle": "تنظيف أرضية كاونتر القاعة",
+  "Nettoyage du Petit évier (pince)": "تنظيف المغسلة الصغيرة (الملقط)",
+  "Dépoussiérage des étagères et vitre": "إزالة الغبار عن الرفوف والزجاج",
+  "Nettoyage du Comptoir (support en inox)": "تنظيف الكاونتر (السطح الستانلس)",
+  "Nettoyage de Machine à café": "تنظيف آلة القهوة",
+  "Nettoyage de Poubelle à café": "تنظيف سلة نفايات القهوة",
+  "Nettoyage de Boite à cornet": "تنظيف علبة الكورنيه",
+  "Nettoyage de Boite mise en place des jus et d'eau": "تنظيف علبة تجهيز العصائر والماء",
+  "Contrôler la propreté des Petits matériels": "مراقبة نظافة الأدوات الصغيرة",
+  "Nettoyage de l'armoire (+) (stoufs des cakes)": "تنظيف الخزانة الموجبة (رفوف الكيك)",
+  "Contrôler la propreté des Torchons microfibres": "مراقبة نظافة مناشف الميكروفايبر",
+  "Nettoyage du Sol du comptoir": "تنظيف أرضية الكاونتر",
+  "Nettoyage du Petit évier": "تنظيف المغسلة الصغيرة",
+  "Nettoyage de Poubelle": "تنظيف سلة النفايات",
+  "Nettoyage de l'armoire (+) (topping)": "تنظيف الخزانة الموجبة (التوبينغ)",
+  "Lavage des Torchons microfibres": "غسل مناشف الميكروفايبر",
+  "Nettoyage des moules de cornet/tulipe": "تنظيف قوالب الكورنيه/التوليب",
+  "Boites à cornets": "علب الكورنيه",
+  "Table de travail en inox": "طاولة العمل الستانلس",
+  "Machines à cornets": "آلات الكورنيه",
+  "Gants de production propres": "قفازات إنتاج نظيفة",
+  "Sol": "الأرضية",
+  "Murs": "الجدران",
+  "Nettoyage du sol et égouts (1 fois/jour)": "تنظيف الأرضية والمصارف (مرة في اليوم)",
+  "Nettoyage des murs, portes et plafonds (1 fois/semaine)": "تنظيف الجدران والأبواب والأسقف (مرة في الأسبوع)",
+  "Nettoyage des étagères (1 fois/semaine)": "تنظيف الرفوف (مرة في الأسبوع)",
+  "Nettoyage des palettes (1 fois/semaine)": "تنظيف المنصات (مرة في الأسبوع)",
+  "Nettoyage des chemins de câble (1 fois/semaine)": "تنظيف مسارات الكابلات (مرة في الأسبوع)",
+  "Organisation des produits (1 fois/jour)": "ترتيب المنتجات (مرة في اليوم)",
+  "Dépoussiérage de la caisse et des tableaux": "إزالة الغبار عن الصندوق واللوحات",
+  "Dépoussiérage des tableaux": "إزالة الغبار عن اللوحات",
+  "Dépoussiérage de la caisse": "إزالة الغبار عن الصندوق",
+  "Sol de la passe, cuisine et chambre positive": "أرضية البّاس والمطبخ والغرفة الموجبة",
+  "Porte de la cuisine et comptoir de la salle": "باب المطبخ وكاونتر القاعة",
+  "Chambre froide (+) et (-) : porte, joints, poignées": "الغرفة الباردة (+) و(−): الباب، الحشوات، المقابض",
+  "Les deux plonges, lave-mains": "المغسلتان ومغسلة اليدين",
+  "Poubelles": "سلال النفايات",
+  "Refroidisseur crème fraîche": "مبرّد الكريمة الطازجة",
+  "Petits matériels": "الأدوات الصغيرة",
+  "Siphons": "السيفونات",
+  "Marmite": "الطنجرة",
+  "Table de travail en inox (passe et cuisine)": "طاولة العمل الستانلس (البّاس والمطبخ)",
+  "Dépoussiérage des Chaises et Tables": "إزالة الغبار عن الكراسي والطاولات",
+  "Dépoussiérage du Bois": "إزالة الغبار عن الخشب",
+  "Dépoussiérage de Garde à chaud Viennoiserie et présentoir macarons": "إزالة الغبار عن سخان المخبوزات وعارض الماكرون",
+  "Dépoussiérage du marbre du comptoir": "إزالة الغبار عن رخام الكاونتر",
+  "Dépoussiérage de l'emplacement de matériels de la salle": "إزالة الغبار عن مكان أدوات القاعة",
+};
+
+export function arOf(task: string): string {
+  return CLEANING_TASK_AR[task] ?? "";
+}
+
 const db = () => (supabase as any).from("cleaning_logs");
 
 function mapRow(r: any): CleaningLog {
