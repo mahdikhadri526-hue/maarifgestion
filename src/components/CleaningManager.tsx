@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { CLEANING_ZONES, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs, updateCleaningLog } from "@/lib/cleaningData";
+import { CLEANING_ZONES, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs, updateCleaningLog, arOf } from "@/lib/cleaningData";
 import { OPERATORS } from "@/lib/operators";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -217,7 +217,12 @@ export function CleaningManager() {
                         setTasks((prev) => ({ ...prev, [t]: checked ? "F" : null }));
                       }}
                     />
-                    <div className="flex-1 text-sm">{t}</div>
+                     <div className="flex-1 text-sm">
+                       <div>{t}</div>
+                       {arOf(t) && (
+                         <div dir="rtl" className="text-xs text-muted-foreground font-arabic">{arOf(t)}</div>
+                       )}
+                     </div>
                     <div className="flex gap-1">
                       <button
                         type="button"
@@ -384,7 +389,12 @@ export function CleaningManager() {
                         const v = l.tasks[t];
                         return (
                           <div key={t} className="flex items-center justify-between gap-2 text-xs">
-                            <span className="flex-1">{t}</span>
+                            <span className="flex-1">
+                              <span className="block">{t}</span>
+                              {arOf(t) && (
+                                <span dir="rtl" className="block text-muted-foreground">{arOf(t)}</span>
+                              )}
+                            </span>
                             <span
                               className={`px-2 py-0.5 rounded font-semibold border ${
                                 v === "F"
@@ -418,8 +428,13 @@ export function CleaningManager() {
                   <div className="text-xs text-orange-600 font-semibold">Non remplie</div>
                   <div className="space-y-1 border-t pt-2">
                     {z.tasks.map((t) => (
-                      <div key={t} className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                        <span className="flex-1">{t}</span>
+                       <div key={t} className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                         <span className="flex-1">
+                           <span className="block">{t}</span>
+                           {arOf(t) && (
+                             <span dir="rtl" className="block">{arOf(t)}</span>
+                           )}
+                         </span>
                         <span className="px-2 py-0.5 rounded font-semibold border bg-muted">—</span>
                       </div>
                     ))}
