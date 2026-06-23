@@ -430,12 +430,21 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                 </td>
                 <td className="p-2">
                   <div className="flex items-center justify-end gap-1">
-                  {ENABLE_TRANSFERTS && m.destination && m.type === "sortie" && (
+                  {ENABLE_TRANSFERTS && m.destination && (
+                    (m.type === "sortie" && !m.destination.replace(/^✓\s*/, "").startsWith("Renvoi → ")) ||
+                    (m.type === "entree" && m.destination.replace(/^✓\s*/, "").startsWith("Reçu de "))
+                  ) && (
                     <button
                       onClick={() => handleReintegrate(m)}
                       disabled={m.destination.startsWith("✓") || reintegratingId === m.id}
                       className="p-1.5 rounded-md text-muted-foreground hover:text-success hover:bg-success/10 transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
-                      title={m.destination.startsWith("✓") ? "Déjà réintégré" : "Réintégrer la quantité au stock"}
+                      title={
+                        m.destination.startsWith("✓")
+                          ? "Déjà traité"
+                          : m.type === "entree"
+                          ? "Renvoyer le produit à sa provenance"
+                          : "Recevoir / réintégrer la quantité au stock"
+                      }
                     >
                       <Undo2 className="h-4 w-4" />
                     </button>
