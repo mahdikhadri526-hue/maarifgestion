@@ -353,6 +353,29 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                             ← {m.destination.replace(/^Retour\s+/, "").replace(/^✓\s*/, "")}
                           </span>
                         </>
+                      ) : m.type === "entree" && m.destination.replace(/^✓\s*/, "").startsWith("Reçu de ") ? (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
+                            <ArrowDownCircle className="h-3 w-3" />
+                            Reçu
+                            {m.destination.startsWith("✓") && (
+                              <CheckCircle2 className="h-3 w-3 text-primary" />
+                            )}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground mt-0.5">
+                            ← {m.destination.replace(/^✓\s*/, "").replace(/^Reçu de\s+/, "")}
+                          </span>
+                        </>
+                      ) : m.type === "sortie" && m.destination.replace(/^✓\s*/, "").startsWith("Renvoi → ") ? (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-destructive">
+                            <Undo2 className="h-3 w-3" />
+                            Renvoi
+                          </span>
+                          <span className="text-[10px] text-muted-foreground mt-0.5">
+                            → {m.destination.replace(/^✓\s*/, "").replace(/^Renvoi →\s+/, "")}
+                          </span>
+                        </>
                       ) : (
                         <>
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
