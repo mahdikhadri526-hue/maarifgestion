@@ -130,34 +130,52 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const handleReintegrate = async (m: typeof filtered[number]) => {
     if (!m.destination) return;
     if (m.destination.startsWith("✓")) {
-      toast.info("Ce transfert a déjà été réintégré");
+      toast.info("Ce mouvement a déjà été traité");
       return;
     }
     setReintegratingId(m.id);
     try {
-      // Crée une entrée équivalente pour réintégrer la quantité au stock
-      await saveMovement({
-        date: new Date().toISOString().split("T")[0],
-        productId: m.productId,
-        productName: m.productName,
-        category: m.category,
-        type: "entree",
-        quantity: m.quantity,
-        performedBy: m.performedBy,
-        unitUsed: m.unitUsed,
-        destination: `Retour ${m.destination}`,
-      });
-      // Marque le transfert d'origine comme réintégré
+      const isReceived = m.type === "entree" && m.destination.startsWith("Reçu de ");
+      if (isReceived) {
+        // Renvoyer un produit reçu = créer une sortie équivalente
+        const origin = m.destination.replace(/^Reçu de\s+/, "");
+        await saveMovement({
+          date: new Date().toISOString().split("T")[0],
+          productId: m.productId,
+          productName: m.productName,
+          category: m.category,
+          type: "sortie",
+          quantity: m.quantity,
+          performedBy: m.performedBy,
+          unitUsed: m.unitUsed,
+          destination: `Renvoi → ${origin}`,
+        });
+        toast.success(`Produit renvoyé à ${origin} (-${formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])})`);
+      } else {
+        // Recevoir un produit transféré = créer une entrée équivalente
+        await saveMovement({
+          date: new Date().toISOString().split("T")[0],
+          productId: m.productId,
+          productName: m.productName,
+          category: m.category,
+          type: "entree",
+          quantity: m.quantity,
+          performedBy: m.performedBy,
+          unitUsed: m.unitUsed,
+          destination: `Retour ${m.destination}`,
+        });
+        toast.success(`Quantité réintégrée au stock (+${formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])})`);
+      }
+      // Marque le mouvement d'origine comme traité
       const { error } = await supabase
         .from("stock_movements")
         .update({ destination: `✓ ${m.destination}` })
         .eq("id", m.id);
       if (error) throw error;
-      toast.success(`Quantité réintégrée au stock (+${formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])})`);
       onMovementDeleted?.();
     } catch (e) {
       console.error(e);
-      toast.error("Erreur lors de la réintégration");
+      toast.error("Erreur lors de l'opération");
     } finally {
       setReintegratingId(null);
     }
@@ -335,6 +353,29 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                             ← {m.destination.replace(/^Retour\s+/, "").replace(/^✓\s*/, "")}
                           </span>
                         </>
+                      ) : m.type === "entree" && m.destination.replace(/^✓\s*/, "").startsWith("Reçu de ") ? (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-success">
+                            <ArrowDownCircle className="h-3 w-3" />
+                            Reçu
+                            {m.destination.startsWith("✓") && (
+                              <CheckCircle2 className="h-3 w-3 text-primary" />
+                            )}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground mt-0.5">
+                            ← {m.destination.replace(/^✓\s*/, "").replace(/^Reçu de\s+/, "")}
+                          </span>
+                        </>
+                      ) : m.type === "sortie" && m.destination.replace(/^✓\s*/, "").startsWith("Renvoi → ") ? (
+                        <>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-destructive">
+                            <Undo2 className="h-3 w-3" />
+                            Renvoi
+                          </span>
+                          <span className="text-[10px] text-muted-foreground mt-0.5">
+                            → {m.destination.replace(/^✓\s*/, "").replace(/^Renvoi →\s+/, "")}
+                          </span>
+                        </>
                       ) : (
                         <>
                           <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
@@ -389,12 +430,21 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                 </td>
                 <td className="p-2">
                   <div className="flex items-center justify-end gap-1">
-                  {ENABLE_TRANSFERTS && m.destination && m.type === "sortie" && (
+                  {ENABLE_TRANSFERTS && m.destination && (
+                    (m.type === "sortie" && !m.destination.replace(/^✓\s*/, "").startsWith("Renvoi → ")) ||
+                    (m.type === "entree" && m.destination.replace(/^✓\s*/, "").startsWith("Reçu de "))
+                  ) && (
                     <button
                       onClick={() => handleReintegrate(m)}
                       disabled={m.destination.startsWith("✓") || reintegratingId === m.id}
                       className="p-1.5 rounded-md text-muted-foreground hover:text-success hover:bg-success/10 transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
-                      title={m.destination.startsWith("✓") ? "Déjà réintégré" : "Réintégrer la quantité au stock"}
+                      title={
+                        m.destination.startsWith("✓")
+                          ? "Déjà traité"
+                          : m.type === "entree"
+                          ? "Renvoyer le produit à sa provenance"
+                          : "Recevoir / réintégrer la quantité au stock"
+                      }
                     >
                       <Undo2 className="h-4 w-4" />
                     </button>

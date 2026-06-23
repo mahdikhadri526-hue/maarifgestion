@@ -17,6 +17,7 @@ interface MovementFormProps {
 
 export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const [type, setType] = useState<"entree" | "sortie" | "transfert" | "hassan">("entree");
+  const [transferDirection, setTransferDirection] = useState<"envoye" | "recu">("envoye");
   const [category, setCategory] = useState<Category>("alimentaire");
   const [productId, setProductId] = useState("");
   const [multi, setMulti] = useState<MultiUnitValues>(EMPTY_MULTI);
@@ -52,7 +53,11 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
     }
 
     if (type === "transfert" && !destination.trim()) {
-      toast.error("Veuillez saisir la destination du transfert");
+      toast.error(
+        transferDirection === "envoye"
+          ? "Veuillez saisir la destination du transfert"
+          : "Veuillez saisir la provenance du transfert"
+      );
       return;
     }
 
@@ -65,9 +70,16 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
     try {
       const operatorName = performedBy.trim();
       const unitUsed = dominantUnit(multi, config);
-      // Les transferts et "Direction" sont stockés comme des sorties pour que le calcul du stock reste correct
+      // Les transferts envoyés et "Direction" sont stockés comme des sorties,
+      // les transferts reçus comme des entrées.
       const movementType: "entree" | "sortie" =
-        type === "transfert" || type === "hassan" ? "sortie" : type;
+        type === "hassan"
+          ? "sortie"
+          : type === "transfert"
+          ? transferDirection === "envoye"
+            ? "sortie"
+            : "entree"
+          : type;
       // Bloquer toute sortie qui dépasserait le stock disponible
       if (movementType === "sortie") {
         const available = await getProductAvailableStockInBasePieces(productId);
@@ -79,7 +91,13 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         }
       }
       const destinationValue =
-        type === "transfert" ? destination.trim() : type === "hassan" ? "Direction" : undefined;
+        type === "transfert"
+          ? transferDirection === "envoye"
+            ? destination.trim()
+            : `Reçu de ${destination.trim()}`
+          : type === "hassan"
+          ? "Direction"
+          : undefined;
       await saveMovement({
         date,
         productId,
@@ -106,7 +124,11 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         } else if (type === "sortie") {
           toast.success(`Sortie FIFO de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
         } else if (type === "transfert") {
-          toast.success(`Transfert FIFO de ${totalQty} pièces ${selectedProduct?.name} → ${destination.trim()} enregistré`);
+          toast.success(
+            transferDirection === "envoye"
+              ? `Transfert FIFO de ${totalQty} pièces ${selectedProduct?.name} → ${destination.trim()} enregistré`
+              : `Réception de ${totalQty} pièces ${selectedProduct?.name} de ${destination.trim()} enregistrée`
+          );
         } else {
           toast.success(`Sortie Direction de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
         }
@@ -117,7 +139,9 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
             : type === "sortie"
             ? "Sortie"
             : type === "transfert"
-            ? `Transfert → ${destination.trim()}`
+            ? transferDirection === "envoye"
+              ? `Transfert → ${destination.trim()}`
+              : `Réception ← ${destination.trim()}`
             : "Sortie Direction";
         toast.success(`${label} de ${totalQty} pièces ${selectedProduct?.name} enregistré`);
       }
@@ -253,21 +277,54 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         )}
 
         {type === "transfert" && (
+          <>
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
-              Destination du transfert
+              Type de transfert
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setTransferDirection("envoye")}
+                className={`py-2 rounded-md text-xs font-medium transition-colors ${
+                  transferDirection === "envoye"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                Produit transféré
+              </button>
+              <button
+                type="button"
+                onClick={() => setTransferDirection("recu")}
+                className={`py-2 rounded-md text-xs font-medium transition-colors ${
+                  transferDirection === "recu"
+                    ? "bg-success text-success-foreground"
+                    : "bg-muted text-muted-foreground"
+                }`}
+              >
+                Produit reçu
+              </button>
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">
+              {transferDirection === "envoye"
+                ? "Destination du transfert"
+                : "Provenance du transfert"}
             </label>
             <Input
               type="text"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
             />
-            {isAlimentaire && (
+            {isAlimentaire && transferDirection === "envoye" && (
               <p className="text-[11px] text-primary mt-1">
                 ℹ️ FIFO : déduit des lots les plus anciens.
               </p>
             )}
           </div>
+          </>
         )}
 
         <Button type="submit" className="w-full" disabled={submitting}>
