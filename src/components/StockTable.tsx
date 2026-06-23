@@ -1331,7 +1331,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           <table className="w-full">
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
+                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 30 }}>Produit</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties période</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock actuel</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Livraison en cours</th>
@@ -1347,9 +1347,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   <tr key={level.productId} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                     isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
                   }`}>
-                    <td className="p-3 text-sm font-medium flex items-center gap-1.5">
+                    <td className={`p-3 text-sm font-medium border-r w-[140px] min-w-[140px] ${isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : "bg-card"}`} style={{ position: "sticky", left: 0, zIndex: 15 }}>
+                      <div className="flex items-center gap-1.5">
                       {isRequisitionProduct(level.productId) && <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />}
                       {level.productName}
+                      </div>
                     </td>
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{fmtQty(level.productId, v.sorties)}</td>
                     <td className="p-3 text-right font-mono text-sm">{fmtQty(level.productId, stockActuel)}</td>
