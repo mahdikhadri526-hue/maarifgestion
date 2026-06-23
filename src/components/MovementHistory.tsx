@@ -130,34 +130,52 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const handleReintegrate = async (m: typeof filtered[number]) => {
     if (!m.destination) return;
     if (m.destination.startsWith("✓")) {
-      toast.info("Ce transfert a déjà été réintégré");
+      toast.info("Ce mouvement a déjà été traité");
       return;
     }
     setReintegratingId(m.id);
     try {
-      // Crée une entrée équivalente pour réintégrer la quantité au stock
-      await saveMovement({
-        date: new Date().toISOString().split("T")[0],
-        productId: m.productId,
-        productName: m.productName,
-        category: m.category,
-        type: "entree",
-        quantity: m.quantity,
-        performedBy: m.performedBy,
-        unitUsed: m.unitUsed,
-        destination: `Retour ${m.destination}`,
-      });
-      // Marque le transfert d'origine comme réintégré
+      const isReceived = m.type === "entree" && m.destination.startsWith("Reçu de ");
+      if (isReceived) {
+        // Renvoyer un produit reçu = créer une sortie équivalente
+        const origin = m.destination.replace(/^Reçu de\s+/, "");
+        await saveMovement({
+          date: new Date().toISOString().split("T")[0],
+          productId: m.productId,
+          productName: m.productName,
+          category: m.category,
+          type: "sortie",
+          quantity: m.quantity,
+          performedBy: m.performedBy,
+          unitUsed: m.unitUsed,
+          destination: `Renvoi → ${origin}`,
+        });
+        toast.success(`Produit renvoyé à ${origin} (-${formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])})`);
+      } else {
+        // Recevoir un produit transféré = créer une entrée équivalente
+        await saveMovement({
+          date: new Date().toISOString().split("T")[0],
+          productId: m.productId,
+          productName: m.productName,
+          category: m.category,
+          type: "entree",
+          quantity: m.quantity,
+          performedBy: m.performedBy,
+          unitUsed: m.unitUsed,
+          destination: `Retour ${m.destination}`,
+        });
+        toast.success(`Quantité réintégrée au stock (+${formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])})`);
+      }
+      // Marque le mouvement d'origine comme traité
       const { error } = await supabase
         .from("stock_movements")
         .update({ destination: `✓ ${m.destination}` })
         .eq("id", m.id);
       if (error) throw error;
-      toast.success(`Quantité réintégrée au stock (+${formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])})`);
       onMovementDeleted?.();
     } catch (e) {
       console.error(e);
-      toast.error("Erreur lors de la réintégration");
+      toast.error("Erreur lors de l'opération");
     } finally {
       setReintegratingId(null);
     }
