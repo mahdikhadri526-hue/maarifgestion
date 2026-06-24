@@ -1823,6 +1823,51 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         )}
       </DialogContent>
     </Dialog>
+
+    <Dialog open={adjustOpen} onOpenChange={(o) => { if (!adjustSaving) setAdjustOpen(o); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Régularisation du stock</DialogTitle>
+        </DialogHeader>
+        {adjustData && (
+          <div className="space-y-3 text-sm">
+            <div className="rounded-md border bg-muted/40 p-3 space-y-1">
+              <div className="font-semibold">{adjustData.productName}</div>
+              <div className="text-xs text-muted-foreground">
+                Stock restant : <span className="font-mono">{adjustData.oldRestant}</span> → <span className="font-mono font-semibold">{adjustData.newRestant}</span>
+              </div>
+              <div className="text-xs">
+                Différence : <span className={`font-mono font-semibold ${adjustData.diff > 0 ? "text-success" : "text-destructive"}`}>
+                  {adjustData.diff > 0 ? "+" : ""}{adjustData.diff}
+                </span>
+                <span className="text-muted-foreground ml-1">
+                  ({adjustData.diff > 0 ? "soustraite des" : "ajoutée aux"} sorties du mois)
+                </span>
+              </div>
+            </div>
+            <div>
+              <label className="text-xs font-medium">Effectué par *</label>
+              <select
+                value={adjustPerformedBy}
+                onChange={(e) => setAdjustPerformedBy(e.target.value)}
+                className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Choisir...</option>
+                {getOperators().map((op) => (
+                  <option key={op} value={op}>{op}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setAdjustOpen(false)} disabled={adjustSaving}>Annuler</Button>
+          <Button onClick={confirmAdjust} disabled={adjustSaving || !adjustPerformedBy.trim()}>
+            {adjustSaving ? "Enregistrement..." : "Confirmer"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
