@@ -296,6 +296,7 @@ export async function getMovements(): Promise<StockMovement[]> {
     unitUsed: (row.unit_used as MovementUnit) || "PIECE",
     destination: row.destination || undefined,
     createdAt: row.created_at || undefined,
+    source: row.source || undefined,
   }));
 }
 
