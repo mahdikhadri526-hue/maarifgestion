@@ -465,14 +465,55 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       setEditingStock(null);
       return;
     }
+    setAdjustData({
+      productId: level.productId,
+      productName: level.productName,
+      category: level.category,
+      diff,
+      oldRestant: level.stockRestant,
+      newRestant,
+    });
+    setAdjustPerformedBy("");
+    setAdjustOpen(true);
+    setEditingStock(null);
+  };
+
+  const confirmAdjust = async () => {
+    if (!adjustData) return;
+    const op = adjustPerformedBy.trim();
+    if (!op) {
+      toast.error("Sélectionnez l'opérateur");
+      return;
+    }
+    setAdjustSaving(true);
     try {
-      const newInitial = roundStockQuantity(level.stockInitial + diff);
-      await setInitialStock(level.productId, newInitial);
-      toast.success(`Stock ajusté (initial ${level.stockInitial} → ${newInitial})`);
-      setEditingStock(null);
+      const qty = Math.abs(adjustData.diff);
+      const rounded = roundStockQuantity(qty);
+      // Régularisation : impacte les sorties du mois courant
+      // diff > 0 (stock augmenté) → type=entree, source=regularisation → soustrait des sorties
+      // diff < 0 (stock diminué) → type=sortie, source=regularisation → ajoute aux sorties
+      const today = new Date().toISOString().slice(0, 10);
+      const { error } = await supabase.from("stock_movements").insert({
+        date: today,
+        product_id: adjustData.productId,
+        product_name: adjustData.productName,
+        category: adjustData.category,
+        type: adjustData.diff > 0 ? "entree" : "sortie",
+        quantity: Math.max(1, Math.round(rounded)),
+        performed_by: op,
+        unit_used: "PIECE",
+        source: "regularisation",
+      } as any);
+      if (error) throw error;
+      toast.success(`Régularisation enregistrée (${adjustData.oldRestant} → ${adjustData.newRestant})`);
+      setAdjustOpen(false);
+      setAdjustData(null);
       refresh();
-    } catch {
+    } catch (e) {
+      console.error(e);
       toast.error("Erreur lors de l'ajustement");
+    } finally {
+      setAdjustSaving(false);
     }
   };
 
