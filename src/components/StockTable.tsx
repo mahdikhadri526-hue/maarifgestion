@@ -1328,7 +1328,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         </div>
       ) : variant === "order" ? (
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 30 }}>Produit</th>
@@ -1384,7 +1384,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         </div>
       ) : (
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 30 }}>Produit</th>
