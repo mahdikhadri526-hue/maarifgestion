@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMovements, useProductUnitConfigs, useAllRequisitions } from "@/hooks/useStockData";
 import { deleteMovement, formatQuantityForProduct, saveMovement } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
-import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send, Undo2, CheckCircle2, ClipboardList } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send, Undo2, CheckCircle2, ClipboardList, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
@@ -341,7 +341,19 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   </div>
                 </td>
                 <td className="p-3">
-                  {m.destination ? (
+                  {m.source === "regularisation" ? (
+                    <div className="flex flex-col gap-0.5">
+                      <span className={`inline-flex items-center gap-1 text-xs font-medium ${
+                        m.type === "entree" ? "text-success" : "text-destructive"
+                      }`}>
+                        <Settings2 className="h-3.5 w-3.5" />
+                        Régularisation des stocks
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {m.type === "entree" ? "Sorties − " : "Sorties + "}{m.quantity}
+                      </span>
+                    </div>
+                  ) : m.destination ? (
                     <div className="flex flex-col">
                       {m.type === "entree" && m.destination.startsWith("Retour ") ? (
                         <>
