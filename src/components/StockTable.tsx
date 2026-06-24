@@ -1327,11 +1327,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           )}
         </div>
       ) : variant === "order" ? (
-        <div className="overflow-x-auto">
-          <table className="w-full" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
+        <div className="overflow-x-auto max-w-full">
+          <table className="stock-sticky-table text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", overflow: "visible" }}>
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 30 }}>Produit</th>
+                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted border-r stock-sticky-column stock-sticky-head" style={{ position: "sticky", left: 0, zIndex: 45 }}>Produit</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties période</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock actuel</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Livraison en cours</th>
@@ -1347,7 +1347,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   <tr key={level.productId} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                     isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
                   }`}>
-                    <td className={`p-3 text-sm font-medium border-r w-[140px] min-w-[140px] ${isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : "bg-card"}`} style={{ position: "sticky", left: 0, zIndex: 15 }}>
+                    <td className={`p-3 text-sm font-medium border-r stock-sticky-column ${isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : "bg-card"}`} style={{ position: "sticky", left: 0, zIndex: 25 }}>
                       <div className="flex items-center gap-1.5">
                       {isRequisitionProduct(level.productId) && <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />}
                       {level.productName}
@@ -1383,11 +1383,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full" style={{ borderCollapse: "separate", borderSpacing: 0 }}>
+        <div className="overflow-x-auto max-w-full">
+          <table className="stock-sticky-table text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", overflow: "visible" }}>
             <thead>
               <tr className="border-b bg-muted/50">
-                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 30 }}>Produit</th>
+                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted border-r stock-sticky-column stock-sticky-head" style={{ position: "sticky", left: 0, zIndex: 45 }}>Produit</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Conversion</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité Réf.</th>
@@ -1413,7 +1413,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <tr key={level.productId} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                   isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
                 }`}>
-                  <td className={`p-3 text-sm font-medium border-r w-[140px] min-w-[140px] ${isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : "bg-card"}`} style={{ position: "sticky", left: 0, zIndex: 15 }}>
+                  <td className={`p-3 text-sm font-medium border-r stock-sticky-column ${isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : "bg-card"}`} style={{ position: "sticky", left: 0, zIndex: 25 }}>
                     <div className="flex items-center gap-1.5">
                     {isRequisitionProduct(level.productId) && <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" />}
                     {isAggregateLevel(level) ? (
