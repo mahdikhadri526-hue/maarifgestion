@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMovements, useProductUnitConfigs, useAllRequisitions } from "@/hooks/useStockData";
 import { deleteMovement, formatQuantityForProduct, saveMovement } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
-import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send, Undo2, CheckCircle2, ClipboardList } from "lucide-react";
+import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send, Undo2, CheckCircle2, ClipboardList, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
