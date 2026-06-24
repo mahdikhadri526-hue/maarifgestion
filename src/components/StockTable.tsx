@@ -321,6 +321,17 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [editingStock, setEditingStock] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState<string>("");
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
+  const [adjustOpen, setAdjustOpen] = useState(false);
+  const [adjustData, setAdjustData] = useState<{
+    productId: string;
+    productName: string;
+    category: Category;
+    diff: number;
+    oldRestant: number;
+    newRestant: number;
+  } | null>(null);
+  const [adjustPerformedBy, setAdjustPerformedBy] = useState<string>("");
+  const [adjustSaving, setAdjustSaving] = useState(false);
 
   const canEditStock = can("edit_stock");
   const canEditRemaining = can("edit_remaining_stock") || can("edit_stock");
