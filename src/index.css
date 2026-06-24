@@ -121,6 +121,28 @@
     z-index: 45;
   }
 
+  .stock-sticky-table {
+    width: max-content !important;
+    min-width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    overflow: visible !important;
+  }
+
+  .stock-sticky-table .stock-sticky-column {
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 25 !important;
+    min-width: 150px !important;
+    width: 150px !important;
+    max-width: 150px !important;
+    box-shadow: 2px 0 4px -2px hsl(var(--border));
+  }
+
+  .stock-sticky-table .stock-sticky-head {
+    z-index: 45 !important;
+  }
+
   /* Finition pro des cartes du dashboard */
   .rounded-lg.border.bg-card {
     @apply shadow-sm hover:shadow-md transition-shadow duration-200;
