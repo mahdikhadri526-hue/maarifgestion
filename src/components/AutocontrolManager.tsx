@@ -11,6 +11,7 @@ import {
   getAutocontrols,
   updateAutocontrol,
 } from "@/lib/autocontrolData";
+import { MANAGERS } from "@/lib/managers";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -1466,8 +1467,9 @@ export function AutocontrolManager() {
             >
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="Mr Mahdi Khadri">Mr Mahdi Khadri</SelectItem>
-                <SelectItem value="Mr Hamza Fadlou">Mr Hamza Fadlou</SelectItem>
+                {MANAGERS.map((m) => (
+                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -1883,8 +1885,9 @@ export function AutocontrolManager() {
                 >
                   <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Mr Mahdi Khadri">Mr Mahdi Khadri</SelectItem>
-                    <SelectItem value="Mr Hamza Fadlou">Mr Hamza Fadlou</SelectItem>
+                    {MANAGERS.map((m) => (
+                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
