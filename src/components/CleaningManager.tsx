@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { CLEANING_ZONES, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs, updateCleaningLog, arOf } from "@/lib/cleaningData";
 import { OPERATORS } from "@/lib/operators";
+import { MANAGERS } from "@/lib/managers";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -35,7 +36,7 @@ const CLEANING_EXTRA_OPERATORS = [
 
 const CLEANING_OPERATORS = Array.from(new Set([...OPERATORS, ...CLEANING_EXTRA_OPERATORS]));
 
-const CLEANING_MANAGERS = ["Mr Mahdi Khadri", "Mr Hamza Fadlou"] as const;
+const CLEANING_MANAGERS = MANAGERS;
 
 function todayISO() {
   const d = new Date();
