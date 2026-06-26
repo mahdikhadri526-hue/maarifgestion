@@ -156,12 +156,14 @@ function SingleProductHistory({
   end: string;
 }) {
   const { data: history, loading } = useProductDailyHistory(productId);
+  const { data: initialStocks } = useInitialStocks();
   const products = getProducts();
   const product = products.find((p) => p.id === productId);
 
   if (loading) return <p className="text-center text-muted-foreground py-8">Chargement...</p>;
 
-  const rows = filterRows(history || [], mode, day, month, start, end);
+  const fullHistory = history || [];
+  const rows = filterRows(fullHistory, mode, day, month, start, end);
   const totals = rows.reduce(
     (acc, r) => ({
       entrees: acc.entrees + (r.entrees || 0),
@@ -169,13 +171,28 @@ function SingleProductHistory({
     }),
     { entrees: 0, sorties: 0 }
   );
-  const stockInitialPeriode = rows.length > 0 ? rows[0].stockInitial : 0;
-  const stockRestantFinal = rows.length > 0 ? rows[rows.length - 1].stockRestant : 0;
+  const baseInitial = (initialStocks as any)?.[productId] ?? 0;
+  let stockInitialPeriode = rows.length > 0 ? rows[0].stockInitial : baseInitial;
+  let stockRestantFinal = rows.length > 0 ? rows[rows.length - 1].stockRestant : baseInitial;
+  if (rows.length === 0) {
+    const beforeRows = fullHistory.filter((r) => {
+      const d = r.date.slice(0, 10);
+      if (mode === "day") return d < day;
+      if (mode === "month") return d < `${month}-01`;
+      if (mode === "period") return start ? d < start : false;
+      return false;
+    });
+    const last = beforeRows[beforeRows.length - 1];
+    if (last) {
+      stockInitialPeriode = last.stockRestant;
+      stockRestantFinal = last.stockRestant;
+    }
+  }
   const quantiteUtilisee = totals.sorties;
 
   return (
     <div>
-      {rows.length > 0 && (
+      {productId && (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 bg-muted/30 border-b text-xs">
           <div><div className="text-muted-foreground">Stock Initial</div><div className="font-mono font-semibold text-primary">{stockInitialPeriode}</div></div>
           <div><div className="text-muted-foreground">Entrées</div><div className="font-mono font-semibold text-success">{totals.entrees}</div></div>
