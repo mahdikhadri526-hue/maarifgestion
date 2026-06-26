@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Category, getProducts } from "@/lib/stockData";
-import { useProductDailyHistory } from "@/hooks/useStockData";
+import { useProductDailyHistory, useInitialStocks } from "@/hooks/useStockData";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -54,6 +54,7 @@ function AllProductsSummary({
   end: string;
 }) {
   const products = getProducts(category);
+  const { data: initialStocks } = useInitialStocks();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -67,17 +68,17 @@ function AllProductsSummary({
           const filtered = filterRows(h, mode, day, month, start, end);
           const firstRow = filtered.length > 0 ? filtered[0] : null;
           const lastRow = filtered.length > 0 ? filtered[filtered.length - 1] : null;
-          // Si filtré et vide : stock initial = stock restant cumulé jusque là
-          // Approximation simple : si aucun mouvement sur la période, on prend le dernier connu avant
-          let stockInitial = firstRow ? firstRow.stockInitial : 0;
-          let stockRestant = lastRow ? lastRow.stockRestant : 0;
-          if (filtered.length === 0 && h.length > 0) {
-            // chercher la dernière ligne avant la période
+          const baseInitial = (initialStocks as any)?.[p.id] ?? 0;
+          let stockInitial = firstRow ? firstRow.stockInitial : baseInitial;
+          let stockRestant = lastRow ? lastRow.stockRestant : baseInitial;
+          if (filtered.length === 0) {
+            // Aucun mouvement sur la période : reprendre le dernier stock connu avant la période
             const beforeRows = h.filter((r) => {
               const d = r.date.slice(0, 10);
               if (mode === "day") return d < day;
               if (mode === "month") return d < `${month}-01`;
               if (mode === "period") return start ? d < start : false;
+              if (mode === "all") return false;
               return false;
             });
             const last = beforeRows[beforeRows.length - 1];
@@ -103,7 +104,7 @@ function AllProductsSummary({
     return () => {
       cancelled = true;
     };
-  }, [category, mode, day, month, start, end]);
+  }, [category, mode, day, month, start, end, initialStocks]);
 
   if (loading) return <p className="text-center text-muted-foreground py-8">Chargement...</p>;
 
@@ -124,7 +125,7 @@ function AllProductsSummary({
           {data.map((p) => (
             <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
               <td className="p-3 text-sm font-medium">{p.name}</td>
-              <td className="p-3 text-right font-mono text-sm text-primary">{p.stockInitial || "-"}</td>
+              <td className="p-3 text-right font-mono text-sm text-primary">{p.stockInitial}</td>
               <td className="p-3 text-right font-mono text-sm text-success">{p.totalEntrees || "-"}</td>
               <td className="p-3 text-right font-mono text-sm text-destructive">{p.totalSorties || "-"}</td>
               <td className="p-3 text-right font-mono text-sm text-warning">{p.totalSorties || "-"}</td>
@@ -155,12 +156,14 @@ function SingleProductHistory({
   end: string;
 }) {
   const { data: history, loading } = useProductDailyHistory(productId);
+  const { data: initialStocks } = useInitialStocks();
   const products = getProducts();
   const product = products.find((p) => p.id === productId);
 
   if (loading) return <p className="text-center text-muted-foreground py-8">Chargement...</p>;
 
-  const rows = filterRows(history || [], mode, day, month, start, end);
+  const fullHistory = history || [];
+  const rows = filterRows(fullHistory, mode, day, month, start, end);
   const totals = rows.reduce(
     (acc, r) => ({
       entrees: acc.entrees + (r.entrees || 0),
@@ -168,13 +171,28 @@ function SingleProductHistory({
     }),
     { entrees: 0, sorties: 0 }
   );
-  const stockInitialPeriode = rows.length > 0 ? rows[0].stockInitial : 0;
-  const stockRestantFinal = rows.length > 0 ? rows[rows.length - 1].stockRestant : 0;
+  const baseInitial = (initialStocks as any)?.[productId] ?? 0;
+  let stockInitialPeriode = rows.length > 0 ? rows[0].stockInitial : baseInitial;
+  let stockRestantFinal = rows.length > 0 ? rows[rows.length - 1].stockRestant : baseInitial;
+  if (rows.length === 0) {
+    const beforeRows = fullHistory.filter((r) => {
+      const d = r.date.slice(0, 10);
+      if (mode === "day") return d < day;
+      if (mode === "month") return d < `${month}-01`;
+      if (mode === "period") return start ? d < start : false;
+      return false;
+    });
+    const last = beforeRows[beforeRows.length - 1];
+    if (last) {
+      stockInitialPeriode = last.stockRestant;
+      stockRestantFinal = last.stockRestant;
+    }
+  }
   const quantiteUtilisee = totals.sorties;
 
   return (
     <div>
-      {rows.length > 0 && (
+      {productId && (
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 bg-muted/30 border-b text-xs">
           <div><div className="text-muted-foreground">Stock Initial</div><div className="font-mono font-semibold text-primary">{stockInitialPeriode}</div></div>
           <div><div className="text-muted-foreground">Entrées</div><div className="font-mono font-semibold text-success">{totals.entrees}</div></div>
