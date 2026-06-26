@@ -223,7 +223,7 @@ function SingleProductHistory({
 export function ProductHistory() {
   const [category, setCategory] = useState<Category>("alimentaire");
   const [productId, setProductId] = useState("");
-  const [mode, setMode] = useState<FilterMode>("all");
+  const [mode, setMode] = useState<FilterMode>("month");
   const [day, setDay] = useState<string>(todayISO());
   const [month, setMonth] = useState<string>(currentMonthISO());
   const [start, setStart] = useState<string>("");
