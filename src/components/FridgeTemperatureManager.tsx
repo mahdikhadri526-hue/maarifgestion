@@ -12,11 +12,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Thermometer, Save, AlertTriangle, CheckCircle2, FileDown } from "lucide-react";
 import { EQUIPMENTS, SLOTS, ZONES, formatDisplayTemp, parseDisplayTemp, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
 import { OPERATORS } from "@/lib/operators";
+import { MANAGERS } from "@/lib/managers";
 import { useAuth } from "@/contexts/AuthContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-
-const MANAGERS = ["Mr Mahdi Khadri", "Mr Hamza Fadlou"] as const;
 
 interface RowState {
   id?: string;
