@@ -304,7 +304,7 @@ const monthEndISO = (month: string) => {
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
   const [category, setCategory] = useState<Category | "all" | "tarte" | "glace">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
-  const [mode, setMode] = useState<FilterMode>(variant === "order" ? "month" : "all");
+  const [mode, setMode] = useState<FilterMode>("month");
   const [day, setDay] = useState<string>(todayISO());
   const [month, setMonth] = useState<string>(currentMonthISO());
   const [start, setStart] = useState<string>("");
@@ -1444,6 +1444,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Conversion</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité Réf.</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
                 {showRefCols && (
                   <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées Réf.</th>
@@ -1538,6 +1539,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       {level.category === "alimentaire" ? "Alimentaire" : "Emballage"}
                     </span>
                   </td>
+                  <td className="p-3 text-right font-mono text-sm text-primary font-semibold">{fmtQty(level.productId, v.stockInitial)}</td>
                   <td className="p-3 text-right font-mono text-sm text-success">{fmtQty(level.productId, v.entrees)}</td>
                   {showRefCols && (
                     <td className="p-3 text-right font-mono text-sm text-muted-foreground">
