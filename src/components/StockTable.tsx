@@ -318,8 +318,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [chantillyAgg, setChantillyAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const [amandesAgg, setAmandesAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const { can } = useAuth();
-  const [editingStock, setEditingStock] = useState<string | null>(null);
-  const [editingValue, setEditingValue] = useState<string>("");
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustData, setAdjustData] = useState<{
@@ -330,6 +328,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     oldRestant: number;
     newRestant: number;
   } | null>(null);
+  const [adjustInputValue, setAdjustInputValue] = useState("");
   const [adjustPerformedBy, setAdjustPerformedBy] = useState<string>("");
   const [adjustSaving, setAdjustSaving] = useState(false);
 
@@ -453,33 +452,47 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     });
   };
 
-  const saveStockEdit = async (level: typeof filtered[number]) => {
-    const newRestant = Number(editingValue);
-    if (!Number.isFinite(newRestant)) {
-      toast.error("Valeur invalide");
-      setEditingStock(null);
-      return;
+  const getAdjustmentDate = () => {
+    const today = todayISO();
+    if (mode === "day" && day) return day;
+    if (mode === "month" && month) return today.startsWith(month) ? today : monthEndISO(month);
+    if (mode === "period") {
+      if (start && today < start) return start;
+      if (end && today > end) return end;
     }
-    const diff = newRestant - level.stockRestant;
-    if (diff === 0) {
-      setEditingStock(null);
-      return;
-    }
+    return today;
+  };
+
+  const openStockAdjustment = (level: typeof filtered[number], currentRestant: number) => {
     setAdjustData({
       productId: level.productId,
       productName: level.productName,
       category: level.category,
-      diff,
-      oldRestant: level.stockRestant,
-      newRestant,
+      diff: 0,
+      oldRestant: currentRestant,
+      newRestant: currentRestant,
     });
+    setAdjustInputValue(String(currentRestant));
     setAdjustPerformedBy("");
     setAdjustOpen(true);
-    setEditingStock(null);
   };
 
   const confirmAdjust = async () => {
     if (!adjustData) return;
+    const newRestant = Number(adjustInputValue);
+    if (!Number.isFinite(newRestant)) {
+      toast.error("Valeur invalide");
+      return;
+    }
+    const diff = roundStockQuantity(newRestant - adjustData.oldRestant);
+    if (diff === 0) {
+      toast.error("Modifiez le stock restant avant de confirmer");
+      return;
+    }
+    if (!Number.isInteger(Math.abs(diff))) {
+      toast.error("Veuillez saisir un nombre entier");
+      return;
+    }
     const op = adjustPerformedBy.trim();
     if (!op) {
       toast.error("Sélectionnez l'opérateur");
@@ -487,27 +500,26 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
     setAdjustSaving(true);
     try {
-      const qty = Math.abs(adjustData.diff);
-      const rounded = roundStockQuantity(qty);
       // Régularisation : impacte les sorties du mois courant
       // diff > 0 (stock augmenté) → type=entree, source=regularisation → soustrait des sorties
       // diff < 0 (stock diminué) → type=sortie, source=regularisation → ajoute aux sorties
-      const today = new Date().toISOString().slice(0, 10);
+      const adjustmentDate = getAdjustmentDate();
       const { error } = await supabase.from("stock_movements").insert({
-        date: today,
+        date: adjustmentDate,
         product_id: adjustData.productId,
         product_name: adjustData.productName,
         category: adjustData.category,
-        type: adjustData.diff > 0 ? "entree" : "sortie",
-        quantity: Math.max(1, Math.round(rounded)),
+        type: diff > 0 ? "entree" : "sortie",
+        quantity: Math.abs(diff),
         performed_by: op,
         unit_used: "PIECE",
         source: "regularisation",
       } as any);
       if (error) throw error;
-      toast.success(`Régularisation enregistrée (${adjustData.oldRestant} → ${adjustData.newRestant})`);
+      toast.success(`Régularisation enregistrée (${adjustData.oldRestant} → ${newRestant})`);
       setAdjustOpen(false);
       setAdjustData(null);
+      setAdjustInputValue("");
       refresh();
     } catch (e) {
       console.error(e);
@@ -1567,34 +1579,18 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   <td className={`p-3 text-right font-mono text-sm font-semibold ${
                     v.stockRestant < 0 ? "text-destructive" : v.stockRestant === 0 ? "text-muted-foreground" : ""
                   }`}>
-                    {canEditRemaining && editingStock === level.productId ? (
-                      <input
-                        type="number"
-                        autoFocus
-                        value={editingValue}
-                        onChange={(e) => setEditingValue(e.target.value)}
-                        onBlur={() => saveStockEdit(level)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") saveStockEdit(level);
-                          if (e.key === "Escape") setEditingStock(null);
-                        }}
-                        className="w-20 text-right bg-background border rounded px-2 py-1 text-sm"
-                      />
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={!canEditRemaining || isReadOnlyAggId(level.productId)}
-                        onClick={() => {
-                          if (isReadOnlyAggId(level.productId)) return;
-                          setEditingStock(level.productId);
-                          setEditingValue(String(v.stockRestant));
-                        }}
-                        className={canEditRemaining && !isReadOnlyAggId(level.productId) ? "hover:underline cursor-pointer" : "cursor-default"}
-                        title={canEditRemaining ? "Cliquer pour ajuster le stock (régularisation enregistrée à la date du jour)" : undefined}
-                      >
-                        {fmtQty(level.productId, v.stockRestant)}
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      disabled={!canEditRemaining || isReadOnlyAggId(level.productId)}
+                      onClick={() => {
+                        if (isReadOnlyAggId(level.productId)) return;
+                        openStockAdjustment(level, v.stockRestant);
+                      }}
+                      className={canEditRemaining && !isReadOnlyAggId(level.productId) ? "hover:underline cursor-pointer" : "cursor-default"}
+                      title={canEditRemaining ? "Cliquer pour modifier le stock restant" : undefined}
+                    >
+                      {fmtQty(level.productId, v.stockRestant)}
+                    </button>
                   </td>
                   {showRefCols && (
                     <td className="p-3 text-right font-mono text-sm font-semibold text-muted-foreground">
@@ -1829,23 +1825,45 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     <Dialog open={adjustOpen} onOpenChange={(o) => { if (!adjustSaving) setAdjustOpen(o); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Régularisation du stock</DialogTitle>
+          <DialogTitle>Modifier le stock restant</DialogTitle>
         </DialogHeader>
         {adjustData && (
           <div className="space-y-3 text-sm">
             <div className="rounded-md border bg-muted/40 p-3 space-y-1">
               <div className="font-semibold">{adjustData.productName}</div>
               <div className="text-xs text-muted-foreground">
-                Stock restant : <span className="font-mono">{adjustData.oldRestant}</span> → <span className="font-mono font-semibold">{adjustData.newRestant}</span>
+                Stock restant actuel : <span className="font-mono font-semibold">{adjustData.oldRestant}</span>
               </div>
-              <div className="text-xs">
-                Différence : <span className={`font-mono font-semibold ${adjustData.diff > 0 ? "text-success" : "text-destructive"}`}>
-                  {adjustData.diff > 0 ? "+" : ""}{adjustData.diff}
-                </span>
-                <span className="text-muted-foreground ml-1">
-                  ({adjustData.diff > 0 ? "soustraite des" : "ajoutée aux"} sorties du mois)
-                </span>
-              </div>
+              {(() => {
+                const newValue = Number(adjustInputValue);
+                const diff = Number.isFinite(newValue) ? roundStockQuantity(newValue - adjustData.oldRestant) : 0;
+                return (
+                  <div className="text-xs">
+                    Différence : <span className={`font-mono font-semibold ${diff > 0 ? "text-success" : diff < 0 ? "text-destructive" : ""}`}>
+                      {diff > 0 ? "+" : ""}{diff}
+                    </span>
+                    {diff !== 0 && (
+                      <span className="text-muted-foreground ml-1">
+                        ({diff > 0 ? "ajoute une entrée" : "ajoute une sortie"})
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+            <div>
+              <label className="text-xs font-medium">Nouveau stock restant *</label>
+              <Input
+                type="number"
+                step="1"
+                value={adjustInputValue}
+                onChange={(e) => setAdjustInputValue(e.target.value)}
+                className="mt-1 text-right font-mono"
+                autoFocus
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                L'ajustement sera enregistré comme régularisation dans le filtre affiché.
+              </p>
             </div>
             <div>
               <label className="text-xs font-medium">Effectué par *</label>
@@ -1864,7 +1882,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => setAdjustOpen(false)} disabled={adjustSaving}>Annuler</Button>
-          <Button onClick={confirmAdjust} disabled={adjustSaving || !adjustPerformedBy.trim()}>
+          <Button onClick={confirmAdjust} disabled={adjustSaving || !adjustPerformedBy.trim() || !adjustInputValue.trim()}>
             {adjustSaving ? "Enregistrement..." : "Confirmer"}
           </Button>
         </DialogFooter>
