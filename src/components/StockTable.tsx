@@ -1567,7 +1567,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   <td className={`p-3 text-right font-mono text-sm font-semibold ${
                     v.stockRestant < 0 ? "text-destructive" : v.stockRestant === 0 ? "text-muted-foreground" : ""
                   }`}>
-                    {mode === "all" && canEditRemaining && editingStock === level.productId ? (
+                    {canEditRemaining && editingStock === level.productId ? (
                       <input
                         type="number"
                         autoFocus
@@ -1583,14 +1583,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     ) : (
                       <button
                         type="button"
-                        disabled={mode !== "all" || !canEditRemaining || isReadOnlyAggId(level.productId)}
+                        disabled={!canEditRemaining || isReadOnlyAggId(level.productId)}
                         onClick={() => {
                           if (isReadOnlyAggId(level.productId)) return;
                           setEditingStock(level.productId);
                           setEditingValue(String(v.stockRestant));
                         }}
-                        className={mode === "all" && canEditRemaining && !isReadOnlyAggId(level.productId) ? "hover:underline cursor-pointer" : "cursor-default"}
-                        title={mode === "all" && canEditRemaining ? "Cliquer pour ajuster le stock (corrigera le stock initial)" : undefined}
+                        className={canEditRemaining && !isReadOnlyAggId(level.productId) ? "hover:underline cursor-pointer" : "cursor-default"}
+                        title={canEditRemaining ? "Cliquer pour ajuster le stock (régularisation enregistrée à la date du jour)" : undefined}
                       >
                         {fmtQty(level.productId, v.stockRestant)}
                       </button>
