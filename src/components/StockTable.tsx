@@ -1579,34 +1579,18 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   <td className={`p-3 text-right font-mono text-sm font-semibold ${
                     v.stockRestant < 0 ? "text-destructive" : v.stockRestant === 0 ? "text-muted-foreground" : ""
                   }`}>
-                    {canEditRemaining && editingStock === level.productId ? (
-                      <input
-                        type="number"
-                        autoFocus
-                        value={editingValue}
-                        onChange={(e) => setEditingValue(e.target.value)}
-                        onBlur={() => saveStockEdit(level)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter") saveStockEdit(level);
-                          if (e.key === "Escape") setEditingStock(null);
-                        }}
-                        className="w-20 text-right bg-background border rounded px-2 py-1 text-sm"
-                      />
-                    ) : (
-                      <button
-                        type="button"
-                        disabled={!canEditRemaining || isReadOnlyAggId(level.productId)}
-                        onClick={() => {
-                          if (isReadOnlyAggId(level.productId)) return;
-                          setEditingStock(level.productId);
-                          setEditingValue(String(v.stockRestant));
-                        }}
-                        className={canEditRemaining && !isReadOnlyAggId(level.productId) ? "hover:underline cursor-pointer" : "cursor-default"}
-                        title={canEditRemaining ? "Cliquer pour ajuster le stock (régularisation enregistrée à la date du jour)" : undefined}
-                      >
-                        {fmtQty(level.productId, v.stockRestant)}
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      disabled={!canEditRemaining || isReadOnlyAggId(level.productId)}
+                      onClick={() => {
+                        if (isReadOnlyAggId(level.productId)) return;
+                        openStockAdjustment(level, v.stockRestant);
+                      }}
+                      className={canEditRemaining && !isReadOnlyAggId(level.productId) ? "hover:underline cursor-pointer" : "cursor-default"}
+                      title={canEditRemaining ? "Cliquer pour modifier le stock restant" : undefined}
+                    >
+                      {fmtQty(level.productId, v.stockRestant)}
+                    </button>
                   </td>
                   {showRefCols && (
                     <td className="p-3 text-right font-mono text-sm font-semibold text-muted-foreground">
@@ -1841,23 +1825,45 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     <Dialog open={adjustOpen} onOpenChange={(o) => { if (!adjustSaving) setAdjustOpen(o); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Régularisation du stock</DialogTitle>
+          <DialogTitle>Modifier le stock restant</DialogTitle>
         </DialogHeader>
         {adjustData && (
           <div className="space-y-3 text-sm">
             <div className="rounded-md border bg-muted/40 p-3 space-y-1">
               <div className="font-semibold">{adjustData.productName}</div>
               <div className="text-xs text-muted-foreground">
-                Stock restant : <span className="font-mono">{adjustData.oldRestant}</span> → <span className="font-mono font-semibold">{adjustData.newRestant}</span>
+                Stock restant actuel : <span className="font-mono font-semibold">{adjustData.oldRestant}</span>
               </div>
-              <div className="text-xs">
-                Différence : <span className={`font-mono font-semibold ${adjustData.diff > 0 ? "text-success" : "text-destructive"}`}>
-                  {adjustData.diff > 0 ? "+" : ""}{adjustData.diff}
-                </span>
-                <span className="text-muted-foreground ml-1">
-                  ({adjustData.diff > 0 ? "soustraite des" : "ajoutée aux"} sorties du mois)
-                </span>
-              </div>
+              {(() => {
+                const newValue = Number(adjustInputValue);
+                const diff = Number.isFinite(newValue) ? roundStockQuantity(newValue - adjustData.oldRestant) : 0;
+                return (
+                  <div className="text-xs">
+                    Différence : <span className={`font-mono font-semibold ${diff > 0 ? "text-success" : diff < 0 ? "text-destructive" : ""}`}>
+                      {diff > 0 ? "+" : ""}{diff}
+                    </span>
+                    {diff !== 0 && (
+                      <span className="text-muted-foreground ml-1">
+                        ({diff > 0 ? "ajoute une entrée" : "ajoute une sortie"})
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+            <div>
+              <label className="text-xs font-medium">Nouveau stock restant *</label>
+              <Input
+                type="number"
+                step="1"
+                value={adjustInputValue}
+                onChange={(e) => setAdjustInputValue(e.target.value)}
+                className="mt-1 text-right font-mono"
+                autoFocus
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                L'ajustement sera enregistré comme régularisation dans le filtre affiché.
+              </p>
             </div>
             <div>
               <label className="text-xs font-medium">Effectué par *</label>
@@ -1876,7 +1882,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => setAdjustOpen(false)} disabled={adjustSaving}>Annuler</Button>
-          <Button onClick={confirmAdjust} disabled={adjustSaving || !adjustPerformedBy.trim()}>
+          <Button onClick={confirmAdjust} disabled={adjustSaving || !adjustPerformedBy.trim() || !adjustInputValue.trim()}>
             {adjustSaving ? "Enregistrement..." : "Confirmer"}
           </Button>
         </DialogFooter>
