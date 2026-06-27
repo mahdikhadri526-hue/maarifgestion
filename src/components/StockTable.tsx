@@ -318,8 +318,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [chantillyAgg, setChantillyAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const [amandesAgg, setAmandesAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const { can } = useAuth();
-  const [editingStock, setEditingStock] = useState<string | null>(null);
-  const [editingValue, setEditingValue] = useState<string>("");
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustData, setAdjustData] = useState<{
@@ -330,6 +328,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     oldRestant: number;
     newRestant: number;
   } | null>(null);
+  const [adjustInputValue, setAdjustInputValue] = useState("");
   const [adjustPerformedBy, setAdjustPerformedBy] = useState<string>("");
   const [adjustSaving, setAdjustSaving] = useState(false);
 
@@ -453,33 +452,47 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     });
   };
 
-  const saveStockEdit = async (level: typeof filtered[number]) => {
-    const newRestant = Number(editingValue);
-    if (!Number.isFinite(newRestant)) {
-      toast.error("Valeur invalide");
-      setEditingStock(null);
-      return;
+  const getAdjustmentDate = () => {
+    const today = todayISO();
+    if (mode === "day" && day) return day;
+    if (mode === "month" && month) return today.startsWith(month) ? today : monthEndISO(month);
+    if (mode === "period") {
+      if (start && today < start) return start;
+      if (end && today > end) return end;
     }
-    const diff = newRestant - level.stockRestant;
-    if (diff === 0) {
-      setEditingStock(null);
-      return;
-    }
+    return today;
+  };
+
+  const openStockAdjustment = (level: typeof filtered[number], currentRestant: number) => {
     setAdjustData({
       productId: level.productId,
       productName: level.productName,
       category: level.category,
-      diff,
-      oldRestant: level.stockRestant,
-      newRestant,
+      diff: 0,
+      oldRestant: currentRestant,
+      newRestant: currentRestant,
     });
+    setAdjustInputValue(String(currentRestant));
     setAdjustPerformedBy("");
     setAdjustOpen(true);
-    setEditingStock(null);
   };
 
   const confirmAdjust = async () => {
     if (!adjustData) return;
+    const newRestant = Number(adjustInputValue);
+    if (!Number.isFinite(newRestant)) {
+      toast.error("Valeur invalide");
+      return;
+    }
+    const diff = roundStockQuantity(newRestant - adjustData.oldRestant);
+    if (diff === 0) {
+      toast.error("Modifiez le stock restant avant de confirmer");
+      return;
+    }
+    if (!Number.isInteger(Math.abs(diff))) {
+      toast.error("Veuillez saisir un nombre entier");
+      return;
+    }
     const op = adjustPerformedBy.trim();
     if (!op) {
       toast.error("Sélectionnez l'opérateur");
@@ -487,27 +500,26 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
     setAdjustSaving(true);
     try {
-      const qty = Math.abs(adjustData.diff);
-      const rounded = roundStockQuantity(qty);
       // Régularisation : impacte les sorties du mois courant
       // diff > 0 (stock augmenté) → type=entree, source=regularisation → soustrait des sorties
       // diff < 0 (stock diminué) → type=sortie, source=regularisation → ajoute aux sorties
-      const today = new Date().toISOString().slice(0, 10);
+      const adjustmentDate = getAdjustmentDate();
       const { error } = await supabase.from("stock_movements").insert({
-        date: today,
+        date: adjustmentDate,
         product_id: adjustData.productId,
         product_name: adjustData.productName,
         category: adjustData.category,
-        type: adjustData.diff > 0 ? "entree" : "sortie",
-        quantity: Math.max(1, Math.round(rounded)),
+        type: diff > 0 ? "entree" : "sortie",
+        quantity: Math.abs(diff),
         performed_by: op,
         unit_used: "PIECE",
         source: "regularisation",
       } as any);
       if (error) throw error;
-      toast.success(`Régularisation enregistrée (${adjustData.oldRestant} → ${adjustData.newRestant})`);
+      toast.success(`Régularisation enregistrée (${adjustData.oldRestant} → ${newRestant})`);
       setAdjustOpen(false);
       setAdjustData(null);
+      setAdjustInputValue("");
       refresh();
     } catch (e) {
       console.error(e);
