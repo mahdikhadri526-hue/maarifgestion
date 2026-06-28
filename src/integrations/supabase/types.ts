@@ -254,6 +254,194 @@ export type Database = {
         }
         Relationships: []
       }
+      inventory_counts: {
+        Row: {
+          counted_by_user_id: string
+          counter_slot: string
+          id: string
+          line_id: string
+          mise_en_place_qty: number | null
+          session_id: string
+          stock_qty: number | null
+          updated_at: string
+        }
+        Insert: {
+          counted_by_user_id: string
+          counter_slot: string
+          id?: string
+          line_id: string
+          mise_en_place_qty?: number | null
+          session_id: string
+          stock_qty?: number | null
+          updated_at?: string
+        }
+        Update: {
+          counted_by_user_id?: string
+          counter_slot?: string
+          id?: string
+          line_id?: string
+          mise_en_place_qty?: number | null
+          session_id?: string
+          stock_qty?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_counts_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_lines: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          lot_id: string | null
+          lot_number: string | null
+          product_id: string
+          product_name: string
+          session_id: string
+          sort_order: number
+          theoretical_qty: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          lot_id?: string | null
+          lot_number?: string | null
+          product_id: string
+          product_name: string
+          session_id: string
+          sort_order?: number
+          theoretical_qty?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          lot_id?: string | null
+          lot_number?: string | null
+          product_id?: string
+          product_name?: string
+          session_id?: string
+          sort_order?: number
+          theoretical_qty?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_lines_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_resolutions: {
+        Row: {
+          final_mise_en_place_qty: number | null
+          final_stock_qty: number | null
+          id: string
+          line_id: string
+          resolved_at: string
+          resolved_by: string | null
+          session_id: string
+          variance_vs_theoretical: number | null
+        }
+        Insert: {
+          final_mise_en_place_qty?: number | null
+          final_stock_qty?: number | null
+          id?: string
+          line_id: string
+          resolved_at?: string
+          resolved_by?: string | null
+          session_id: string
+          variance_vs_theoretical?: number | null
+        }
+        Update: {
+          final_mise_en_place_qty?: number | null
+          final_stock_qty?: number | null
+          id?: string
+          line_id?: string
+          resolved_at?: string
+          resolved_by?: string | null
+          session_id?: string
+          variance_vs_theoretical?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_resolutions_line_id_fkey"
+            columns: ["line_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_resolutions_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inventory_sessions: {
+        Row: {
+          closed_at: string | null
+          counter_a_done: boolean
+          counter_a_user_id: string | null
+          counter_b_done: boolean
+          counter_b_user_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          label: string
+          session_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          counter_a_done?: boolean
+          counter_a_user_id?: string | null
+          counter_b_done?: boolean
+          counter_b_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label: string
+          session_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          counter_a_done?: boolean
+          counter_a_user_id?: string | null
+          counter_b_done?: boolean
+          counter_b_user_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          label?: string
+          session_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lot_entries: {
         Row: {
           created_at: string
@@ -695,6 +883,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_manage_inventory: { Args: { _user_id: string }; Returns: boolean }
+      can_participate_inventory: {
+        Args: { _session_id: string; _user_id: string }
+        Returns: boolean
+      }
       has_permission: {
         Args: { _permission_key: string; _user_id: string }
         Returns: boolean
@@ -705,6 +898,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      inventory_session_status: {
+        Args: { _session_id: string }
+        Returns: string
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
     }

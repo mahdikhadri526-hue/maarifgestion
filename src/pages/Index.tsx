@@ -11,14 +11,15 @@ import { WeeklyTracking } from "@/components/WeeklyTracking";
 import { FridgeTemperatureManager } from "@/components/FridgeTemperatureManager";
 import { RecipeManager } from "@/components/RecipeManager";
 import { CleaningManager } from "@/components/CleaningManager";
-import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles } from "lucide-react";
+import { InventoryModule } from "@/components/inventory/InventoryModule";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { UserManagement } from "@/components/auth/UserManagement";
 
-type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "hebdo" | "temperatures" | "recettes" | "nettoyage";
+type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -42,6 +43,7 @@ const Index = () => {
     { id: "temperatures" as Tab, label: "Températures frigos", icon: Thermometer, perm: "view_temperatures" },
     { id: "recettes" as Tab, label: "Recettes", icon: ChefHat, perm: "view_recipes" },
     { id: "nettoyage" as Tab, label: "Nettoyage", icon: Sparkles, perm: "view_cleaning" },
+    { id: "inventaire" as Tab, label: "Inventaire", icon: PackageCheck, perm: "view_inventory" },
   ];
   const tabs = allTabs.filter((t) => can(t.perm));
 
@@ -196,6 +198,8 @@ const Index = () => {
         {tab === "recettes" && <RecipeManager />}
 
         {tab === "nettoyage" && <CleaningManager />}
+
+        {tab === "inventaire" && <InventoryModule />}
       </main>
       </>
       )}

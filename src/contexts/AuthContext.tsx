@@ -34,6 +34,8 @@ export const ALL_PERMISSIONS = [
   { key: "view_cleaning", label: "Voir le suivi de nettoyage quotidien" },
   { key: "edit_cleaning", label: "Modifier le suivi de nettoyage quotidien" },
   { key: "delete_cleaning", label: "Supprimer du suivi de nettoyage quotidien" },
+  { key: "view_inventory", label: "Participer à l'inventaire" },
+  { key: "manage_inventory", label: "Gérer / rapprocher les inventaires" },
 ] as const;
 
 export type PermissionKey = (typeof ALL_PERMISSIONS)[number]["key"];
