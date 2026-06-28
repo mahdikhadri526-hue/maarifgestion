@@ -283,11 +283,8 @@ export async function upsertCount(params: {
 }
 
 export async function markCounterDone(sessionId: string, slot: CounterSlot): Promise<void> {
-  const field = slot === "A" ? "counter_a_done" : "counter_b_done";
-  const { error } = await supabase
-    .from("inventory_sessions")
-    .update({ [field]: true })
-    .eq("id", sessionId);
+  const patch = slot === "A" ? { counter_a_done: true } : { counter_b_done: true };
+  const { error } = await supabase.from("inventory_sessions").update(patch).eq("id", sessionId);
   if (error) throw error;
 }
 
