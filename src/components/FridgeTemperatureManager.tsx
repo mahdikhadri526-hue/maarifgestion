@@ -423,6 +423,7 @@ export function FridgeTemperatureManager() {
     }
     setSavingZone(zone);
     let ok = 0, ko = 0;
+    const savedCodes: string[] = [];
     for (const eq of zoneEquips) {
       const r = rows[eq.code];
       const isOff = r.temperature.trim().toUpperCase() === "OFF";
@@ -444,6 +445,7 @@ export function FridgeTemperatureManager() {
         .select().single();
       if (error) { ko++; } else {
         ok++;
+        savedCodes.push(eq.code);
         updateRow(eq.code, {
           id: data.id,
           performed_by: operator,
@@ -457,7 +459,7 @@ export function FridgeTemperatureManager() {
     if (ok > 0) {
       setSavedTodayBySlot((prev) => {
         const nextSlot = new Set(prev[slot]);
-        zoneEquips.forEach((eq) => nextSlot.add(eq.code));
+        savedCodes.forEach((code) => nextSlot.add(code));
         return { ...prev, [slot]: nextSlot };
       });
     }
