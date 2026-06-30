@@ -195,14 +195,20 @@ export function FridgeTemperatureManager() {
   });
   const audioContextRef = useRef<AudioContext | null>(null);
 
+  const ensureAudioContext = useCallback(() => {
+    const AC: typeof AudioContext | undefined =
+      (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!AC) return null;
+    if (!audioContextRef.current) audioContextRef.current = new AC();
+    const ctx = audioContextRef.current;
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    return ctx;
+  }, []);
+
   const playAlertBeep = useCallback(() => {
     try {
-      const AC: typeof AudioContext | undefined =
-        (window as any).AudioContext || (window as any).webkitAudioContext;
-      if (!AC) return;
-      if (!audioContextRef.current) audioContextRef.current = new AC();
-      const ctx = audioContextRef.current;
-      if (ctx.state === "suspended") ctx.resume().catch(() => {});
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
       const start = ctx.currentTime + 0.03;
       [880, 1046, 880].forEach((frequency, i) => {
         const t0 = start + i * 0.28;
@@ -218,10 +224,11 @@ export function FridgeTemperatureManager() {
         osc.stop(t0 + 0.24);
       });
     } catch {}
-  }, []);
+  }, [ensureAudioContext]);
 
   useEffect(() => {
     const unlockAudio = () => {
+      ensureAudioContext();
       if (!soundMuted && missingTempCount > 0) playAlertBeep();
       window.removeEventListener("pointerdown", unlockAudio);
       window.removeEventListener("keydown", unlockAudio);
@@ -232,7 +239,7 @@ export function FridgeTemperatureManager() {
       window.removeEventListener("pointerdown", unlockAudio);
       window.removeEventListener("keydown", unlockAudio);
     };
-  }, [missingTempCount, playAlertBeep, soundMuted]);
+  }, [ensureAudioContext, missingTempCount, playAlertBeep, soundMuted]);
 
   useEffect(() => {
     try { localStorage.setItem("fridge_alert_muted", soundMuted ? "1" : "0"); } catch {}
