@@ -196,8 +196,9 @@ export function FridgeTemperatureManager() {
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const ensureAudioContext = useCallback(() => {
+    const audioWindow = window as Window & { webkitAudioContext?: typeof AudioContext };
     const AC: typeof AudioContext | undefined =
-      (window as any).AudioContext || (window as any).webkitAudioContext;
+      window.AudioContext || audioWindow.webkitAudioContext;
     if (!AC) return null;
     if (!audioContextRef.current) audioContextRef.current = new AC();
     const ctx = audioContextRef.current;
@@ -223,7 +224,9 @@ export function FridgeTemperatureManager() {
         osc.start(t0);
         osc.stop(t0 + 0.24);
       });
-    } catch {}
+    } catch {
+      return;
+    }
   }, [ensureAudioContext]);
 
   useEffect(() => {
@@ -242,7 +245,7 @@ export function FridgeTemperatureManager() {
   }, [ensureAudioContext, missingTempCount, playAlertBeep, soundMuted]);
 
   useEffect(() => {
-    try { localStorage.setItem("fridge_alert_muted", soundMuted ? "1" : "0"); } catch {}
+    try { localStorage.setItem("fridge_alert_muted", soundMuted ? "1" : "0"); } catch { return; }
   }, [soundMuted]);
 
   useEffect(() => {
@@ -257,7 +260,7 @@ export function FridgeTemperatureManager() {
 
   useEffect(() => {
     return () => {
-      try { audioContextRef.current?.close(); } catch {}
+      try { audioContextRef.current?.close(); } catch { return; }
     };
   }, []);
 
@@ -274,7 +277,7 @@ export function FridgeTemperatureManager() {
       "16h": new Set<string>(),
       "00h": new Set<string>(),
     };
-    (data ?? []).forEach((r: any) => {
+    (data ?? []).forEach((r: { slot: string | null; equipment_code: string | null }) => {
       if (SLOTS.includes(r.slot as FridgeSlot) && r.equipment_code) {
         next[r.slot as FridgeSlot].add(r.equipment_code);
       }
