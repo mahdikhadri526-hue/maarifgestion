@@ -899,6 +899,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      inv_mark_counter_done: {
+        Args: { _session_id: string; _slot: string }
+        Returns: undefined
+      }
       inventory_session_status: {
         Args: { _session_id: string }
         Returns: string
