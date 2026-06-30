@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Thermometer, Save, AlertTriangle, CheckCircle2, FileDown } from "lucide-react";
+import { Thermometer, Save, AlertTriangle, CheckCircle2, FileDown, Volume2, VolumeX } from "lucide-react";
 import { EQUIPMENTS, SLOTS, ZONES, formatDisplayTemp, parseDisplayTemp, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
 import { OPERATORS } from "@/lib/operators";
 import { MANAGERS } from "@/lib/managers";
@@ -154,6 +154,49 @@ export function FridgeTemperatureManager() {
       return !r || (!r.id && r.temperature.trim() === "");
     });
   }, [date, slot, rows, now]);
+
+  // Alerte sonore quand des températures sont manquantes après le créneau
+  const [soundMuted, setSoundMuted] = useState<boolean>(() => {
+    try { return localStorage.getItem("fridge_alert_muted") === "1"; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("fridge_alert_muted", soundMuted ? "1" : "0"); } catch {}
+  }, [soundMuted]);
+
+  useEffect(() => {
+    if (soundMuted) return;
+    if (missingTempEquipments.length === 0) return;
+    let ctx: AudioContext | null = null;
+    const AC: typeof AudioContext | undefined =
+      (window as any).AudioContext || (window as any).webkitAudioContext;
+    if (!AC) return;
+    const beep = () => {
+      try {
+        if (!ctx) ctx = new AC();
+        if (ctx.state === "suspended") ctx.resume().catch(() => {});
+        const now = ctx.currentTime;
+        for (let i = 0; i < 3; i++) {
+          const t0 = now + i * 0.35;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = 880;
+          gain.gain.setValueAtTime(0, t0);
+          gain.gain.linearRampToValueAtTime(0.35, t0 + 0.02);
+          gain.gain.linearRampToValueAtTime(0, t0 + 0.25);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(t0);
+          osc.stop(t0 + 0.27);
+        }
+      } catch {}
+    };
+    beep();
+    const id = setInterval(beep, 8000);
+    return () => {
+      clearInterval(id);
+      try { ctx?.close(); } catch {}
+    };
+  }, [missingTempEquipments.length, soundMuted]);
 
   async function load() {
     setLoading(true);
@@ -441,7 +484,7 @@ export function FridgeTemperatureManager() {
               {missingTempEquipments.length > 0 && (
                 <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
                   <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-                  <div>
+                  <div className="flex-1">
                     <div className="font-medium">
                       Températures non saisies (créneau {slot} dépassé de plus de 30 min)
                     </div>
@@ -449,6 +492,16 @@ export function FridgeTemperatureManager() {
                       {missingTempEquipments.length} équipement(s) en attente&nbsp;: {missingTempEquipments.map((e) => `${e.zone} – ${e.name}`).join(", ")}
                     </div>
                   </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 px-2 text-destructive hover:text-destructive"
+                    onClick={() => setSoundMuted((m) => !m)}
+                    title={soundMuted ? "Activer le son" : "Couper le son"}
+                  >
+                    {soundMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+                  </Button>
                 </div>
               )}
               {zonesMissingVisa.length > 0 && (
