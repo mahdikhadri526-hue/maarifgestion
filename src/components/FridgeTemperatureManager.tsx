@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,11 @@ interface RowState {
   performed_by: string;
   visa_manager: string;
   created_at?: string;
+}
+
+interface MissingTemperatureAlert {
+  slot: FridgeSlot;
+  equipments: typeof EQUIPMENTS;
 }
 
 function emptyRow(): RowState {
@@ -101,6 +106,11 @@ export function FridgeTemperatureManager() {
   const [savingZone, setSavingZone] = useState<FridgeZone | null>(null);
   const [zoneVisa, setZoneVisa] = useState<Record<string, string>>({});
   const [zoneOperator, setZoneOperator] = useState<Record<string, string>>({});
+  const [savedTodayBySlot, setSavedTodayBySlot] = useState<Record<FridgeSlot, Set<string>>>(() => ({
+    "07h": new Set<string>(),
+    "16h": new Set<string>(),
+    "00h": new Set<string>(),
+  }));
 
   // Historique
   const [historyDate, setHistoryDate] = useState<string>("");
@@ -138,65 +148,142 @@ export function FridgeTemperatureManager() {
     return () => clearInterval(t);
   }, []);
 
-  const missingTempEquipments = useMemo(() => {
-    if (date !== serviceDateStr(now)) return [] as typeof EQUIPMENTS;
-    const slotHour = slot === "07h" ? 7 : slot === "16h" ? 16 : 0;
-    const slotStart = new Date(now);
-    slotStart.setHours(slotHour, 0, 0, 0);
-    // Pour le créneau 00h, l'heure de référence est minuit du jour civil suivant la date de service
-    if (slot === "00h") {
-      slotStart.setDate(slotStart.getDate() + 1);
-    }
-    const diffMin = (now.getTime() - slotStart.getTime()) / 60000;
-    if (diffMin < 30) return [];
-    return EQUIPMENTS.filter((eq) => {
-      const r = rows[eq.code];
-      return !r || (!r.id && r.temperature.trim() === "");
-    });
-  }, [date, slot, rows, now]);
+  const currentServiceDate = serviceDateStr(now);
+
+  const getSlotDeadline = useCallback((targetSlot: FridgeSlot, serviceDateValue: string) => {
+    const [year, month, day] = serviceDateValue.split("-").map(Number);
+    const deadline = new Date(year, month - 1, day, targetSlot === "07h" ? 7 : targetSlot === "16h" ? 16 : 0, 30, 0, 0);
+    // Le créneau 00h appartient à la fin du service, donc au jour civil suivant.
+    if (targetSlot === "00h") deadline.setDate(deadline.getDate() + 1);
+    return deadline;
+  }, []);
+
+  const overdueSlots = useMemo(() => {
+    return SLOTS.filter((targetSlot) => now >= getSlotDeadline(targetSlot, currentServiceDate));
+  }, [currentServiceDate, getSlotDeadline, now]);
+
+  const missingTempAlerts = useMemo<MissingTemperatureAlert[]>(() => {
+    if (date !== currentServiceDate) return [];
+
+    return overdueSlots
+      .map((targetSlot) => {
+        const savedCodes = new Set(savedTodayBySlot[targetSlot]);
+
+        if (targetSlot === slot) {
+          EQUIPMENTS.forEach((eq) => {
+            const row = rows[eq.code];
+            if (row?.id) savedCodes.add(eq.code);
+          });
+        }
+
+        return {
+          slot: targetSlot,
+          equipments: EQUIPMENTS.filter((eq) => !savedCodes.has(eq.code)),
+        };
+      })
+      .filter((alert) => alert.equipments.length > 0);
+  }, [currentServiceDate, date, overdueSlots, rows, savedTodayBySlot, slot]);
+
+  const missingTempCount = useMemo(
+    () => missingTempAlerts.reduce((total, alert) => total + alert.equipments.length, 0),
+    [missingTempAlerts]
+  );
 
   // Alerte sonore quand des températures sont manquantes après le créneau
   const [soundMuted, setSoundMuted] = useState<boolean>(() => {
     try { return localStorage.getItem("fridge_alert_muted") === "1"; } catch { return false; }
   });
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  const ensureAudioContext = useCallback(() => {
+    const audioWindow = window as Window & { webkitAudioContext?: typeof AudioContext };
+    const AC: typeof AudioContext | undefined =
+      window.AudioContext || audioWindow.webkitAudioContext;
+    if (!AC) return null;
+    if (!audioContextRef.current) audioContextRef.current = new AC();
+    const ctx = audioContextRef.current;
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+    return ctx;
+  }, []);
+
+  const playAlertBeep = useCallback(() => {
+    try {
+      const ctx = ensureAudioContext();
+      if (!ctx) return;
+      const start = ctx.currentTime + 0.03;
+      [880, 1046, 880].forEach((frequency, i) => {
+        const t0 = start + i * 0.28;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "square";
+        osc.frequency.value = frequency;
+        gain.gain.setValueAtTime(0.0001, t0);
+        gain.gain.exponentialRampToValueAtTime(0.28, t0 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.22);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + 0.24);
+      });
+    } catch {
+      return;
+    }
+  }, [ensureAudioContext]);
+
   useEffect(() => {
-    try { localStorage.setItem("fridge_alert_muted", soundMuted ? "1" : "0"); } catch {}
+    const unlockAudio = () => {
+      ensureAudioContext();
+      if (!soundMuted && missingTempCount > 0) playAlertBeep();
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+    };
+    window.addEventListener("pointerdown", unlockAudio, { once: true });
+    window.addEventListener("keydown", unlockAudio, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", unlockAudio);
+      window.removeEventListener("keydown", unlockAudio);
+    };
+  }, [ensureAudioContext, missingTempCount, playAlertBeep, soundMuted]);
+
+  useEffect(() => {
+    try { localStorage.setItem("fridge_alert_muted", soundMuted ? "1" : "0"); } catch { return; }
   }, [soundMuted]);
 
   useEffect(() => {
     if (soundMuted) return;
-    if (missingTempEquipments.length === 0) return;
-    let ctx: AudioContext | null = null;
-    const AC: typeof AudioContext | undefined =
-      (window as any).AudioContext || (window as any).webkitAudioContext;
-    if (!AC) return;
-    const beep = () => {
-      try {
-        if (!ctx) ctx = new AC();
-        if (ctx.state === "suspended") ctx.resume().catch(() => {});
-        const now = ctx.currentTime;
-        for (let i = 0; i < 3; i++) {
-          const t0 = now + i * 0.35;
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.type = "sine";
-          osc.frequency.value = 880;
-          gain.gain.setValueAtTime(0, t0);
-          gain.gain.linearRampToValueAtTime(0.35, t0 + 0.02);
-          gain.gain.linearRampToValueAtTime(0, t0 + 0.25);
-          osc.connect(gain).connect(ctx.destination);
-          osc.start(t0);
-          osc.stop(t0 + 0.27);
-        }
-      } catch {}
-    };
-    beep();
-    const id = setInterval(beep, 8000);
+    if (missingTempCount === 0) return;
+    playAlertBeep();
+    const id = setInterval(playAlertBeep, 8000);
     return () => {
       clearInterval(id);
-      try { ctx?.close(); } catch {}
     };
-  }, [missingTempEquipments.length, soundMuted]);
+  }, [missingTempCount, playAlertBeep, soundMuted]);
+
+  useEffect(() => {
+    return () => {
+      try { audioContextRef.current?.close(); } catch { return; }
+    };
+  }, []);
+
+  async function loadSavedTodayBySlot() {
+    const serviceDate = serviceDateStr();
+    const { data, error } = await supabase
+      .from("fridge_temperatures")
+      .select("slot,equipment_code")
+      .eq("control_date", serviceDate);
+    if (error) return;
+
+    const next: Record<FridgeSlot, Set<string>> = {
+      "07h": new Set<string>(),
+      "16h": new Set<string>(),
+      "00h": new Set<string>(),
+    };
+    (data ?? []).forEach((r: { slot: string | null; equipment_code: string | null }) => {
+      if (SLOTS.includes(r.slot as FridgeSlot) && r.equipment_code) {
+        next[r.slot as FridgeSlot].add(r.equipment_code);
+      }
+    });
+    setSavedTodayBySlot(next);
+  }
 
   async function load() {
     setLoading(true);
@@ -239,6 +326,7 @@ export function FridgeTemperatureManager() {
     });
     setZoneVisa(visaByZone);
     setZoneOperator(opByZone);
+    void loadSavedTodayBySlot();
   }
 
   useEffect(() => {
@@ -321,6 +409,10 @@ export function FridgeTemperatureManager() {
       action_corrective: payload.action_corrective,
       created_at: data.created_at,
     });
+    setSavedTodayBySlot((prev) => ({
+      ...prev,
+      [slot]: new Set(prev[slot]).add(code),
+    }));
     toast({ title: "Enregistré", description: `${eq.name} (${slot})` });
   }
 
@@ -341,6 +433,7 @@ export function FridgeTemperatureManager() {
     }
     setSavingZone(zone);
     let ok = 0, ko = 0;
+    const savedCodes: string[] = [];
     for (const eq of zoneEquips) {
       const r = rows[eq.code];
       const isOff = r.temperature.trim().toUpperCase() === "OFF";
@@ -362,6 +455,7 @@ export function FridgeTemperatureManager() {
         .select().single();
       if (error) { ko++; } else {
         ok++;
+        savedCodes.push(eq.code);
         updateRow(eq.code, {
           id: data.id,
           performed_by: operator,
@@ -371,6 +465,13 @@ export function FridgeTemperatureManager() {
           created_at: data.created_at,
         });
       }
+    }
+    if (ok > 0) {
+      setSavedTodayBySlot((prev) => {
+        const nextSlot = new Set(prev[slot]);
+        savedCodes.forEach((code) => nextSlot.add(code));
+        return { ...prev, [slot]: nextSlot };
+      });
     }
     setSavingZone(null);
     toast({ title: `Zone ${zone} enregistrée`, description: `${ok} ligne(s) enregistrée(s)${ko ? `, ${ko} erreur(s)` : ""}` });
@@ -416,6 +517,11 @@ export function FridgeTemperatureManager() {
       return;
     }
     setRows((prev) => ({ ...prev, [code]: emptyRow() }));
+    setSavedTodayBySlot((prev) => {
+      const nextSlot = new Set(prev[slot]);
+      nextSlot.delete(code);
+      return { ...prev, [slot]: nextSlot };
+    });
     toast({ title: "Saisie supprimée" });
   }
 
@@ -471,6 +577,28 @@ export function FridgeTemperatureManager() {
               <FileDown className="h-4 w-4 mr-1" /> Exporter PDF
             </Button>
           </div>
+          <div className="mt-3 flex flex-col gap-2 rounded-md border border-border bg-muted/40 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm">
+              <div className="font-medium">Alerte sonore températures</div>
+              <div className="text-xs text-muted-foreground">
+                {missingTempCount > 0
+                  ? `${missingTempCount} température(s) en retard aujourd'hui`
+                  : "Aucune température en retard aujourd'hui"}
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant={soundMuted ? "outline" : "default"}
+              size="sm"
+              onClick={() => {
+                setSoundMuted((m) => !m);
+                if (soundMuted) playAlertBeep();
+              }}
+            >
+              {soundMuted ? <VolumeX className="h-4 w-4 mr-1" /> : <Volume2 className="h-4 w-4 mr-1" />}
+              {soundMuted ? "Activer le son" : "Couper le son"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -478,18 +606,22 @@ export function FridgeTemperatureManager() {
         <Card><CardContent className="p-6 text-center text-sm text-muted-foreground">Chargement…</CardContent></Card>
       ) : (
         <>
-        {(zonesMissingVisa.length > 0 || missingTempEquipments.length > 0) && (
+        {(zonesMissingVisa.length > 0 || missingTempCount > 0) && (
           <Card>
             <CardContent className="p-4 space-y-2">
-              {missingTempEquipments.length > 0 && (
+              {missingTempCount > 0 && (
                 <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
                   <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
                   <div className="flex-1">
                     <div className="font-medium">
-                      Températures non saisies (créneau {slot} dépassé de plus de 30 min)
+                      Températures non saisies à l'heure prévue
                     </div>
-                    <div className="text-xs opacity-90 mt-1">
-                      {missingTempEquipments.length} équipement(s) en attente&nbsp;: {missingTempEquipments.map((e) => `${e.zone} – ${e.name}`).join(", ")}
+                    <div className="space-y-1 text-xs opacity-90 mt-1">
+                      {missingTempAlerts.map((alert) => (
+                        <div key={alert.slot}>
+                          <strong>{alert.slot}</strong>&nbsp;: {alert.equipments.length} équipement(s) en attente&nbsp;: {alert.equipments.map((e) => `${e.zone} – ${e.name}`).join(", ")}
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <Button
