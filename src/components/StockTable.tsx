@@ -317,7 +317,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [siropWeekly, setSiropWeekly] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const [chantillyAgg, setChantillyAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const [amandesAgg, setAmandesAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
-  const { can } = useAuth();
+  const { can, isAdmin } = useAuth();
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustData, setAdjustData] = useState<{
@@ -1692,9 +1692,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         </div>
                         
                       </div>
-                      <Button size="sm" variant="ghost" onClick={() => deleteSavedOrder(o.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                      {isAdmin && (
+                        <Button size="sm" variant="ghost" onClick={() => deleteSavedOrder(o.id)}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      )}
                     </div>
                     <div className="flex justify-end mb-2">
                       <Button
