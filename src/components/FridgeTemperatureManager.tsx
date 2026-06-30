@@ -172,7 +172,7 @@ export function FridgeTemperatureManager() {
         if (targetSlot === slot) {
           EQUIPMENTS.forEach((eq) => {
             const row = rows[eq.code];
-            if (row?.id || row?.temperature.trim()) savedCodes.add(eq.code);
+            if (row?.id) savedCodes.add(eq.code);
           });
         }
 
