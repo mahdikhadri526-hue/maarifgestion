@@ -222,7 +222,7 @@ export function FridgeTemperatureManager() {
 
   useEffect(() => {
     const unlockAudio = () => {
-      if (!soundMuted) playAlertBeep();
+      if (!soundMuted && missingTempCount > 0) playAlertBeep();
       window.removeEventListener("pointerdown", unlockAudio);
       window.removeEventListener("keydown", unlockAudio);
     };
@@ -232,7 +232,7 @@ export function FridgeTemperatureManager() {
       window.removeEventListener("pointerdown", unlockAudio);
       window.removeEventListener("keydown", unlockAudio);
     };
-  }, [playAlertBeep, soundMuted]);
+  }, [missingTempCount, playAlertBeep, soundMuted]);
 
   useEffect(() => {
     try { localStorage.setItem("fridge_alert_muted", soundMuted ? "1" : "0"); } catch {}
