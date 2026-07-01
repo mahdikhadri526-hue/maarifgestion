@@ -1860,9 +1860,9 @@ export function AutocontrolManager() {
                         <Input
                           type="date"
                           value={editFields.dlc}
-                          readOnly={editEntry.ficheType === "Panaché" || editEntry.ficheType === "Cornet/Tulipe/Gaufrette" || (editEntry.ficheType === "Oranges/Bigarreaux confits" && (editEntry.article === "Orange confit" || editEntry.article === "Bigarreaux confits"))}
-                          disabled={editEntry.ficheType === "Panaché" || editEntry.ficheType === "Cornet/Tulipe/Gaufrette" || (editEntry.ficheType === "Oranges/Bigarreaux confits" && (editEntry.article === "Orange confit" || editEntry.article === "Bigarreaux confits"))}
-                          className={(editEntry.ficheType === "Panaché" || editEntry.ficheType === "Cornet/Tulipe/Gaufrette" || (editEntry.ficheType === "Oranges/Bigarreaux confits" && (editEntry.article === "Orange confit" || editEntry.article === "Bigarreaux confits"))) ? "bg-muted" : undefined}
+                          readOnly
+                          disabled
+                          className="bg-muted"
                           onChange={(e) => setEditFields((f) => ({ ...f, dlc: e.target.value }))}
                         />
                       </div>
