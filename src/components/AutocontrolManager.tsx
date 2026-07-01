@@ -1327,6 +1327,9 @@ export function AutocontrolManager() {
               <Input
                 type="date"
                 value={form.dlc}
+                readOnly={isAutoDlc}
+                disabled={isAutoDlc}
+                className={isAutoDlc ? "bg-muted" : undefined}
                 onChange={(e) => setForm((f) => ({ ...f, dlc: e.target.value }))}
               />
             </div>
