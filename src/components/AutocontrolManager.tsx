@@ -596,6 +596,7 @@ export function AutocontrolManager() {
   const isDecoration = form.ficheType === "Décoration";
   const isPanache = form.ficheType === "Panaché";
   const isPerte = form.ficheType === "Suivi perte produit et casse matériel";
+  const isAutoDlc = isPanache || (form.ficheType === "Oranges/Bigarreaux confits" && isConfit);
 
   const refresh = useCallback(async () => {
     try {
