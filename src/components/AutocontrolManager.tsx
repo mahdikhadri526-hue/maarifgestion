@@ -345,6 +345,26 @@ function getDayName(iso: string): string {
   return DAY_NAMES_FR[parseISODateLocal(iso).getDay()];
 }
 
+function addDaysISO(iso: string, days: number): string {
+  if (!iso) return "";
+  const d = parseISODateLocal(iso);
+  d.setDate(d.getDate() + days);
+  return fmtISO(d);
+}
+
+// Calcul automatique de la DLC en fonction de la fiche + article + date de contrôle.
+// Panaché : +90 j — CTG : +20 j — Orange confit : +20 j — Bigarreaux confits : +51 j.
+function computeAutoDlc(ficheType: FicheType, article: string, controlDate: string): string {
+  if (!controlDate) return "";
+  if (ficheType === "Panaché") return addDaysISO(controlDate, 90);
+  if (ficheType === "Cornet/Tulipe/Gaufrette") return addDaysISO(controlDate, 20);
+  if (ficheType === "Oranges/Bigarreaux confits") {
+    if (article === "Orange confit") return addDaysISO(controlDate, 20);
+    if (article === "Bigarreaux confits") return addDaysISO(controlDate, 51);
+  }
+  return "";
+}
+
 async function syncTarteMovementEntry(
   autocontrolArticle: string,
   quantity: number,
