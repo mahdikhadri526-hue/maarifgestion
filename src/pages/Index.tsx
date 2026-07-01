@@ -1,23 +1,24 @@
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { StockTable } from "@/components/StockTable";
-import { MovementForm } from "@/components/MovementForm";
-import { MovementHistory } from "@/components/MovementHistory";
-import { InitialStockForm } from "@/components/InitialStockForm";
-import { ProductHistory } from "@/components/ProductHistory";
-import { RequisitionForm } from "@/components/RequisitionForm";
-import { ExpiryAlerts, LotManager, StockOutAlerts, PendingAutocontrolAlerts } from "@/components/LotManagement";
-import { AutocontrolManager } from "@/components/AutocontrolManager";
-import { WeeklyTracking } from "@/components/WeeklyTracking";
-import { FridgeTemperatureManager } from "@/components/FridgeTemperatureManager";
-import { RecipeManager } from "@/components/RecipeManager";
-import { CleaningManager } from "@/components/CleaningManager";
-import { InventoryModule } from "@/components/inventory/InventoryModule";
+import { ExpiryAlerts, StockOutAlerts, PendingAutocontrolAlerts } from "@/components/LotManagement";
+// Lazy-loaded heavy tab modules — réduit le bundle initial et accélère le premier affichage.
+const MovementForm = lazy(() => import("@/components/MovementForm").then((m) => ({ default: m.MovementForm })));
+const MovementHistory = lazy(() => import("@/components/MovementHistory").then((m) => ({ default: m.MovementHistory })));
+const InitialStockForm = lazy(() => import("@/components/InitialStockForm").then((m) => ({ default: m.InitialStockForm })));
+const RequisitionForm = lazy(() => import("@/components/RequisitionForm").then((m) => ({ default: m.RequisitionForm })));
+const LotManager = lazy(() => import("@/components/LotManagement").then((m) => ({ default: m.LotManager })));
+const AutocontrolManager = lazy(() => import("@/components/AutocontrolManager").then((m) => ({ default: m.AutocontrolManager })));
+const WeeklyTracking = lazy(() => import("@/components/WeeklyTracking").then((m) => ({ default: m.WeeklyTracking })));
+const FridgeTemperatureManager = lazy(() => import("@/components/FridgeTemperatureManager").then((m) => ({ default: m.FridgeTemperatureManager })));
+const RecipeManager = lazy(() => import("@/components/RecipeManager").then((m) => ({ default: m.RecipeManager })));
+const CleaningManager = lazy(() => import("@/components/CleaningManager").then((m) => ({ default: m.CleaningManager })));
+const InventoryModule = lazy(() => import("@/components/inventory/InventoryModule").then((m) => ({ default: m.InventoryModule })));
+const UserManagement = lazy(() => import("@/components/auth/UserManagement").then((m) => ({ default: m.UserManagement })));
 import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
-import { UserManagement } from "@/components/auth/UserManagement";
 
 type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire";
 
@@ -69,7 +70,9 @@ const Index = () => {
 
       {showAdmin && isAdmin ? (
         <main className="max-w-5xl mx-auto px-4 py-6">
-          <UserManagement onBack={() => setShowAdmin(false)} />
+          <Suspense fallback={<TabFallback />}>
+            <UserManagement onBack={() => setShowAdmin(false)} />
+          </Suspense>
         </main>
       ) : (
       <>
@@ -173,33 +176,26 @@ const Index = () => {
           </></div>
         )}
 
-        {tab === "stock-initial" && <InitialStockForm key={refreshKey} onUpdated={refresh} />}
-
-        {tab === "mouvements" && (
-          <div key={refreshKey} className="max-w-xl mx-auto">
-            <MovementForm onMovementAdded={refresh} />
-          </div>
+        {tab !== "dashboard" && (
+          <Suspense fallback={<TabFallback />}>
+            {tab === "stock-initial" && <InitialStockForm key={refreshKey} onUpdated={refresh} />}
+            {tab === "mouvements" && (
+              <div key={refreshKey} className="max-w-xl mx-auto">
+                <MovementForm onMovementAdded={refresh} />
+              </div>
+            )}
+            {tab === "historique" && <MovementHistory key={refreshKey} onMovementDeleted={refresh} />}
+            {tab === "produit" && <StockTable />}
+            {tab === "requisition" && <RequisitionForm onUpdated={refresh} />}
+            {tab === "lots" && <LotManager />}
+            {tab === "autocontrole" && <AutocontrolManager />}
+            {tab === "hebdo" && <WeeklyTracking />}
+            {tab === "temperatures" && <FridgeTemperatureManager />}
+            {tab === "recettes" && <RecipeManager />}
+            {tab === "nettoyage" && <CleaningManager />}
+            {tab === "inventaire" && <InventoryModule />}
+          </Suspense>
         )}
-
-        {tab === "historique" && <MovementHistory key={refreshKey} onMovementDeleted={refresh} />}
-
-        {tab === "produit" && <StockTable />}
-
-        {tab === "requisition" && <RequisitionForm onUpdated={refresh} />}
-
-        {tab === "lots" && <LotManager />}
-
-        {tab === "autocontrole" && <AutocontrolManager />}
-
-        {tab === "hebdo" && <WeeklyTracking />}
-
-        {tab === "temperatures" && <FridgeTemperatureManager />}
-
-        {tab === "recettes" && <RecipeManager />}
-
-        {tab === "nettoyage" && <CleaningManager />}
-
-        {tab === "inventaire" && <InventoryModule />}
       </main>
       </>
       )}
@@ -208,3 +204,11 @@ const Index = () => {
 };
 
 export default Index;
+
+function TabFallback() {
+  return (
+    <div className="min-h-[40vh] flex items-center justify-center text-sm text-muted-foreground">
+      Chargement…
+    </div>
+  );
+}
