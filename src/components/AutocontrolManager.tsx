@@ -596,6 +596,7 @@ export function AutocontrolManager() {
   const isDecoration = form.ficheType === "Décoration";
   const isPanache = form.ficheType === "Panaché";
   const isPerte = form.ficheType === "Suivi perte produit et casse matériel";
+  const isAutoDlc = isPanache || (form.ficheType === "Oranges/Bigarreaux confits" && isConfit);
 
   const refresh = useCallback(async () => {
     try {
@@ -1205,9 +1206,9 @@ export function AutocontrolManager() {
                             <Input
                               type="date"
                               value={row.dlc}
-                              onChange={(e) =>
-                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], dlc: e.target.value } }))
-                              }
+                              readOnly
+                              disabled
+                              className="bg-muted"
                             />
                           </div>
                         </div>
@@ -1326,6 +1327,9 @@ export function AutocontrolManager() {
               <Input
                 type="date"
                 value={form.dlc}
+                readOnly={isAutoDlc}
+                disabled={isAutoDlc}
+                className={isAutoDlc ? "bg-muted" : undefined}
                 onChange={(e) => setForm((f) => ({ ...f, dlc: e.target.value }))}
               />
             </div>
@@ -1856,6 +1860,9 @@ export function AutocontrolManager() {
                         <Input
                           type="date"
                           value={editFields.dlc}
+                          readOnly
+                          disabled
+                          className="bg-muted"
                           onChange={(e) => setEditFields((f) => ({ ...f, dlc: e.target.value }))}
                         />
                       </div>
