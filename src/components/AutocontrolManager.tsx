@@ -345,6 +345,26 @@ function getDayName(iso: string): string {
   return DAY_NAMES_FR[parseISODateLocal(iso).getDay()];
 }
 
+function addDaysISO(iso: string, days: number): string {
+  if (!iso) return "";
+  const d = parseISODateLocal(iso);
+  d.setDate(d.getDate() + days);
+  return fmtISO(d);
+}
+
+// Calcul automatique de la DLC en fonction de la fiche + article + date de contrôle.
+// Panaché : +90 j — CTG : +20 j — Orange confit : +20 j — Bigarreaux confits : +51 j.
+function computeAutoDlc(ficheType: FicheType, article: string, controlDate: string): string {
+  if (!controlDate) return "";
+  if (ficheType === "Panaché") return addDaysISO(controlDate, 90);
+  if (ficheType === "Cornet/Tulipe/Gaufrette") return addDaysISO(controlDate, 20);
+  if (ficheType === "Oranges/Bigarreaux confits") {
+    if (article === "Orange confit") return addDaysISO(controlDate, 20);
+    if (article === "Bigarreaux confits") return addDaysISO(controlDate, 51);
+  }
+  return "";
+}
+
 async function syncTarteMovementEntry(
   autocontrolArticle: string,
   quantity: number,
@@ -711,6 +731,34 @@ export function AutocontrolManager() {
       .map(([n]) => n)
       .join("|"),
   ]);
+
+  // Auto-remplissage de la DLC pour la fiche principale (Panaché, Oranges/Bigarreaux confits)
+  useEffect(() => {
+    const auto = computeAutoDlc(form.ficheType, form.article, form.controlDate);
+    if (!auto) return;
+    if (form.ficheType === "Cornet/Tulipe/Gaufrette") return; // géré par produit
+    setForm((f) => (f.dlc === auto ? f : { ...f, dlc: auto }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.ficheType, form.article, form.controlDate]);
+
+  // Auto-remplissage de la DLC des produits CTG (Cornet/Tulipe/Gaufrette : +20 j)
+  useEffect(() => {
+    if (form.ficheType !== "Cornet/Tulipe/Gaufrette") return;
+    const auto = addDaysISO(form.controlDate, 20);
+    if (!auto) return;
+    setCtgProducts((s) => {
+      let changed = false;
+      const next = { ...s };
+      for (const key of CTG_PRODUCTS) {
+        if (next[key].dlc !== auto) {
+          next[key] = { ...next[key], dlc: auto };
+          changed = true;
+        }
+      }
+      return changed ? next : s;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.ficheType, form.controlDate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
