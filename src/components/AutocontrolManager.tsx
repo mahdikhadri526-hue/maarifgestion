@@ -1206,9 +1206,9 @@ export function AutocontrolManager() {
                             <Input
                               type="date"
                               value={row.dlc}
-                              onChange={(e) =>
-                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], dlc: e.target.value } }))
-                              }
+                              readOnly
+                              disabled
+                              className="bg-muted"
                             />
                           </div>
                         </div>
