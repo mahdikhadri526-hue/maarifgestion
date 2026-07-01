@@ -732,6 +732,34 @@ export function AutocontrolManager() {
       .join("|"),
   ]);
 
+  // Auto-remplissage de la DLC pour la fiche principale (Panaché, Oranges/Bigarreaux confits)
+  useEffect(() => {
+    const auto = computeAutoDlc(form.ficheType, form.article, form.controlDate);
+    if (!auto) return;
+    if (form.ficheType === "Cornet/Tulipe/Gaufrette") return; // géré par produit
+    setForm((f) => (f.dlc === auto ? f : { ...f, dlc: auto }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.ficheType, form.article, form.controlDate]);
+
+  // Auto-remplissage de la DLC des produits CTG (Cornet/Tulipe/Gaufrette : +20 j)
+  useEffect(() => {
+    if (form.ficheType !== "Cornet/Tulipe/Gaufrette") return;
+    const auto = addDaysISO(form.controlDate, 20);
+    if (!auto) return;
+    setCtgProducts((s) => {
+      let changed = false;
+      const next = { ...s };
+      for (const key of CTG_PRODUCTS) {
+        if (next[key].dlc !== auto) {
+          next[key] = { ...next[key], dlc: auto };
+          changed = true;
+        }
+      }
+      return changed ? next : s;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.ficheType, form.controlDate]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
