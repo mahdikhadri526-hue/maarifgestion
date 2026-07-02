@@ -14,6 +14,7 @@ import { NewSessionDialog } from "./NewSessionDialog";
 import { CountingView } from "./CountingView";
 import { ReconciliationView } from "./ReconciliationView";
 import { toast } from "sonner";
+import { formatDateFR } from "@/lib/utils";
 
 export function InventoryModule() {
   const { user, can } = useAuth();
@@ -167,7 +168,7 @@ function SessionCard({
           {youAreCounter && <Badge variant="outline">Vous comptez</Badge>}
         </div>
         <div className="text-xs text-muted-foreground mt-1">
-          Date : {new Date(session.sessionDate).toLocaleDateString("fr-FR")} · A:{" "}
+          Date : {formatDateFR(session.sessionDate)} · A:{" "}
           {session.counterADone ? "✅" : "⏳"} · B: {session.counterBDone ? "✅" : "⏳"}
         </div>
       </div>

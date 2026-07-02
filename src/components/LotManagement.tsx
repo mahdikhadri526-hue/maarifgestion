@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/contexts/AuthContext";
 import { ENABLE_FIFO_INDICATOR } from "@/lib/featureFlags";
-import { formatDateFR } from "@/lib/utils";
+import { formatDateFR, formatMaybeDate } from "@/lib/utils";
 import { useEffect } from "react";
 import { getAutocontrols, AutocontrolEntry } from "@/lib/autocontrolData";
 import { supabase } from "@/integrations/supabase/client";
@@ -163,7 +163,7 @@ export function ExpiryAlerts() {
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{product?.name || lot.productId}</p>
                 <p className="text-xs text-muted-foreground">
-                  Lot: {lot.lotNumber} · Qté restante: {lot.remainingQuantity}
+                  Lot: {formatMaybeDate(lot.lotNumber)} · Qté restante: {lot.remainingQuantity}
                 </p>
               </div>
               <div className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${
@@ -342,7 +342,7 @@ export function LotManager() {
                                   {ordinalLabel(orderNum!)}
                                 </span>
                               )}
-                              <span>{lot.lotNumber}</span>
+                              <span>{formatMaybeDate(lot.lotNumber)}</span>
                             </div>
                           )}
                         </td>

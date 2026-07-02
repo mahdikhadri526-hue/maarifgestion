@@ -16,6 +16,7 @@ import {
   setSessionStatus,
 } from "@/lib/inventoryData";
 import { toast } from "sonner";
+import { formatMaybeDate } from "@/lib/utils";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 
 interface RowData {
@@ -240,7 +241,7 @@ function ResolutionRow({
     <tr className="border-b last:border-0">
       <td className="p-2">
         <div className="font-medium">{row.line.productName}</div>
-        <div className="text-xs text-muted-foreground">Lot : {row.line.lotNumber || "—"}</div>
+        <div className="text-xs text-muted-foreground">Lot : {row.line.lotNumber ? formatMaybeDate(row.line.lotNumber) : "—"}</div>
       </td>
       <td className="p-2 text-right">{row.a?.stockQty ?? "—"}</td>
       <td className="p-2 text-right">{row.b?.stockQty ?? "—"}</td>

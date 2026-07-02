@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { ChevronLeft, ChevronRight, Save, Check, Plus, Trash2, Filter, X, CalendarIcon, Eye, EyeOff, Lock, Printer, FileDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
+import { cn, formatDateFR } from "@/lib/utils";
 import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
 import { OPERATORS } from "@/lib/operators";
 import { useAuth } from "@/contexts/AuthContext";
@@ -65,13 +65,17 @@ function parseISO(iso: string) {
 function addDays(iso: string, n: number) {
   const d = parseISO(iso);
   d.setDate(d.getDate() + n);
-  return d.toLocaleDateString("fr-FR");
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}.${mm}.${d.getFullYear()}`;
 }
 
 function dayShort(iso: string, n: number) {
   const d = parseISO(iso);
   d.setDate(d.getDate() + n);
-  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  return `${dd}.${mm}`;
 }
 
 function lotDateKey(lot: string): string | null {
@@ -1335,8 +1339,8 @@ export function WeeklyTracking() {
 
   const buildWeeklyPdf = (label: string) => {
     const periodText = filterFrom || filterTo
-      ? `Période du ${filterFrom ? parseISO(filterFrom).toLocaleDateString("fr-FR") : parseISO(weekStart).toLocaleDateString("fr-FR")} au ${filterTo ? parseISO(filterTo).toLocaleDateString("fr-FR") : addDays(weekStart, 6)}`
-      : `Semaine du ${parseISO(weekStart).toLocaleDateString("fr-FR")} au ${addDays(weekStart, 6)}`;
+      ? `Période du ${filterFrom ? formatDateFR(filterFrom) : formatDateFR(weekStart)} au ${filterTo ? formatDateFR(filterTo) : addDays(weekStart, 6)}`
+      : `Semaine du ${formatDateFR(weekStart)} au ${addDays(weekStart, 6)}`;
     const title = `Suivi hebdomadaire — ${tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : "Mouvement tartes"}`;
     const sections: PdfTableSection[] = [];
 
@@ -1411,7 +1415,7 @@ export function WeeklyTracking() {
       title,
       subtitle: periodText,
       meta: [
-        `Généré le ${new Date().toLocaleDateString("fr-FR")}`,
+        `Généré le ${formatDateFR(new Date().toISOString())}`,
         filterArticle !== "all" ? `Produit : ${filterArticle}` : "Tous les produits",
         filterType === "masquer_lots" ? "Lots masqués à l'écran — PDF complet" : "Entrées vertes / sorties rouges",
       ],
@@ -1521,7 +1525,7 @@ export function WeeklyTracking() {
             </Popover>
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
               <CalendarIcon className="h-3.5 w-3.5" />
-              Semaine du {parseISO(weekStart).toLocaleDateString("fr-FR")} → {addDays(weekStart, 6)}
+              Semaine du {formatDateFR(weekStart)} → {addDays(weekStart, 6)}
             </div>
             <Button variant="outline" size="icon" className="rounded-full h-9 w-9" onClick={() => shiftWeek(1)}>
               <ChevronRight className="h-4 w-4" />
@@ -1539,7 +1543,7 @@ export function WeeklyTracking() {
         {!showControls && (
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
             <CalendarIcon className="h-3.5 w-3.5" />
-            Semaine du {parseISO(weekStart).toLocaleDateString("fr-FR")} → {addDays(weekStart, 6)}
+            Semaine du {formatDateFR(weekStart)} → {addDays(weekStart, 6)}
           </div>
         )}
         <Button
@@ -1595,7 +1599,7 @@ export function WeeklyTracking() {
               Suivi hebdomadaire — {tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : "Mouvement tartes"}
             </h2>
             <p className="text-xs text-muted-foreground">
-              Semaine du {parseISO(weekStart).toLocaleDateString("fr-FR")} → {addDays(weekStart, 6)}
+              Semaine du {formatDateFR(weekStart)} → {addDays(weekStart, 6)}
             </p>
           </div>
 

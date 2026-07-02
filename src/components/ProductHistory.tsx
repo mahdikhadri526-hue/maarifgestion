@@ -6,6 +6,7 @@ import { FileText } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.jpeg";
+import { formatDateFR } from "@/lib/utils";
 
 type FilterMode = "all" | "day" | "month" | "period";
 
@@ -216,7 +217,7 @@ function SingleProductHistory({
           <tbody>
             {rows.map((row) => (
               <tr key={row.date} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                <td className="p-3 text-sm font-mono">{new Date(row.date).toLocaleDateString("fr-FR")}</td>
+                <td className="p-3 text-sm font-mono">{formatDateFR(row.date)}</td>
                 <td className="p-3 text-right font-mono text-sm">{row.stockInitial}</td>
                 <td className="p-3 text-right font-mono text-sm text-success">{row.entrees || "-"}</td>
                 <td className="p-3 text-right font-mono text-sm text-destructive">{row.sorties || "-"}</td>
