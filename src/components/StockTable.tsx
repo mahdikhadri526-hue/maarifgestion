@@ -34,7 +34,7 @@ import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/contexts/AuthContext";
 import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
+import { cn, formatDateFR } from "@/lib/utils";
 import { downloadStructuredPdf } from "@/lib/printExport";
 
 const TARTE_ARTICLES = [
@@ -1685,10 +1685,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
                         <div className="font-semibold text-sm">
-                          {o.order_date} — <span className="capitalize">{o.category}</span>
+                          {formatDateFR(o.order_date)} — <span className="capitalize">{o.category}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Par {o.performed_by || "—"} · {o.total_items} unité(s) · {new Date(o.created_at).toLocaleString("fr-FR")}
+                          Par {o.performed_by || "—"} · {o.total_items} unité(s) · {formatDateFR(o.created_at)} {new Date(o.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
                         </div>
                         
                       </div>
