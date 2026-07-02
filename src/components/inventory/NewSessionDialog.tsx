@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createSession, listProfiles } from "@/lib/inventoryData";
 import { toast } from "sonner";
+import { formatDateFR } from "@/lib/utils";
 
 export function NewSessionDialog({
   open,
@@ -25,7 +26,7 @@ export function NewSessionDialog({
   useEffect(() => {
     if (!open) return;
     listProfiles().then(setUsers).catch(() => setUsers([]));
-    setLabel(`Inventaire du ${new Date().toLocaleDateString("fr-FR")}`);
+    setLabel(`Inventaire du ${formatDateFR(new Date().toISOString())}`);
   }, [open]);
 
   const submit = async () => {
