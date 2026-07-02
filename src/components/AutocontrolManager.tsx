@@ -455,7 +455,7 @@ export function AutocontrolManager() {
           fiche: entry.ficheType,
           collaborateur: entry.collaborateur,
           article: entry.article,
-          lot: entry.lotNumber || "—",
+          lot: entry.lotNumber ? formatMaybeDate(entry.lotNumber) : "—",
           quantite: entry.quantity ?? "—",
           dlc: entry.dlc ? formatDateFR(entry.dlc) : "—",
           visa: entry.visaManager?.trim() || "En attente",
@@ -1815,7 +1815,7 @@ export function AutocontrolManager() {
               <div className="bg-muted/40 rounded p-3 space-y-1 text-xs">
                 <div><strong>{editEntry.ficheType}</strong> — {formatDateFR(editEntry.controlDate)}</div>
                 <div>Collaborateur : {editEntry.collaborateur}</div>
-                <div>Article : {editEntry.article} {editEntry.lotNumber ? `(lot ${editEntry.lotNumber})` : ""}</div>
+                <div>Article : {editEntry.article} {editEntry.lotNumber ? `(lot ${formatMaybeDate(editEntry.lotNumber)})` : ""}</div>
                 <div>Quantité : {editEntry.quantity ?? "—"}{editEntry.dlc ? ` • DLC ${formatDateFR(editEntry.dlc)}` : ""}</div>
               </div>
 
@@ -2049,7 +2049,7 @@ export function AutocontrolManager() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div><span className="text-muted-foreground">Article :</span> <strong>{viewEntry.article}</strong></div>
-                <div><span className="text-muted-foreground">Lot :</span> {viewEntry.lotNumber || "—"}</div>
+                <div><span className="text-muted-foreground">Lot :</span> {viewEntry.lotNumber ? formatMaybeDate(viewEntry.lotNumber) : "—"}</div>
                 <div>
                   <span className="text-muted-foreground">Quantité :</span> {viewEntry.quantity ?? "—"}
                   {(viewEntry.extraData as any)?.quantity2
