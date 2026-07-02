@@ -15,7 +15,7 @@ import { MANAGERS } from "@/lib/managers";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { formatDateFR, cn } from "@/lib/utils";
+import { formatDateFR, formatMaybeDate, cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
@@ -514,7 +514,7 @@ export function AutocontrolManager() {
       filename: `fiche-${safe}.pdf`,
       title: `Autocontrôle — ${entry.ficheType}`,
       subtitle: `Date : ${formatDateFR(entry.controlDate)}`,
-      meta: [`Collaborateur : ${entry.collaborateur}`, `Généré le ${new Date().toLocaleDateString("fr-FR")}`],
+      meta: [`Collaborateur : ${entry.collaborateur}`, `Généré le ${formatDateFR(new Date().toISOString())}`],
       sections,
     };
   };
@@ -563,7 +563,7 @@ export function AutocontrolManager() {
             date: formatDateFR(e.controlDate),
             collab: e.collaborateur,
             article: e.article,
-            lot: e.lotNumber || "—",
+            lot: e.lotNumber ? formatMaybeDate(e.lotNumber) : "—",
             qte: e.quantity ?? "—",
             dlc: e.dlc ? formatDateFR(e.dlc) : "—",
             visa: e.visaManager?.trim() || "En attente",
@@ -580,7 +580,7 @@ export function AutocontrolManager() {
         filename: `autocontroles-${exportMonth}.pdf`,
         title: "Autocontrôles — Récapitulatif mensuel",
         subtitle: `Mois : ${monthLabel}`,
-        meta: [`${monthEntries.length} fiche(s)`, `Généré le ${new Date().toLocaleDateString("fr-FR")}`],
+        meta: [`${monthEntries.length} fiche(s)`, `Généré le ${formatDateFR(new Date().toISOString())}`],
         sections,
       });
       toast.success("PDF mensuel généré");
@@ -1616,7 +1616,7 @@ export function AutocontrolManager() {
                     <td className="py-3 px-3 border-r border-border/40">{e.collaborateur}</td>
                     <td className="py-3 px-3 border-r border-border/40 font-medium">{e.article}</td>
                     <td className="py-3 px-3 border-r border-border/40 text-xs font-mono text-muted-foreground">
-                      {e.lotNumber || "—"}
+                      {e.lotNumber ? formatMaybeDate(e.lotNumber) : "—"}
                     </td>
                     <td className="py-3 px-3 border-r border-border/40 text-center font-semibold tabular-nums">
                       {e.quantity ?? "—"}
