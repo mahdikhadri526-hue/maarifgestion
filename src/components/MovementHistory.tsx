@@ -9,6 +9,7 @@ import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { ENABLE_TRANSFERTS, ENABLE_REQUISITION_BADGE, ENABLE_MOVEMENT_TIME } from "@/lib/featureFlags";
+import { formatDateFR } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -329,7 +330,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
               }`}>
                 <td className="p-3 text-sm font-mono">
                   <div className="flex flex-col leading-tight">
-                    <span>{new Date(m.date).toLocaleDateString("fr-FR")}</span>
+                    <span>{formatDateFR(m.date)}</span>
                     {ENABLE_MOVEMENT_TIME && m.createdAt && (
                       <span className="text-[10px] text-muted-foreground">
                         {new Date(m.createdAt).toLocaleTimeString("fr-FR", {
