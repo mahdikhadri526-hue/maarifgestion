@@ -15,6 +15,7 @@ import {
   upsertCount,
   markCounterDone,
 } from "@/lib/inventoryData";
+import { formatMaybeDate } from "@/lib/utils";
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
 
@@ -184,7 +185,7 @@ function CountingRow({
       <div className="flex-1 min-w-0">
         <div className="font-medium text-sm truncate">{line.productName}</div>
         <div className="text-xs text-muted-foreground">
-          Lot : {line.lotNumber || "—"}
+          Lot : {line.lotNumber ? formatMaybeDate(line.lotNumber) : "—"}
         </div>
       </div>
       <div className="flex items-center gap-2">
