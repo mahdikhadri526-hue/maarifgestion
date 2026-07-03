@@ -612,11 +612,11 @@ export function FridgeTemperatureManager() {
           <Card>
             <CardContent className="p-4 space-y-2">
               {missingTempCount > 0 && (
-                <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                <div className={`flex items-start gap-2 rounded-md border-2 border-destructive bg-destructive/10 p-3 text-sm text-destructive ${soundMuted ? "" : "animate-pulse"}`}>
+                  <AlertTriangle className={`h-5 w-5 mt-0.5 shrink-0 ${soundMuted ? "" : "animate-bounce"}`} />
                   <div className="flex-1">
-                    <div className="font-medium">
-                      Températures non saisies à l'heure prévue
+                    <div className="font-bold uppercase tracking-wide">
+                      ⚠ Températures non saisies à l'heure prévue
                     </div>
                     <div className="space-y-1 text-xs opacity-90 mt-1">
                       {missingTempAlerts.map((alert) => (
