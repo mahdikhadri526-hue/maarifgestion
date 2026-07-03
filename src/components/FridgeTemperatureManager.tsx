@@ -211,19 +211,21 @@ export function FridgeTemperatureManager() {
       const ctx = ensureAudioContext();
       if (!ctx) return;
       const start = ctx.currentTime + 0.03;
-      [880, 1046, 880].forEach((frequency, i) => {
-        const t0 = start + i * 0.28;
+      // Bip bip bip — 3 courts bips aigus type alarme
+      for (let i = 0; i < 3; i++) {
+        const t0 = start + i * 0.2;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
         osc.type = "square";
-        osc.frequency.value = frequency;
+        osc.frequency.value = 1200;
         gain.gain.setValueAtTime(0.0001, t0);
-        gain.gain.exponentialRampToValueAtTime(0.28, t0 + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.22);
+        gain.gain.exponentialRampToValueAtTime(0.5, t0 + 0.01);
+        gain.gain.setValueAtTime(0.5, t0 + 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.15);
         osc.connect(gain).connect(ctx.destination);
         osc.start(t0);
-        osc.stop(t0 + 0.24);
-      });
+        osc.stop(t0 + 0.16);
+      }
     } catch {
       return;
     }
@@ -252,7 +254,7 @@ export function FridgeTemperatureManager() {
     if (soundMuted) return;
     if (missingTempCount === 0) return;
     playAlertBeep();
-    const id = setInterval(playAlertBeep, 8000);
+    const id = setInterval(playAlertBeep, 3000);
     return () => {
       clearInterval(id);
     };
