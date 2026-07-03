@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   StockMovement, StockLevel, DailyStockRecord, Category, UnitType,
@@ -16,17 +16,35 @@ function useRealtimeData<T>(
 ) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inFlightRef = useRef<Promise<void> | null>(null);
 
   const refresh = useCallback(async () => {
-    try {
-      const result = await fetchFn();
-      setData(result);
-    } catch (err) {
-      console.error("Data fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
+    // Coalesce concurrent refreshes to a single in-flight request
+    if (inFlightRef.current) return inFlightRef.current;
+    const p = (async () => {
+      try {
+        const result = await fetchFn();
+        setData(result);
+      } catch (err) {
+        console.error("Data fetch error:", err);
+      } finally {
+        setLoading(false);
+        inFlightRef.current = null;
+      }
+    })();
+    inFlightRef.current = p;
+    return p;
   }, deps);
+
+  // Debounce burst realtime events (e.g. bulk inserts) to a single refresh
+  const scheduleRefresh = useCallback(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      refresh();
+    }, 250);
+  }, [refresh]);
 
   useEffect(() => {
     refresh();
@@ -35,15 +53,16 @@ function useRealtimeData<T>(
       supabase
         .channel(`realtime-${table}-${Math.random()}`)
         .on("postgres_changes", { event: "*", schema: "public", table }, () => {
-          refresh();
+          scheduleRefresh();
         })
         .subscribe()
     );
 
     return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
       channels.forEach((ch) => supabase.removeChannel(ch));
     };
-  }, [refresh]);
+  }, [refresh, scheduleRefresh]);
 
   return { data, loading, refresh };
 }
