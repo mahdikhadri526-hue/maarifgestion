@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useId } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import {
   StockMovement, StockLevel, DailyStockRecord, Category, UnitType,
@@ -18,6 +18,7 @@ function useRealtimeData<T>(
   const [loading, setLoading] = useState(true);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlightRef = useRef<Promise<void> | null>(null);
+  const instanceId = useId();
 
   const refresh = useCallback(async () => {
     // Coalesce concurrent refreshes to a single in-flight request
@@ -51,7 +52,7 @@ function useRealtimeData<T>(
 
     const channels = tables.map((table) =>
       supabase
-        .channel(`realtime-${table}-${Math.random()}`)
+        .channel(`realtime-${table}-${instanceId}`)
         .on("postgres_changes", { event: "*", schema: "public", table }, () => {
           scheduleRefresh();
         })
@@ -62,7 +63,7 @@ function useRealtimeData<T>(
       if (debounceRef.current) clearTimeout(debounceRef.current);
       channels.forEach((ch) => supabase.removeChannel(ch));
     };
-  }, [refresh, scheduleRefresh]);
+  }, [refresh, scheduleRefresh, instanceId]);
 
   return { data, loading, refresh };
 }
