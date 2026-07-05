@@ -883,13 +883,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_set_user_role: {
-        Args: {
-          _new_role: Database["public"]["Enums"]["app_role"]
-          _target_user_id: string
-        }
-        Returns: undefined
-      }
       can_manage_inventory: { Args: { _user_id: string }; Returns: boolean }
       can_participate_inventory: {
         Args: { _session_id: string; _user_id: string }
