@@ -77,9 +77,11 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   }, []);
 
   const setUserRole = async (userId: string, role: AppRole) => {
-    // remove existing roles
-    await supabase.from("user_roles").delete().eq("user_id", userId);
-    const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
+    // Atomic role change via SECURITY DEFINER RPC (avoids losing role on failure)
+    const { error } = await supabase.rpc("admin_set_user_role", {
+      _target_user_id: userId,
+      _new_role: role,
+    });
     if (error) {
       toast.error("Erreur : " + error.message);
       return;
