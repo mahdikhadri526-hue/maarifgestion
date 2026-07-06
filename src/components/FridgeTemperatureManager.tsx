@@ -378,9 +378,11 @@ export function FridgeTemperatureManager() {
     const eq = EQUIPMENTS.find((e) => e.code === code);
     if (!eq) return;
     const row = rows[code] ?? emptyRow();
-    const isOff = row.temperature.trim().toUpperCase() === "OFF";
-    const tVal = isOff ? null : parseDisplayTemp(row.temperature);
-    if (!isOff && tVal === null) {
+    const upper = row.temperature.trim().toUpperCase();
+    const isOff = upper === "OFF";
+    const isDegiv = upper === DEGIV_SENTINEL;
+    const tVal = isOff || isDegiv ? null : parseDisplayTemp(row.temperature);
+    if (!isOff && !isDegiv && tVal === null) {
       toast({ title: "Saisir la température", variant: "destructive" });
       return;
     }
@@ -397,10 +399,14 @@ export function FridgeTemperatureManager() {
       equipment_code: eq.code,
       equipment_name: eq.name,
       equipment_type: eq.type,
-      temperature_haut: isOff ? null : tVal,
+      temperature_haut: isOff || isDegiv ? null : tVal,
       temperature_bas: null,
-      conformite: row.conformite || null,
-      commentaire: isOff ? "OFF" : (row.commentaire?.trim() ? row.commentaire : "RAS"),
+      conformite: isDegiv ? null : (row.conformite || null),
+      commentaire: isOff
+        ? "OFF"
+        : isDegiv
+          ? (row.commentaire?.trim() ? `${DEGIV_COMMENT} — ${row.commentaire.trim()}` : DEGIV_COMMENT)
+          : (row.commentaire?.trim() ? row.commentaire : "RAS"),
       action_corrective: row.action_corrective?.trim() ? row.action_corrective : "RAS",
       performed_by: operator,
       visa_manager: row.visa_manager || null,
@@ -449,15 +455,21 @@ export function FridgeTemperatureManager() {
     const savedCodes: string[] = [];
     for (const eq of zoneEquips) {
       const r = rows[eq.code];
-      const isOff = r.temperature.trim().toUpperCase() === "OFF";
-      const tVal = isOff ? null : parseDisplayTemp(r.temperature);
-      if (!isOff && tVal === null) { ko++; continue; }
+      const upper = r.temperature.trim().toUpperCase();
+      const isOff = upper === "OFF";
+      const isDegiv = upper === DEGIV_SENTINEL;
+      const tVal = isOff || isDegiv ? null : parseDisplayTemp(r.temperature);
+      if (!isOff && !isDegiv && tVal === null) { ko++; continue; }
       const payload = {
         control_date: date, slot, zone: eq.zone,
         equipment_code: eq.code, equipment_name: eq.name, equipment_type: eq.type,
-        temperature_haut: isOff ? null : tVal, temperature_bas: null,
-        conformite: r.conformite || null,
-        commentaire: isOff ? "OFF" : (r.commentaire?.trim() ? r.commentaire : "RAS"),
+        temperature_haut: isOff || isDegiv ? null : tVal, temperature_bas: null,
+        conformite: isDegiv ? null : (r.conformite || null),
+        commentaire: isOff
+          ? "OFF"
+          : isDegiv
+            ? (r.commentaire?.trim() ? `${DEGIV_COMMENT} — ${r.commentaire.trim()}` : DEGIV_COMMENT)
+            : (r.commentaire?.trim() ? r.commentaire : "RAS"),
         action_corrective: r.action_corrective?.trim() ? r.action_corrective : "RAS",
         performed_by: operator,
         visa_manager: visa || null,
