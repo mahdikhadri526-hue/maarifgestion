@@ -1701,6 +1701,12 @@ export function AutocontrolManager() {
                             )}
                             {e.extraData.cleaning && (
                               <div>
+                                {e.ficheType === "Cornet/Tulipe/Gaufrette" && (e.extraData as any)?.perteKg && (
+                                  <div className="mb-1 text-xs">
+                                    <strong className="uppercase tracking-wide text-muted-foreground">Perte :</strong>{" "}
+                                    <span className="font-medium text-amber-700">{(e.extraData as any).perteKg} kg</span>
+                                  </div>
+                                )}
                                 <strong className="text-xs uppercase tracking-wide text-muted-foreground">Nettoyage</strong>{" "}
                                 <div className="mt-1 flex flex-wrap gap-1">
                                   {Object.entries(e.extraData.cleaning)
