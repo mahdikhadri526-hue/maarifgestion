@@ -1891,6 +1891,23 @@ export function AutocontrolManager() {
                       </div>
                     </div>
                   </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <label className="text-sm font-semibold block mb-2">
+                      Perte (kg) <span className="text-xs font-normal text-muted-foreground">— avant le nettoyage</span>
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={(editExtra as any)?.perteKg ?? ""}
+                      onChange={(e) =>
+                        setEditExtra((x) => ({ ...(x as any), perteKg: e.target.value }))
+                      }
+                      className="max-w-[160px]"
+                    />
+                  </div>
                   <div className="bg-muted/30 rounded-lg p-3">
                     <h4 className="text-sm font-semibold mb-2">Nettoyage</h4>
                     <div className="space-y-2">
