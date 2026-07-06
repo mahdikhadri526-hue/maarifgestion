@@ -37,6 +37,14 @@ function emptyRow(): RowState {
   return { temperature: "", conformite: "conforme", commentaire: "", action_corrective: "", performed_by: "", visa_manager: "" };
 }
 
+const DEGIV_SENTINEL = "DEGIV";
+const DEGIV_COMMENT = "DÉGIVRAGE";
+function isDegivComment(c?: string | null) {
+  if (!c) return false;
+  const norm = c.trim().toUpperCase();
+  return norm === "DEGIV" || norm === "DÉGIVRAGE" || norm === "DEGIVRAGE" || norm.startsWith("DÉGIVRAGE") || norm.startsWith("DEGIVRAGE");
+}
+
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -305,9 +313,12 @@ export function FridgeTemperatureManager() {
     (data ?? []).forEach((r: any) => {
       const eq = EQUIPMENTS.find((e) => e.code === r.equipment_code);
       const rawTemp = r.temperature_haut ?? r.temperature_bas;
+      const degiv = rawTemp === null && isDegivComment(r.commentaire);
       map[r.equipment_code] = {
         id: r.id,
-        temperature: rawTemp !== null && rawTemp !== undefined ? formatDisplayTemp(rawTemp, eq?.type) : (r.commentaire === "OFF" ? "OFF" : ""),
+        temperature: rawTemp !== null && rawTemp !== undefined
+          ? formatDisplayTemp(rawTemp, eq?.type)
+          : (r.commentaire === "OFF" ? "OFF" : (degiv ? DEGIV_SENTINEL : "")),
         conformite: (r.conformite as RowState["conformite"]) ?? "",
         commentaire: r.commentaire ?? "",
         action_corrective: r.action_corrective ?? "",
@@ -367,9 +378,11 @@ export function FridgeTemperatureManager() {
     const eq = EQUIPMENTS.find((e) => e.code === code);
     if (!eq) return;
     const row = rows[code] ?? emptyRow();
-    const isOff = row.temperature.trim().toUpperCase() === "OFF";
-    const tVal = isOff ? null : parseDisplayTemp(row.temperature);
-    if (!isOff && tVal === null) {
+    const upper = row.temperature.trim().toUpperCase();
+    const isOff = upper === "OFF";
+    const isDegiv = upper === DEGIV_SENTINEL;
+    const tVal = isOff || isDegiv ? null : parseDisplayTemp(row.temperature);
+    if (!isOff && !isDegiv && tVal === null) {
       toast({ title: "Saisir la température", variant: "destructive" });
       return;
     }
@@ -386,10 +399,14 @@ export function FridgeTemperatureManager() {
       equipment_code: eq.code,
       equipment_name: eq.name,
       equipment_type: eq.type,
-      temperature_haut: isOff ? null : tVal,
+      temperature_haut: isOff || isDegiv ? null : tVal,
       temperature_bas: null,
-      conformite: row.conformite || null,
-      commentaire: isOff ? "OFF" : (row.commentaire?.trim() ? row.commentaire : "RAS"),
+      conformite: isDegiv ? null : (row.conformite || null),
+      commentaire: isOff
+        ? "OFF"
+        : isDegiv
+          ? (row.commentaire?.trim() ? `${DEGIV_COMMENT} — ${row.commentaire.trim()}` : DEGIV_COMMENT)
+          : (row.commentaire?.trim() ? row.commentaire : "RAS"),
       action_corrective: row.action_corrective?.trim() ? row.action_corrective : "RAS",
       performed_by: operator,
       visa_manager: row.visa_manager || null,
@@ -438,15 +455,21 @@ export function FridgeTemperatureManager() {
     const savedCodes: string[] = [];
     for (const eq of zoneEquips) {
       const r = rows[eq.code];
-      const isOff = r.temperature.trim().toUpperCase() === "OFF";
-      const tVal = isOff ? null : parseDisplayTemp(r.temperature);
-      if (!isOff && tVal === null) { ko++; continue; }
+      const upper = r.temperature.trim().toUpperCase();
+      const isOff = upper === "OFF";
+      const isDegiv = upper === DEGIV_SENTINEL;
+      const tVal = isOff || isDegiv ? null : parseDisplayTemp(r.temperature);
+      if (!isOff && !isDegiv && tVal === null) { ko++; continue; }
       const payload = {
         control_date: date, slot, zone: eq.zone,
         equipment_code: eq.code, equipment_name: eq.name, equipment_type: eq.type,
-        temperature_haut: isOff ? null : tVal, temperature_bas: null,
-        conformite: r.conformite || null,
-        commentaire: isOff ? "OFF" : (r.commentaire?.trim() ? r.commentaire : "RAS"),
+        temperature_haut: isOff || isDegiv ? null : tVal, temperature_bas: null,
+        conformite: isDegiv ? null : (r.conformite || null),
+        commentaire: isOff
+          ? "OFF"
+          : isDegiv
+            ? (r.commentaire?.trim() ? `${DEGIV_COMMENT} — ${r.commentaire.trim()}` : DEGIV_COMMENT)
+            : (r.commentaire?.trim() ? r.commentaire : "RAS"),
         action_corrective: r.action_corrective?.trim() ? r.action_corrective : "RAS",
         performed_by: operator,
         visa_manager: visa || null,
@@ -492,7 +515,11 @@ export function FridgeTemperatureManager() {
         eq.code,
         `${eq.name}\n${eq.type}`,
         eq.zone,
-        r.temperature === "OFF" ? "OFF" : (r.temperature || "—"),
+        r.temperature === "OFF"
+          ? "OFF"
+          : r.temperature === DEGIV_SENTINEL
+            ? "DÉGIVRAGE"
+            : (r.temperature || "—"),
         r.conformite === "conforme" ? "Conforme" : r.conformite === "non_conforme" ? "Non conforme" : "—",
         r.action_corrective || "—",
         r.commentaire || "—",
@@ -730,6 +757,19 @@ export function FridgeTemperatureManager() {
                                   className={`h-9 w-10 rounded-md border text-[10px] font-bold flex items-center justify-center transition-colors ${row.temperature === "OFF" ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
                                   disabled={!editable}
                                 >OFF</button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (row.temperature === DEGIV_SENTINEL) {
+                                      updateRow(eq.code, { temperature: "", conformite: "", commentaire: "", action_corrective: "" });
+                                    } else {
+                                      updateRow(eq.code, { temperature: DEGIV_SENTINEL, conformite: "", commentaire: "", action_corrective: "RAS" });
+                                    }
+                                  }}
+                                  className={`h-9 w-14 rounded-md border text-[10px] font-bold flex items-center justify-center transition-colors ${row.temperature === DEGIV_SENTINEL ? "bg-warning text-warning-foreground border-warning" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                                  disabled={!editable}
+                                  title="Équipement en dégivrage"
+                                >DÉGIV</button>
                                 <Input
                                   type="text"
                                   inputMode="decimal"
@@ -737,11 +777,12 @@ export function FridgeTemperatureManager() {
                                   onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
                                   onBlur={() => {
                                     if (row.temperature.trim().toUpperCase() === "OFF") return;
+                                    if (row.temperature.trim().toUpperCase() === DEGIV_SENTINEL) return;
                                     const sign = getSign(row.temperature, eq.type);
                                     const formatted = formatWithSign(row.temperature, sign);
                                     if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
                                   }}
-                                  disabled={!editable || row.temperature === "OFF"}
+                                  disabled={!editable || row.temperature === "OFF" || row.temperature === DEGIV_SENTINEL}
                                   className="h-9 w-20"
                                   placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
                                 />
@@ -858,6 +899,19 @@ export function FridgeTemperatureManager() {
                                   className={`h-10 w-10 rounded-md border text-[10px] font-bold flex items-center justify-center transition-colors ${row.temperature === "OFF" ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
                                   disabled={!editable}
                                 >OFF</button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (row.temperature === DEGIV_SENTINEL) {
+                                      updateRow(eq.code, { temperature: "", conformite: "", commentaire: "", action_corrective: "" });
+                                    } else {
+                                      updateRow(eq.code, { temperature: DEGIV_SENTINEL, conformite: "", commentaire: "", action_corrective: "RAS" });
+                                    }
+                                  }}
+                                  className={`h-10 w-14 rounded-md border text-[10px] font-bold flex items-center justify-center transition-colors ${row.temperature === DEGIV_SENTINEL ? "bg-warning text-warning-foreground border-warning" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                                  disabled={!editable}
+                                  title="Équipement en dégivrage"
+                                >DÉGIV</button>
                                 <Input
                                   type="text"
                                   inputMode="decimal"
@@ -865,11 +919,12 @@ export function FridgeTemperatureManager() {
                                   onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
                                   onBlur={() => {
                                     if (row.temperature.trim().toUpperCase() === "OFF") return;
+                                    if (row.temperature.trim().toUpperCase() === DEGIV_SENTINEL) return;
                                     const sign = getSign(row.temperature, eq.type);
                                     const formatted = formatWithSign(row.temperature, sign);
                                     if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
                                   }}
-                                  disabled={!editable || row.temperature === "OFF"}
+                                  disabled={!editable || row.temperature === "OFF" || row.temperature === DEGIV_SENTINEL}
                                   className="h-10 text-base font-semibold flex-1"
                                   placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
                                 />
@@ -1016,7 +1071,9 @@ export function FridgeTemperatureManager() {
                 <TableBody>
                   {historyRows.map((r: any) => {
                     const t = r.temperature_haut ?? r.temperature_bas;
-                    const temp = t !== null && t !== undefined ? formatDisplayTemp(t, r.equipment_type) : (r.commentaire === "OFF" ? "OFF" : "—");
+                    const temp = t !== null && t !== undefined
+                      ? formatDisplayTemp(t, r.equipment_type)
+                      : (r.commentaire === "OFF" ? "OFF" : (isDegivComment(r.commentaire) ? "DÉGIV" : "—"));
                     return (
                       <TableRow key={r.id}>
                         <TableCell className="text-xs">{r.zone}</TableCell>
