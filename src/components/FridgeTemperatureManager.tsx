@@ -313,9 +313,12 @@ export function FridgeTemperatureManager() {
     (data ?? []).forEach((r: any) => {
       const eq = EQUIPMENTS.find((e) => e.code === r.equipment_code);
       const rawTemp = r.temperature_haut ?? r.temperature_bas;
+      const degiv = rawTemp === null && isDegivComment(r.commentaire);
       map[r.equipment_code] = {
         id: r.id,
-        temperature: rawTemp !== null && rawTemp !== undefined ? formatDisplayTemp(rawTemp, eq?.type) : (r.commentaire === "OFF" ? "OFF" : ""),
+        temperature: rawTemp !== null && rawTemp !== undefined
+          ? formatDisplayTemp(rawTemp, eq?.type)
+          : (r.commentaire === "OFF" ? "OFF" : (degiv ? DEGIV_SENTINEL : "")),
         conformite: (r.conformite as RowState["conformite"]) ?? "",
         commentaire: r.commentaire ?? "",
         action_corrective: r.action_corrective ?? "",
