@@ -37,6 +37,14 @@ function emptyRow(): RowState {
   return { temperature: "", conformite: "conforme", commentaire: "", action_corrective: "", performed_by: "", visa_manager: "" };
 }
 
+const DEGIV_SENTINEL = "DEGIV";
+const DEGIV_COMMENT = "DÉGIVRAGE";
+function isDegivComment(c?: string | null) {
+  if (!c) return false;
+  const norm = c.trim().toUpperCase();
+  return norm === "DEGIV" || norm === "DÉGIVRAGE" || norm === "DEGIVRAGE" || norm.startsWith("DÉGIVRAGE") || norm.startsWith("DEGIVRAGE");
+}
+
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
