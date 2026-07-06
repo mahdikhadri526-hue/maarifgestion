@@ -186,6 +186,7 @@ const initialPanacheExtra = (): CtgExtraData => ({
 
 const initialCtgExtra = (): CtgExtraData => ({
   ingredients: DEFAULT_CTG_INGREDIENTS.map((name) => ({ name, lot: "", quantity: "" })),
+  perteKg: "",
   cleaning: {
     lavageMachine: false,
     lavageTorchons: false,
