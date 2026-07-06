@@ -899,6 +899,19 @@ export function FridgeTemperatureManager() {
                                   className={`h-10 w-10 rounded-md border text-[10px] font-bold flex items-center justify-center transition-colors ${row.temperature === "OFF" ? "bg-primary text-primary-foreground border-primary" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
                                   disabled={!editable}
                                 >OFF</button>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (row.temperature === DEGIV_SENTINEL) {
+                                      updateRow(eq.code, { temperature: "", conformite: "", commentaire: "", action_corrective: "" });
+                                    } else {
+                                      updateRow(eq.code, { temperature: DEGIV_SENTINEL, conformite: "", commentaire: "", action_corrective: "RAS" });
+                                    }
+                                  }}
+                                  className={`h-10 w-14 rounded-md border text-[10px] font-bold flex items-center justify-center transition-colors ${row.temperature === DEGIV_SENTINEL ? "bg-warning text-warning-foreground border-warning" : "bg-muted text-muted-foreground border-input hover:bg-muted/80"}`}
+                                  disabled={!editable}
+                                  title="Équipement en dégivrage"
+                                >DÉGIV</button>
                                 <Input
                                   type="text"
                                   inputMode="decimal"
@@ -906,11 +919,12 @@ export function FridgeTemperatureManager() {
                                   onChange={(e) => updateRow(eq.code, { temperature: e.target.value })}
                                   onBlur={() => {
                                     if (row.temperature.trim().toUpperCase() === "OFF") return;
+                                    if (row.temperature.trim().toUpperCase() === DEGIV_SENTINEL) return;
                                     const sign = getSign(row.temperature, eq.type);
                                     const formatted = formatWithSign(row.temperature, sign);
                                     if (formatted !== row.temperature) updateRow(eq.code, { temperature: formatted });
                                   }}
-                                  disabled={!editable || row.temperature === "OFF"}
+                                  disabled={!editable || row.temperature === "OFF" || row.temperature === DEGIV_SENTINEL}
                                   className="h-10 text-base font-semibold flex-1"
                                   placeholder={eq.type.startsWith("Frigo positif") || eq.type === "Chambre positive" ? "+" : "-"}
                                 />
