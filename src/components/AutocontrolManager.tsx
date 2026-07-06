@@ -1420,6 +1420,28 @@ export function AutocontrolManager() {
 
           {isCtg && form.extraData && (
             <div className="sm:col-span-2 space-y-4 mt-2 border-t pt-4">
+              {/* Perte (kg) — avant le nettoyage */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <label className="text-sm font-semibold block mb-2">
+                  Perte (kg) <span className="text-xs font-normal text-muted-foreground">— avant le nettoyage</span>
+                </label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={(form.extraData as any).perteKg ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      extraData: { ...f.extraData!, perteKg: e.target.value } as any,
+                    }))
+                  }
+                  className="max-w-[160px]"
+                />
+              </div>
+
               {/* Nettoyage */}
               <div className="bg-muted/30 rounded-lg p-3">
                 <h4 className="text-sm font-semibold mb-2">Nettoyage</h4>
