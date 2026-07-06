@@ -2151,6 +2151,11 @@ export function AutocontrolManager() {
 
               {viewEntry.extraData?.cleaning && (
                 <div>
+                  {viewEntry.ficheType === "Cornet/Tulipe/Gaufrette" && (viewEntry.extraData as any)?.perteKg && (
+                    <div className="mb-2 text-sm">
+                      <strong>Perte (avant nettoyage) :</strong> {(viewEntry.extraData as any).perteKg} kg
+                    </div>
+                  )}
                   <h3 className="font-semibold mb-1">Nettoyage</h3>
                   <ul className="text-xs space-y-1">
                     {Object.entries(viewEntry.extraData.cleaning)
