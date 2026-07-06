@@ -1043,7 +1043,9 @@ export function FridgeTemperatureManager() {
                 <TableBody>
                   {historyRows.map((r: any) => {
                     const t = r.temperature_haut ?? r.temperature_bas;
-                    const temp = t !== null && t !== undefined ? formatDisplayTemp(t, r.equipment_type) : (r.commentaire === "OFF" ? "OFF" : "—");
+                    const temp = t !== null && t !== undefined
+                      ? formatDisplayTemp(t, r.equipment_type)
+                      : (r.commentaire === "OFF" ? "OFF" : (isDegivComment(r.commentaire) ? "DÉGIV" : "—"));
                     return (
                       <TableRow key={r.id}>
                         <TableCell className="text-xs">{r.zone}</TableCell>
