@@ -486,6 +486,16 @@ export function AutocontrolManager() {
       });
     }
     if (entry.extraData?.cleaning) {
+      const perteKg = (entry.extraData as any)?.perteKg;
+      if (entry.ficheType === "Cornet/Tulipe/Gaufrette" && perteKg && String(perteKg).trim() !== "") {
+        sections.push({
+          title: "Perte (avant nettoyage)",
+          columns: [
+            { header: "Perte", dataKey: "perte", width: 60, halign: "center" },
+          ],
+          rows: [{ perte: `${perteKg} kg` }],
+        });
+      }
       sections.push({
         title: "Nettoyage",
         columns: [
