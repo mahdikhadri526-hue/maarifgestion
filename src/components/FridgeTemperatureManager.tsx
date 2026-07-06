@@ -515,7 +515,11 @@ export function FridgeTemperatureManager() {
         eq.code,
         `${eq.name}\n${eq.type}`,
         eq.zone,
-        r.temperature === "OFF" ? "OFF" : (r.temperature || "—"),
+        r.temperature === "OFF"
+          ? "OFF"
+          : r.temperature === DEGIV_SENTINEL
+            ? "DÉGIVRAGE"
+            : (r.temperature || "—"),
         r.conformite === "conforme" ? "Conforme" : r.conformite === "non_conforme" ? "Non conforme" : "—",
         r.action_corrective || "—",
         r.commentaire || "—",
