@@ -33,6 +33,7 @@ export interface PanacheMatiere {
 export interface CtgExtraData {
   ingredients?: IngredientLine[];
   matieresPremieres?: PanacheMatiere[];
+  perteKg?: string | null;
   cleaning?: {
     lavageMachine: ConformityStatus | boolean;
     lavageTorchons: ConformityStatus | boolean;

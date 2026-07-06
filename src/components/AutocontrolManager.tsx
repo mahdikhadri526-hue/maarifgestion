@@ -186,6 +186,7 @@ const initialPanacheExtra = (): CtgExtraData => ({
 
 const initialCtgExtra = (): CtgExtraData => ({
   ingredients: DEFAULT_CTG_INGREDIENTS.map((name) => ({ name, lot: "", quantity: "" })),
+  perteKg: "",
   cleaning: {
     lavageMachine: false,
     lavageTorchons: false,
@@ -485,6 +486,16 @@ export function AutocontrolManager() {
       });
     }
     if (entry.extraData?.cleaning) {
+      const perteKg = (entry.extraData as any)?.perteKg;
+      if (entry.ficheType === "Cornet/Tulipe/Gaufrette" && perteKg && String(perteKg).trim() !== "") {
+        sections.push({
+          title: "Perte (avant nettoyage)",
+          columns: [
+            { header: "Perte", dataKey: "perte", width: 60, halign: "center" },
+          ],
+          rows: [{ perte: `${perteKg} kg` }],
+        });
+      }
       sections.push({
         title: "Nettoyage",
         columns: [
@@ -1419,6 +1430,28 @@ export function AutocontrolManager() {
 
           {isCtg && form.extraData && (
             <div className="sm:col-span-2 space-y-4 mt-2 border-t pt-4">
+              {/* Perte (kg) — avant le nettoyage */}
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <label className="text-sm font-semibold block mb-2">
+                  Perte (kg) <span className="text-xs font-normal text-muted-foreground">— avant le nettoyage</span>
+                </label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={(form.extraData as any).perteKg ?? ""}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      extraData: { ...f.extraData!, perteKg: e.target.value } as any,
+                    }))
+                  }
+                  className="max-w-[160px]"
+                />
+              </div>
+
               {/* Nettoyage */}
               <div className="bg-muted/30 rounded-lg p-3">
                 <h4 className="text-sm font-semibold mb-2">Nettoyage</h4>
@@ -1668,6 +1701,12 @@ export function AutocontrolManager() {
                             )}
                             {e.extraData.cleaning && (
                               <div>
+                                {e.ficheType === "Cornet/Tulipe/Gaufrette" && (e.extraData as any)?.perteKg && (
+                                  <div className="mb-1 text-xs">
+                                    <strong className="uppercase tracking-wide text-muted-foreground">Perte :</strong>{" "}
+                                    <span className="font-medium text-amber-700">{(e.extraData as any).perteKg} kg</span>
+                                  </div>
+                                )}
                                 <strong className="text-xs uppercase tracking-wide text-muted-foreground">Nettoyage</strong>{" "}
                                 <div className="mt-1 flex flex-wrap gap-1">
                                   {Object.entries(e.extraData.cleaning)
@@ -1867,6 +1906,23 @@ export function AutocontrolManager() {
                         />
                       </div>
                     </div>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                    <label className="text-sm font-semibold block mb-2">
+                      Perte (kg) <span className="text-xs font-normal text-muted-foreground">— avant le nettoyage</span>
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      inputMode="decimal"
+                      placeholder="0.00"
+                      value={(editExtra as any)?.perteKg ?? ""}
+                      onChange={(e) =>
+                        setEditExtra((x) => ({ ...(x as any), perteKg: e.target.value }))
+                      }
+                      className="max-w-[160px]"
+                    />
                   </div>
                   <div className="bg-muted/30 rounded-lg p-3">
                     <h4 className="text-sm font-semibold mb-2">Nettoyage</h4>
@@ -2111,6 +2167,11 @@ export function AutocontrolManager() {
 
               {viewEntry.extraData?.cleaning && (
                 <div>
+                  {viewEntry.ficheType === "Cornet/Tulipe/Gaufrette" && (viewEntry.extraData as any)?.perteKg && (
+                    <div className="mb-2 text-sm">
+                      <strong>Perte (avant nettoyage) :</strong> {(viewEntry.extraData as any).perteKg} kg
+                    </div>
+                  )}
                   <h3 className="font-semibold mb-1">Nettoyage</h3>
                   <ul className="text-xs space-y-1">
                     {Object.entries(viewEntry.extraData.cleaning)
