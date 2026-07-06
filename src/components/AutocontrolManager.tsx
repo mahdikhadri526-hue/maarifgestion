@@ -489,7 +489,7 @@ export function AutocontrolManager() {
       const perteKg = (entry.extraData as any)?.perteKg;
       if (entry.ficheType === "Cornet/Tulipe/Gaufrette" && perteKg && String(perteKg).trim() !== "") {
         sections.push({
-          title: "Perte (avant nettoyage)",
+          title: "Perte",
           columns: [
             { header: "Perte", dataKey: "perte", width: 60, halign: "center" },
           ],
@@ -1430,10 +1430,10 @@ export function AutocontrolManager() {
 
           {isCtg && form.extraData && (
             <div className="sm:col-span-2 space-y-4 mt-2 border-t pt-4">
-              {/* Perte (kg) — avant le nettoyage */}
+              {/* Perte (kg) */}
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                 <label className="text-sm font-semibold block mb-2">
-                  Perte (kg) <span className="text-xs font-normal text-muted-foreground">— avant le nettoyage</span>
+                  Perte (kg)
                 </label>
                 <Input
                   type="number"
@@ -1909,7 +1909,7 @@ export function AutocontrolManager() {
                   </div>
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
                     <label className="text-sm font-semibold block mb-2">
-                      Perte (kg) <span className="text-xs font-normal text-muted-foreground">— avant le nettoyage</span>
+                      Perte (kg)
                     </label>
                     <Input
                       type="number"
@@ -2169,7 +2169,7 @@ export function AutocontrolManager() {
                 <div>
                   {viewEntry.ficheType === "Cornet/Tulipe/Gaufrette" && (viewEntry.extraData as any)?.perteKg && (
                     <div className="mb-2 text-sm">
-                      <strong>Perte (avant nettoyage) :</strong> {(viewEntry.extraData as any).perteKg} kg
+                      <strong>Perte :</strong> {(viewEntry.extraData as any).perteKg} kg
                     </div>
                   )}
                   <h3 className="font-semibold mb-1">Nettoyage</h3>
