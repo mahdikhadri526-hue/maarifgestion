@@ -205,6 +205,23 @@ const initialCtgExtra = (): CtgExtraData => ({
 
 type CtgProductKey = "Cornet" | "Tulipe" | "Gaufrette";
 const CTG_PRODUCTS: CtgProductKey[] = ["Cornet", "Tulipe", "Gaufrette"];
+// Poids unitaire (kg) par produit CTG — utilisé pour calculer le % de perte
+// (poids total des pertes / poids total de la production) × 100
+const CTG_UNIT_WEIGHT_KG: Record<string, number> = {
+  Cornet: 0.007,
+  Tulipe: 0.015,
+  Gaufrette: 0.003,
+};
+function ctgPertePercent(perteKgRaw: unknown, productionKg: number): number | null {
+  const perte = Number(perteKgRaw);
+  if (!Number.isFinite(perte) || perte <= 0) return null;
+  if (!productionKg || productionKg <= 0) return null;
+  return (perte / productionKg) * 100;
+}
+function formatPercent(pct: number | null): string {
+  if (pct === null) return "—";
+  return `${pct.toFixed(2)} %`;
+}
 type CtgProductRow = { selected: boolean; quantity: string; quantity2: string; lotNumber: string; dlc: string };
 const initialCtgProducts = (): Record<CtgProductKey, CtgProductRow> => ({
   Cornet: { selected: true, quantity: "", quantity2: "", lotNumber: "", dlc: "" },
