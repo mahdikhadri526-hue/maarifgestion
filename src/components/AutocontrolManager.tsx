@@ -1958,6 +1958,19 @@ export function AutocontrolManager() {
                       }
                       className="max-w-[160px]"
                     />
+                    {(() => {
+                      const unit = CTG_UNIT_WEIGHT_KG[editEntry.article] ?? 0;
+                      const q = Number(editFields.quantity);
+                      const prodKg = Number.isFinite(q) && q > 0 ? q * unit : 0;
+                      const pct = ctgPertePercent((editExtra as any)?.perteKg, prodKg);
+                      return (
+                        <p className="mt-2 text-xs text-amber-800">
+                          Production ({editEntry.article}) : <strong>{prodKg.toFixed(3)} kg</strong>
+                          {" — "}
+                          % de perte : <strong>{formatPercent(pct)}</strong>
+                        </p>
+                      );
+                    })()}
                   </div>
                   <div className="bg-muted/30 rounded-lg p-3">
                     <h4 className="text-sm font-semibold mb-2">Nettoyage</h4>
