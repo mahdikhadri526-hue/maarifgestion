@@ -1467,6 +1467,24 @@ export function AutocontrolManager() {
                   }
                   className="max-w-[160px]"
                 />
+                {(() => {
+                  const perte = Number((form.extraData as any).perteKg);
+                  const prodKg = CTG_PRODUCTS.reduce((sum, p) => {
+                    const row = ctgProducts[p];
+                    if (!row?.selected) return sum;
+                    const q = Number(row.quantity);
+                    if (!Number.isFinite(q) || q <= 0) return sum;
+                    return sum + q * (CTG_UNIT_WEIGHT_KG[p] ?? 0);
+                  }, 0);
+                  const pct = ctgPertePercent(perte, prodKg);
+                  return (
+                    <p className="mt-2 text-xs text-amber-800">
+                      Production : <strong>{prodKg.toFixed(3)} kg</strong>
+                      {" — "}
+                      % de perte : <strong>{formatPercent(pct)}</strong>
+                    </p>
+                  );
+                })()}
               </div>
 
               {/* Nettoyage */}
