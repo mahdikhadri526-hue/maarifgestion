@@ -205,6 +205,23 @@ const initialCtgExtra = (): CtgExtraData => ({
 
 type CtgProductKey = "Cornet" | "Tulipe" | "Gaufrette";
 const CTG_PRODUCTS: CtgProductKey[] = ["Cornet", "Tulipe", "Gaufrette"];
+// Poids unitaire (kg) par produit CTG — utilisé pour calculer le % de perte
+// (poids total des pertes / poids total de la production) × 100
+const CTG_UNIT_WEIGHT_KG: Record<string, number> = {
+  Cornet: 0.007,
+  Tulipe: 0.015,
+  Gaufrette: 0.003,
+};
+function ctgPertePercent(perteKgRaw: unknown, productionKg: number): number | null {
+  const perte = Number(perteKgRaw);
+  if (!Number.isFinite(perte) || perte <= 0) return null;
+  if (!productionKg || productionKg <= 0) return null;
+  return (perte / productionKg) * 100;
+}
+function formatPercent(pct: number | null): string {
+  if (pct === null) return "—";
+  return `${pct.toFixed(2)} %`;
+}
 type CtgProductRow = { selected: boolean; quantity: string; quantity2: string; lotNumber: string; dlc: string };
 const initialCtgProducts = (): Record<CtgProductKey, CtgProductRow> => ({
   Cornet: { selected: true, quantity: "", quantity2: "", lotNumber: "", dlc: "" },
@@ -488,12 +505,22 @@ export function AutocontrolManager() {
     if (entry.extraData?.cleaning) {
       const perteKg = (entry.extraData as any)?.perteKg;
       if (entry.ficheType === "Cornet/Tulipe/Gaufrette" && perteKg && String(perteKg).trim() !== "") {
+        const unit = CTG_UNIT_WEIGHT_KG[entry.article] ?? 0;
+        const q = Number(entry.quantity);
+        const prodKg = Number.isFinite(q) && q > 0 ? q * unit : 0;
+        const pct = ctgPertePercent(perteKg, prodKg);
         sections.push({
           title: "Perte",
           columns: [
             { header: "Perte", dataKey: "perte", width: 60, halign: "center" },
+            { header: "Production", dataKey: "prod", width: 60, halign: "center" },
+            { header: "% de perte", dataKey: "pct", width: 60, halign: "center" },
           ],
-          rows: [{ perte: `${perteKg} kg` }],
+          rows: [{
+            perte: `${perteKg} kg`,
+            prod: prodKg > 0 ? `${prodKg.toFixed(3)} kg` : "—",
+            pct: formatPercent(pct),
+          }],
         });
       }
       sections.push({
@@ -1450,6 +1477,24 @@ export function AutocontrolManager() {
                   }
                   className="max-w-[160px]"
                 />
+                {(() => {
+                  const perte = Number((form.extraData as any).perteKg);
+                  const prodKg = CTG_PRODUCTS.reduce((sum, p) => {
+                    const row = ctgProducts[p];
+                    if (!row?.selected) return sum;
+                    const q = Number(row.quantity);
+                    if (!Number.isFinite(q) || q <= 0) return sum;
+                    return sum + q * (CTG_UNIT_WEIGHT_KG[p] ?? 0);
+                  }, 0);
+                  const pct = ctgPertePercent(perte, prodKg);
+                  return (
+                    <p className="mt-2 text-xs text-amber-800">
+                      Production : <strong>{prodKg.toFixed(3)} kg</strong>
+                      {" — "}
+                      % de perte : <strong>{formatPercent(pct)}</strong>
+                    </p>
+                  );
+                })()}
               </div>
 
               {/* Nettoyage */}
@@ -1705,6 +1750,17 @@ export function AutocontrolManager() {
                                   <div className="mb-1 text-xs">
                                     <strong className="uppercase tracking-wide text-muted-foreground">Perte :</strong>{" "}
                                     <span className="font-medium text-amber-700">{(e.extraData as any).perteKg} kg</span>
+                                    {(() => {
+                                      const unit = CTG_UNIT_WEIGHT_KG[e.article] ?? 0;
+                                      const q = Number(e.quantity);
+                                      const prodKg = Number.isFinite(q) && q > 0 ? q * unit : 0;
+                                      const pct = ctgPertePercent((e.extraData as any).perteKg, prodKg);
+                                      return pct !== null ? (
+                                        <span className="ml-2 text-amber-800">
+                                          ({formatPercent(pct)} de la production)
+                                        </span>
+                                      ) : null;
+                                    })()}
                                   </div>
                                 )}
                                 <strong className="text-xs uppercase tracking-wide text-muted-foreground">Nettoyage</strong>{" "}
@@ -1923,6 +1979,19 @@ export function AutocontrolManager() {
                       }
                       className="max-w-[160px]"
                     />
+                    {(() => {
+                      const unit = CTG_UNIT_WEIGHT_KG[editEntry.article] ?? 0;
+                      const q = Number(editFields.quantity);
+                      const prodKg = Number.isFinite(q) && q > 0 ? q * unit : 0;
+                      const pct = ctgPertePercent((editExtra as any)?.perteKg, prodKg);
+                      return (
+                        <p className="mt-2 text-xs text-amber-800">
+                          Production ({editEntry.article}) : <strong>{prodKg.toFixed(3)} kg</strong>
+                          {" — "}
+                          % de perte : <strong>{formatPercent(pct)}</strong>
+                        </p>
+                      );
+                    })()}
                   </div>
                   <div className="bg-muted/30 rounded-lg p-3">
                     <h4 className="text-sm font-semibold mb-2">Nettoyage</h4>
@@ -2170,6 +2239,17 @@ export function AutocontrolManager() {
                   {viewEntry.ficheType === "Cornet/Tulipe/Gaufrette" && (viewEntry.extraData as any)?.perteKg && (
                     <div className="mb-2 text-sm">
                       <strong>Perte :</strong> {(viewEntry.extraData as any).perteKg} kg
+                      {(() => {
+                        const unit = CTG_UNIT_WEIGHT_KG[viewEntry.article] ?? 0;
+                        const q = Number(viewEntry.quantity);
+                        const prodKg = Number.isFinite(q) && q > 0 ? q * unit : 0;
+                        const pct = ctgPertePercent((viewEntry.extraData as any).perteKg, prodKg);
+                        return pct !== null ? (
+                          <span className="ml-2 text-amber-700">
+                            — Production : {prodKg.toFixed(3)} kg — % de perte : <strong>{formatPercent(pct)}</strong>
+                          </span>
+                        ) : null;
+                      })()}
                     </div>
                   )}
                   <h3 className="font-semibold mb-1">Nettoyage</h3>
