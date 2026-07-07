@@ -899,12 +899,23 @@ export function AutocontrolManager() {
       }
       if (isCtg) {
         const selected = CTG_PRODUCTS.filter((p) => ctgProducts[p].selected);
+        const perteKgNum = Number((extraData as any)?.perteKg);
+        const hasPerte = Number.isFinite(perteKgNum) && perteKgNum > 0;
         for (const p of selected) {
           const row = ctgProducts[p];
           const qty2 = Number(row.quantity2);
           const perEntryExtra = Number.isFinite(qty2) && qty2 > 0
             ? { ...(extraData as any), quantity2: qty2 }
             : extraData;
+          // Historique lisible dans la colonne Notes : perte, production, %
+          let notesToSave = baseResult.data.notes ?? "";
+          if (hasPerte) {
+            const q = Number(row.quantity);
+            const prodKg = Number.isFinite(q) && q > 0 ? q * (CTG_UNIT_WEIGHT_KG[p] ?? 0) : 0;
+            const pct = ctgPertePercent(perteKgNum, prodKg);
+            const line = `Perte : ${perteKgNum} kg — Production ${p} : ${prodKg.toFixed(3)} kg — % de perte : ${formatPercent(pct)}`;
+            notesToSave = notesToSave ? `${notesToSave}\n${line}` : line;
+          }
           await addAutocontrol({
             ficheType: form.ficheType,
             controlDate: baseResult.data.controlDate,
@@ -914,7 +925,7 @@ export function AutocontrolManager() {
             quantity: Number(row.quantity),
             dlc: row.dlc || null,
             visaManager: baseResult.data.visaManager,
-            notes: baseResult.data.notes,
+            notes: notesToSave || null,
             extraData: perEntryExtra,
           });
           await syncTarteMovementEntry(
