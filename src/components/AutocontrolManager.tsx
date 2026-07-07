@@ -2229,6 +2229,17 @@ export function AutocontrolManager() {
                   {viewEntry.ficheType === "Cornet/Tulipe/Gaufrette" && (viewEntry.extraData as any)?.perteKg && (
                     <div className="mb-2 text-sm">
                       <strong>Perte :</strong> {(viewEntry.extraData as any).perteKg} kg
+                      {(() => {
+                        const unit = CTG_UNIT_WEIGHT_KG[viewEntry.article] ?? 0;
+                        const q = Number(viewEntry.quantity);
+                        const prodKg = Number.isFinite(q) && q > 0 ? q * unit : 0;
+                        const pct = ctgPertePercent((viewEntry.extraData as any).perteKg, prodKg);
+                        return pct !== null ? (
+                          <span className="ml-2 text-amber-700">
+                            — Production : {prodKg.toFixed(3)} kg — % de perte : <strong>{formatPercent(pct)}</strong>
+                          </span>
+                        ) : null;
+                      })()}
                     </div>
                   )}
                   <h3 className="font-semibold mb-1">Nettoyage</h3>
