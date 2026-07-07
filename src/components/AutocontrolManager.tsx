@@ -505,12 +505,22 @@ export function AutocontrolManager() {
     if (entry.extraData?.cleaning) {
       const perteKg = (entry.extraData as any)?.perteKg;
       if (entry.ficheType === "Cornet/Tulipe/Gaufrette" && perteKg && String(perteKg).trim() !== "") {
+        const unit = CTG_UNIT_WEIGHT_KG[entry.article] ?? 0;
+        const q = Number(entry.quantity);
+        const prodKg = Number.isFinite(q) && q > 0 ? q * unit : 0;
+        const pct = ctgPertePercent(perteKg, prodKg);
         sections.push({
           title: "Perte",
           columns: [
             { header: "Perte", dataKey: "perte", width: 60, halign: "center" },
+            { header: "Production", dataKey: "prod", width: 60, halign: "center" },
+            { header: "% de perte", dataKey: "pct", width: 60, halign: "center" },
           ],
-          rows: [{ perte: `${perteKg} kg` }],
+          rows: [{
+            perte: `${perteKg} kg`,
+            prod: prodKg > 0 ? `${prodKg.toFixed(3)} kg` : "—",
+            pct: formatPercent(pct),
+          }],
         });
       }
       sections.push({
