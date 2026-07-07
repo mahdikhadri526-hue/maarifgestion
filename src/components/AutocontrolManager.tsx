@@ -1740,6 +1740,17 @@ export function AutocontrolManager() {
                                   <div className="mb-1 text-xs">
                                     <strong className="uppercase tracking-wide text-muted-foreground">Perte :</strong>{" "}
                                     <span className="font-medium text-amber-700">{(e.extraData as any).perteKg} kg</span>
+                                    {(() => {
+                                      const unit = CTG_UNIT_WEIGHT_KG[e.article] ?? 0;
+                                      const q = Number(e.quantity);
+                                      const prodKg = Number.isFinite(q) && q > 0 ? q * unit : 0;
+                                      const pct = ctgPertePercent((e.extraData as any).perteKg, prodKg);
+                                      return pct !== null ? (
+                                        <span className="ml-2 text-amber-800">
+                                          ({formatPercent(pct)} de la production)
+                                        </span>
+                                      ) : null;
+                                    })()}
                                   </div>
                                 )}
                                 <strong className="text-xs uppercase tracking-wide text-muted-foreground">Nettoyage</strong>{" "}
