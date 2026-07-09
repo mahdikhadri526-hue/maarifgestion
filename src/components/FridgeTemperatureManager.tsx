@@ -647,8 +647,26 @@ export function FridgeTemperatureManager() {
                     </div>
                     <div className="space-y-1 text-xs opacity-90 mt-1">
                       {missingTempAlerts.map((alert) => (
-                        <div key={alert.slot}>
-                          <strong>{alert.slot}</strong>&nbsp;: {alert.equipments.length} équipement(s) en attente&nbsp;: {alert.equipments.map((e) => `${e.zone} – ${e.name}`).join(", ")}
+                        <div key={alert.slot} className="flex flex-wrap items-start gap-2">
+                          <div className="flex-1 min-w-0">
+                            <strong>{alert.slot}</strong>&nbsp;: {alert.equipments.length} équipement(s) en attente&nbsp;: {alert.equipments.map((e) => `${e.zone} – ${e.name}`).join(", ")}
+                          </div>
+                          {alert.slot !== slot && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="destructive"
+                              className="h-7 shrink-0"
+                              onClick={() => {
+                                setDate(currentServiceDate);
+                                setSlot(alert.slot);
+                                const firstZone = alert.equipments[0]?.zone;
+                                if (firstZone) setZoneFilter(firstZone);
+                              }}
+                            >
+                              Saisir le créneau {alert.slot}
+                            </Button>
+                          )}
                         </div>
                       ))}
                     </div>
