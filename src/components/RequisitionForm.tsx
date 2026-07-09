@@ -41,6 +41,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const [quantities, setQuantities] = useState<Record<string, MultiUnitValues>>({});
   const [search, setSearch] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [savingId, setSavingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<MultiUnitValues>(EMPTY_MULTI);
   const [operators, setOperators] = useState<string[]>(() => getOperators());
@@ -135,6 +136,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const handleSingleSave = async (productId: string) => {
     const product = allProducts.find((pr) => pr.id === productId);
     if (!product) return;
+    if (savingId || submitting) return;
     if (isLocked) {
       toast.error("Saisie verrouillée : la date n'est plus le jour J");
       return;
@@ -150,13 +152,14 @@ export function RequisitionForm({ onUpdated }: Props) {
       toast.error("Quantité invalide");
       return;
     }
-    const available = await getProductAvailableStockInBasePieces(productId);
-    if (total > available) {
-      const availableLabel = formatQuantityForProduct(productId, available, cfg);
-      toast.error(`Stock insuffisant pour ${product.name} : seulement ${availableLabel} disponible(s)`);
-      return;
-    }
+    setSavingId(productId);
     try {
+      const available = await getProductAvailableStockInBasePieces(productId);
+      if (total > available) {
+        const availableLabel = formatQuantityForProduct(productId, available, cfg);
+        toast.error(`Stock insuffisant pour ${product.name} : seulement ${availableLabel} disponible(s)`);
+        return;
+      }
       const operatorName = performedBy.trim();
       await saveRequisition({
         date,
@@ -174,6 +177,8 @@ export function RequisitionForm({ onUpdated }: Props) {
     } catch (err) {
       toast.error("Erreur");
       console.error(err);
+    } finally {
+      setSavingId(null);
     }
   };
 
@@ -365,10 +370,10 @@ export function RequisitionForm({ onUpdated }: Props) {
                       size="sm"
                       variant="outline"
                       className="h-9 px-2 text-xs"
-                      disabled={total <= 0 || isLocked}
+                      disabled={total <= 0 || isLocked || savingId === p.id || submitting}
                       onClick={() => handleSingleSave(p.id)}
                     >
-                      ✓
+                      {savingId === p.id ? "…" : "✓"}
                     </Button>
                   </div>
                 </td>
