@@ -100,9 +100,10 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     if (filterProduct !== "all" && m.productId !== filterProduct) return false;
     if (filterType !== "all") {
       if (filterType === "transfert") {
-        // Transferts en cours + retours de prêts (reçus) + retours d'emprunts (renvoyés)
-        // Exclut les transferts clôturés (préfixés ✓) et les destinations internes.
+        // Transferts en cours uniquement : sorties vers une destination ou reçus d'une destination,
+        // excluant les transferts clôturés (✓), les retours de prêts (Retour X) et les retours d'emprunts (Renvoi → X).
         if (!m.destination || m.destination === "Mr Hassan" || m.destination === "Direction" || m.destination.startsWith("✓")) return false;
+        if (m.destination.startsWith("Retour ") || m.destination.startsWith("Renvoi → ")) return false;
       } else if (filterType === "hassan") {
         if (m.destination !== "Mr Hassan" && m.destination !== "Direction") return false;
       } else if (filterType === "sortie") {
