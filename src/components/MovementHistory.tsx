@@ -47,7 +47,9 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const [filterEndDate, setFilterEndDate] = useState<string>("");
   const [filterProduct, setFilterProduct] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
+  const [filterDestination, setFilterDestination] = useState<string>("all");
   const [filterPerformedBy, setFilterPerformedBy] = useState<string>("all");
+
   const { data: movements, loading } = useMovements();
   const { data: configs } = useProductUnitConfigs();
   const { data: requisitions } = useAllRequisitions();
