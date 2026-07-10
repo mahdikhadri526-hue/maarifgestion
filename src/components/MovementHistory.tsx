@@ -334,8 +334,12 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   ))}
                 </SelectContent>
               </Select>
-
+            </div>
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Par</label>
+              <Select value={filterPerformedBy} onValueChange={setFilterPerformedBy}>
                 <SelectTrigger className="h-8 text-xs">
+
                   <SelectValue placeholder="Tous" />
                 </SelectTrigger>
                 <SelectContent className="max-h-72 bg-popover z-50">
