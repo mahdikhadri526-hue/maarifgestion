@@ -100,7 +100,9 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     if (filterProduct !== "all" && m.productId !== filterProduct) return false;
     if (filterType !== "all") {
       if (filterType === "transfert") {
-        if (!m.destination || m.destination === "Mr Hassan" || m.destination === "Direction") return false;
+        // Transferts en cours + retours de prêts (reçus) + retours d'emprunts (renvoyés)
+        // Exclut les transferts clôturés (préfixés ✓) et les destinations internes.
+        if (!m.destination || m.destination === "Mr Hassan" || m.destination === "Direction" || m.destination.startsWith("✓")) return false;
       } else if (filterType === "hassan") {
         if (m.destination !== "Mr Hassan" && m.destination !== "Direction") return false;
       } else if (filterType === "sortie") {
@@ -310,7 +312,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   <SelectItem value="sortie">Sorties</SelectItem>
                   {ENABLE_TRANSFERTS && (
                     <>
-                      <SelectItem value="transfert">Transferts</SelectItem>
+                      <SelectItem value="transfert">Transferts (en cours + retours)</SelectItem>
                       <SelectItem value="hassan">Direction</SelectItem>
                       <SelectItem value="recu">Retours de prêts (reçus)</SelectItem>
                       <SelectItem value="renvoi">Retours d'emprunts (renvoyés)</SelectItem>
