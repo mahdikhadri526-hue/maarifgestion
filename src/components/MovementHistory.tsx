@@ -80,6 +80,17 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const operatorOptions = Array.from(
     new Set(sorted.map((m) => m.performedBy).filter((v): v is string => !!v))
   ).sort();
+  const destinationOptions = Array.from(
+    new Set(
+      sorted
+        .map((m) => m.destination)
+        .filter((d): d is string => !!d && !d.startsWith("✓"))
+        .map((d) => d.replace(/^Retour\s+/, "").replace(/^Reçu de\s+/, "").replace(/^Renvoi →\s+/, ""))
+    )
+  ).sort();
+
+  const normalizeDestination = (d: string) =>
+    d.replace(/^✓\s*/, "").replace(/^Retour\s+/, "").replace(/^Reçu de\s+/, "").replace(/^Renvoi →\s+/, "");
 
   const filtered = sorted.filter((m) => {
     const mDate = m.date.slice(0, 10);
@@ -93,15 +104,27 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
       } else if (filterType === "hassan") {
         if (m.destination !== "Mr Hassan" && m.destination !== "Direction") return false;
       } else if (filterType === "sortie") {
-        // Sorties "pures" (hors transferts)
+        // Sorties "pures" (hors transferts, hors renvois, hors Direction)
         if (m.type !== "sortie" || m.destination) return false;
+      } else if (filterType === "renvoi") {
+        if (m.type !== "sortie" || !normalizeDestination(m.destination || "").startsWith("Renvoi")) return false;
+      } else if (filterType === "recu") {
+        if (m.type !== "entree" || !m.destination) return false;
+        const nd = normalizeDestination(m.destination);
+        if (!nd.startsWith("Reçu") && !nd.startsWith("Retour")) return false;
       } else if (m.type !== filterType) {
         return false;
       }
     }
+    if (filterDestination !== "all") {
+      if (!m.destination) return false;
+      const nd = normalizeDestination(m.destination);
+      if (nd !== filterDestination) return false;
+    }
     if (filterPerformedBy !== "all" && (m.performedBy || "") !== filterPerformedBy) return false;
     return true;
   });
+
 
   const hasFilters =
     !!filterDate ||
