@@ -323,7 +323,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
               </Select>
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Destination</label>
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Destination des transferts</label>
               <Select value={filterDestination} onValueChange={setFilterDestination}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Toutes" />
