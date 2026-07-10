@@ -312,14 +312,29 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                     <>
                       <SelectItem value="transfert">Transferts</SelectItem>
                       <SelectItem value="hassan">Direction</SelectItem>
+                      <SelectItem value="recu">Produits reçus</SelectItem>
+                      <SelectItem value="renvoi">Produits renvoyés</SelectItem>
                     </>
                   )}
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Par</label>
-              <Select value={filterPerformedBy} onValueChange={setFilterPerformedBy}>
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Destination</label>
+              <Select value={filterDestination} onValueChange={setFilterDestination}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Toutes" />
+                </SelectTrigger>
+                <SelectContent className="max-h-72 bg-popover z-50">
+                  <SelectItem value="all">Toutes les destinations</SelectItem>
+                  {destinationOptions.map((dest) => (
+                    <SelectItem key={dest} value={dest}>
+                      {dest}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Tous" />
                 </SelectTrigger>
