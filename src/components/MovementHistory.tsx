@@ -132,6 +132,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     !!filterEndDate ||
     filterProduct !== "all" ||
     filterType !== "all" ||
+    filterDestination !== "all" ||
     filterPerformedBy !== "all";
 
   const resetFilters = () => {
@@ -140,8 +141,10 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     setFilterEndDate("");
     setFilterProduct("all");
     setFilterType("all");
+    setFilterDestination("all");
     setFilterPerformedBy("all");
   };
+
 
   const movementToDelete = filtered.find((m) => m.id === deleteId);
 
