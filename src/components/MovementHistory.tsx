@@ -314,9 +314,9 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   {ENABLE_TRANSFERTS && (
                     <>
                       <SelectItem value="transfert">Transferts (en cours)</SelectItem>
-                      <SelectItem value="hassan">Direction</SelectItem>
                       <SelectItem value="recu">Retours de prêts (reçus)</SelectItem>
                       <SelectItem value="renvoi">Retours d'emprunts (renvoyés)</SelectItem>
+                      <SelectItem value="hassan">Direction</SelectItem>
                     </>
                   )}
                 </SelectContent>
