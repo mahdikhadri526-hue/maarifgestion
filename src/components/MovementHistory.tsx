@@ -107,11 +107,11 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
         // Sorties "pures" (hors transferts, hors renvois, hors Direction)
         if (m.type !== "sortie" || m.destination) return false;
       } else if (filterType === "renvoi") {
-        if (m.type !== "sortie" || !normalizeDestination(m.destination || "").startsWith("Renvoi")) return false;
+        // Renvois : retour de produits que j'ai empruntés (sortie « Renvoi → X »)
+        if (m.type !== "sortie" || !(m.destination || "").startsWith("Renvoi")) return false;
       } else if (filterType === "recu") {
-        if (m.type !== "entree" || !m.destination) return false;
-        const nd = normalizeDestination(m.destination);
-        if (!nd.startsWith("Reçu") && !nd.startsWith("Retour")) return false;
+        // Reçus : retour de produits que j'ai prêtés (entrée « Retour X »)
+        if (m.type !== "entree" || !(m.destination || "").startsWith("Retour ")) return false;
       } else if (m.type !== filterType) {
         return false;
       }
@@ -312,8 +312,8 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                     <>
                       <SelectItem value="transfert">Transferts</SelectItem>
                       <SelectItem value="hassan">Direction</SelectItem>
-                      <SelectItem value="recu">Produits reçus</SelectItem>
-                      <SelectItem value="renvoi">Produits renvoyés</SelectItem>
+                      <SelectItem value="recu">Retours de prêts (reçus)</SelectItem>
+                      <SelectItem value="renvoi">Retours d'emprunts (renvoyés)</SelectItem>
                     </>
                   )}
                 </SelectContent>
