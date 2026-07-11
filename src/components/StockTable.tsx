@@ -95,6 +95,12 @@ function parseISODate(iso: string) {
   return new Date(y, (m || 1) - 1, d || 1);
 }
 
+// Arrondit toujours à la valeur supérieure au multiple de 5 (2 → 5, 11 → 15).
+function ceilTo5(n: number) {
+  if (!isFinite(n) || n <= 0) return 0;
+  return Math.ceil(n / 5) * 5;
+}
+
 function formatISODate(date: Date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
