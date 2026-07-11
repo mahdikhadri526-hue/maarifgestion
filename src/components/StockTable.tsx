@@ -1050,7 +1050,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     return filtered
       .map((level) => {
         const v = getRowValues(level);
-        const def = ceilTo5(Math.max(0, v.sorties - level.stockRestant));
+        const def = Math.max(0, v.sorties - level.stockRestant);
         const ov = orderQtyOverrides[level.productId];
         const qty = ov !== undefined && ov !== "" ? Number(ov) : def;
         return { name: level.productName, quantity: qty };
@@ -1412,7 +1412,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               {filtered.map((level) => {
                 const v = getRowValues(level);
                 const stockActuel = level.stockRestant;
-                const aCommander = ceilTo5(Math.max(0, v.sorties - stockActuel));
+                const aCommander = Math.max(0, v.sorties - stockActuel);
                 return (
                   <tr key={level.productId} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                     isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
