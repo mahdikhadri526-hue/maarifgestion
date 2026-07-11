@@ -1326,6 +1326,12 @@ export function WeeklyTracking() {
     filterArticle !== "all" || filterDay !== "all" || filterType !== "all" || !!filterFrom || !!filterTo;
 
   const dash = (value: any) => (value === "" || value == null ? "—" : String(value));
+  const fmtNum = (value: any) => {
+    if (value === "" || value == null) return value;
+    const n = Number(value);
+    if (!isFinite(n)) return value;
+    return Math.round(n * 100) / 100;
+  };
   const conformityText = (value: any) => (value === "C" ? "C" : "—");
   const formatLots = (batches: { lot: string; remaining: number }[]) => {
     const merged = new Map<string, number>();
@@ -1403,7 +1409,7 @@ export function WeeklyTracking() {
             si: dash(c.stock_initial),
             entrees: entreeText,
             lotsEntree,
-            sorties: dash(getSortie(dIdx, article, wkStart)),
+            sorties: dash(fmtNum(getSortie(dIdx, article, wkStart))),
             lotsRestants: formatLots(getLotsOfDay(dIdx, article, wkStart)),
           };
         })),
@@ -2055,7 +2061,7 @@ export function WeeklyTracking() {
                           {/* Sortie auto — ROUGE */}
                           <td className={cn("p-0.5 align-top", dim && "opacity-30")}>
                             <div className="h-7 w-14 text-xs px-1 flex items-center justify-center bg-destructive/10 text-destructive border border-destructive/40 rounded font-medium">
-                              {sortieAuto === "" || sortieAuto == null ? "—" : sortieAuto}
+                              {sortieAuto === "" || sortieAuto == null ? "—" : fmtNum(sortieAuto)}
                             </div>
                           </td>
                           {/* Lot existant (FIFO restant par lot) */}
