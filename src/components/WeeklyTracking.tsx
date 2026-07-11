@@ -296,7 +296,7 @@ function LotExistantCell({
             >
               {m.lot}
             </span>
-            <span className="font-bold tabular-nums text-foreground">×{m.remaining}</span>
+            <span className="font-bold tabular-nums text-foreground">×{Math.round(m.remaining * 100) / 100}</span>
           </div>
         ))
       )}
