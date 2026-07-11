@@ -1033,8 +1033,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         .map((r) => {
           const liv = Number(livraisonOverrides[r.article] || 0) || 0;
           const def = category === "glace"
-            ? Math.max(0, r.sorties - r.stockActuel - liv)
-            : Math.max(0, r.sorties - r.stockActuel);
+            ? ceilTo5(Math.max(0, r.sorties - r.stockActuel - liv))
+            : ceilTo5(Math.max(0, r.sorties - r.stockActuel));
           const ov = orderQtyOverrides[r.article];
           const qty = ov !== undefined && ov !== "" ? Number(ov) : def;
           return { name: r.article, quantity: isNaN(qty) ? 0 : qty };
@@ -1044,7 +1044,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     return filtered
       .map((level) => {
         const v = getRowValues(level);
-        const def = Math.max(0, v.sorties - level.stockRestant);
+        const def = ceilTo5(Math.max(0, v.sorties - level.stockRestant));
         const ov = orderQtyOverrides[level.productId];
         const qty = ov !== undefined && ov !== "" ? Number(ov) : def;
         return { name: level.productName, quantity: qty };
@@ -1375,8 +1375,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         min="0"
                         value={orderQtyOverrides[r.article] ?? String(
                           category === "glace"
-                            ? Math.max(0, r.sorties - r.stockActuel - (Number(livraisonOverrides[r.article] || 0) || 0))
-                            : Math.max(0, r.sorties - r.stockActuel)
+                            ? ceilTo5(Math.max(0, r.sorties - r.stockActuel - (Number(livraisonOverrides[r.article] || 0) || 0)))
+                            : ceilTo5(Math.max(0, r.sorties - r.stockActuel))
                         )}
                         onChange={(e) => setOverride(r.article, e.target.value)}
                         className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono font-semibold text-warning"
@@ -1406,7 +1406,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               {filtered.map((level) => {
                 const v = getRowValues(level);
                 const stockActuel = level.stockRestant;
-                const aCommander = Math.max(0, v.sorties - stockActuel);
+                const aCommander = ceilTo5(Math.max(0, v.sorties - stockActuel));
                 return (
                   <tr key={level.productId} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                     isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
