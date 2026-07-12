@@ -10,12 +10,32 @@ import { Plus, Minus, Send } from "lucide-react";
 import { toast } from "sonner";
 import { MultiUnitInput, MultiUnitValues, EMPTY_MULTI, totalPieces, dominantUnit } from "./MultiUnitInput";
 import { ENABLE_TRANSFERTS } from "@/lib/featureFlags";
+import { useAuth } from "@/contexts/AuthContext";
+
+const TRANSFER_LOCATIONS = [
+  "Dar Bouazza",
+  "Corniche",
+  "Almaz",
+  "Sidi Maarouf",
+  "Bouskoura",
+  "Hassan 2",
+  "Anfa place",
+  "Tachfine",
+  "Rabat",
+  "Morocco Mall",
+  "Mohamedia",
+  "Californie",
+  "Franchise",
+  "Événement",
+  "Ville verte",
+];
 
 interface MovementFormProps {
   onMovementAdded: () => void;
 }
 
 export function MovementForm({ onMovementAdded }: MovementFormProps) {
+  const { isAdmin } = useAuth();
   const [type, setType] = useState<"entree" | "sortie" | "transfert" | "hassan">("entree");
   const [transferDirection, setTransferDirection] = useState<"envoye" | "recu">("envoye");
   const [category, setCategory] = useState<Category>("alimentaire");
@@ -26,6 +46,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const [expiryDate, setExpiryDate] = useState("");
   const [performedBy, setPerformedBy] = useState("");
   const [destination, setDestination] = useState("");
+  const [customDestination, setCustomDestination] = useState("");
   const [operators, setOperators] = useState<string[]>(() => getOperators());
   const [submitting, setSubmitting] = useState(false);
 
@@ -52,7 +73,9 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
       return;
     }
 
-    if (type === "transfert" && !destination.trim()) {
+    const resolvedDestination =
+      destination === "__autre__" ? customDestination.trim() : destination.trim();
+    if (type === "transfert" && !resolvedDestination) {
       toast.error(
         transferDirection === "envoye"
           ? "Veuillez saisir la destination du transfert"
@@ -93,8 +116,8 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
       const destinationValue =
         type === "transfert"
           ? transferDirection === "envoye"
-            ? destination.trim()
-            : `Reçu de ${destination.trim()}`
+            ? resolvedDestination
+            : `Reçu de ${resolvedDestination}`
           : type === "hassan"
           ? "Direction"
           : undefined;
@@ -126,8 +149,8 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         } else if (type === "transfert") {
           toast.success(
             transferDirection === "envoye"
-              ? `Transfert FIFO de ${totalQty} pièces ${selectedProduct?.name} → ${destination.trim()} enregistré`
-              : `Réception de ${totalQty} pièces ${selectedProduct?.name} de ${destination.trim()} enregistrée`
+              ? `Transfert FIFO de ${totalQty} pièces ${selectedProduct?.name} → ${resolvedDestination} enregistré`
+              : `Réception de ${totalQty} pièces ${selectedProduct?.name} de ${resolvedDestination} enregistrée`
           );
         } else {
           toast.success(`Sortie Direction de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
@@ -140,8 +163,8 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
             ? "Sortie"
             : type === "transfert"
             ? transferDirection === "envoye"
-              ? `Transfert → ${destination.trim()}`
-              : `Réception ← ${destination.trim()}`
+              ? `Transfert → ${resolvedDestination}`
+              : `Réception ← ${resolvedDestination}`
             : "Sortie Direction";
         toast.success(`${label} de ${totalQty} pièces ${selectedProduct?.name} enregistré`);
       }
@@ -151,6 +174,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
       setLotNumber("");
       setExpiryDate("");
       setDestination("");
+      setCustomDestination("");
       onMovementAdded();
     } catch (err) {
       toast.error("Erreur lors de l'enregistrement");
@@ -313,11 +337,32 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
                 ? "Destination du transfert"
                 : "Provenance du transfert"}
             </label>
-            <Input
-              type="text"
+            <Select
               value={destination}
-              onChange={(e) => setDestination(e.target.value)}
-            />
+              onValueChange={(v) => {
+                setDestination(v);
+                if (v !== "__autre__") setCustomDestination("");
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un site" />
+              </SelectTrigger>
+              <SelectContent>
+                {TRANSFER_LOCATIONS.map((loc) => (
+                  <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                ))}
+                {isAdmin && <SelectItem value="__autre__">Autre (admin)…</SelectItem>}
+              </SelectContent>
+            </Select>
+            {isAdmin && destination === "__autre__" && (
+              <Input
+                type="text"
+                className="mt-2"
+                placeholder="Saisir un site personnalisé"
+                value={customDestination}
+                onChange={(e) => setCustomDestination(e.target.value)}
+              />
+            )}
             {isAlimentaire && transferDirection === "envoye" && (
               <p className="text-[11px] text-primary mt-1">
                 ℹ️ FIFO : déduit des lots les plus anciens.
