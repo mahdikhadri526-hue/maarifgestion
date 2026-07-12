@@ -33,7 +33,6 @@ const TARTE_ARTICLES = [
   "Handonet", "Rince Matic", "Wach Matic", "Handobac",
 ];
 const GLACE_ARTICLES = [
-  "Sicilienne vanille", "Sicilienne chocolat", "Sicilienne fraise", "Sicilienne mangue",
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
   "Parfait", "Fraise", "Framboise", "Orange", "Mangue", "Citron", "Pêche",
   "Banane", "Citron menthe", "Orange cannelle", "Réglisse",
