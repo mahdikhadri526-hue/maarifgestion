@@ -1,0 +1,1 @@
+ALTER TABLE public.initial_stocks ADD COLUMN IF NOT EXISTS min_quantity numeric NOT NULL DEFAULT 0;

@@ -220,6 +220,7 @@ export type Database = {
           carton_enabled: boolean
           created_at: string
           id: string
+          min_quantity: number
           paquet_enabled: boolean
           pieces_per_carton: number
           pieces_per_paquet: number
@@ -232,6 +233,7 @@ export type Database = {
           carton_enabled?: boolean
           created_at?: string
           id?: string
+          min_quantity?: number
           paquet_enabled?: boolean
           pieces_per_carton?: number
           pieces_per_paquet?: number
@@ -244,6 +246,7 @@ export type Database = {
           carton_enabled?: boolean
           created_at?: string
           id?: string
+          min_quantity?: number
           paquet_enabled?: boolean
           pieces_per_carton?: number
           pieces_per_paquet?: number
