@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Category, getProducts, setInitialStock } from "@/lib/stockData";
+import { Category, getProducts, setInitialStock, getMinStocks, setMinStock } from "@/lib/stockData";
 import { useInitialStocks } from "@/hooks/useStockData";
 import { addLotEntry } from "@/lib/lotData";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ export function InitialStockForm({ onUpdated }: Props) {
   const [category, setCategory] = useState<Category | "all">("all");
   const [search, setSearch] = useState("");
   const [stocks, setStocks] = useState<Record<string, string>>({});
+  const [minStocks, setMinStocks] = useState<Record<string, string>>({});
   const [lotNumbers, setLotNumbers] = useState<Record<string, string>>({});
   const [expiryDates, setExpiryDates] = useState<Record<string, string>>({});
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
@@ -29,6 +30,14 @@ export function InitialStockForm({ onUpdated }: Props) {
       setStocks(result);
     }
   }, [savedStocks]);
+
+  useEffect(() => {
+    getMinStocks().then((m) => {
+      const result: Record<string, string> = {};
+      Object.entries(m).forEach(([k, v]) => { result[k] = String(v); });
+      setMinStocks(result);
+    }).catch((e) => console.error(e));
+  }, []);
 
   const products = getProducts(category === "all" ? undefined : category);
   const filtered = products.filter((p) =>
@@ -56,6 +65,14 @@ export function InitialStockForm({ onUpdated }: Props) {
     }
 
     await setInitialStock(productId, val);
+
+    const minRaw = minStocks[productId];
+    if (minRaw !== undefined && minRaw !== "") {
+      const minVal = Number(minRaw);
+      if (!isNaN(minVal) && minVal >= 0) {
+        try { await setMinStock(productId, minVal); } catch (e) { console.error(e); }
+      }
+    }
 
     if (isAlim && val > 0 && lot && dlc) {
       try {
@@ -121,6 +138,7 @@ export function InitialStockForm({ onUpdated }: Props) {
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-28">Stock Minimum</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-28">Stock Initial</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-36">N° Lot (Alim.)</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-36">DLC (Alim.)</th>
@@ -140,6 +158,16 @@ export function InitialStockForm({ onUpdated }: Props) {
                     }`}>
                       {isAlim ? "Alim." : "Emb."}
                     </span>
+                  </td>
+                  <td className="p-3">
+                    <Input
+                      type="number" min="0"
+                      value={minStocks[p.id] || ""}
+                      onChange={(e) => setMinStocks((s) => ({ ...s, [p.id]: e.target.value }))}
+                      className="font-mono text-right w-24 ml-auto"
+                      placeholder="0"
+                      disabled={!isUnlocked}
+                    />
                   </td>
                   <td className="p-3">
                     <Input
