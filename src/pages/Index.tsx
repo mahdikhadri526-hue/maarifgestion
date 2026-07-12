@@ -1,6 +1,6 @@
 import { lazy, Suspense, useState } from "react";
 import { StockTable } from "@/components/StockTable";
-import { ExpiryAlerts, StockOutAlerts, PendingAutocontrolAlerts } from "@/components/LotManagement";
+import { ExpiryAlerts, StockOutAlerts, LowStockAlerts, PendingAutocontrolAlerts } from "@/components/LotManagement";
 // Lazy-loaded heavy tab modules — réduit le bundle initial et accélère le premier affichage.
 const MovementForm = lazy(() => import("@/components/MovementForm").then((m) => ({ default: m.MovementForm })));
 const MovementHistory = lazy(() => import("@/components/MovementHistory").then((m) => ({ default: m.MovementHistory })));
@@ -128,6 +128,9 @@ const Index = () => {
 
             {/* Stock Alerts */}
             <StockOutAlerts />
+
+            {/* Stock minimum atteint */}
+            <LowStockAlerts />
 
             {/* Expiry Alerts */}
             <ExpiryAlerts />

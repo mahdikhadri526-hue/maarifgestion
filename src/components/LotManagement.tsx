@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { updateLotEntry, deleteLotEntry, LotEntry } from "@/lib/lotData";
-import { formatQuantityForProduct, getProducts } from "@/lib/stockData";
+import { formatQuantityForProduct, getProducts, getMinStocks } from "@/lib/stockData";
 import { useExpiringLots, useProductLots, useProductUnitConfigs, useStockLevels } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2, PackageX, ClipboardCheck } from "lucide-react";
+import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2, PackageX, ClipboardCheck, TrendingDown } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/contexts/AuthContext";
@@ -129,6 +129,61 @@ export function StockOutAlerts() {
             </div>
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+export function LowStockAlerts() {
+  const { data: levels, loading } = useStockLevels();
+  const [minStocks, setMinStocks] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    let active = true;
+    const load = () => getMinStocks().then((m) => { if (active) setMinStocks(m); }).catch((e) => console.error(e));
+    load();
+    const ch = supabase
+      .channel("min-stocks-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "initial_stocks" }, () => load())
+      .subscribe();
+    return () => { active = false; supabase.removeChannel(ch); };
+  }, []);
+
+  if (loading || !levels) return null;
+  const low = levels.filter((l) => {
+    const min = minStocks[l.productId] || 0;
+    return min > 0 && l.stockRestant > 0 && l.stockRestant <= min;
+  });
+  if (low.length === 0) return null;
+
+  return (
+    <div className="bg-amber-500/5 border border-amber-500/30 rounded-xl p-4 animate-fade-in">
+      <div className="flex items-center gap-2 mb-3">
+        <TrendingDown className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+        <h3 className="font-semibold text-amber-700 dark:text-amber-400">
+          Stock minimum atteint ({low.length}) — Anticiper la commande
+        </h3>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {low.map((l) => {
+          const min = minStocks[l.productId] || 0;
+          return (
+            <div
+              key={l.productId}
+              className="flex items-center justify-between rounded-lg p-2.5 text-sm border bg-background border-amber-500/20"
+            >
+              <div className="flex-1 min-w-0">
+                <p className="font-medium truncate">{l.productName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {l.category === "alimentaire" ? "Alimentaire" : "Emballage"} · Min: {min}
+                </p>
+              </div>
+              <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 whitespace-nowrap">
+                Restant: {l.stockRestant}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
