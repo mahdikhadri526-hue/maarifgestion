@@ -164,9 +164,23 @@ export function InitialStockForm({ onUpdated }: Props) {
                       type="number" min="0"
                       value={minStocks[p.id] || ""}
                       onChange={(e) => setMinStocks((s) => ({ ...s, [p.id]: e.target.value }))}
+                      onBlur={async (e) => {
+                        if (!can("edit_stock")) return;
+                        const raw = e.target.value;
+                        if (raw === "") return;
+                        const v = Number(raw);
+                        if (isNaN(v) || v < 0) { toast.error("Stock min invalide"); return; }
+                        try {
+                          await setMinStock(p.id, v);
+                          toast.success("Stock min mis à jour");
+                        } catch (err) {
+                          console.error(err);
+                          toast.error("Erreur enregistrement stock min");
+                        }
+                      }}
                       className="font-mono text-right w-24 ml-auto"
                       placeholder="0"
-                      disabled={!isUnlocked}
+                      disabled={!can("edit_stock")}
                     />
                   </td>
                   <td className="p-3">
