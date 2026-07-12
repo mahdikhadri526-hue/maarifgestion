@@ -70,7 +70,6 @@ const EXTRA_AGG_IDS = [SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID, NUTELLA_N
 const isReadOnlyAggId = (id: string) =>
   id === NESPRESSO_AGG_ID_CONST || id === MACARON_AGG_ID || EXTRA_AGG_IDS.includes(id);
 const GLACE_ARTICLES = [
-  "Sicilienne vanille", "Sicilienne chocolat", "Sicilienne fraise", "Sicilienne mangue",
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
   "Parfait", "Fraise", "Framboise", "Orange", "Mangue", "Citron", "Pêche",
   "Banane", "Citron menthe", "Orange cannelle", "Réglisse",
