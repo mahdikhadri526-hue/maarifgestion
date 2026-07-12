@@ -73,7 +73,9 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
       return;
     }
 
-    if (type === "transfert" && !destination.trim()) {
+    const resolvedDestination =
+      destination === "__autre__" ? customDestination.trim() : destination.trim();
+    if (type === "transfert" && !resolvedDestination) {
       toast.error(
         transferDirection === "envoye"
           ? "Veuillez saisir la destination du transfert"
@@ -114,8 +116,8 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
       const destinationValue =
         type === "transfert"
           ? transferDirection === "envoye"
-            ? destination.trim()
-            : `Reçu de ${destination.trim()}`
+            ? resolvedDestination
+            : `Reçu de ${resolvedDestination}`
           : type === "hassan"
           ? "Direction"
           : undefined;
@@ -147,8 +149,8 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         } else if (type === "transfert") {
           toast.success(
             transferDirection === "envoye"
-              ? `Transfert FIFO de ${totalQty} pièces ${selectedProduct?.name} → ${destination.trim()} enregistré`
-              : `Réception de ${totalQty} pièces ${selectedProduct?.name} de ${destination.trim()} enregistrée`
+              ? `Transfert FIFO de ${totalQty} pièces ${selectedProduct?.name} → ${resolvedDestination} enregistré`
+              : `Réception de ${totalQty} pièces ${selectedProduct?.name} de ${resolvedDestination} enregistrée`
           );
         } else {
           toast.success(`Sortie Direction de ${totalQty} pièces ${selectedProduct?.name} enregistrée`);
@@ -161,8 +163,8 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
             ? "Sortie"
             : type === "transfert"
             ? transferDirection === "envoye"
-              ? `Transfert → ${destination.trim()}`
-              : `Réception ← ${destination.trim()}`
+              ? `Transfert → ${resolvedDestination}`
+              : `Réception ← ${resolvedDestination}`
             : "Sortie Direction";
         toast.success(`${label} de ${totalQty} pièces ${selectedProduct?.name} enregistré`);
       }
