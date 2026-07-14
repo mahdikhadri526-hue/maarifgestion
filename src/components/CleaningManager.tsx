@@ -192,7 +192,7 @@ export function CleaningManager() {
             <Select value={collaborateur} onValueChange={setCollaborateur}>
               <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
               <SelectContent>
-                {CLEANING_OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                {(zoneKey === "toilettes_client_salle" ? TOILETTES_SALLE_OPERATORS : CLEANING_OPERATORS).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
