@@ -27,6 +27,16 @@ export const OPERATORS: string[] = [
   "ABDEWAHAD BELAAZIZ",
   "Mr Mahdi Khadri",
   "Mr Hamza Fadlou",
+  "TAHA OZDOUR",
+  "WALID BOUROUSS",
+  "HAMZA KAROUME",
+  "YASSER BOUHOMA",
+  "OUSSAMA ID AZA",
+  "AHMED HILAL",
+  "AHIME MEDOUDI",
+  "ISSA BAHAFID",
+  "HAITAM",
+  "ADAM",
 ];
 
 export function getOperators(): string[] {
