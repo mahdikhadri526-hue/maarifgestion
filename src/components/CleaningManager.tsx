@@ -321,9 +321,9 @@ export function CleaningManager() {
                     <div className="flex items-start gap-3 flex-wrap">
                       <div className="flex-1 min-w-[180px]">
                         <div className="font-medium text-sm">{z?.label ?? l.zone} — {l.collaborateur}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {done}/{total} tâches · {conf} conformes · {nc} NC · {fait} fait{l.visaManager ? ` · Visa: ${l.visaManager}` : ""}
-                        </div>
+                        {l.visaManager && (
+                          <div className="text-xs text-muted-foreground">Visa: {l.visaManager}</div>
+                        )}
                       </div>
                       {user?.email !== "gestionmaarif1@gmail.com" && editingId !== l.id && (
                         <Button size="sm" variant="ghost" onClick={() => startEdit(l)}>
