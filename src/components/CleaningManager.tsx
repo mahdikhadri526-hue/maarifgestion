@@ -36,6 +36,9 @@ const CLEANING_EXTRA_OPERATORS = [
 
 const CLEANING_OPERATORS = Array.from(new Set([...OPERATORS, ...CLEANING_EXTRA_OPERATORS]));
 
+// Liste dédiée uniquement pour la zone "Toilettes client (Salle)"
+const TOILETTES_SALLE_OPERATORS = ["Amina", "Bahija", "Fatimzahra", "Chifaa"];
+
 const CLEANING_MANAGERS = MANAGERS;
 
 function todayISO() {
