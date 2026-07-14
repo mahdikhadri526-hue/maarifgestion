@@ -106,6 +106,17 @@ export const CLEANING_ZONES: CleaningZone[] = [
       "Dépoussiérage de l'emplacement de matériels de la salle",
     ],
   },
+  {
+    key: "toilettes_client_salle",
+    label: "Toilettes client (Salle)",
+    tasks: [
+      "Nettoyage de Sol, murs, portes et égouts",
+      "Nettoyage des toilettes",
+      "Nettoyage des lave-mains",
+      "Nettoyage des poubelles",
+      "Papier, savon et désodorisant disponibles",
+    ],
+  },
 ];
 
 export interface CleaningLog {
@@ -168,6 +179,11 @@ export const CLEANING_TASK_AR: Record<string, string> = {
   "Dépoussiérage de Garde à chaud Viennoiserie et présentoir macarons": "إزالة الغبار عن سخان المخبوزات وعارض الماكرون",
   "Dépoussiérage du marbre du comptoir": "إزالة الغبار عن رخام الكاونتر",
   "Dépoussiérage de l'emplacement de matériels de la salle": "إزالة الغبار عن مكان أدوات القاعة",
+  "Nettoyage de Sol, murs, portes et égouts": "تنظيف الأرضية، الجدران، الأبواب والمجاري",
+  "Nettoyage des toilettes": "تنظيف المرحاض",
+  "Nettoyage des lave-mains": "تنظيف المغاسل",
+  "Nettoyage des poubelles": "تنظيف سلة المهملات",
+  "Papier, savon et désodorisant disponibles": "يتوفر ورق التواليت والصابون ومعطر الجو",
 };
 
 export function arOf(task: string): string {
