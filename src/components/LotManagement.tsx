@@ -91,7 +91,7 @@ function OrderPlacedButton({
       onClick={canEdit ? onMark : undefined}
       disabled={!canEdit}
       title={canEdit ? "Marquer la commande comme passée" : "Réservé à l'administrateur"}
-      className="text-[10px] font-semibold px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 transition-colors whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-primary/10"
+      className="text-[10px] font-semibold px-2 py-1 rounded-full bg-destructive/10 text-destructive border border-destructive/30 hover:bg-destructive/20 transition-colors whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-destructive/10"
     >
       Commande passée
     </button>
@@ -216,8 +216,14 @@ export function StockOutAlerts() {
               </div>
             </div>
             <div className="flex justify-end">
+              <OrderPlacedButton
+                placed={!!placed[l.productId]}
+                onMark={() => { mark(l.productId); toast.success("Commande marquée comme passée"); }}
+                onUnmark={() => unmark(l.productId)}
+                canEdit={isAdmin}
+              />
               <span
-                className={`text-[10px] font-bold px-2 py-1 rounded-full mr-2 ${
+                className={`text-[10px] font-bold px-2 py-1 rounded-full ml-2 ${
                   placed[l.productId]
                     ? "bg-success/15 text-success border border-success/30"
                     : "bg-destructive/15 text-destructive border border-destructive/30"
@@ -226,12 +232,6 @@ export function StockOutAlerts() {
               >
                 {placed[l.productId] ? "Oui" : "Non"}
               </span>
-              <OrderPlacedButton
-                placed={!!placed[l.productId]}
-                onMark={() => { mark(l.productId); toast.success("Commande marquée comme passée"); }}
-                onUnmark={() => unmark(l.productId)}
-                canEdit={isAdmin}
-              />
             </div>
           </div>
         ))}
@@ -292,8 +292,14 @@ export function LowStockAlerts() {
                 </span>
               </div>
               <div className="flex justify-end">
+                <OrderPlacedButton
+                  placed={!!placed[l.productId]}
+                  onMark={() => { mark(l.productId); toast.success("Commande marquée comme passée"); }}
+                  onUnmark={() => unmark(l.productId)}
+                  canEdit={isAdmin}
+                />
                 <span
-                  className={`text-[10px] font-bold px-2 py-1 rounded-full mr-2 ${
+                  className={`text-[10px] font-bold px-2 py-1 rounded-full ml-2 ${
                     placed[l.productId]
                       ? "bg-success/15 text-success border border-success/30"
                       : "bg-destructive/15 text-destructive border border-destructive/30"
@@ -302,12 +308,6 @@ export function LowStockAlerts() {
                 >
                   {placed[l.productId] ? "Oui" : "Non"}
                 </span>
-                <OrderPlacedButton
-                  placed={!!placed[l.productId]}
-                  onMark={() => { mark(l.productId); toast.success("Commande marquée comme passée"); }}
-                  onUnmark={() => unmark(l.productId)}
-                  canEdit={isAdmin}
-                />
               </div>
             </div>
           );
