@@ -478,6 +478,24 @@ export type Database = {
         }
         Relationships: []
       }
+      order_placed_products: {
+        Row: {
+          marked_at: string
+          marked_by: string | null
+          product_id: string
+        }
+        Insert: {
+          marked_at?: string
+          marked_by?: string | null
+          product_id: string
+        }
+        Update: {
+          marked_at?: string
+          marked_by?: string | null
+          product_id?: string
+        }
+        Relationships: []
+      }
       production_entries: {
         Row: {
           created_at: string

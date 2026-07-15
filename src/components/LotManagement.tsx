@@ -14,56 +14,46 @@ import { useEffect } from "react";
 import { getAutocontrols, AutocontrolEntry } from "@/lib/autocontrolData";
 import { supabase } from "@/integrations/supabase/client";
 
-// --- Persistance locale du marquage "Commande passée" ---
-const ORDER_PLACED_KEY = "order_placed_products_v1";
-
-function readOrderPlaced(): Record<string, string> {
-  try {
-    const raw = localStorage.getItem(ORDER_PLACED_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
+// --- Persistance partagée (Supabase) du marquage "Commande passée" ---
+async function fetchOrderPlaced(): Promise<Record<string, string>> {
+  const { data, error } = await supabase
+    .from("order_placed_products")
+    .select("product_id, marked_at");
+  if (error) {
+    console.error("fetch order_placed_products", error);
     return {};
   }
-}
-
-function writeOrderPlaced(data: Record<string, string>) {
-  try {
-    localStorage.setItem(ORDER_PLACED_KEY, JSON.stringify(data));
-    window.dispatchEvent(new Event("order-placed-changed"));
-  } catch {}
+  const map: Record<string, string> = {};
+  for (const row of data || []) map[(row as any).product_id] = (row as any).marked_at;
+  return map;
 }
 
 function useOrderPlaced() {
-  const [state, setState] = useState<Record<string, string>>(() => readOrderPlaced());
+  const [state, setState] = useState<Record<string, string>>({});
   useEffect(() => {
-    const sync = () => setState(readOrderPlaced());
-    window.addEventListener("order-placed-changed", sync);
-    window.addEventListener("storage", sync);
-    return () => {
-      window.removeEventListener("order-placed-changed", sync);
-      window.removeEventListener("storage", sync);
-    };
+    let active = true;
+    const load = () => fetchOrderPlaced().then((m) => { if (active) setState(m); });
+    load();
+    const ch = supabase
+      .channel("order-placed-rt")
+      .on("postgres_changes", { event: "*", schema: "public", table: "order_placed_products" }, () => load())
+      .subscribe();
+    return () => { active = false; supabase.removeChannel(ch); };
   }, []);
-  const mark = (productId: string) => {
-    const next = { ...readOrderPlaced(), [productId]: new Date().toISOString() };
-    writeOrderPlaced(next);
+  const mark = async (productId: string) => {
+    const { data: auth } = await supabase.auth.getUser();
+    setState((s) => ({ ...s, [productId]: new Date().toISOString() }));
+    const { error } = await supabase
+      .from("order_placed_products")
+      .upsert({ product_id: productId, marked_at: new Date().toISOString(), marked_by: auth.user?.id ?? null });
+    if (error) { console.error(error); toast.error("Erreur de synchronisation"); }
   };
-  const unmark = (productId: string) => {
-    const next = { ...readOrderPlaced() };
-    delete next[productId];
-    writeOrderPlaced(next);
+  const unmark = async (productId: string) => {
+    setState((s) => { const n = { ...s }; delete n[productId]; return n; });
+    const { error } = await supabase.from("order_placed_products").delete().eq("product_id", productId);
+    if (error) { console.error(error); toast.error("Erreur de synchronisation"); }
   };
-  const pruneTo = (validIds: Set<string>) => {
-    const current = readOrderPlaced();
-    let changed = false;
-    const next: Record<string, string> = {};
-    for (const [id, ts] of Object.entries(current)) {
-      if (validIds.has(id)) next[id] = ts;
-      else changed = true;
-    }
-    if (changed) writeOrderPlaced(next);
-  };
-  return { state, mark, unmark, pruneTo };
+  return { state, mark, unmark };
 }
 
 function OrderPlacedButton({
