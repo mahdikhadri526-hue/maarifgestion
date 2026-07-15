@@ -35,7 +35,7 @@ function useOrderPlaced() {
     const load = () => fetchOrderPlaced().then((m) => { if (active) setState(m); });
     load();
     const ch = supabase
-      .channel("order-placed-rt")
+      .channel(`order-placed-rt-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "order_placed_products" }, () => load())
       .subscribe();
     return () => { active = false; supabase.removeChannel(ch); };
