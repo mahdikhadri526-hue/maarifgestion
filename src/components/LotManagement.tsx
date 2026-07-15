@@ -70,19 +70,22 @@ function OrderPlacedButton({
   placed,
   onMark,
   onUnmark,
-}: { placed: boolean; onMark: () => void; onUnmark: () => void }) {
+  canEdit,
+}: { placed: boolean; onMark: () => void; onUnmark: () => void; canEdit: boolean }) {
   if (placed) {
     return (
       <button
         type="button"
-        onClick={onUnmark}
-        title="Annuler la mention"
-        className="text-[10px] font-semibold px-2 py-1 rounded-full bg-success/15 text-success border border-success/30 hover:bg-success/25 transition-colors whitespace-nowrap flex items-center gap-1"
+        onClick={canEdit ? onUnmark : undefined}
+        disabled={!canEdit}
+        title={canEdit ? "Annuler la mention" : "Réservé à l'administrateur"}
+        className="text-[10px] font-semibold px-2 py-1 rounded-full bg-success/15 text-success border border-success/30 hover:bg-success/25 transition-colors whitespace-nowrap flex items-center gap-1 disabled:opacity-70 disabled:cursor-not-allowed disabled:hover:bg-success/15"
       >
         <Check className="h-3 w-3" /> Commande passée
       </button>
     );
   }
+  if (!canEdit) return null;
   return (
     <button
       type="button"
