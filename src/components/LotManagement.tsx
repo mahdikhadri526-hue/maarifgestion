@@ -174,6 +174,7 @@ export function PendingAutocontrolAlerts({ onOpen }: { onOpen?: () => void }) {
 export function StockOutAlerts() {
   const { data: levels, loading } = useStockLevels();
   const { state: placed, mark, unmark } = useOrderPlaced();
+  const { isAdmin } = useAuth();
   if (loading || !levels) return null;
   const outOfStock = levels.filter((l) => l.stockRestant <= 0);
   if (outOfStock.length === 0) return null;
@@ -218,6 +219,7 @@ export function StockOutAlerts() {
                 placed={!!placed[l.productId]}
                 onMark={() => { mark(l.productId); toast.success("Commande marquée comme passée"); }}
                 onUnmark={() => unmark(l.productId)}
+                canEdit={isAdmin}
               />
             </div>
           </div>
@@ -231,6 +233,7 @@ export function LowStockAlerts() {
   const { data: levels, loading } = useStockLevels();
   const [minStocks, setMinStocks] = useState<Record<string, number>>({});
   const { state: placed, mark, unmark } = useOrderPlaced();
+  const { isAdmin } = useAuth();
 
   useEffect(() => {
     let active = true;
@@ -282,6 +285,7 @@ export function LowStockAlerts() {
                   placed={!!placed[l.productId]}
                   onMark={() => { mark(l.productId); toast.success("Commande marquée comme passée"); }}
                   onUnmark={() => unmark(l.productId)}
+                  canEdit={isAdmin}
                 />
               </div>
             </div>
