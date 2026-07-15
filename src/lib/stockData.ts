@@ -38,9 +38,19 @@ export const HIDE_PIECE_PRODUCTS: Set<string> = new Set([
 
 // Produits masqués de la liste (données conservées, filtrés à l'affichage)
 export const HIDDEN_PRODUCT_IDS: Set<string> = new Set([
-  "ali-11", // CIGARE (index dans ALIMENTAIRE_PRODUCTS)
+  "ali-10", // CIGARE
   "emb-21", // BANDE SOUS COUVERCLE 0,5L
 ]);
+
+const HIDDEN_PRODUCT_NAME_PATTERNS = [
+  /^CIGARE\b/,
+  /^BANDE\s+SOUS\s+COUVERCLE\s+0[,.]5\s*L\b/,
+];
+
+function isHiddenProduct(product: Pick<Product, "id" | "name">): boolean {
+  const normalizedName = product.name.trim().toUpperCase().replace(/\s+/g, " ");
+  return HIDDEN_PRODUCT_IDS.has(product.id) || HIDDEN_PRODUCT_NAME_PATTERNS.some((pattern) => pattern.test(normalizedName));
+}
 
 export function getPieceLabel(productId: string): { singular: string; plural: string; short: string } {
   return PIECE_LABEL_OVERRIDES[productId] || { singular: "Pièce", plural: "Pièces", short: "pcs" };
@@ -250,11 +260,11 @@ export function getProducts(category?: Category): Product[] {
   const ali = ALIMENTAIRE_PRODUCTS.map((raw, i) => {
     const { name, conditionnement } = parseProduct(raw);
     return { id: `ali-${i}`, name, conditionnement, category: "alimentaire" as Category, initialStock: 0 };
-  }).filter((p) => p.name !== "__HIDDEN__" && !HIDDEN_PRODUCT_IDS.has(p.id));
+  }).filter((p) => p.name !== "__HIDDEN__" && !isHiddenProduct(p));
   const emb = EMBALLAGE_PRODUCTS.map((raw, i) => {
     const { name, conditionnement } = parseProduct(raw);
     return { id: `emb-${i}`, name, conditionnement, category: "emballage" as Category, initialStock: 0 };
-  }).filter((p) => p.name !== "__HIDDEN__" && !HIDDEN_PRODUCT_IDS.has(p.id));
+  }).filter((p) => p.name !== "__HIDDEN__" && !isHiddenProduct(p));
   const sortByName = (a: Product, b: Product) =>
     a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
   if (category === "alimentaire") return ali.sort(sortByName);
