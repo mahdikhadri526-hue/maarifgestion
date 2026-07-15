@@ -170,8 +170,15 @@ export function PendingAutocontrolAlerts({ onOpen }: { onOpen?: () => void }) {
 
 export function StockOutAlerts() {
   const { data: levels, loading } = useStockLevels();
+  const { state: placed, mark, unmark, pruneTo } = useOrderPlaced();
   if (loading || !levels) return null;
   const outOfStock = levels.filter((l) => l.stockRestant <= 0);
+  // Nettoyer les marquages devenus obsolètes (produit ré-approvisionné)
+  const validIds = new Set(outOfStock.map((l) => l.productId));
+  // Conserver aussi ceux de la liste stock min (autre composant) → union via effet
+  useEffect(() => {
+    // Ne pas purger ici pour ne pas écraser ceux du stock min : purge locale seulement si aucune intersection
+  }, []);
   if (outOfStock.length === 0) return null;
 
   return (
@@ -198,14 +205,21 @@ export function StockOutAlerts() {
                 {l.category === "alimentaire" ? "Alimentaire" : "Emballage"}
               </p>
             </div>
-            <div
-              className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${
-                l.stockRestant < 0
-                  ? "bg-destructive text-destructive-foreground"
-                  : "bg-muted-foreground/20 text-foreground"
-              }`}
-            >
-              {l.stockRestant < 0 ? `${l.stockRestant}` : "RUPTURE"}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <div
+                className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${
+                  l.stockRestant < 0
+                    ? "bg-destructive text-destructive-foreground"
+                    : "bg-muted-foreground/20 text-foreground"
+                }`}
+              >
+                {l.stockRestant < 0 ? `${l.stockRestant}` : "RUPTURE"}
+              </div>
+              <OrderPlacedButton
+                placed={!!placed[l.productId]}
+                onMark={() => { mark(l.productId); toast.success("Commande marquée comme passée"); }}
+                onUnmark={() => unmark(l.productId)}
+              />
             </div>
           </div>
         ))}
@@ -217,6 +231,7 @@ export function StockOutAlerts() {
 export function LowStockAlerts() {
   const { data: levels, loading } = useStockLevels();
   const [minStocks, setMinStocks] = useState<Record<string, number>>({});
+  const { state: placed, mark, unmark } = useOrderPlaced();
 
   useEffect(() => {
     let active = true;
@@ -258,9 +273,16 @@ export function LowStockAlerts() {
                   {l.category === "alimentaire" ? "Alimentaire" : "Emballage"} · Min: {min}
                 </p>
               </div>
-              <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 whitespace-nowrap">
-                Restant: {l.stockRestant}
-              </span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 whitespace-nowrap">
+                  Restant: {l.stockRestant}
+                </span>
+                <OrderPlacedButton
+                  placed={!!placed[l.productId]}
+                  onMark={() => { mark(l.productId); toast.success("Commande marquée comme passée"); }}
+                  onUnmark={() => unmark(l.productId)}
+                />
+              </div>
             </div>
           );
         })}
