@@ -187,21 +187,21 @@ export function StockOutAlerts() {
         {outOfStock.map((l) => (
           <div
             key={l.productId}
-            className={`flex items-center justify-between rounded-lg p-2.5 text-sm border ${
+            className={`flex flex-col gap-2 rounded-lg p-2.5 text-sm border ${
               l.stockRestant < 0
                 ? "bg-destructive/10 border-destructive/40"
                 : "bg-muted border-border"
             }`}
           >
-            <div className="flex-1 min-w-0">
-              <p className="font-medium truncate">{l.productName}</p>
-              <p className="text-xs text-muted-foreground">
-                {l.category === "alimentaire" ? "Alimentaire" : "Emballage"}
-              </p>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium break-words">{l.productName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {l.category === "alimentaire" ? "Alimentaire" : "Emballage"}
+                </p>
+              </div>
               <div
-                className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap ${
+                className={`text-xs font-bold px-2 py-1 rounded-full whitespace-nowrap flex-shrink-0 ${
                   l.stockRestant < 0
                     ? "bg-destructive text-destructive-foreground"
                     : "bg-muted-foreground/20 text-foreground"
@@ -209,6 +209,8 @@ export function StockOutAlerts() {
               >
                 {l.stockRestant < 0 ? `${l.stockRestant}` : "RUPTURE"}
               </div>
+            </div>
+            <div className="flex justify-end">
               <OrderPlacedButton
                 placed={!!placed[l.productId]}
                 onMark={() => { mark(l.productId); toast.success("Commande marquée comme passée"); }}
@@ -259,18 +261,20 @@ export function LowStockAlerts() {
           return (
             <div
               key={l.productId}
-              className="flex items-center justify-between rounded-lg p-2.5 text-sm border bg-background border-amber-500/20"
+              className="flex flex-col gap-2 rounded-lg p-2.5 text-sm border bg-background border-amber-500/20"
             >
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{l.productName}</p>
-                <p className="text-xs text-muted-foreground">
-                  {l.category === "alimentaire" ? "Alimentaire" : "Emballage"} · Min: {min}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 whitespace-nowrap">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium break-words">{l.productName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {l.category === "alimentaire" ? "Alimentaire" : "Emballage"} · Min: {min}
+                  </p>
+                </div>
+                <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 whitespace-nowrap flex-shrink-0">
                   Restant: {l.stockRestant}
                 </span>
+              </div>
+              <div className="flex justify-end">
                 <OrderPlacedButton
                   placed={!!placed[l.productId]}
                   onMark={() => { mark(l.productId); toast.success("Commande marquée comme passée"); }}
