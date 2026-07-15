@@ -38,7 +38,7 @@ export const HIDE_PIECE_PRODUCTS: Set<string> = new Set([
 
 // Produits masqués de la liste (données conservées, filtrés à l'affichage)
 export const HIDDEN_PRODUCT_IDS: Set<string> = new Set([
-  "ali-9",  // CIGARE
+  "ali-11", // CIGARE (index dans ALIMENTAIRE_PRODUCTS)
   "emb-21", // BANDE SOUS COUVERCLE 0,5L
 ]);
 
