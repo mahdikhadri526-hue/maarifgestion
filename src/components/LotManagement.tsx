@@ -216,6 +216,16 @@ export function StockOutAlerts() {
               </div>
             </div>
             <div className="flex justify-end">
+              <span
+                className={`text-[10px] font-bold px-2 py-1 rounded-full mr-2 ${
+                  placed[l.productId]
+                    ? "bg-success/15 text-success border border-success/30"
+                    : "bg-destructive/15 text-destructive border border-destructive/30"
+                }`}
+                title="Commande passée ?"
+              >
+                {placed[l.productId] ? "Oui" : "Non"}
+              </span>
               <OrderPlacedButton
                 placed={!!placed[l.productId]}
                 onMark={() => { mark(l.productId); toast.success("Commande marquée comme passée"); }}
@@ -282,6 +292,16 @@ export function LowStockAlerts() {
                 </span>
               </div>
               <div className="flex justify-end">
+                <span
+                  className={`text-[10px] font-bold px-2 py-1 rounded-full mr-2 ${
+                    placed[l.productId]
+                      ? "bg-success/15 text-success border border-success/30"
+                      : "bg-destructive/15 text-destructive border border-destructive/30"
+                  }`}
+                  title="Commande passée ?"
+                >
+                  {placed[l.productId] ? "Oui" : "Non"}
+                </span>
                 <OrderPlacedButton
                   placed={!!placed[l.productId]}
                   onMark={() => { mark(l.productId); toast.success("Commande marquée comme passée"); }}
