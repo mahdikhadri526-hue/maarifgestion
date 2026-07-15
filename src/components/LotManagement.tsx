@@ -170,15 +170,9 @@ export function PendingAutocontrolAlerts({ onOpen }: { onOpen?: () => void }) {
 
 export function StockOutAlerts() {
   const { data: levels, loading } = useStockLevels();
-  const { state: placed, mark, unmark, pruneTo } = useOrderPlaced();
+  const { state: placed, mark, unmark } = useOrderPlaced();
   if (loading || !levels) return null;
   const outOfStock = levels.filter((l) => l.stockRestant <= 0);
-  // Nettoyer les marquages devenus obsolètes (produit ré-approvisionné)
-  const validIds = new Set(outOfStock.map((l) => l.productId));
-  // Conserver aussi ceux de la liste stock min (autre composant) → union via effet
-  useEffect(() => {
-    // Ne pas purger ici pour ne pas écraser ceux du stock min : purge locale seulement si aucune intersection
-  }, []);
   if (outOfStock.length === 0) return null;
 
   return (
