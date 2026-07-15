@@ -85,12 +85,13 @@ function OrderPlacedButton({
       </button>
     );
   }
-  if (!canEdit) return null;
   return (
     <button
       type="button"
-      onClick={onMark}
-      className="text-[10px] font-semibold px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 transition-colors whitespace-nowrap"
+      onClick={canEdit ? onMark : undefined}
+      disabled={!canEdit}
+      title={canEdit ? "Marquer la commande comme passée" : "Réservé à l'administrateur"}
+      className="text-[10px] font-semibold px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 transition-colors whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-primary/10"
     >
       Commande passée
     </button>
