@@ -14,6 +14,86 @@ import { useEffect } from "react";
 import { getAutocontrols, AutocontrolEntry } from "@/lib/autocontrolData";
 import { supabase } from "@/integrations/supabase/client";
 
+// --- Persistance locale du marquage "Commande passée" ---
+const ORDER_PLACED_KEY = "order_placed_products_v1";
+
+function readOrderPlaced(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem(ORDER_PLACED_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeOrderPlaced(data: Record<string, string>) {
+  try {
+    localStorage.setItem(ORDER_PLACED_KEY, JSON.stringify(data));
+    window.dispatchEvent(new Event("order-placed-changed"));
+  } catch {}
+}
+
+function useOrderPlaced() {
+  const [state, setState] = useState<Record<string, string>>(() => readOrderPlaced());
+  useEffect(() => {
+    const sync = () => setState(readOrderPlaced());
+    window.addEventListener("order-placed-changed", sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener("order-placed-changed", sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+  const mark = (productId: string) => {
+    const next = { ...readOrderPlaced(), [productId]: new Date().toISOString() };
+    writeOrderPlaced(next);
+  };
+  const unmark = (productId: string) => {
+    const next = { ...readOrderPlaced() };
+    delete next[productId];
+    writeOrderPlaced(next);
+  };
+  const pruneTo = (validIds: Set<string>) => {
+    const current = readOrderPlaced();
+    let changed = false;
+    const next: Record<string, string> = {};
+    for (const [id, ts] of Object.entries(current)) {
+      if (validIds.has(id)) next[id] = ts;
+      else changed = true;
+    }
+    if (changed) writeOrderPlaced(next);
+  };
+  return { state, mark, unmark, pruneTo };
+}
+
+function OrderPlacedButton({
+  placed,
+  onMark,
+  onUnmark,
+}: { placed: boolean; onMark: () => void; onUnmark: () => void }) {
+  if (placed) {
+    return (
+      <button
+        type="button"
+        onClick={onUnmark}
+        title="Annuler la mention"
+        className="text-[10px] font-semibold px-2 py-1 rounded-full bg-success/15 text-success border border-success/30 hover:bg-success/25 transition-colors whitespace-nowrap flex items-center gap-1"
+      >
+        <Check className="h-3 w-3" /> Commande passée
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onMark}
+      className="text-[10px] font-semibold px-2 py-1 rounded-full bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 transition-colors whitespace-nowrap"
+    >
+      Commande passée
+    </button>
+  );
+}
+
 export function PendingAutocontrolAlerts({ onOpen }: { onOpen?: () => void }) {
   const [pending, setPending] = useState<AutocontrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
