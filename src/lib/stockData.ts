@@ -36,6 +36,12 @@ export const HIDE_PIECE_PRODUCTS: Set<string> = new Set([
   "emb-44", // GANT
 ]);
 
+// Produits masqués de la liste (données conservées, filtrés à l'affichage)
+export const HIDDEN_PRODUCT_IDS: Set<string> = new Set([
+  "ali-9",  // CIGARE
+  "emb-21", // BANDE SOUS COUVERCLE 0,5L
+]);
+
 export function getPieceLabel(productId: string): { singular: string; plural: string; short: string } {
   return PIECE_LABEL_OVERRIDES[productId] || { singular: "Pièce", plural: "Pièces", short: "pcs" };
 }
@@ -244,11 +250,11 @@ export function getProducts(category?: Category): Product[] {
   const ali = ALIMENTAIRE_PRODUCTS.map((raw, i) => {
     const { name, conditionnement } = parseProduct(raw);
     return { id: `ali-${i}`, name, conditionnement, category: "alimentaire" as Category, initialStock: 0 };
-  }).filter((p) => p.name !== "__HIDDEN__");
+  }).filter((p) => p.name !== "__HIDDEN__" && !HIDDEN_PRODUCT_IDS.has(p.id));
   const emb = EMBALLAGE_PRODUCTS.map((raw, i) => {
     const { name, conditionnement } = parseProduct(raw);
     return { id: `emb-${i}`, name, conditionnement, category: "emballage" as Category, initialStock: 0 };
-  }).filter((p) => p.name !== "__HIDDEN__");
+  }).filter((p) => p.name !== "__HIDDEN__" && !HIDDEN_PRODUCT_IDS.has(p.id));
   const sortByName = (a: Product, b: Product) =>
     a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
   if (category === "alimentaire") return ali.sort(sortByName);
