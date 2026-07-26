@@ -2107,6 +2107,9 @@ export function WeeklyTracking() {
           </div>
         </TabsContent>
         ))}
+        <TabsContent value="materiel" className="mt-4 min-w-0">
+          <MaterielTracking weekStart={weekStart} />
+        </TabsContent>
         </div>
       </Tabs>
     </div>
