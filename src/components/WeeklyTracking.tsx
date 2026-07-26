@@ -15,6 +15,7 @@ import { OPERATORS } from "@/lib/operators";
 import { useAuth } from "@/contexts/AuthContext";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 import { fetchAllRows } from "@/lib/supabasePaginate";
+import { MaterielTracking } from "./MaterielTracking";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
@@ -305,7 +306,7 @@ function LotExistantCell({
 
 export function WeeklyTracking() {
   const [weekStart, setWeekStart] = useState<string>(fmt(getMonday(new Date())));
-  const [tab, setTab] = useState<"creme" | "glace" | "tarte">("creme");
+  const [tab, setTab] = useState<"creme" | "glace" | "tarte" | "materiel">("creme");
   const [rows, setRows] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
   // Toutes les entrées "Crème fraîche (mousse fouettée)" du mouvement glaces,
