@@ -119,10 +119,7 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
   const [saving, setSaving] = useState(false);
   const [local, setLocal] = useState<Record<string, Cell>>({});
 
-  const todayIso = fmt(new Date());
-  const weekEnd = sundayIso(weekStart);
-  const isCurrentWeek = todayIso >= weekStart && todayIso <= weekEnd;
-  const editable = canEdit && isCurrentWeek;
+  const editable = canEdit;
   const siEditable = editable;
 
   const load = async () => {
@@ -214,9 +211,7 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
           <div>
             <h3 className="font-semibold">Suivi matériel — semaine du {formatDateFR(weekStart)}</h3>
             <p className="text-xs text-muted-foreground">
-              SI (lundi), Entrées et Sorties modifiables toute la semaine. Restant = SI + E − S.
-              {" "}
-              {!isCurrentWeek ? "Semaine passée — lecture seule." : "Modifiable."}
+              SI (lundi), Entrées et Sorties modifiables pour toutes les semaines. Restant = SI + E − S.
             </p>
           </div>
           {(editable || siEditable) && (
