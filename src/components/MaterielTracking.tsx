@@ -124,6 +124,7 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
   const weekEnd = sundayIso(weekStart);
   const isCurrentWeek = todayIso >= weekStart && todayIso <= weekEnd;
   const editable = canEdit && isCurrentWeek && isSunday;
+  const siEditable = canEdit && isCurrentWeek;
 
   const load = async () => {
     setLoading(true);
@@ -214,16 +215,16 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
           <div>
             <h3 className="font-semibold">Suivi matériel — semaine du {formatDateFR(weekStart)}</h3>
             <p className="text-xs text-muted-foreground">
-              Saisie chaque dimanche : Stock Initial du lundi, Entrées et Sorties de la semaine. Le Restant se calcule automatiquement (SI + E − S).
+              Stock Initial du lundi modifiable toute la semaine. Entrées et Sorties saisies le dimanche. Restant = SI + E − S.
               {" "}
-              {editable
-                ? "Modifiable aujourd'hui."
-                : !isSunday
-                ? "Modification autorisée uniquement le dimanche."
-                : "Semaine passée — lecture seule."}
+              {!isCurrentWeek
+                ? "Semaine passée — lecture seule."
+                : editable
+                ? "Modifiable aujourd'hui (SI + E/S)."
+                : "SI modifiable · Entrées/Sorties uniquement le dimanche."}
             </p>
           </div>
-          {editable && (
+          {(editable || siEditable) && (
             <Button onClick={handleSave} disabled={saving} size="sm">
               <Save className="h-4 w-4 mr-2" />
               {saving ? "Enregistrement…" : "Enregistrer"}
@@ -264,7 +265,7 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
                         className="h-8 w-20 ml-auto text-right tabular-nums"
                         value={c.si}
                         onChange={(ev) => setLocal((p) => ({ ...p, [a.name]: { ...c, si: ev.target.value } }))}
-                        disabled={!editable}
+                        disabled={!siEditable}
                       />
                     </td>
                     <td className="p-2 text-right">
