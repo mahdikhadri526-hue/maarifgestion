@@ -120,11 +120,10 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
   const [local, setLocal] = useState<Record<string, Cell>>({});
 
   const todayIso = fmt(new Date());
-  const isSunday = new Date().getDay() === 0;
   const weekEnd = sundayIso(weekStart);
   const isCurrentWeek = todayIso >= weekStart && todayIso <= weekEnd;
-  const editable = canEdit && isCurrentWeek && isSunday;
-  const siEditable = canEdit && isCurrentWeek;
+  const editable = canEdit && isCurrentWeek;
+  const siEditable = editable;
 
   const load = async () => {
     setLoading(true);
@@ -215,13 +214,9 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
           <div>
             <h3 className="font-semibold">Suivi matériel — semaine du {formatDateFR(weekStart)}</h3>
             <p className="text-xs text-muted-foreground">
-              Stock Initial du lundi modifiable toute la semaine. Entrées et Sorties saisies le dimanche. Restant = SI + E − S.
+              SI (lundi), Entrées et Sorties modifiables toute la semaine. Restant = SI + E − S.
               {" "}
-              {!isCurrentWeek
-                ? "Semaine passée — lecture seule."
-                : editable
-                ? "Modifiable aujourd'hui (SI + E/S)."
-                : "SI modifiable · Entrées/Sorties uniquement le dimanche."}
+              {!isCurrentWeek ? "Semaine passée — lecture seule." : "Modifiable."}
             </p>
           </div>
           {(editable || siEditable) && (
