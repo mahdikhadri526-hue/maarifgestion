@@ -1562,6 +1562,7 @@ export function WeeklyTracking() {
           {showControls ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
           {showControls ? "Masquer" : "Afficher"}
         </Button>
+        {tab !== "materiel" && (
         <div className={cn("flex items-center gap-2 no-print", showControls ? "" : "ml-auto")}>
           <Button onClick={handlePrintFiche} size="sm" variant="outline" className="shadow-sm">
             <Printer className="h-4 w-4 mr-2" />
@@ -1576,6 +1577,7 @@ export function WeeklyTracking() {
             {saving ? "Enregistrement..." : "Enregistrer"}
           </Button>
         </div>
+        )}
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
@@ -1597,6 +1599,12 @@ export function WeeklyTracking() {
             className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-rose-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-rose-700 data-[state=inactive]:hover:bg-rose-100 transition-all"
           >
             Mouvement tartes
+          </TabsTrigger>
+          <TabsTrigger
+            value="materiel"
+            className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-emerald-700 data-[state=inactive]:hover:bg-emerald-100 transition-all"
+          >
+            Suivi matériel
           </TabsTrigger>
         </TabsList>
         <div ref={ficheRef} className="bg-background p-2 rounded-md">
