@@ -90,6 +90,12 @@ function sundayIso(weekStart: string) {
   return fmt(d);
 }
 
+function addWeeksIso(weekStart: string, weeks: number) {
+  const d = parseISO(weekStart);
+  d.setDate(d.getDate() + weeks * 7);
+  return fmt(d);
+}
+
 type Row = {
   id?: string;
   week_start: string;
@@ -110,6 +116,8 @@ const num = (v: string) => {
   return isNaN(n) ? 0 : n;
 };
 const disp = (v: any) => (v === null || v === undefined ? "" : String(v));
+const hasValue = (v: any) => v !== "" && v !== null && v !== undefined && !isNaN(Number(v));
+const fmtQty = (v: number) => String(Math.round(v * 100) / 100);
 
 export function MaterielTracking({ weekStart }: { weekStart: string }) {
   const { can } = useAuth();
@@ -170,6 +178,31 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
     return Array.from(set).sort((a, b) => (a < b ? 1 : -1));
   }, [rows, weekStart]);
 
+  const rowFor = (article: string, wk: string) => rows.find((r) => r.week_start === wk && r.article === article);
+
+  const getWeekCell = (article: string, wk: string): Cell => {
+    if (wk === weekStart) return local[article] ?? { si: "", e: "", s: "" };
+    const r = rowFor(article, wk);
+    return {
+      si: r ? disp(r.stock_initial ?? r.quantity) : "",
+      e: r ? disp(r.entrees) : "",
+      s: r ? disp(r.sorties) : "",
+    };
+  };
+
+  const getAutoSortie = (article: string, wk: string) => {
+    const current = getWeekCell(article, wk);
+    const next = getWeekCell(article, addWeeksIso(wk, 1));
+    if (!hasValue(current.si) || !hasValue(next.si)) return null;
+    return num(current.si) + num(current.e) - num(next.si);
+  };
+
+  const getEffectiveSortie = (article: string, wk: string, manual: string) => {
+    const auto = getAutoSortie(article, wk);
+    if (auto !== null && (!hasValue(manual) || Number(manual) === 0)) return auto;
+    return num(manual);
+  };
+
   const handleSave = async () => {
     if (!editable) return;
     setSaving(true);
@@ -178,7 +211,7 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
         const c = local[a.name] ?? { si: "", e: "", s: "" };
         const si = num(c.si);
         const e = num(c.e);
-        const s = num(c.s);
+        const s = getEffectiveSortie(a.name, weekStart, c.s);
         return {
           fiche_type: MATERIEL_FICHE_TYPE,
           week_start: weekStart,
@@ -243,7 +276,8 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
             ) : (
               MATERIEL_ARTICLES.map((a, idx) => {
                 const c = local[a.name] ?? { si: "", e: "", s: "" };
-                const restant = num(c.si) + num(c.e) - num(c.s);
+                const sortie = getEffectiveSortie(a.name, weekStart, c.s);
+                const restant = num(c.si) + num(c.e) - sortie;
                 return (
                   <tr key={a.name} className="border-t">
                     <td className="p-2 text-muted-foreground tabular-nums">{idx + 1}</td>
@@ -273,7 +307,7 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
                         type="number"
                         inputMode="decimal"
                         className="h-8 w-20 ml-auto text-right tabular-nums bg-destructive/5"
-                        value={c.s}
+                        value={fmtQty(sortie)}
                         onChange={(ev) => setLocal((p) => ({ ...p, [a.name]: { ...c, s: ev.target.value } }))}
                         disabled={!editable}
                       />
@@ -317,16 +351,19 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
                       <tbody>
                         {MATERIEL_ARTICLES.map((a) => {
                           const r = byArt.get(a.name);
-                          const restant =
-                            r?.quantity ?? ((r?.stock_initial ?? 0) + (r?.entrees ?? 0) - (r?.sorties ?? 0));
+                          const autoSortie = getAutoSortie(a.name, wk);
+                          const sortie = autoSortie ?? r?.sorties ?? 0;
+                          const restant = r
+                            ? ((r.stock_initial ?? r.quantity ?? 0) + (r.entrees ?? 0) - sortie)
+                            : 0;
                           return (
                             <tr key={a.name} className="border-t">
                               <td className="p-1.5">{a.name}</td>
                               <td className="p-1.5 text-right tabular-nums">{r?.stock_initial ?? "—"}</td>
                               <td className="p-1.5 text-right tabular-nums text-success">{r?.entrees ?? "—"}</td>
-                              <td className="p-1.5 text-right tabular-nums text-destructive">{r?.sorties ?? "—"}</td>
+                              <td className="p-1.5 text-right tabular-nums text-destructive">{r ? fmtQty(sortie) : "—"}</td>
                               <td className="p-1.5 text-right tabular-nums font-semibold">
-                                {r ? restant : "—"}
+                                {r ? fmtQty(restant) : "—"}
                               </td>
                             </tr>
                           );
