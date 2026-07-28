@@ -29,6 +29,17 @@ const compareLots = (a: LotRow, b: LotRow) =>
 const compareMovements = (a: MovementRow, b: MovementRow) =>
   toDayKey(a.date).localeCompare(toDayKey(b.date)) || a.created_at.localeCompare(b.created_at);
 
+const isLotAvailableForMovement = (lot: LotRow, movement: MovementRow) => {
+  const lotDay = toDayKey(lot.entry_date);
+  const movementDay = toDayKey(movement.date);
+
+  if (lotDay < movementDay) return true;
+  if (lotDay > movementDay) return false;
+
+  // Même journée : ne pas consommer un lot créé après une sortie déjà saisie.
+  return lot.created_at <= movement.created_at;
+};
+
 export async function syncLotBalances(productId?: string): Promise<Map<string, number>> {
   const buildLots = () =>
     productId
@@ -66,7 +77,7 @@ export async function syncLotBalances(productId?: string): Promise<Map<string, n
     const availableLots = (lotsByProduct.get(movement.product_id) || [])
       .filter(
         (lot) =>
-          toDayKey(lot.entry_date) <= toDayKey(movement.date) && (remainingByLot.get(lot.id) || 0) > 0,
+          isLotAvailableForMovement(lot, movement) && (remainingByLot.get(lot.id) || 0) > 0,
       )
       .sort(compareLots);
 
