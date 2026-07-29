@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatDateFR } from "@/lib/utils";
+import { cn, formatDateFR } from "@/lib/utils";
 
 export const MATERIEL_ARTICLES: { name: string; defaultQty: number }[] = [
   { name: "Verre personnel", defaultQty: 3 },
@@ -257,15 +257,36 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
       </div>
 
       <div className="bg-card rounded-lg border overflow-auto max-h-[70vh]">
-        <table className="w-full text-sm">
-          <thead className="bg-muted sticky top-0 z-10">
+        <table
+          className="weekly-sticky-table text-sm"
+          style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%" }}
+        >
+          <thead>
             <tr>
-              <th className="p-2 text-left w-10">#</th>
-              <th className="p-2 text-left">Article</th>
-              <th className="p-2 text-right w-24">SI (lundi)</th>
-              <th className="p-2 text-right w-24 text-success">Entrées</th>
-              <th className="p-2 text-right w-24 text-destructive">Sorties</th>
-              <th className="p-2 text-right w-24">Restant</th>
+              <th
+                className="p-2 text-left weekly-sticky-column weekly-sticky-head bg-muted border-r w-[60px] min-w-[60px] text-[11px]"
+                style={{ position: "sticky", left: 0, top: 0, zIndex: 45 }}
+              >
+                #
+              </th>
+              <th
+                className="p-2 text-left weekly-sticky-column weekly-sticky-head bg-muted border-r w-[220px] min-w-[220px] text-[11px]"
+                style={{ position: "sticky", left: 60, top: 0, zIndex: 45 }}
+              >
+                Article
+              </th>
+              <th className="p-2 text-center bg-muted border-r w-[110px] min-w-[110px] text-[11px] sticky top-0 z-30">
+                SI (lundi)
+              </th>
+              <th className="p-2 text-center bg-success/10 text-success border-r w-[110px] min-w-[110px] text-[11px] sticky top-0 z-30">
+                Entrées
+              </th>
+              <th className="p-2 text-center bg-destructive/10 text-destructive border-r w-[110px] min-w-[110px] text-[11px] sticky top-0 z-30">
+                Sorties
+              </th>
+              <th className="p-2 text-center bg-muted w-[110px] min-w-[110px] text-[11px] sticky top-0 z-30">
+                Restant
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -278,41 +299,59 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
                 const c = local[a.name] ?? { si: "", e: "", s: "" };
                 const sortie = getEffectiveSortie(a.name, weekStart, c.s);
                 const restant = num(c.si) + num(c.e) - sortie;
+                const rowBg = idx % 2 === 0 ? "bg-card" : "bg-muted/40";
                 return (
                   <tr key={a.name} className="border-t">
-                    <td className="p-2 text-muted-foreground tabular-nums">{idx + 1}</td>
-                    <td className="p-2">{a.name}</td>
-                    <td className="p-2 text-right">
+                    <td
+                      className={cn(
+                        "p-2 text-muted-foreground tabular-nums text-[11px] weekly-sticky-column border-r w-[60px] min-w-[60px]",
+                        rowBg,
+                      )}
+                      style={{ position: "sticky", left: 0, zIndex: 25 }}
+                    >
+                      {idx + 1}
+                    </td>
+                    <td
+                      className={cn(
+                        "p-2 font-medium weekly-sticky-column border-r whitespace-nowrap max-w-[220px] w-[220px] min-w-[220px] truncate text-[11px]",
+                        rowBg,
+                      )}
+                      style={{ position: "sticky", left: 60, zIndex: 25 }}
+                      title={a.name}
+                    >
+                      {a.name}
+                    </td>
+                    <td className="p-1 text-center border-r">
                       <Input
                         type="number"
                         inputMode="decimal"
-                        className="h-8 w-20 ml-auto text-right tabular-nums"
+                        className="h-7 w-20 mx-auto text-center text-xs px-1 tabular-nums"
                         value={c.si}
                         onChange={(ev) => setLocal((p) => ({ ...p, [a.name]: { ...c, si: ev.target.value } }))}
                         disabled={!siEditable}
                       />
                     </td>
-                    <td className="p-2 text-right">
+                    <td className="p-1 text-center border-r">
                       <Input
                         type="number"
                         inputMode="decimal"
-                        className="h-8 w-20 ml-auto text-right tabular-nums bg-success/5"
+                        className="h-7 w-20 mx-auto text-center text-xs px-1 tabular-nums bg-success/10 text-success border-success/40 font-medium"
                         value={c.e}
                         onChange={(ev) => setLocal((p) => ({ ...p, [a.name]: { ...c, e: ev.target.value } }))}
                         disabled={!editable}
                       />
                     </td>
-                    <td className="p-2 text-right">
+                    <td className="p-1 text-center border-r">
                       <Input
                         type="number"
                         inputMode="decimal"
-                        className="h-8 w-20 ml-auto text-right tabular-nums bg-destructive/5"
+                        className="h-7 w-20 mx-auto text-center text-xs px-1 tabular-nums bg-destructive/10 text-destructive border-destructive/40 font-medium"
                         value={fmtQty(sortie)}
                         onChange={(ev) => setLocal((p) => ({ ...p, [a.name]: { ...c, s: ev.target.value } }))}
                         disabled={!editable}
                       />
                     </td>
-                    <td className="p-2 text-right tabular-nums font-semibold">
+                    <td className="p-2 text-center tabular-nums font-semibold text-[11px]">
                       {Math.round(restant * 100) / 100}
                     </td>
                   </tr>
