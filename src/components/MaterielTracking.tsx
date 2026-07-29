@@ -362,7 +362,7 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
         </table>
       </div>
 
-      {historyWeeks.length > 0 && (
+      {false && historyWeeks.length > 0 && (
         <div className="bg-card rounded-lg border">
           <div className="px-4 py-2 border-b bg-muted/50">
             <h4 className="font-semibold text-sm">Historique — semaines précédentes</h4>
