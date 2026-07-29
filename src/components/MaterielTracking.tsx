@@ -264,14 +264,14 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
           <thead>
             <tr>
               <th
-                className="p-2 text-left weekly-sticky-column weekly-sticky-head bg-muted border-r w-[60px] min-w-[60px] text-[11px]"
+                className="p-2 text-left weekly-sticky-column weekly-sticky-head bg-muted border-r w-[36px] min-w-[36px] text-[11px]"
                 style={{ position: "sticky", left: 0, top: 0, zIndex: 45 }}
               >
                 #
               </th>
               <th
-                className="p-2 text-left weekly-sticky-column weekly-sticky-head bg-muted border-r w-[220px] min-w-[220px] text-[11px]"
-                style={{ position: "sticky", left: 60, top: 0, zIndex: 45 }}
+                className="p-2 text-left weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px] max-w-[140px] text-[11px]"
+                style={{ position: "sticky", left: 36, top: 0, zIndex: 45 }}
               >
                 Article
               </th>
@@ -299,12 +299,12 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
                 const c = local[a.name] ?? { si: "", e: "", s: "" };
                 const sortie = getEffectiveSortie(a.name, weekStart, c.s);
                 const restant = num(c.si) + num(c.e) - sortie;
-                const rowBg = idx % 2 === 0 ? "bg-card" : "bg-muted/40";
+                const rowBg = idx % 2 === 0 ? "bg-card" : "bg-secondary";
                 return (
                   <tr key={a.name} className="border-t">
                     <td
                       className={cn(
-                        "p-2 text-muted-foreground tabular-nums text-[11px] weekly-sticky-column border-r w-[60px] min-w-[60px]",
+                        "p-2 text-muted-foreground tabular-nums text-[11px] weekly-sticky-column border-r w-[36px] min-w-[36px]",
                         rowBg,
                       )}
                       style={{ position: "sticky", left: 0, zIndex: 25 }}
@@ -313,10 +313,10 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
                     </td>
                     <td
                       className={cn(
-                        "p-2 font-medium weekly-sticky-column border-r whitespace-nowrap max-w-[220px] w-[220px] min-w-[220px] truncate text-[11px]",
+                        "p-2 font-medium weekly-sticky-column border-r whitespace-nowrap max-w-[140px] w-[140px] min-w-[140px] truncate text-[11px]",
                         rowBg,
                       )}
-                      style={{ position: "sticky", left: 60, zIndex: 25 }}
+                      style={{ position: "sticky", left: 36, zIndex: 25 }}
                       title={a.name}
                     >
                       {a.name}
