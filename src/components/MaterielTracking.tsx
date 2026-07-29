@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { Save } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { formatDateFR } from "@/lib/utils";
+import { cn, formatDateFR } from "@/lib/utils";
 
 export const MATERIEL_ARTICLES: { name: string; defaultQty: number }[] = [
   { name: "Verre personnel", defaultQty: 3 },
