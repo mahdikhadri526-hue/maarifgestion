@@ -1384,6 +1384,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties période</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock actuel</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Livraison en cours</th>
+                {category === "glace" && (
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Capacité de stockage</th>
+                )}
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté à commander</th>
               </tr>
             </thead>
@@ -1405,18 +1408,49 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       />
                     </td>
                     <td className="p-3 text-right">
-                      <input
-                        type="number"
-                        min="0"
-                        value={orderQtyOverrides[r.article] ?? String(
-                          category === "glace"
-                            ? ceilTo5(Math.max(0, r.sorties - r.stockActuel - (Number(livraisonOverrides[r.article] || 0) || 0)))
-                            : ceilTo5(Math.max(0, r.sorties - r.stockActuel))
-                        )}
-                        onChange={(e) => setOverride(r.article, e.target.value)}
-                        className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono font-semibold text-warning"
-                      />
+                      {category === "glace" ? (
+                        <input
+                          type="number"
+                          min="0"
+                          value={capacityByArticle[r.article] ?? ""}
+                          onChange={(e) => setCapacity(r.article, e.target.value)}
+                          className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
+                        />
+                      ) : null}
                     </td>
+                    {category === "glace" && (() => {
+                      const def = ceilTo5(Math.max(0, r.sorties - r.stockActuel - (Number(livraisonOverrides[r.article] || 0) || 0)));
+                      const ov = orderQtyOverrides[r.article];
+                      const rawN = ov !== undefined && ov !== "" ? Number(ov) : def;
+                      const capped = capQty(r.article, isNaN(rawN) ? 0 : rawN);
+                      const isCapped = capacityFor(r.article) !== null && capped < (isNaN(rawN) ? 0 : rawN);
+                      return (
+                        <td className="p-3 text-right">
+                          <input
+                            type="number"
+                            min="0"
+                            value={String(capped)}
+                            onChange={(e) => setOverride(r.article, e.target.value)}
+                            className={cn(
+                              "w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono font-semibold",
+                              isCapped ? "text-destructive border-destructive/50" : "text-warning",
+                            )}
+                            title={isCapped ? "Limité par la capacité de stockage" : undefined}
+                          />
+                        </td>
+                      );
+                    })()}
+                    {category !== "glace" && (
+                      <td className="p-3 text-right">
+                        <input
+                          type="number"
+                          min="0"
+                          value={orderQtyOverrides[r.article] ?? String(ceilTo5(Math.max(0, r.sorties - r.stockActuel)))}
+                          onChange={(e) => setOverride(r.article, e.target.value)}
+                          className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono font-semibold text-warning"
+                        />
+                      </td>
+                    )}
                   </tr>
                 ))}
             </tbody>
