@@ -1069,8 +1069,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             ? ceilTo5(Math.max(0, r.sorties - r.stockActuel - liv))
             : ceilTo5(Math.max(0, r.sorties - r.stockActuel));
           const ov = orderQtyOverrides[r.article];
-          const qty = ov !== undefined && ov !== "" ? Number(ov) : def;
-          return { name: r.article, quantity: isNaN(qty) ? 0 : qty };
+          const raw = ov !== undefined && ov !== "" ? Number(ov) : def;
+          const safe = isNaN(raw) ? 0 : raw;
+          const qty = category === "glace" ? capQty(r.article, safe) : safe;
+          return { name: r.article, quantity: qty };
         })
         .filter((x) => x.quantity > 0);
     }
