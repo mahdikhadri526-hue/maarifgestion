@@ -988,6 +988,34 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const setLivraison = (key: string, value: string) => {
     setLivraisonOverrides((prev) => ({ ...prev, [key]: value }));
   };
+  // Capacité de stockage par parfum de glace (persistée localement)
+  const CAPACITY_KEY = "glace_storage_capacity";
+  const [capacityByArticle, setCapacityByArticle] = useState<Record<string, string>>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(CAPACITY_KEY) || "{}");
+    } catch {
+      return {};
+    }
+  });
+  const setCapacity = (key: string, value: string) => {
+    setCapacityByArticle((prev) => {
+      const next = { ...prev, [key]: value };
+      try { localStorage.setItem(CAPACITY_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  };
+  const capacityFor = (article: string): number | null => {
+    const raw = capacityByArticle[article];
+    if (raw === undefined || raw === "") return null;
+    const n = Number(raw);
+    return isNaN(n) ? null : n;
+  };
+  // Plafonne la quantité à commander par la capacité de stockage (glace uniquement)
+  const capQty = (article: string, qty: number) => {
+    const cap = capacityFor(article);
+    if (cap === null) return qty;
+    return Math.max(0, Math.min(qty, cap));
+  };
   // Dialogue "Choisir une commande" — applique une commande enregistrée à toutes les lignes
   const [pickOrderOpen, setPickOrderOpen] = useState(false);
   const applyOrderAsLivraison = (o: SavedOrder) => {
