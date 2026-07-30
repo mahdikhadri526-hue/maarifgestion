@@ -1425,6 +1425,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       const rawN = ov !== undefined && ov !== "" ? Number(ov) : def;
                       const capped = capQty(r.article, isNaN(rawN) ? 0 : rawN);
                       const isCapped = capacityFor(r.article) !== null && capped < (isNaN(rawN) ? 0 : rawN);
+                      const diff = (isNaN(rawN) ? 0 : rawN) - capped;
                       return (
                         <td className="p-3 text-right">
                           <input
@@ -1436,7 +1437,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                               "w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono font-semibold",
                               isCapped ? "text-destructive border-destructive/50" : "text-warning",
                             )}
-                            title={isCapped ? "Limité par la capacité de stockage" : undefined}
+                            title={isCapped ? `Dépassement de ${diff} — limité par la capacité de stockage (${capacityFor(r.article)}). Demandé : ${isNaN(rawN) ? 0 : rawN}` : undefined}
                           />
                         </td>
                       );
