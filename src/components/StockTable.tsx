@@ -1407,17 +1407,18 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
                       />
                     </td>
-                    <td className="p-3 text-right">
-                      {category === "glace" ? (
+                    {category === "glace" && (
+                      <td className="p-3 text-right">
                         <input
                           type="number"
                           min="0"
+                          placeholder="—"
                           value={capacityByArticle[r.article] ?? ""}
                           onChange={(e) => setCapacity(r.article, e.target.value)}
                           className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
                         />
-                      ) : null}
-                    </td>
+                      </td>
+                    )}
                     {category === "glace" && (() => {
                       const def = ceilTo5(Math.max(0, r.sorties - r.stockActuel - (Number(livraisonOverrides[r.article] || 0) || 0)));
                       const ov = orderQtyOverrides[r.article];
