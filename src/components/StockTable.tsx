@@ -988,21 +988,66 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const setLivraison = (key: string, value: string) => {
     setLivraisonOverrides((prev) => ({ ...prev, [key]: value }));
   };
-  // Capacité de stockage par parfum de glace (persistée localement)
+  // Capacité de stockage par parfum de glace (partagée via la base, synchro temps réel)
   const CAPACITY_KEY = "glace_storage_capacity";
-  const [capacityByArticle, setCapacityByArticle] = useState<Record<string, string>>(() => {
-    try {
-      return JSON.parse(localStorage.getItem(CAPACITY_KEY) || "{}");
-    } catch {
-      return {};
-    }
-  });
+  const [capacityByArticle, setCapacityByArticle] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      const { data } = await supabase.from("glace_storage_capacity").select("article, capacity");
+      if (cancelled) return;
+      const next: Record<string, string> = {};
+      for (const r of (data as any[]) || []) {
+        next[r.article] = r.capacity === null || r.capacity === undefined ? "" : String(r.capacity);
+      }
+      // Migration unique depuis localStorage
+      try {
+        const raw = localStorage.getItem(CAPACITY_KEY);
+        if (raw && Object.keys(next).length === 0) {
+          const local = JSON.parse(raw) as Record<string, string>;
+          const rows = Object.entries(local)
+            .filter(([, v]) => v !== "" && v !== undefined && !isNaN(Number(v)))
+            .map(([article, v]) => ({ article, capacity: Number(v) }));
+          if (rows.length) {
+            await supabase.from("glace_storage_capacity").upsert(rows, { onConflict: "article" });
+            for (const r of rows) next[r.article] = String(r.capacity);
+          }
+          localStorage.removeItem(CAPACITY_KEY);
+        }
+      } catch { /* ignore */ }
+      setCapacityByArticle(next);
+    };
+    load();
+    const ch = supabase
+      .channel("glace_storage_capacity_sync")
+      .on("postgres_changes", { event: "*", schema: "public", table: "glace_storage_capacity" }, (payload: any) => {
+        setCapacityByArticle((prev) => {
+          const next = { ...prev };
+          if (payload.eventType === "DELETE") {
+            const a = payload.old?.article;
+            if (a) delete next[a];
+          } else if (payload.new?.article) {
+            const c = payload.new.capacity;
+            next[payload.new.article] = c === null || c === undefined ? "" : String(c);
+          }
+          return next;
+        });
+      })
+      .subscribe();
+    return () => {
+      cancelled = true;
+      supabase.removeChannel(ch);
+    };
+  }, []);
   const setCapacity = (key: string, value: string) => {
-    setCapacityByArticle((prev) => {
-      const next = { ...prev, [key]: value };
-      try { localStorage.setItem(CAPACITY_KEY, JSON.stringify(next)); } catch { /* ignore */ }
-      return next;
-    });
+    setCapacityByArticle((prev) => ({ ...prev, [key]: value }));
+    const n = value === "" ? null : Number(value);
+    void supabase
+      .from("glace_storage_capacity")
+      .upsert(
+        { article: key, capacity: n !== null && isNaN(n) ? null : n, updated_at: new Date().toISOString() },
+        { onConflict: "article" },
+      );
   };
   const capacityFor = (article: string): number | null => {
     const raw = capacityByArticle[article];
@@ -1428,6 +1473,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       const diff = (isNaN(rawN) ? 0 : rawN) - capped;
                       return (
                         <td className="p-3 text-right">
+                          <div className="inline-flex flex-col items-end gap-0.5">
                           <input
                             type="number"
                             min="0"
@@ -1439,6 +1485,12 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                             )}
                             title={isCapped ? `Dépassement de ${diff} — limité par la capacité de stockage (${capacityFor(r.article)}). Demandé : ${isNaN(rawN) ? 0 : rawN}` : undefined}
                           />
+                          {isCapped && (
+                            <span className="text-[10px] font-medium text-destructive whitespace-nowrap">
+                              +{diff} au-dessus (dem. {isNaN(rawN) ? 0 : rawN})
+                            </span>
+                          )}
+                          </div>
                         </td>
                       );
                     })()}

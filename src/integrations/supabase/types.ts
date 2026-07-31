@@ -215,6 +215,24 @@ export type Database = {
         }
         Relationships: []
       }
+      glace_storage_capacity: {
+        Row: {
+          article: string
+          capacity: number | null
+          updated_at: string
+        }
+        Insert: {
+          article: string
+          capacity?: number | null
+          updated_at?: string
+        }
+        Update: {
+          article?: string
+          capacity?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       initial_stocks: {
         Row: {
           carton_enabled: boolean
