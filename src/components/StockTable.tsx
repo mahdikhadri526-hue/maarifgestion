@@ -1473,6 +1473,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       const diff = (isNaN(rawN) ? 0 : rawN) - capped;
                       return (
                         <td className="p-3 text-right">
+                          <div className="inline-flex flex-col items-end gap-0.5">
                           <input
                             type="number"
                             min="0"
@@ -1484,6 +1485,12 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                             )}
                             title={isCapped ? `Dépassement de ${diff} — limité par la capacité de stockage (${capacityFor(r.article)}). Demandé : ${isNaN(rawN) ? 0 : rawN}` : undefined}
                           />
+                          {isCapped && (
+                            <span className="text-[10px] font-medium text-destructive whitespace-nowrap">
+                              +{diff} au-dessus (dem. {isNaN(rawN) ? 0 : rawN})
+                            </span>
+                          )}
+                          </div>
                         </td>
                       );
                     })()}
