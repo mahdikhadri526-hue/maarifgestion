@@ -336,12 +336,12 @@ export function CleaningManager() {
                           <div className="text-xs text-muted-foreground">Visa: {l.visaManager}</div>
                         )}
                       </div>
-                      {user?.email !== "gestionmaarif1@gmail.com" && editingId !== l.id && (
+                      {user?.email !== "gestionmaarif1@gmail.com" && editingId !== l.id && (isAdmin || l.logDate === todayISO()) && (
                         <Button size="sm" variant="ghost" onClick={() => startEdit(l)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
                       )}
-                      {user?.email !== "gestionmaarif1@gmail.com" && editingId !== l.id && (
+                      {user?.email !== "gestionmaarif1@gmail.com" && editingId !== l.id && (isAdmin || l.logDate === todayISO()) && (
                         <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
