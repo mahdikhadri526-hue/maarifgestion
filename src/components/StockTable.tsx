@@ -1454,14 +1454,20 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     </td>
                     {category === "glace" && (
                       <td className="p-3 text-right">
-                        <input
-                          type="number"
-                          min="0"
-                          placeholder="—"
-                          value={capacityByArticle[r.article] ?? ""}
-                          onChange={(e) => setCapacity(r.article, e.target.value)}
-                          className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
-                        />
+                        {isAdmin ? (
+                          <input
+                            type="number"
+                            min="0"
+                            placeholder="—"
+                            value={capacityByArticle[r.article] ?? ""}
+                            onChange={(e) => setCapacity(r.article, e.target.value)}
+                            className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
+                          />
+                        ) : (
+                          <span className="inline-block w-20 text-right text-sm font-mono text-muted-foreground" title="Seul l'administrateur peut modifier la capacité de stockage">
+                            {capacityByArticle[r.article] || "—"}
+                          </span>
+                        )}
                       </td>
                     )}
                     {category === "glace" && (() => {
