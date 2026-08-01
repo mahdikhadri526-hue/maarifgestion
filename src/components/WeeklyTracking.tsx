@@ -1768,8 +1768,9 @@ export function WeeklyTracking() {
                             >
                               <SelectTrigger className="h-8 min-w-[140px]"><SelectValue placeholder="—" /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Mr Mahdi Khadri">Mr Mahdi Khadri</SelectItem>
-                                <SelectItem value="Mr Hamza Fadlou">Mr Hamza Fadlou</SelectItem>
+                                {MANAGERS.map((m) => (
+                                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </td>
