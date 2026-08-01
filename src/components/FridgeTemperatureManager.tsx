@@ -61,6 +61,12 @@ function serviceDateStr(d: Date = new Date()) {
   return `${y}-${m}-${day}`;
 }
 
+function nextServiceDateStr() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return serviceDateStr(d);
+}
+
 function currentSlot(): FridgeSlot {
   const h = new Date().getHours();
   if (h >= 5 && h < 12) return "07h";
