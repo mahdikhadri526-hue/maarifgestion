@@ -596,14 +596,14 @@ export function FridgeTemperatureManager() {
                 value={date}
                 onChange={(e) => {
                   const v = e.target.value;
-                  if (!isAdmin && (v < serviceDateStr() || v > nextServiceDateStr())) return;
+                  if (!isAdmin && (v < editableMinDateStr() || v > editableMaxDateStr())) return;
                   setDate(v);
                 }}
-                min={isAdmin ? undefined : serviceDateStr()}
-                max={isAdmin ? undefined : nextServiceDateStr()}
+                min={isAdmin ? undefined : editableMinDateStr()}
+                max={isAdmin ? undefined : editableMaxDateStr()}
               />
               {!isAdmin && (
-                <p className="text-xs text-muted-foreground mt-1">Saisie limitée au jour en cours et au lendemain.</p>
+                <p className="text-xs text-muted-foreground mt-1">Jour J modifiable jusqu'à 3h00 du matin, ainsi que J+1.</p>
               )}
             </div>
             <div>
