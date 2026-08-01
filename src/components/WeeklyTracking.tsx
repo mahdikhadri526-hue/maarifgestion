@@ -12,6 +12,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn, formatDateFR } from "@/lib/utils";
 import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
 import { OPERATORS } from "@/lib/operators";
+import { MANAGERS } from "@/lib/managers";
 import { useAuth } from "@/contexts/AuthContext";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 import { fetchAllRows } from "@/lib/supabasePaginate";
@@ -1768,8 +1769,9 @@ export function WeeklyTracking() {
                             >
                               <SelectTrigger className="h-8 min-w-[140px]"><SelectValue placeholder="—" /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="Mr Mahdi Khadri">Mr Mahdi Khadri</SelectItem>
-                                <SelectItem value="Mr Hamza Fadlou">Mr Hamza Fadlou</SelectItem>
+                                {MANAGERS.map((m) => (
+                                  <SelectItem key={m} value={m}>{m}</SelectItem>
+                                ))}
                               </SelectContent>
                             </Select>
                           </td>
