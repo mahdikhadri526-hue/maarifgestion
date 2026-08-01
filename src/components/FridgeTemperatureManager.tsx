@@ -61,10 +61,25 @@ function serviceDateStr(d: Date = new Date()) {
   return `${y}-${m}-${day}`;
 }
 
-function nextServiceDateStr() {
+function ymd(d: Date) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+// Le jour J reste modifiable jusqu'à 3h00 du matin de J+1
+function editableMinDateStr() {
   const d = new Date();
+  if (d.getHours() < 3) d.setDate(d.getDate() - 1);
+  return ymd(d);
+}
+
+function editableMaxDateStr() {
+  const d = new Date();
+  if (d.getHours() < 3) d.setDate(d.getDate() - 1);
   d.setDate(d.getDate() + 1);
-  return serviceDateStr(d);
+  return ymd(d);
 }
 
 function currentSlot(): FridgeSlot {
@@ -581,14 +596,14 @@ export function FridgeTemperatureManager() {
                 value={date}
                 onChange={(e) => {
                   const v = e.target.value;
-                  if (!isAdmin && (v < serviceDateStr() || v > nextServiceDateStr())) return;
+                  if (!isAdmin && (v < editableMinDateStr() || v > editableMaxDateStr())) return;
                   setDate(v);
                 }}
-                min={isAdmin ? undefined : serviceDateStr()}
-                max={isAdmin ? undefined : nextServiceDateStr()}
+                min={isAdmin ? undefined : editableMinDateStr()}
+                max={isAdmin ? undefined : editableMaxDateStr()}
               />
               {!isAdmin && (
-                <p className="text-xs text-muted-foreground mt-1">Saisie limitée au jour en cours et au lendemain.</p>
+                <p className="text-xs text-muted-foreground mt-1">Jour J modifiable jusqu'à 3h00 du matin, ainsi que J+1.</p>
               )}
             </div>
             <div>
