@@ -574,13 +574,11 @@ export function FridgeTemperatureManager() {
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                readOnly={!isAdmin}
-                disabled={!isAdmin}
                 min={isAdmin ? undefined : serviceDateStr()}
-                max={isAdmin ? undefined : serviceDateStr()}
+                max={isAdmin ? undefined : nextServiceDateStr()}
               />
               {!isAdmin && (
-                <p className="text-xs text-muted-foreground mt-1">Saisie limitée au jour en cours.</p>
+                <p className="text-xs text-muted-foreground mt-1">Saisie limitée au jour en cours et au lendemain.</p>
               )}
             </div>
             <div>
