@@ -64,7 +64,7 @@ export function CleaningManager() {
   const [editNotes, setEditNotes] = useState("");
   const [editVisa, setEditVisa] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const refresh = async () => {
     try {
@@ -185,7 +185,18 @@ export function CleaningManager() {
           </div>
           <div>
             <Label>Date</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              readOnly={!isAdmin}
+              disabled={!isAdmin}
+              min={isAdmin ? undefined : todayISO()}
+              max={isAdmin ? undefined : todayISO()}
+            />
+            {!isAdmin && (
+              <p className="text-xs text-muted-foreground mt-1">Saisie limitée au jour en cours.</p>
+            )}
           </div>
           <div>
             <Label>Collaborateur</Label>
