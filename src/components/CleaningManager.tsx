@@ -64,7 +64,7 @@ export function CleaningManager() {
   const [editNotes, setEditNotes] = useState("");
   const [editVisa, setEditVisa] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const refresh = async () => {
     try {
@@ -185,7 +185,18 @@ export function CleaningManager() {
           </div>
           <div>
             <Label>Date</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              readOnly={!isAdmin}
+              disabled={!isAdmin}
+              min={isAdmin ? undefined : todayISO()}
+              max={isAdmin ? undefined : todayISO()}
+            />
+            {!isAdmin && (
+              <p className="text-xs text-muted-foreground mt-1">Saisie limitée au jour en cours.</p>
+            )}
           </div>
           <div>
             <Label>Collaborateur</Label>
@@ -325,12 +336,12 @@ export function CleaningManager() {
                           <div className="text-xs text-muted-foreground">Visa: {l.visaManager}</div>
                         )}
                       </div>
-                      {user?.email !== "gestionmaarif1@gmail.com" && editingId !== l.id && (
+                      {user?.email !== "gestionmaarif1@gmail.com" && editingId !== l.id && (isAdmin || l.logDate === todayISO()) && (
                         <Button size="sm" variant="ghost" onClick={() => startEdit(l)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
                       )}
-                      {user?.email !== "gestionmaarif1@gmail.com" && editingId !== l.id && (
+                      {user?.email !== "gestionmaarif1@gmail.com" && editingId !== l.id && (isAdmin || l.logDate === todayISO()) && (
                         <Button size="sm" variant="ghost" onClick={() => remove(l.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

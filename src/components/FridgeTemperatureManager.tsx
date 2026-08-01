@@ -97,7 +97,7 @@ function formatTime(ts?: string): string {
 }
 
 export function FridgeTemperatureManager() {
-  const { can, user } = useAuth();
+  const { can, user, isAdmin } = useAuth();
   const isNoDeleteUser = user?.email === "gestionmaarif1@gmail.com";
   const canEdit = can("edit_temperatures");
   const canDelete = can("delete_temperatures") && !isNoDeleteUser;
@@ -570,7 +570,18 @@ export function FridgeTemperatureManager() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <Label>Date du contrôle</Label>
-              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                readOnly={!isAdmin}
+                disabled={!isAdmin}
+                min={isAdmin ? undefined : serviceDateStr()}
+                max={isAdmin ? undefined : serviceDateStr()}
+              />
+              {!isAdmin && (
+                <p className="text-xs text-muted-foreground mt-1">Saisie limitée au jour en cours.</p>
+              )}
             </div>
             <div>
               <Label>Créneau</Label>
