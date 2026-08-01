@@ -579,7 +579,11 @@ export function FridgeTemperatureManager() {
               <Input
                 type="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (!isAdmin && (v < serviceDateStr() || v > nextServiceDateStr())) return;
+                  setDate(v);
+                }}
                 min={isAdmin ? undefined : serviceDateStr()}
                 max={isAdmin ? undefined : nextServiceDateStr()}
               />
