@@ -61,6 +61,12 @@ function serviceDateStr(d: Date = new Date()) {
   return `${y}-${m}-${day}`;
 }
 
+function nextServiceDateStr() {
+  const d = new Date();
+  d.setDate(d.getDate() + 1);
+  return serviceDateStr(d);
+}
+
 function currentSlot(): FridgeSlot {
   const h = new Date().getHours();
   if (h >= 5 && h < 12) return "07h";
@@ -573,14 +579,16 @@ export function FridgeTemperatureManager() {
               <Input
                 type="date"
                 value={date}
-                onChange={(e) => setDate(e.target.value)}
-                readOnly={!isAdmin}
-                disabled={!isAdmin}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (!isAdmin && (v < serviceDateStr() || v > nextServiceDateStr())) return;
+                  setDate(v);
+                }}
                 min={isAdmin ? undefined : serviceDateStr()}
-                max={isAdmin ? undefined : serviceDateStr()}
+                max={isAdmin ? undefined : nextServiceDateStr()}
               />
               {!isAdmin && (
-                <p className="text-xs text-muted-foreground mt-1">Saisie limitée au jour en cours.</p>
+                <p className="text-xs text-muted-foreground mt-1">Saisie limitée au jour en cours et au lendemain.</p>
               )}
             </div>
             <div>
