@@ -744,13 +744,17 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           CHANTILLY_WEEKLY_ARTICLE,
           AMANDES_WEEKLY_ARTICLE,
         ];
-        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
-          supabase
+        const wr = weekRangeFilter(mode, day, month, start, end);
+        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() => {
+          let q = supabase
             .from("weekly_tracking")
             .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
             .eq("fiche_type", "Mouvement glaces & tartes")
-            .in("article", [...MACARON_ARTICLES, ...extraArticles] as unknown as string[]),
-        );
+            .in("article", [...MACARON_ARTICLES, ...extraArticles] as unknown as string[]);
+          if (wr.from) q = q.gte("week_start", wr.from);
+          if (wr.to) q = q.lte("week_start", wr.to);
+          return q;
+        });
         if (cancelled) return;
         const isInSelectedPeriod = (date: string) => {
           if (mode === "day") return day ? date === day : true;
