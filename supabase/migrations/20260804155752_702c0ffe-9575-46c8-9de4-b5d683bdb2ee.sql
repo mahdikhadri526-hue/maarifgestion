@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_weekly_tracking_fiche_article_week ON public.weekly_tracking (fiche_type, article, week_start);
