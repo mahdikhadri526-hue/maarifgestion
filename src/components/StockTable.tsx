@@ -691,14 +691,19 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     setWeeklyLoading(true);
     (async () => {
       try {
-        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
-          supabase
+        const list = category === "tarte" ? TARTE_ARTICLES : GLACE_ARTICLES;
+        const wr = weekRangeFilter(mode, day, month, start, end);
+        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() => {
+          let q = supabase
             .from("weekly_tracking")
             .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
-            .eq("fiche_type", "Mouvement glaces & tartes"),
-        );
+            .eq("fiche_type", "Mouvement glaces & tartes")
+            .in("article", list as unknown as string[]);
+          if (wr.from) q = q.gte("week_start", wr.from);
+          if (wr.to) q = q.lte("week_start", wr.to);
+          return q;
+        });
         if (cancelled) return;
-        const list = category === "tarte" ? TARTE_ARTICLES : GLACE_ARTICLES;
         const isInSelectedPeriod = (date: string) => {
           if (mode === "day") return day ? date === day : true;
           if (mode === "month") return month ? date.startsWith(month) : true;
