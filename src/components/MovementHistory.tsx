@@ -402,7 +402,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((m) => (
+            {visible.map((m) => (
               <tr key={m.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                 isRequisitionProduct(m.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
               }`}>
