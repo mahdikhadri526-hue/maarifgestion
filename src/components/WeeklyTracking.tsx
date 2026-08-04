@@ -18,6 +18,7 @@ import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableS
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { MaterielTracking } from "./MaterielTracking";
 
+const SHOW_KG_BAC = false; // colonne Kg/bac masquée
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
 const TARTE_ARTICLES = [
@@ -1872,7 +1873,7 @@ export function WeeklyTracking() {
               <thead className="bg-muted sticky top-0 z-30">
                 <tr>
                   <th className="p-1 text-left weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px] text-[11px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Article</th>
-                  {t === "glace" && (
+                  {SHOW_KG_BAC && t === "glace" && (
                     <th
                       className="p-1 text-center weekly-sticky-column weekly-sticky-head bg-muted border-r w-[110px] min-w-[110px] text-[11px]"
                       style={{ position: "sticky", left: 140, zIndex: 45 }}
@@ -1912,7 +1913,7 @@ export function WeeklyTracking() {
                 </tr>
                 <tr>
                   <th className="p-1 weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 45 }}></th>
-                  {t === "glace" && (
+                  {SHOW_KG_BAC && t === "glace" && (
                     <th
                       className="p-1 weekly-sticky-column weekly-sticky-head bg-muted border-r w-[110px] min-w-[110px]"
                       style={{ position: "sticky", left: 140, zIndex: 45 }}
@@ -1949,7 +1950,7 @@ export function WeeklyTracking() {
                     >
                       {article}
                     </td>
-                    {t === "glace" && (
+                    {SHOW_KG_BAC && t === "glace" && (
                       <td
                         className={cn(
                           "p-1 weekly-sticky-column border-r text-center",
