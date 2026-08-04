@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useMovements, useProductUnitConfigs, useAllRequisitions } from "@/hooks/useStockData";
 import { deleteMovement, formatQuantityForProduct, saveMovement } from "@/lib/stockData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
@@ -57,11 +57,15 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   // Set des clés "date|productId|category" pour identifier les sorties issues
   // d'une réquisition (la sortie est créée avec la même date et le même produit
   // par saveRequisition / setRequisitionTotal).
-  const requisitionKeys = new Set<string>(
-    (requisitions || []).map((r) => {
-      const category = r.type === "salle" ? "alimentaire" : "emballage";
-      return `${r.date}|${r.productId}|${category}`;
-    })
+  const requisitionKeys = useMemo(
+    () =>
+      new Set<string>(
+        (requisitions || []).map((r) => {
+          const category = r.type === "salle" ? "alimentaire" : "emballage";
+          return `${r.date}|${r.productId}|${category}`;
+        })
+      ),
+    [requisitions]
   );
   const isFromRequisition = (m: { date: string; productId: string; category: string; type: string; destination?: string | null }) => {
     if (m.type !== "sortie") return false;
@@ -69,30 +73,46 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     return requisitionKeys.has(`${m.date.slice(0, 10)}|${m.productId}|${m.category}`);
   };
 
-  const sorted = [...(movements || [])].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  const sorted = useMemo(
+    () =>
+      [...(movements || [])].sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      ),
+    [movements]
   );
 
   // Unique products & operators for select options
-  const productOptions = Array.from(
-    new Map(sorted.map((m) => [m.productId, m.productName])).entries()
-  ).sort((a, b) => a[1].localeCompare(b[1]));
-  const operatorOptions = Array.from(
-    new Set(sorted.map((m) => m.performedBy).filter((v): v is string => !!v))
-  ).sort();
-  const destinationOptions = Array.from(
-    new Set(
-      sorted
-        .map((m) => m.destination)
-        .filter((d): d is string => !!d && !d.startsWith("✓"))
-        .map((d) => d.replace(/^Retour\s+/, "").replace(/^Reçu de\s+/, "").replace(/^Renvoi →\s+/, ""))
-    )
-  ).sort();
+  const productOptions = useMemo(
+    () =>
+      Array.from(new Map(sorted.map((m) => [m.productId, m.productName])).entries()).sort(
+        (a, b) => a[1].localeCompare(b[1])
+      ),
+    [sorted]
+  );
+  const operatorOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(sorted.map((m) => m.performedBy).filter((v): v is string => !!v))
+      ).sort(),
+    [sorted]
+  );
+  const destinationOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          sorted
+            .map((m) => m.destination)
+            .filter((d): d is string => !!d && !d.startsWith("✓"))
+            .map((d) => d.replace(/^Retour\s+/, "").replace(/^Reçu de\s+/, "").replace(/^Renvoi →\s+/, ""))
+        )
+      ).sort(),
+    [sorted]
+  );
 
   const normalizeDestination = (d: string) =>
     d.replace(/^✓\s*/, "").replace(/^Retour\s+/, "").replace(/^Reçu de\s+/, "").replace(/^Renvoi →\s+/, "");
 
-  const filtered = sorted.filter((m) => {
+  const filtered = useMemo(() => sorted.filter((m) => {
     const mDate = m.date.slice(0, 10);
     if (filterDate && mDate !== filterDate) return false;
     if (filterStartDate && mDate < filterStartDate) return false;
@@ -126,7 +146,15 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     }
     if (filterPerformedBy !== "all" && (m.performedBy || "") !== filterPerformedBy) return false;
     return true;
-  });
+  }), [sorted, filterDate, filterStartDate, filterEndDate, filterProduct, filterType, filterDestination, filterPerformedBy]);
+
+  // Rendu progressif : n'affiche qu'un lot de lignes à la fois pour rester fluide
+  const PAGE = 100;
+  const [visibleCount, setVisibleCount] = useState(PAGE);
+  useEffect(() => {
+    setVisibleCount(PAGE);
+  }, [filterDate, filterStartDate, filterEndDate, filterProduct, filterType, filterDestination, filterPerformedBy]);
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
 
   const hasFilters =
@@ -374,7 +402,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((m) => (
+            {visible.map((m) => (
               <tr key={m.id} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                 isRequisitionProduct(m.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
               }`}>
@@ -531,6 +559,16 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
             ))}
           </tbody>
         </table>
+        {visibleCount < filtered.length && (
+          <div className="p-3 text-center border-t">
+            <button
+              onClick={() => setVisibleCount((c) => c + PAGE)}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Afficher plus ({filtered.length - visibleCount} restants)
+            </button>
+          </div>
+        )}
         {filtered.length === 0 && (
           <p className="text-center text-muted-foreground py-8">
             {sorted.length === 0 ? "Aucun mouvement enregistré" : "Aucun mouvement ne correspond aux filtres"}
