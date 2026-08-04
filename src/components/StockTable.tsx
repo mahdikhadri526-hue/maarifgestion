@@ -135,14 +135,16 @@ function weekRangeFilter(
   month: string,
   start: string,
   end: string,
-): { from?: string; to?: string } {
+): { from?: string } {
   let s: string | undefined;
   let e: string | undefined;
   if (mode === "day" && day) { s = day; e = day; }
   else if (mode === "month" && month) { s = `${month}-01`; e = `${month}-31`; }
   else if (mode === "period") { s = start || undefined; e = end || undefined; }
   // une semaine peut démarrer jusqu'à 7 jours avant la période
-  return { from: s ? shiftISO(s, -7) : undefined, to: e };
+  void e;
+  // Pas de borne haute : le "stock actuel" doit toujours refléter les dernières saisies.
+  return { from: s ? shiftISO(s, -7) : undefined };
 }
 
 function buildWeeklyOrderRows(
@@ -700,7 +702,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             .eq("fiche_type", "Mouvement glaces & tartes")
             .in("article", list as unknown as string[]);
           if (wr.from) q = q.gte("week_start", wr.from);
-          if (wr.to) q = q.lte("week_start", wr.to);
           return q;
         });
         if (cancelled) return;
@@ -752,7 +753,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             .eq("fiche_type", "Mouvement glaces & tartes")
             .in("article", [...MACARON_ARTICLES, ...extraArticles] as unknown as string[]);
           if (wr.from) q = q.gte("week_start", wr.from);
-          if (wr.to) q = q.lte("week_start", wr.to);
           return q;
         });
         if (cancelled) return;
