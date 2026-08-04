@@ -121,6 +121,32 @@ function numericValue(value: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
+// Décale une date ISO de n jours (utilisé pour borner week_start côté serveur).
+function shiftISO(iso: string, days: number) {
+  const d = parseISODate(iso);
+  d.setDate(d.getDate() + days);
+  return formatISODate(d);
+}
+
+// Bornes de semaines à charger selon le filtre période (évite de tout télécharger).
+function weekRangeFilter(
+  mode: string,
+  day: string,
+  month: string,
+  start: string,
+  end: string,
+): { from?: string } {
+  let s: string | undefined;
+  let e: string | undefined;
+  if (mode === "day" && day) { s = day; e = day; }
+  else if (mode === "month" && month) { s = `${month}-01`; e = `${month}-31`; }
+  else if (mode === "period") { s = start || undefined; e = end || undefined; }
+  // une semaine peut démarrer jusqu'à 7 jours avant la période
+  void e;
+  // Pas de borne haute : le "stock actuel" doit toujours refléter les dernières saisies.
+  return { from: s ? shiftISO(s, -7) : undefined };
+}
+
 function buildWeeklyOrderRows(
   records: WeeklyTrackingOrderRecord[],
   articles: readonly string[],
@@ -667,14 +693,18 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     setWeeklyLoading(true);
     (async () => {
       try {
-        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
-          supabase
+        const list = category === "tarte" ? TARTE_ARTICLES : GLACE_ARTICLES;
+        const wr = weekRangeFilter(mode, day, month, start, end);
+        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() => {
+          let q = supabase
             .from("weekly_tracking")
             .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
-            .eq("fiche_type", "Mouvement glaces & tartes"),
-        );
+            .eq("fiche_type", "Mouvement glaces & tartes")
+            .in("article", list as unknown as string[]);
+          if (wr.from) q = q.gte("week_start", wr.from);
+          return q;
+        });
         if (cancelled) return;
-        const list = category === "tarte" ? TARTE_ARTICLES : GLACE_ARTICLES;
         const isInSelectedPeriod = (date: string) => {
           if (mode === "day") return day ? date === day : true;
           if (mode === "month") return month ? date.startsWith(month) : true;
@@ -715,13 +745,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           CHANTILLY_WEEKLY_ARTICLE,
           AMANDES_WEEKLY_ARTICLE,
         ];
-        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
-          supabase
+        const wr = weekRangeFilter(mode, day, month, start, end);
+        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() => {
+          let q = supabase
             .from("weekly_tracking")
             .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
             .eq("fiche_type", "Mouvement glaces & tartes")
-            .in("article", [...MACARON_ARTICLES, ...extraArticles] as unknown as string[]),
-        );
+            .in("article", [...MACARON_ARTICLES, ...extraArticles] as unknown as string[]);
+          if (wr.from) q = q.gte("week_start", wr.from);
+          return q;
+        });
         if (cancelled) return;
         const isInSelectedPeriod = (date: string) => {
           if (mode === "day") return day ? date === day : true;
