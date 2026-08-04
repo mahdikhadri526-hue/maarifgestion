@@ -121,6 +121,30 @@ function numericValue(value: unknown) {
   return Number.isFinite(n) ? n : 0;
 }
 
+// Décale une date ISO de n jours (utilisé pour borner week_start côté serveur).
+function shiftISO(iso: string, days: number) {
+  const d = parseISODate(iso);
+  d.setDate(d.getDate() + days);
+  return formatISODate(d);
+}
+
+// Bornes de semaines à charger selon le filtre période (évite de tout télécharger).
+function weekRangeFilter(
+  mode: string,
+  day: string,
+  month: string,
+  start: string,
+  end: string,
+): { from?: string; to?: string } {
+  let s: string | undefined;
+  let e: string | undefined;
+  if (mode === "day" && day) { s = day; e = day; }
+  else if (mode === "month" && month) { s = `${month}-01`; e = `${month}-31`; }
+  else if (mode === "period") { s = start || undefined; e = end || undefined; }
+  // une semaine peut démarrer jusqu'à 7 jours avant la période
+  return { from: s ? shiftISO(s, -7) : undefined, to: e };
+}
+
 function buildWeeklyOrderRows(
   records: WeeklyTrackingOrderRecord[],
   articles: readonly string[],
