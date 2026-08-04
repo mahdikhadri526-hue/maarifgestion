@@ -42,9 +42,7 @@ const Index = () => {
     { id: "autocontrole" as Tab, label: "Autocontrôle", icon: ClipboardCheck, perm: "view_autocontrol" },
     { id: "hebdo" as Tab, label: "Suivi hebdomadaire", icon: CalendarDays, perm: "view_weekly" },
     { id: "temperatures" as Tab, label: "Températures frigos", icon: Thermometer, perm: "view_temperatures" },
-    { id: "recettes" as Tab, label: "Recettes", icon: ChefHat, perm: "view_recipes" },
     { id: "nettoyage" as Tab, label: "Nettoyage", icon: Sparkles, perm: "view_cleaning" },
-    { id: "inventaire" as Tab, label: "Inventaire", icon: PackageCheck, perm: "view_inventory" },
   ];
   const tabs = allTabs.filter((t) => can(t.perm));
 
