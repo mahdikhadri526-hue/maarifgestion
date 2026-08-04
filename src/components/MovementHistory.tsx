@@ -559,6 +559,16 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
             ))}
           </tbody>
         </table>
+        {visibleCount < filtered.length && (
+          <div className="p-3 text-center border-t">
+            <button
+              onClick={() => setVisibleCount((c) => c + PAGE)}
+              className="text-xs font-medium text-primary hover:underline"
+            >
+              Afficher plus ({filtered.length - visibleCount} restants)
+            </button>
+          </div>
+        )}
         {filtered.length === 0 && (
           <p className="text-center text-muted-foreground py-8">
             {sorted.length === 0 ? "Aucun mouvement enregistré" : "Aucun mouvement ne correspond aux filtres"}
