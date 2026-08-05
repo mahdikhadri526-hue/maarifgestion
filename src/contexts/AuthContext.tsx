@@ -82,25 +82,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const [pdvLoading, setPdvLoading] = useState(true);
   const [pdvPermissions, setPdvPermissions] = useState<Set<string> | null>(null);
+  const [assignedPdvId, setAssignedPdvId] = useState<string | null>(null);
+  const [assignedLoaded, setAssignedLoaded] = useState(false);
 
   const isAdmin = role === "admin";
   const multiPdvEnabled = ENABLE_MULTI_PDV || (MULTI_PDV_ADMIN_ONLY && isAdmin);
 
-  // Bascule automatique selon le compte : admin => multi-PDV, sinon PDV principal.
+  // Bascule automatique selon le compte : admin => multi-PDV,
+  // sinon PDV rattaché au compte (user_pdvs), ou PDV principal par défaut.
   useEffect(() => {
     if (multiPdvEnabled) {
       const stored = getStoredPdvId();
       setCurrentPdvId(stored);
       setPdvId(stored);
     } else {
-      setCurrentPdvId(DEFAULT_PDV_ID);
-      setPdvId(DEFAULT_PDV_ID);
+      if (!assignedLoaded) return;
+      const target = assignedPdvId ?? DEFAULT_PDV_ID;
+      setCurrentPdvId(target);
+      setPdvId(target);
     }
-  }, [multiPdvEnabled]);
+  }, [multiPdvEnabled, assignedPdvId, assignedLoaded]);
 
   useEffect(() => {
     let cancelled = false;
-    if (!multiPdvEnabled || !pdvId) {
+    if (!pdvId) {
       setPdvPermissions(null);
       return;
     }
@@ -121,14 +126,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [pdvId, multiPdvEnabled]);
+  }, [pdvId]);
 
   const loadPdvs = useCallback(async () => {
     setPdvLoading(true);
-    if (!multiPdvEnabled) {
-      setCurrentPdvId(DEFAULT_PDV_ID);
-      setPdvId(DEFAULT_PDV_ID);
-    }
     const { data } = await supabase.from("pdvs").select("id, code, name, active").order("name");
     const list = ((data ?? []) as Pdv[]).filter((p) => p.active);
     setPdvs(list);
@@ -143,9 +144,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [multiPdvEnabled]);
 
   const loadRoleAndPerms = useCallback(async (uid: string) => {
-    const [{ data: roles }, { data: perms }] = await Promise.all([
+    const [{ data: roles }, { data: perms }, { data: userPdvs }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", uid),
       supabase.from("user_permissions").select("permission_key, allowed").eq("user_id", uid),
+      supabase.from("user_pdvs").select("pdv_id").eq("user_id", uid).limit(1),
     ]);
     let r: AppRole | null = null;
     if (roles && roles.length > 0) {
@@ -158,6 +160,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (p.allowed) set.add(p.permission_key);
     });
     setPermissions(set);
+    setAssignedPdvId((userPdvs?.[0] as any)?.pdv_id ?? null);
+    setAssignedLoaded(true);
   }, []);
 
   useEffect(() => {
@@ -173,6 +177,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole(null);
         setPermissions(new Set());
         setPdvs([]);
+        setAssignedPdvId(null);
+        setAssignedLoaded(false);
         if (ENABLE_MULTI_PDV || MULTI_PDV_ADMIN_ONLY) {
           setCurrentPdvId(null);
           setPdvId(null);
