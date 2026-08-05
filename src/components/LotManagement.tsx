@@ -12,7 +12,7 @@ import { ENABLE_FIFO_INDICATOR } from "@/lib/featureFlags";
 import { formatDateFR, formatMaybeDate } from "@/lib/utils";
 import { useEffect } from "react";
 import { getAutocontrols, AutocontrolEntry } from "@/lib/autocontrolData";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/db";
 
 // --- Persistance partagée (Supabase) du marquage "Commande passée" ---
 async function fetchOrderPlaced(): Promise<Record<string, string>> {

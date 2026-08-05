@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/db";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 
 export type Category = "alimentaire" | "emballage";
