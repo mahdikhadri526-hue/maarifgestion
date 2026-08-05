@@ -1,21 +1,17 @@
 ---
 name: Signal de publication
-description: Mot-clé requis avant de publier les modifications du jour
+description: Mot-clé requis avant toute publication ; le multi-PDV ne doit pas être publié
 type: preference
 ---
-Toutes les modifications faites à partir de 16:32 ne doivent PAS être publiées tant que l'utilisateur n'a pas envoyé le signal.
+Aucune publication (frontend) sans signal explicite de l'utilisateur.
 
-**Modifications concernées (cumulées) :**
-- Boutons Transfert / Mr Hassan
-- Réintégration des transferts
-- Filtres historique mouvements
-- Tableau "Qté à commander" sur le dashboard (variant order)
-- Colonne "Stock actuel" + filtres par période
-- Toute modification ultérieure tant que le signal n'a pas été donné
+**Signal de publication : `go`** (mot exact, envoyé par l'utilisateur)
 
-**Signal de publication : `go`**
+**Non publiable pour l'instant :**
+- Toute la refonte MULTI-PDV (sélecteur de PDV, codes d'accès, permissions par PDV, client `@/lib/db`)
+- Toute modification ultérieure tant que `go` n'a pas été donné
 
 **How to apply:**
-- Ne JAMAIS suggérer de publier (pas de `<presentation-open-publish>`) tant que l'utilisateur n'a pas tapé `go`.
-- Quand l'utilisateur tape `go`, proposer la publication.
-- Les modifications backend (migrations DB) sont déjà actives — cela ne concerne que la publication frontend.
+- Ne JAMAIS appeler `preview_ui--publish` ni afficher `<presentation-open-publish>` sans le signal `go`.
+- Quand l'utilisateur tape `go`, demander confirmation de ce qui doit partir en production avant de publier.
+- Les migrations base de données sont déjà actives en production — elles sont additives et n'affectent pas la version publiée tant que le frontend n'est pas republié.
