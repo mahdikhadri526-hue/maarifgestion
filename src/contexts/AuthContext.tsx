@@ -1,6 +1,14 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentPdvId, setCurrentPdvId } from "@/lib/pdvStore";
+
+export interface Pdv {
+  id: string;
+  code: string;
+  name: string;
+  active: boolean;
+}
 
 export type AppRole = "admin" | "manager" | "operator" | "viewer";
 
@@ -50,6 +58,12 @@ interface AuthContextValue {
   can: (key: string) => boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
+  pdvs: Pdv[];
+  pdvId: string | null;
+  pdv: Pdv | null;
+  pdvLoading: boolean;
+  selectPdv: (id: string | null) => void;
+  refreshPdvs: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -60,6 +74,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [permissions, setPermissions] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
+  const [pdvs, setPdvs] = useState<Pdv[]>([]);
+  const [pdvId, setPdvId] = useState<string | null>(getCurrentPdvId());
+  const [pdvLoading, setPdvLoading] = useState(true);
+
+  const loadPdvs = useCallback(async () => {
+    setPdvLoading(true);
+    const { data } = await supabase.from("pdvs").select("id, code, name, active").order("name");
+    const list = ((data ?? []) as Pdv[]).filter((p) => p.active);
+    setPdvs(list);
+    const stored = getCurrentPdvId();
+    if (stored && !list.some((p) => p.id === stored)) {
+      setCurrentPdvId(null);
+      setPdvId(null);
+    } else if (!stored && list.length === 1) {
+      setCurrentPdvId(list[0].id);
+      setPdvId(list[0].id);
+    }
+    setPdvLoading(false);
+  }, []);
 
   const loadRoleAndPerms = useCallback(async (uid: string) => {
     const [{ data: roles }, { data: perms }] = await Promise.all([
@@ -84,10 +117,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
-        setTimeout(() => loadRoleAndPerms(sess.user.id), 0);
+        setTimeout(() => {
+          loadRoleAndPerms(sess.user.id);
+          loadPdvs();
+        }, 0);
       } else {
         setRole(null);
         setPermissions(new Set());
+        setPdvs([]);
+        setCurrentPdvId(null);
+        setPdvId(null);
       }
     });
 
@@ -96,13 +135,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(sess?.user ?? null);
       if (sess?.user) {
         loadRoleAndPerms(sess.user.id).finally(() => setLoading(false));
+        loadPdvs();
       } else {
         setLoading(false);
+        setPdvLoading(false);
       }
     });
 
     return () => sub.subscription.unsubscribe();
-  }, [loadRoleAndPerms]);
+  }, [loadRoleAndPerms, loadPdvs]);
 
   const isAdmin = role === "admin";
 
@@ -123,8 +164,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (user) await loadRoleAndPerms(user.id);
   };
 
+  const selectPdv = useCallback((id: string | null) => {
+    setCurrentPdvId(id);
+    setPdvId(id);
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, role, permissions, isAdmin, can, signOut, refresh }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        role,
+        permissions,
+        isAdmin,
+        can,
+        signOut,
+        refresh,
+        pdvs,
+        pdvId,
+        pdv: pdvs.find((p) => p.id === pdvId) ?? null,
+        pdvLoading,
+        selectPdv,
+        refreshPdvs: loadPdvs,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

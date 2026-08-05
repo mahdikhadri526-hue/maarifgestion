@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/db";
 
 export type FicheType =
   | "Oranges/Bigarreaux confits"

@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/db";
 import { saveMovement, MovementUnit, getProducts } from "./stockData";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 

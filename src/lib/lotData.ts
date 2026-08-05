@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/db";
 import { syncLotBalances } from "./lotBalance";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 
