@@ -45,3 +45,18 @@ export const ENABLE_ORDER_COLUMNS = true;
  * est `false`, seule la liste des lots reste visible sans annotation FIFO.
  */
 export const ENABLE_FIFO_INDICATOR = true;
+
+/**
+ * Active l'architecture MULTI-PDV côté interface : écran de sélection du point
+ * de vente au démarrage, changement de PDV depuis le menu utilisateur, gestion
+ * des PDV / codes d'accès / permissions par PDV dans l'écran admin.
+ *
+ * Tant que ce flag est `false`, l'application se comporte exactement comme
+ * avant : aucun écran de sélection, tout le monde travaille automatiquement
+ * sur le PDV principal (`DEFAULT_PDV_ID`). Les données et la structure
+ * multi-PDV restent intactes en base.
+ */
+export const ENABLE_MULTI_PDV = false;
+
+/** PDV utilisé automatiquement quand ENABLE_MULTI_PDV est `false`. */
+export const DEFAULT_PDV_ID = "00000000-0000-0000-0000-000000000001";
