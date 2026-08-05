@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentPdvId, setCurrentPdvId } from "@/lib/pdvStore";
+import { DEFAULT_PDV_ID, ENABLE_MULTI_PDV } from "@/lib/featureFlags";
 
 export interface Pdv {
   id: string;
@@ -75,13 +76,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [permissions, setPermissions] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [pdvs, setPdvs] = useState<Pdv[]>([]);
-  const [pdvId, setPdvId] = useState<string | null>(getCurrentPdvId());
+  const [pdvId, setPdvId] = useState<string | null>(
+    ENABLE_MULTI_PDV ? getCurrentPdvId() : DEFAULT_PDV_ID,
+  );
   const [pdvLoading, setPdvLoading] = useState(true);
   const [pdvPermissions, setPdvPermissions] = useState<Set<string> | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    if (!pdvId) {
+    if (!ENABLE_MULTI_PDV || !pdvId) {
       setPdvPermissions(null);
       return;
     }
@@ -106,13 +109,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadPdvs = useCallback(async () => {
     setPdvLoading(true);
+    if (!ENABLE_MULTI_PDV) {
+      setCurrentPdvId(DEFAULT_PDV_ID);
+      setPdvId(DEFAULT_PDV_ID);
+    }
     const { data } = await supabase.from("pdvs").select("id, code, name, active").order("name");
     const list = ((data ?? []) as Pdv[]).filter((p) => p.active);
     setPdvs(list);
-    const stored = getCurrentPdvId();
-    if (stored && !list.some((p) => p.id === stored)) {
-      setCurrentPdvId(null);
-      setPdvId(null);
+    if (ENABLE_MULTI_PDV) {
+      const stored = getCurrentPdvId();
+      if (stored && !list.some((p) => p.id === stored)) {
+        setCurrentPdvId(null);
+        setPdvId(null);
+      }
     }
     setPdvLoading(false);
   }, []);
@@ -148,8 +157,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole(null);
         setPermissions(new Set());
         setPdvs([]);
-        setCurrentPdvId(null);
-        setPdvId(null);
+        if (ENABLE_MULTI_PDV) {
+          setCurrentPdvId(null);
+          setPdvId(null);
+        }
       }
     });
 
@@ -189,6 +200,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const selectPdv = useCallback((id: string | null) => {
+    if (!ENABLE_MULTI_PDV) return;
     setCurrentPdvId(id);
     setPdvId(id);
   }, []);

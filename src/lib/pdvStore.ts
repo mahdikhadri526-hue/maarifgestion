@@ -1,7 +1,12 @@
+import { DEFAULT_PDV_ID, ENABLE_MULTI_PDV } from "@/lib/featureFlags";
+
 const STORAGE_KEY = "current_pdv_id";
 
-let currentPdvId: string | null =
-  typeof localStorage !== "undefined" ? localStorage.getItem(STORAGE_KEY) : null;
+let currentPdvId: string | null = !ENABLE_MULTI_PDV
+  ? DEFAULT_PDV_ID
+  : typeof localStorage !== "undefined"
+    ? localStorage.getItem(STORAGE_KEY)
+    : null;
 
 export function getCurrentPdvId(): string | null {
   return currentPdvId;

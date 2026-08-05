@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ALL_PERMISSIONS, AppRole, useAuth } from "@/contexts/AuthContext";
 import { PdvManagement } from "@/components/pdv/PdvManagement";
+import { ENABLE_MULTI_PDV } from "@/lib/featureFlags";
 
 interface ProfileRow {
   user_id: string;
@@ -163,7 +164,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
         </CardContent>
       </Card>
 
-      <PdvManagement onChanged={load} />
+      {ENABLE_MULTI_PDV && <PdvManagement onChanged={load} />}
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
