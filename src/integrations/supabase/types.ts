@@ -621,12 +621,48 @@ export type Database = {
           },
         ]
       }
+      pdv_permissions: {
+        Row: {
+          allowed: boolean
+          created_at: string
+          id: string
+          pdv_id: string
+          permission_key: string
+          updated_at: string
+        }
+        Insert: {
+          allowed?: boolean
+          created_at?: string
+          id?: string
+          pdv_id: string
+          permission_key: string
+          updated_at?: string
+        }
+        Update: {
+          allowed?: boolean
+          created_at?: string
+          id?: string
+          pdv_id?: string
+          permission_key?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdv_permissions_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pdvs: {
         Row: {
           access_code: string
           active: boolean
           code: string
           created_at: string
+          default_role: Database["public"]["Enums"]["app_role"]
           id: string
           name: string
           updated_at: string
@@ -636,6 +672,7 @@ export type Database = {
           active?: boolean
           code: string
           created_at?: string
+          default_role?: Database["public"]["Enums"]["app_role"]
           id?: string
           name: string
           updated_at?: string
@@ -645,6 +682,7 @@ export type Database = {
           active?: boolean
           code?: string
           created_at?: string
+          default_role?: Database["public"]["Enums"]["app_role"]
           id?: string
           name?: string
           updated_at?: string
