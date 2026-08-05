@@ -26,6 +26,7 @@ export type Database = {
           id: string
           lot_number: string | null
           notes: string | null
+          pdv_id: string
           quantity: number | null
           updated_at: string
           visa_manager: string | null
@@ -41,6 +42,7 @@ export type Database = {
           id?: string
           lot_number?: string | null
           notes?: string | null
+          pdv_id?: string
           quantity?: number | null
           updated_at?: string
           visa_manager?: string | null
@@ -56,11 +58,20 @@ export type Database = {
           id?: string
           lot_number?: string | null
           notes?: string | null
+          pdv_id?: string
           quantity?: number | null
           updated_at?: string
           visa_manager?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "autocontrols_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cleaning_logs: {
         Row: {
@@ -69,6 +80,7 @@ export type Database = {
           id: string
           log_date: string
           notes: string | null
+          pdv_id: string
           tasks: Json
           updated_at: string
           visa_manager: string | null
@@ -80,6 +92,7 @@ export type Database = {
           id?: string
           log_date: string
           notes?: string | null
+          pdv_id?: string
           tasks?: Json
           updated_at?: string
           visa_manager?: string | null
@@ -91,12 +104,21 @@ export type Database = {
           id?: string
           log_date?: string
           notes?: string | null
+          pdv_id?: string
           tasks?: Json
           updated_at?: string
           visa_manager?: string | null
           zone?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cleaning_logs_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       finished_products: {
         Row: {
@@ -145,6 +167,7 @@ export type Database = {
           equipment_name: string
           equipment_type: string
           id: string
+          pdv_id: string
           performed_by: string
           slot: string
           temperature_bas: number | null
@@ -163,6 +186,7 @@ export type Database = {
           equipment_name: string
           equipment_type: string
           id?: string
+          pdv_id?: string
           performed_by: string
           slot: string
           temperature_bas?: number | null
@@ -181,6 +205,7 @@ export type Database = {
           equipment_name?: string
           equipment_type?: string
           id?: string
+          pdv_id?: string
           performed_by?: string
           slot?: string
           temperature_bas?: number | null
@@ -189,7 +214,15 @@ export type Database = {
           visa_manager?: string | null
           zone?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fridge_temperatures_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       glace_grammage: {
         Row: {
@@ -240,6 +273,7 @@ export type Database = {
           id: string
           min_quantity: number
           paquet_enabled: boolean
+          pdv_id: string
           pieces_per_carton: number
           pieces_per_paquet: number
           product_id: string
@@ -253,6 +287,7 @@ export type Database = {
           id?: string
           min_quantity?: number
           paquet_enabled?: boolean
+          pdv_id?: string
           pieces_per_carton?: number
           pieces_per_paquet?: number
           product_id: string
@@ -266,6 +301,7 @@ export type Database = {
           id?: string
           min_quantity?: number
           paquet_enabled?: boolean
+          pdv_id?: string
           pieces_per_carton?: number
           pieces_per_paquet?: number
           product_id?: string
@@ -273,7 +309,15 @@ export type Database = {
           unit?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "initial_stocks_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       inventory_counts: {
         Row: {
@@ -282,6 +326,7 @@ export type Database = {
           id: string
           line_id: string
           mise_en_place_qty: number | null
+          pdv_id: string
           session_id: string
           stock_qty: number | null
           updated_at: string
@@ -292,6 +337,7 @@ export type Database = {
           id?: string
           line_id: string
           mise_en_place_qty?: number | null
+          pdv_id?: string
           session_id: string
           stock_qty?: number | null
           updated_at?: string
@@ -302,6 +348,7 @@ export type Database = {
           id?: string
           line_id?: string
           mise_en_place_qty?: number | null
+          pdv_id?: string
           session_id?: string
           stock_qty?: number | null
           updated_at?: string
@@ -312,6 +359,13 @@ export type Database = {
             columns: ["line_id"]
             isOneToOne: false
             referencedRelation: "inventory_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_counts_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
             referencedColumns: ["id"]
           },
           {
@@ -330,6 +384,7 @@ export type Database = {
           id: string
           lot_id: string | null
           lot_number: string | null
+          pdv_id: string
           product_id: string
           product_name: string
           session_id: string
@@ -342,6 +397,7 @@ export type Database = {
           id?: string
           lot_id?: string | null
           lot_number?: string | null
+          pdv_id?: string
           product_id: string
           product_name: string
           session_id: string
@@ -354,6 +410,7 @@ export type Database = {
           id?: string
           lot_id?: string | null
           lot_number?: string | null
+          pdv_id?: string
           product_id?: string
           product_name?: string
           session_id?: string
@@ -361,6 +418,13 @@ export type Database = {
           theoretical_qty?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "inventory_lines_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "inventory_lines_session_id_fkey"
             columns: ["session_id"]
@@ -376,6 +440,7 @@ export type Database = {
           final_stock_qty: number | null
           id: string
           line_id: string
+          pdv_id: string
           resolved_at: string
           resolved_by: string | null
           session_id: string
@@ -386,6 +451,7 @@ export type Database = {
           final_stock_qty?: number | null
           id?: string
           line_id: string
+          pdv_id?: string
           resolved_at?: string
           resolved_by?: string | null
           session_id: string
@@ -396,6 +462,7 @@ export type Database = {
           final_stock_qty?: number | null
           id?: string
           line_id?: string
+          pdv_id?: string
           resolved_at?: string
           resolved_by?: string | null
           session_id?: string
@@ -407,6 +474,13 @@ export type Database = {
             columns: ["line_id"]
             isOneToOne: false
             referencedRelation: "inventory_lines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_resolutions_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
             referencedColumns: ["id"]
           },
           {
@@ -429,6 +503,7 @@ export type Database = {
           created_by: string | null
           id: string
           label: string
+          pdv_id: string
           session_date: string
           status: string
           updated_at: string
@@ -443,6 +518,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           label: string
+          pdv_id?: string
           session_date?: string
           status?: string
           updated_at?: string
@@ -457,11 +533,20 @@ export type Database = {
           created_by?: string | null
           id?: string
           label?: string
+          pdv_id?: string
           session_date?: string
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "inventory_sessions_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       lot_entries: {
         Row: {
@@ -470,6 +555,7 @@ export type Database = {
           expiry_date: string
           id: string
           lot_number: string
+          pdv_id: string
           product_id: string
           quantity: number
           remaining_quantity: number
@@ -480,6 +566,7 @@ export type Database = {
           expiry_date: string
           id?: string
           lot_number: string
+          pdv_id?: string
           product_id: string
           quantity: number
           remaining_quantity?: number
@@ -490,27 +577,74 @@ export type Database = {
           expiry_date?: string
           id?: string
           lot_number?: string
+          pdv_id?: string
           product_id?: string
           quantity?: number
           remaining_quantity?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "lot_entries_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       order_placed_products: {
         Row: {
           marked_at: string
           marked_by: string | null
+          pdv_id: string
           product_id: string
         }
         Insert: {
           marked_at?: string
           marked_by?: string | null
+          pdv_id?: string
           product_id: string
         }
         Update: {
           marked_at?: string
           marked_by?: string | null
+          pdv_id?: string
           product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_placed_products_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pdvs: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -521,6 +655,7 @@ export type Database = {
           finished_product_id: string
           id: string
           notes: string | null
+          pdv_id: string
           performed_by: string
           quantity_produced: number
           recipe_id: string | null
@@ -531,6 +666,7 @@ export type Database = {
           finished_product_id: string
           id?: string
           notes?: string | null
+          pdv_id?: string
           performed_by: string
           quantity_produced: number
           recipe_id?: string | null
@@ -541,6 +677,7 @@ export type Database = {
           finished_product_id?: string
           id?: string
           notes?: string | null
+          pdv_id?: string
           performed_by?: string
           quantity_produced?: number
           recipe_id?: string | null
@@ -551,6 +688,13 @@ export type Database = {
             columns: ["finished_product_id"]
             isOneToOne: false
             referencedRelation: "finished_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "production_entries_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
             referencedColumns: ["id"]
           },
           {
@@ -679,6 +823,7 @@ export type Database = {
           created_at: string
           date: string
           id: string
+          pdv_id: string
           performed_by: string | null
           product_id: string
           product_name: string
@@ -690,6 +835,7 @@ export type Database = {
           created_at?: string
           date: string
           id?: string
+          pdv_id?: string
           performed_by?: string | null
           product_id: string
           product_name: string
@@ -701,6 +847,7 @@ export type Database = {
           created_at?: string
           date?: string
           id?: string
+          pdv_id?: string
           performed_by?: string | null
           product_id?: string
           product_name?: string
@@ -708,7 +855,15 @@ export type Database = {
           type?: string
           unit_used?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "requisitions_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_orders: {
         Row: {
@@ -718,6 +873,7 @@ export type Database = {
           items: Json
           notes: string | null
           order_date: string
+          pdv_id: string
           performed_by: string | null
           total_items: number
         }
@@ -728,6 +884,7 @@ export type Database = {
           items?: Json
           notes?: string | null
           order_date: string
+          pdv_id?: string
           performed_by?: string | null
           total_items?: number
         }
@@ -738,10 +895,19 @@ export type Database = {
           items?: Json
           notes?: string | null
           order_date?: string
+          pdv_id?: string
           performed_by?: string | null
           total_items?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "saved_orders_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_movements: {
         Row: {
@@ -750,6 +916,7 @@ export type Database = {
           date: string
           destination: string | null
           id: string
+          pdv_id: string
           performed_by: string | null
           product_id: string
           product_name: string
@@ -764,6 +931,7 @@ export type Database = {
           date: string
           destination?: string | null
           id?: string
+          pdv_id?: string
           performed_by?: string | null
           product_id: string
           product_name: string
@@ -778,6 +946,7 @@ export type Database = {
           date?: string
           destination?: string | null
           id?: string
+          pdv_id?: string
           performed_by?: string | null
           product_id?: string
           product_name?: string
@@ -786,7 +955,15 @@ export type Database = {
           type?: string
           unit_used?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stock_ref_conversions: {
         Row: {
@@ -808,6 +985,35 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      user_pdvs: {
+        Row: {
+          created_at: string
+          id: string
+          pdv_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pdv_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pdv_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_pdvs_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_permissions: {
         Row: {
@@ -865,6 +1071,7 @@ export type Database = {
           id: string
           lot_number: string | null
           odeur: string | null
+          pdv_id: string
           quantity: number | null
           row_index: number
           sorties: number | null
@@ -885,6 +1092,7 @@ export type Database = {
           id?: string
           lot_number?: string | null
           odeur?: string | null
+          pdv_id?: string
           quantity?: number | null
           row_index?: number
           sorties?: number | null
@@ -905,6 +1113,7 @@ export type Database = {
           id?: string
           lot_number?: string | null
           odeur?: string | null
+          pdv_id?: string
           quantity?: number | null
           row_index?: number
           sorties?: number | null
@@ -915,13 +1124,25 @@ export type Database = {
           visa_operateur?: string | null
           week_start?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "weekly_tracking_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
+      can_access_pdv: {
+        Args: { _pdv_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_manage_inventory: { Args: { _user_id: string }; Returns: boolean }
       can_participate_inventory: {
         Args: { _session_id: string; _user_id: string }
