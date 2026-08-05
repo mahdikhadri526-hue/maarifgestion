@@ -434,7 +434,7 @@ export function FridgeTemperatureManager() {
     } as any;
     const { data, error } = await supabase
       .from("fridge_temperatures")
-      .upsert(payload, { onConflict: "control_date,slot,equipment_code" })
+      .upsert(payload, { onConflict: "pdv_id,control_date,slot,equipment_code" })
       .select()
       .single();
     setSaving(null);
@@ -473,6 +473,7 @@ export function FridgeTemperatureManager() {
     }
     setSavingZone(zone);
     let ok = 0, ko = 0;
+    let firstError = "";
     const savedCodes: string[] = [];
     for (const eq of zoneEquips) {
       const r = rows[eq.code];
@@ -497,9 +498,12 @@ export function FridgeTemperatureManager() {
       } as any;
       const { data, error } = await supabase
         .from("fridge_temperatures")
-        .upsert(payload, { onConflict: "control_date,slot,equipment_code" })
+        .upsert(payload, { onConflict: "pdv_id,control_date,slot,equipment_code" })
         .select().single();
-      if (error) { ko++; } else {
+      if (error) {
+        ko++;
+        if (!firstError) firstError = error.message;
+      } else {
         ok++;
         savedCodes.push(eq.code);
         updateRow(eq.code, {
@@ -520,7 +524,11 @@ export function FridgeTemperatureManager() {
       });
     }
     setSavingZone(null);
-    toast({ title: `Zone ${zone} enregistrée`, description: `${ok} ligne(s) enregistrée(s)${ko ? `, ${ko} erreur(s)` : ""}` });
+    toast({
+      title: ko > 0 && ok === 0 ? "Erreur d'enregistrement" : `Zone ${zone} enregistrée`,
+      description: firstError || `${ok} ligne(s) enregistrée(s)${ko ? `, ${ko} erreur(s)` : ""}`,
+      variant: ko > 0 && ok === 0 ? "destructive" : "default",
+    });
   }
 
   function exportPdf() {
