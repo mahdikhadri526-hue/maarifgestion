@@ -12,6 +12,12 @@ export function getCurrentPdvId(): string | null {
   return currentPdvId;
 }
 
+/** Valeur mémorisée dans le navigateur (indépendante du flag). */
+export function getStoredPdvId(): string | null {
+  if (typeof localStorage === "undefined") return null;
+  return localStorage.getItem(STORAGE_KEY);
+}
+
 export function requireCurrentPdvId(): string {
   if (!currentPdvId) throw new Error("Aucun point de vente sélectionné");
   return currentPdvId;
