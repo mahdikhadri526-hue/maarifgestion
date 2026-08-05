@@ -25,7 +25,7 @@ export function UserMenu({ onOpenAdmin }: { onOpenAdmin: () => void }) {
         <DropdownMenuLabel className="font-normal">
           <div className="text-sm font-medium">{user.email}</div>
           <div className="text-xs text-muted-foreground capitalize">Rôle : {role ?? "—"}</div>
-          {multiPdvEnabled && pdv && (
+          {pdv && (
             <div className="text-xs text-muted-foreground">PDV : {pdv.name}</div>
           )}
         </DropdownMenuLabel>
