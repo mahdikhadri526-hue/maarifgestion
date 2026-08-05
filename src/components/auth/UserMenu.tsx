@@ -1,4 +1,4 @@
-import { LogOut, Shield, User as UserIcon } from "lucide-react";
+import { Building2, LogOut, Shield, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,7 +11,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 export function UserMenu({ onOpenAdmin }: { onOpenAdmin: () => void }) {
-  const { user, role, isAdmin, signOut } = useAuth();
+  const { user, role, isAdmin, signOut, pdv, pdvs, selectPdv } = useAuth();
   if (!user) return null;
   return (
     <DropdownMenu>
@@ -25,8 +25,14 @@ export function UserMenu({ onOpenAdmin }: { onOpenAdmin: () => void }) {
         <DropdownMenuLabel className="font-normal">
           <div className="text-sm font-medium">{user.email}</div>
           <div className="text-xs text-muted-foreground capitalize">Rôle : {role ?? "—"}</div>
+          {pdv && <div className="text-xs text-muted-foreground">PDV : {pdv.name}</div>}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {pdvs.length > 1 && (
+          <DropdownMenuItem onClick={() => selectPdv(null)}>
+            <Building2 className="h-4 w-4 mr-2" /> Changer de point de vente
+          </DropdownMenuItem>
+        )}
         {isAdmin && (
           <DropdownMenuItem onClick={onOpenAdmin}>
             <Shield className="h-4 w-4 mr-2" /> Gestion des utilisateurs
