@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AuthPage } from "@/components/auth/AuthPage";
 import { PdvSelector } from "@/components/pdv/PdvSelector";
+import { ENABLE_MULTI_PDV } from "@/lib/featureFlags";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -17,7 +18,7 @@ function AuthGate() {
     return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Chargement…</div>;
   }
   if (!user) return <AuthPage />;
-  if (!pdvId) return <PdvSelector />;
+  if (ENABLE_MULTI_PDV && !pdvId) return <PdvSelector />;
   return (
     <BrowserRouter key={pdvId}>
       <Routes>
