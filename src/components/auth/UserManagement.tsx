@@ -163,7 +163,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
         </CardContent>
       </Card>
 
-      <PdvManagement onChanged={load} />
+      {ENABLE_MULTI_PDV && <PdvManagement onChanged={load} />}
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
