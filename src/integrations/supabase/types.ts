@@ -623,6 +623,7 @@ export type Database = {
       }
       pdvs: {
         Row: {
+          access_code: string
           active: boolean
           code: string
           created_at: string
@@ -631,6 +632,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          access_code?: string
           active?: boolean
           code: string
           created_at?: string
@@ -639,6 +641,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          access_code?: string
           active?: boolean
           code?: string
           created_at?: string
@@ -1168,6 +1171,10 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      verify_pdv_code: {
+        Args: { _code: string; _pdv_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "operator" | "viewer"
