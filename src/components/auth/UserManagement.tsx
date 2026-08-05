@@ -10,7 +10,6 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ALL_PERMISSIONS, AppRole, useAuth } from "@/contexts/AuthContext";
 import { PdvManagement } from "@/components/pdv/PdvManagement";
-import { ENABLE_MULTI_PDV } from "@/lib/featureFlags";
 
 interface ProfileRow {
   user_id: string;

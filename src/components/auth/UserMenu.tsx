@@ -9,10 +9,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
-import { ENABLE_MULTI_PDV } from "@/lib/featureFlags";
 
 export function UserMenu({ onOpenAdmin }: { onOpenAdmin: () => void }) {
-  const { user, role, isAdmin, signOut, pdv, pdvs, selectPdv } = useAuth();
+  const { user, role, isAdmin, signOut, pdv, selectPdv, multiPdvEnabled } = useAuth();
   if (!user) return null;
   return (
     <DropdownMenu>
@@ -26,12 +25,12 @@ export function UserMenu({ onOpenAdmin }: { onOpenAdmin: () => void }) {
         <DropdownMenuLabel className="font-normal">
           <div className="text-sm font-medium">{user.email}</div>
           <div className="text-xs text-muted-foreground capitalize">Rôle : {role ?? "—"}</div>
-          {ENABLE_MULTI_PDV && pdv && (
+          {multiPdvEnabled && pdv && (
             <div className="text-xs text-muted-foreground">PDV : {pdv.name}</div>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {ENABLE_MULTI_PDV && (
+        {multiPdvEnabled && (
           <DropdownMenuItem onClick={() => selectPdv(null)}>
             <Building2 className="h-4 w-4 mr-2" /> Changer de point de vente
           </DropdownMenuItem>
