@@ -77,6 +77,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [pdvs, setPdvs] = useState<Pdv[]>([]);
   const [pdvId, setPdvId] = useState<string | null>(getCurrentPdvId());
   const [pdvLoading, setPdvLoading] = useState(true);
+  const [pdvPermissions, setPdvPermissions] = useState<Set<string> | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!pdvId) {
+      setPdvPermissions(null);
+      return;
+    }
+    supabase
+      .from("pdv_permissions" as any)
+      .select("permission_key, allowed")
+      .eq("pdv_id", pdvId)
+      .then(({ data }) => {
+        if (cancelled) return;
+        if (!data || data.length === 0) {
+          setPdvPermissions(null);
+          return;
+        }
+        const set = new Set<string>();
+        (data as any[]).forEach((p) => p.allowed && set.add(p.permission_key));
+        setPdvPermissions(set);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [pdvId]);
 
   const loadPdvs = useCallback(async () => {
     setPdvLoading(true);
@@ -148,9 +174,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (key: string) => {
       if (!user) return false;
       if (isAdmin) return true;
+      if (pdvPermissions) return pdvPermissions.has(key);
       return permissions.has(key);
     },
-    [user, isAdmin, permissions],
+    [user, isAdmin, permissions, pdvPermissions],
   );
 
   const signOut = async () => {
