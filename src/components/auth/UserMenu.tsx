@@ -28,11 +28,9 @@ export function UserMenu({ onOpenAdmin }: { onOpenAdmin: () => void }) {
           {pdv && <div className="text-xs text-muted-foreground">PDV : {pdv.name}</div>}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        {pdvs.length > 1 && (
-          <DropdownMenuItem onClick={() => selectPdv(null)}>
-            <Building2 className="h-4 w-4 mr-2" /> Changer de point de vente
-          </DropdownMenuItem>
-        )}
+        <DropdownMenuItem onClick={() => selectPdv(null)}>
+          <Building2 className="h-4 w-4 mr-2" /> Changer de point de vente
+        </DropdownMenuItem>
         {isAdmin && (
           <DropdownMenuItem onClick={onOpenAdmin}>
             <Shield className="h-4 w-4 mr-2" /> Gestion des utilisateurs
