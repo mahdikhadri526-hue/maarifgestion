@@ -6,19 +6,18 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AuthPage } from "@/components/auth/AuthPage";
 import { PdvSelector } from "@/components/pdv/PdvSelector";
-import { ENABLE_MULTI_PDV } from "@/lib/featureFlags";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
 function AuthGate() {
-  const { user, loading, pdvId, pdvLoading } = useAuth();
+  const { user, loading, pdvId, pdvLoading, multiPdvEnabled } = useAuth();
   if (loading || (user && pdvLoading)) {
     return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Chargement…</div>;
   }
   if (!user) return <AuthPage />;
-  if (ENABLE_MULTI_PDV && !pdvId) return <PdvSelector />;
+  if (multiPdvEnabled && !pdvId) return <PdvSelector />;
   return (
     <BrowserRouter key={pdvId}>
       <Routes>

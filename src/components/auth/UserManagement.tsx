@@ -42,7 +42,7 @@ const ROLE_PRESETS: Record<AppRole, string[]> = {
 };
 
 export function UserManagement({ onBack }: { onBack: () => void }) {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, multiPdvEnabled } = useAuth();
   const [users, setUsers] = useState<ProfileRow[]>([]);
   const [roles, setRoles] = useState<Record<string, AppRole | null>>({});
   const [perms, setPerms] = useState<Record<string, Set<string>>>({});
@@ -163,7 +163,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
         </CardContent>
       </Card>
 
-      {ENABLE_MULTI_PDV && <PdvManagement onChanged={load} />}
+      {multiPdvEnabled && <PdvManagement onChanged={load} />}
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
