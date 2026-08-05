@@ -1,15 +1,18 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ShieldCheck, Settings2 } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Settings2, UserPlus, Trash2, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ALL_PERMISSIONS, AppRole, useAuth } from "@/contexts/AuthContext";
 import { PdvManagement } from "@/components/pdv/PdvManagement";
+
+const PROTECTED_EMAILS = ["gestionmaarif1@gmail.com"];
 
 interface ProfileRow {
   user_id: string;
@@ -42,21 +45,52 @@ const ROLE_PRESETS: Record<AppRole, string[]> = {
 };
 
 export function UserManagement({ onBack }: { onBack: () => void }) {
-  const { user: currentUser, multiPdvEnabled } = useAuth();
+  const { user: currentUser, multiPdvEnabled, pdvs } = useAuth();
   const [users, setUsers] = useState<ProfileRow[]>([]);
   const [roles, setRoles] = useState<Record<string, AppRole | null>>({});
   const [perms, setPerms] = useState<Record<string, Set<string>>>({});
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ProfileRow | null>(null);
+  const [userPdvs, setUserPdvs] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newRole, setNewRole] = useState<AppRole>("operator");
+  const [newPdv, setNewPdv] = useState<string>("");
+  const [pwdTarget, setPwdTarget] = useState<ProfileRow | null>(null);
+  const [pwdValue, setPwdValue] = useState("");
+
+  const isProtected = (email?: string | null) =>
+    !!email && PROTECTED_EMAILS.includes(email.toLowerCase());
+
+  const callAdmin = async (payload: Record<string, unknown>) => {
+    setBusy(true);
+    const { data, error } = await supabase.functions.invoke("admin-users", { body: payload });
+    setBusy(false);
+    if (error) {
+      const msg = (data as any)?.error ?? error.message;
+      toast.error("Erreur : " + msg);
+      return false;
+    }
+    if ((data as any)?.error) {
+      toast.error("Erreur : " + (data as any).error);
+      return false;
+    }
+    return true;
+  };
 
   const load = async () => {
     setLoading(true);
-    const [{ data: profs }, { data: allRoles }, { data: allPerms }] = await Promise.all([
+    const [{ data: profs }, { data: allRoles }, { data: allPerms }, { data: allUserPdvs }] = await Promise.all([
       supabase.from("profiles").select("user_id, email, display_name").order("created_at", { ascending: true }),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("user_permissions").select("user_id, permission_key, allowed"),
+      supabase.from("user_pdvs").select("user_id, pdv_id"),
     ]);
     setUsers(profs ?? []);
+    const upMap: Record<string, string> = {};
+    ((allUserPdvs ?? []) as any[]).forEach((r) => { upMap[r.user_id] = r.pdv_id; });
+    setUserPdvs(upMap);
     const rMap: Record<string, AppRole | null> = {};
     const order: AppRole[] = ["admin", "manager", "operator", "viewer"];
     (allRoles ?? []).forEach((r: any) => {
@@ -109,6 +143,47 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
     load();
   };
 
+  const createUser = async () => {
+    if (!newEmail.trim() || newPassword.length < 6) {
+      toast.error("Email et mot de passe (6 caractères minimum) requis");
+      return;
+    }
+    const ok = await callAdmin({
+      action: "create",
+      email: newEmail.trim(),
+      password: newPassword,
+      role: newRole,
+      pdv_id: newPdv || null,
+    });
+    if (!ok) return;
+    toast.success("Utilisateur créé");
+    setNewEmail(""); setNewPassword(""); setNewPdv("");
+    load();
+  };
+
+  const deleteUser = async (u: ProfileRow) => {
+    if (!confirm(`Supprimer définitivement ${u.email} ?`)) return;
+    const ok = await callAdmin({ action: "delete", user_id: u.user_id });
+    if (!ok) return;
+    toast.success("Utilisateur supprimé");
+    load();
+  };
+
+  const changePassword = async () => {
+    if (!pwdTarget) return;
+    const ok = await callAdmin({ action: "password", user_id: pwdTarget.user_id, password: pwdValue });
+    if (!ok) return;
+    toast.success("Mot de passe mis à jour");
+    setPwdTarget(null); setPwdValue("");
+  };
+
+  const assignPdv = async (userId: string, pdvIdValue: string) => {
+    const ok = await callAdmin({ action: "assign_pdv", user_id: userId, pdv_id: pdvIdValue || null });
+    if (!ok) return;
+    toast.success("Point de vente mis à jour");
+    load();
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -122,6 +197,36 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
 
       <Card>
         <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <UserPlus className="h-4 w-4 text-primary" /> Ajouter un utilisateur
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-2 sm:grid-cols-5">
+          <Input placeholder="Email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+          <Input placeholder="Mot de passe" type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+          <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="manager">Manager</SelectItem>
+              <SelectItem value="operator">Opérateur</SelectItem>
+              <SelectItem value="viewer">Lecteur</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={newPdv} onValueChange={setNewPdv}>
+            <SelectTrigger><SelectValue placeholder="Point de vente" /></SelectTrigger>
+            <SelectContent>
+              {pdvs.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={createUser} disabled={busy}>Créer</Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <CardTitle className="text-base">Utilisateurs ({users.length})</CardTitle>
         </CardHeader>
         <CardContent>
@@ -132,6 +237,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
               {users.map((u) => {
                 const r = roles[u.user_id] ?? "viewer";
                 const isMe = u.user_id === currentUser?.id;
+                const locked = isProtected(u.email);
                 return (
                   <div key={u.user_id} className="flex items-center justify-between gap-3 p-3 border rounded-lg flex-wrap">
                     <div className="min-w-0 flex-1">
@@ -140,7 +246,22 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
                     </div>
                     <div className="flex items-center gap-2">
                       {isMe && <Badge variant="secondary">Vous</Badge>}
-                      <Select value={r} onValueChange={(v) => setUserRole(u.user_id, v as AppRole)} disabled={isMe}>
+                      {locked && <Badge variant="outline">Protégé</Badge>}
+                      <Select
+                        value={userPdvs[u.user_id] ?? ""}
+                        onValueChange={(v) => assignPdv(u.user_id, v)}
+                        disabled={locked || busy}
+                      >
+                        <SelectTrigger className="w-[150px]">
+                          <SelectValue placeholder="Point de vente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {pdvs.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={r} onValueChange={(v) => setUserRole(u.user_id, v as AppRole)} disabled={isMe || locked}>
                         <SelectTrigger className="w-[140px]">
                           <SelectValue />
                         </SelectTrigger>
@@ -151,8 +272,19 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
                           <SelectItem value="viewer">Lecteur</SelectItem>
                         </SelectContent>
                       </Select>
-                      <Button variant="outline" size="sm" onClick={() => setEditing(u)} disabled={isMe || r === "admin"}>
+                      <Button variant="outline" size="sm" onClick={() => setEditing(u)} disabled={isMe || r === "admin" || locked}>
                         <Settings2 className="h-4 w-4 mr-1" /> Permissions
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => { setPwdTarget(u); setPwdValue(""); }} disabled={locked}>
+                        <KeyRound className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => deleteUser(u)}
+                        disabled={isMe || locked || busy}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -164,6 +296,23 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       </Card>
 
       {multiPdvEnabled && <PdvManagement onChanged={load} />}
+
+      <Dialog open={!!pwdTarget} onOpenChange={(o) => !o && setPwdTarget(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nouveau mot de passe — {pwdTarget?.email}</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Nouveau mot de passe"
+            value={pwdValue}
+            onChange={(e) => setPwdValue(e.target.value)}
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPwdTarget(null)}>Annuler</Button>
+            <Button onClick={changePassword} disabled={busy || pwdValue.length < 6}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
