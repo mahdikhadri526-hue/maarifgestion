@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ShieldCheck, Settings2, Building2 } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ALL_PERMISSIONS, AppRole, useAuth } from "@/contexts/AuthContext";
@@ -42,22 +42,19 @@ const ROLE_PRESETS: Record<AppRole, string[]> = {
 };
 
 export function UserManagement({ onBack }: { onBack: () => void }) {
-  const { user: currentUser, pdvs } = useAuth();
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<ProfileRow[]>([]);
   const [roles, setRoles] = useState<Record<string, AppRole | null>>({});
   const [perms, setPerms] = useState<Record<string, Set<string>>>({});
-  const [userPdvs, setUserPdvs] = useState<Record<string, Set<string>>>({});
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ProfileRow | null>(null);
-  const [editingPdv, setEditingPdv] = useState<ProfileRow | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const [{ data: profs }, { data: allRoles }, { data: allPerms }, { data: allUserPdvs }] = await Promise.all([
+    const [{ data: profs }, { data: allRoles }, { data: allPerms }] = await Promise.all([
       supabase.from("profiles").select("user_id, email, display_name").order("created_at", { ascending: true }),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("user_permissions").select("user_id, permission_key, allowed"),
-      supabase.from("user_pdvs").select("user_id, pdv_id"),
     ]);
     setUsers(profs ?? []);
     const rMap: Record<string, AppRole | null> = {};
@@ -73,12 +70,6 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       if (p.allowed) pMap[p.user_id].add(p.permission_key);
     });
     setPerms(pMap);
-    const uMap: Record<string, Set<string>> = {};
-    (allUserPdvs ?? []).forEach((r: any) => {
-      if (!uMap[r.user_id]) uMap[r.user_id] = new Set();
-      uMap[r.user_id].add(r.pdv_id);
-    });
-    setUserPdvs(uMap);
     setLoading(false);
   };
 
@@ -114,19 +105,6 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
         { user_id: userId, permission_key: key, allowed: true },
         { onConflict: "user_id,permission_key" },
       );
-    }
-    load();
-  };
-
-  const toggleUserPdv = async (userId: string, pdvId: string, current: boolean) => {
-    if (current) {
-      await supabase.from("user_pdvs").delete().eq("user_id", userId).eq("pdv_id", pdvId);
-    } else {
-      const { error } = await supabase.from("user_pdvs").insert({ user_id: userId, pdv_id: pdvId });
-      if (error) {
-        toast.error("Erreur : " + error.message);
-        return;
-      }
     }
     load();
   };
@@ -176,9 +154,6 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
                       <Button variant="outline" size="sm" onClick={() => setEditing(u)} disabled={isMe || r === "admin"}>
                         <Settings2 className="h-4 w-4 mr-1" /> Permissions
                       </Button>
-                      <Button variant="outline" size="sm" onClick={() => setEditingPdv(u)}>
-                        <Building2 className="h-4 w-4 mr-1" /> PDV ({userPdvs[u.user_id]?.size ?? 0})
-                      </Button>
                     </div>
                   </div>
                 );
@@ -189,33 +164,6 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       </Card>
 
       <PdvManagement onChanged={load} />
-
-      <Dialog open={!!editingPdv} onOpenChange={(o) => !o && setEditingPdv(null)}>
-        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Points de vente de {editingPdv?.display_name || editingPdv?.email}</DialogTitle>
-          </DialogHeader>
-          {editingPdv && (
-            <div className="space-y-2">
-              {pdvs.map((p) => {
-                const has = userPdvs[editingPdv.user_id]?.has(p.id) ?? false;
-                return (
-                  <label key={p.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
-                    <Checkbox checked={has} onCheckedChange={() => toggleUserPdv(editingPdv.user_id, p.id, has)} />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{p.name}</div>
-                      <div className="text-xs text-muted-foreground">{p.code}</div>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
-          )}
-          <DialogFooter>
-            <Button onClick={() => setEditingPdv(null)}>Fermer</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">

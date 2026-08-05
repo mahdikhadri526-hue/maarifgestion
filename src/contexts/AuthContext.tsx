@@ -87,9 +87,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (stored && !list.some((p) => p.id === stored)) {
       setCurrentPdvId(null);
       setPdvId(null);
-    } else if (!stored && list.length === 1) {
-      setCurrentPdvId(list[0].id);
-      setPdvId(list[0].id);
     }
     setPdvLoading(false);
   }, []);
