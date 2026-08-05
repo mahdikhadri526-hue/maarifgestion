@@ -13,7 +13,7 @@ const queryClient = new QueryClient();
 
 function AuthGate() {
   const { user, loading, pdvId, pdvLoading, multiPdvEnabled } = useAuth();
-  if (loading || (user && pdvLoading)) {
+  if (loading || (user && pdvLoading) || (user && !multiPdvEnabled && !pdvId)) {
     return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Chargement…</div>;
   }
   if (!user) return <AuthPage />;
