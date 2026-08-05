@@ -58,5 +58,12 @@ export const ENABLE_FIFO_INDICATOR = true;
  */
 export const ENABLE_MULTI_PDV = false;
 
+/**
+ * Quand `true`, le multi-PDV (écran de sélection, code d'accès, gestion des PDV)
+ * est actif UNIQUEMENT pour le compte administrateur. Les autres comptes
+ * continuent de travailler automatiquement sur le PDV principal.
+ */
+export const MULTI_PDV_ADMIN_ONLY = true;
+
 /** PDV utilisé automatiquement quand ENABLE_MULTI_PDV est `false`. */
 export const DEFAULT_PDV_ID = "00000000-0000-0000-0000-000000000001";
