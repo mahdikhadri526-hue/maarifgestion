@@ -5,11 +5,13 @@ Supabase (Lovable Cloud) pour la base de données et la synchronisation en temps
 Accès sécurisé protégé par un code PIN à 4 chiffres (1975) à chaque session.
 Design corporate tons bleus. Logo sur lock screen, header et tableaux.
 Dashboard pro : statistiques sans icônes, tableau de stock masqué par défaut.
+Application MULTI-PDV : données cloisonnées par pdv_id, accès via le client @/lib/db.
 Calcul du stock : Stock Initial + Entrées - Sorties.
 Chaque mouvement/réquisition exige le prénom de l'opérateur (champ obligatoire).
 Ne PAS publier les modifications du jour tant que l'utilisateur n'a pas tapé le signal `go`.
 
 ## Memories
+- [Architecture multi-PDV](mem://features/multi-pdv) — Cloisonnement par pdv_id, tables partagées, client @/lib/db obligatoire
 - [Gestion des stocks](mem://features/gestion-stock) — Formule de calcul, stock de départ, historique et règles de suppression
 - [Rapports et analyses](mem://features/rapports) — Vue détaillée quotidienne par produit et option de synthèse globale
 - [Réquisitions automatiques](mem://features/requisitions) — Saisies de consommation différées au lendemain (Salle/Emporter)
