@@ -189,10 +189,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (bootRef.current) return;
     bootRef.current = true;
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
+        // INITIAL_SESSION / TOKEN_REFRESHED n'apportent rien de neuf :
+        // getSession() ci-dessous charge déjà rôle + PDV.
+        if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
         setTimeout(() => {
           loadRoleAndPerms(sess.user.id);
           loadPdvs();
