@@ -11,7 +11,17 @@ export interface Pdv {
   active: boolean;
 }
 
-export type AppRole = "admin" | "manager" | "operator" | "viewer";
+export type AppRole = "admin" | "regional_admin" | "manager" | "operator" | "viewer";
+
+export const ROLE_LABELS: Record<AppRole, string> = {
+  admin: "Admin",
+  regional_admin: "Admin régional",
+  manager: "Manager",
+  operator: "Opérateur",
+  viewer: "Lecteur",
+};
+
+export const ROLE_ORDER: AppRole[] = ["admin", "regional_admin", "manager", "operator", "viewer"];
 
 export const ALL_PERMISSIONS = [
   { key: "view_dashboard", label: "Voir le tableau de bord" },
@@ -56,6 +66,8 @@ interface AuthContextValue {
   role: AppRole | null;
   permissions: Set<string>;
   isAdmin: boolean;
+  isRegionalAdmin: boolean;
+  assignedPdvIds: string[];
   can: (key: string) => boolean;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
@@ -82,17 +94,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const [pdvLoading, setPdvLoading] = useState(true);
   const [pdvPermissions, setPdvPermissions] = useState<Set<string> | null>(null);
-  const [assignedPdvId, setAssignedPdvId] = useState<string | null>(null);
+  const [assignedPdvIds, setAssignedPdvIds] = useState<string[]>([]);
   const [assignedLoaded, setAssignedLoaded] = useState(false);
 
   const isAdmin = role === "admin";
-  const multiPdvEnabled = ENABLE_MULTI_PDV || (MULTI_PDV_ADMIN_ONLY && isAdmin);
+  const isRegionalAdmin = role === "regional_admin";
+  const multiPdvEnabled =
+    ENABLE_MULTI_PDV || (MULTI_PDV_ADMIN_ONLY && (isAdmin || isRegionalAdmin));
+  const assignedPdvId = assignedPdvIds[0] ?? null;
 
   // Bascule automatique selon le compte : admin => multi-PDV,
   // sinon PDV rattaché au compte (user_pdvs), ou PDV principal par défaut.
   useEffect(() => {
     if (multiPdvEnabled) {
-      const stored = getStoredPdvId();
+      let stored = getStoredPdvId();
+      if (isRegionalAdmin) {
+        if (!assignedLoaded) return;
+        if (!stored || !assignedPdvIds.includes(stored)) {
+          stored = assignedPdvIds.length === 1 ? assignedPdvIds[0] : null;
+        }
+      }
       setCurrentPdvId(stored);
       setPdvId(stored);
     } else {
@@ -101,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setCurrentPdvId(target);
       setPdvId(target);
     }
-  }, [multiPdvEnabled, assignedPdvId, assignedLoaded]);
+  }, [multiPdvEnabled, isRegionalAdmin, assignedPdvIds, assignedPdvId, assignedLoaded]);
 
   useEffect(() => {
     let cancelled = false;
@@ -147,12 +168,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [{ data: roles }, { data: perms }, { data: userPdvs }] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", uid),
       supabase.from("user_permissions").select("permission_key, allowed").eq("user_id", uid),
-      supabase.from("user_pdvs").select("pdv_id").eq("user_id", uid).limit(1),
+      supabase.from("user_pdvs").select("pdv_id").eq("user_id", uid),
     ]);
     let r: AppRole | null = null;
     if (roles && roles.length > 0) {
-      const order: AppRole[] = ["admin", "manager", "operator", "viewer"];
-      r = order.find((o) => roles.some((x) => x.role === o)) ?? (roles[0].role as AppRole);
+      r = ROLE_ORDER.find((o) => roles.some((x: any) => x.role === o)) ?? (roles[0].role as AppRole);
     }
     setRole(r);
     const set = new Set<string>();
@@ -160,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (p.allowed) set.add(p.permission_key);
     });
     setPermissions(set);
-    setAssignedPdvId((userPdvs?.[0] as any)?.pdv_id ?? null);
+    setAssignedPdvIds(((userPdvs ?? []) as any[]).map((r) => r.pdv_id));
     setAssignedLoaded(true);
   }, []);
 
@@ -177,7 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setRole(null);
         setPermissions(new Set());
         setPdvs([]);
-        setAssignedPdvId(null);
+        setAssignedPdvIds([]);
         setAssignedLoaded(false);
         if (ENABLE_MULTI_PDV || MULTI_PDV_ADMIN_ONLY) {
           setCurrentPdvId(null);
@@ -205,10 +225,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (key: string) => {
       if (!user) return false;
       if (isAdmin) return true;
+      if (isRegionalAdmin) return permissions.has(key);
       if (pdvPermissions) return pdvPermissions.has(key);
       return permissions.has(key);
     },
-    [user, isAdmin, permissions, pdvPermissions],
+    [user, isAdmin, isRegionalAdmin, permissions, pdvPermissions],
   );
 
   const signOut = async () => {
@@ -221,9 +242,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const selectPdv = useCallback((id: string | null) => {
     if (!multiPdvEnabled) return;
+    if (isRegionalAdmin && id && !assignedPdvIds.includes(id)) return;
     setCurrentPdvId(id);
     setPdvId(id);
-  }, [multiPdvEnabled]);
+  }, [multiPdvEnabled, isRegionalAdmin, assignedPdvIds]);
+
+  const visiblePdvs = isRegionalAdmin ? pdvs.filter((p) => assignedPdvIds.includes(p.id)) : pdvs;
 
   return (
     <AuthContext.Provider
@@ -234,10 +258,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role,
         permissions,
         isAdmin,
+        isRegionalAdmin,
+        assignedPdvIds,
         can,
         signOut,
         refresh,
-        pdvs,
+        pdvs: visiblePdvs,
         pdvId,
         pdv: pdvs.find((p) => p.id === pdvId) ?? null,
         pdvLoading,

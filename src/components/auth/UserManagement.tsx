@@ -22,6 +22,7 @@ interface ProfileRow {
 
 const ROLE_PRESETS: Record<AppRole, string[]> = {
   admin: ALL_PERMISSIONS.map((p) => p.key),
+  regional_admin: ALL_PERMISSIONS.map((p) => p.key),
   manager: [
     "view_dashboard", "view_stock", "edit_stock",
     "view_movements", "edit_movements", "delete_movements",
@@ -51,7 +52,8 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   const [perms, setPerms] = useState<Record<string, Set<string>>>({});
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState<ProfileRow | null>(null);
-  const [userPdvs, setUserPdvs] = useState<Record<string, string>>({});
+  const [userPdvs, setUserPdvs] = useState<Record<string, string[]>>({});
+  const [pdvEditing, setPdvEditing] = useState<ProfileRow | null>(null);
   const [busy, setBusy] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -88,11 +90,13 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       supabase.from("user_pdvs").select("user_id, pdv_id"),
     ]);
     setUsers(profs ?? []);
-    const upMap: Record<string, string> = {};
-    ((allUserPdvs ?? []) as any[]).forEach((r) => { upMap[r.user_id] = r.pdv_id; });
+    const upMap: Record<string, string[]> = {};
+    ((allUserPdvs ?? []) as any[]).forEach((r) => {
+      (upMap[r.user_id] ??= []).push(r.pdv_id);
+    });
     setUserPdvs(upMap);
     const rMap: Record<string, AppRole | null> = {};
-    const order: AppRole[] = ["admin", "manager", "operator", "viewer"];
+    const order: AppRole[] = ["admin", "regional_admin", "manager", "operator", "viewer"];
     (allRoles ?? []).forEach((r: any) => {
       const cur = rMap[r.user_id];
       if (!cur || order.indexOf(r.role) < order.indexOf(cur)) rMap[r.user_id] = r.role;
@@ -112,6 +116,13 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   }, []);
 
   const setUserRole = async (userId: string, role: AppRole) => {
+    if (role === "regional_admin") {
+      const others = Object.entries(roles).filter(([id, r]) => r === "regional_admin" && id !== userId);
+      if (others.length >= 2) {
+        toast.error("Limite atteinte : 2 comptes Admin régional maximum");
+        return;
+      }
+    }
     // remove existing roles
     await supabase.from("user_roles").delete().eq("user_id", userId);
     const { error } = await supabase.from("user_roles").insert({ user_id: userId, role });
@@ -184,6 +195,20 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
     load();
   };
 
+  const toggleUserPdv = async (userId: string, pdvIdValue: string) => {
+    const current = userPdvs[userId] ?? [];
+    const next = current.includes(pdvIdValue)
+      ? current.filter((x) => x !== pdvIdValue)
+      : [...current, pdvIdValue];
+    setUserPdvs((prev) => ({ ...prev, [userId]: next }));
+    const ok = await callAdmin({ action: "assign_pdvs", user_id: userId, pdv_ids: next });
+    if (!ok) {
+      setUserPdvs((prev) => ({ ...prev, [userId]: current }));
+      return;
+    }
+    load();
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -208,6 +233,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="regional_admin">Admin régional</SelectItem>
               <SelectItem value="manager">Manager</SelectItem>
               <SelectItem value="operator">Opérateur</SelectItem>
               <SelectItem value="viewer">Lecteur</SelectItem>
@@ -247,26 +273,39 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
                     <div className="flex items-center gap-2">
                       {isMe && <Badge variant="secondary">Vous</Badge>}
                       {locked && <Badge variant="outline">Protégé</Badge>}
-                      <Select
-                        value={userPdvs[u.user_id] ?? ""}
-                        onValueChange={(v) => assignPdv(u.user_id, v)}
-                        disabled={locked || busy}
-                      >
-                        <SelectTrigger className="w-[150px]">
-                          <SelectValue placeholder="Point de vente" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {pdvs.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      {r === "regional_admin" ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-[150px]"
+                          onClick={() => setPdvEditing(u)}
+                          disabled={locked || busy}
+                        >
+                          PDV ({(userPdvs[u.user_id] ?? []).length})
+                        </Button>
+                      ) : (
+                        <Select
+                          value={userPdvs[u.user_id]?.[0] ?? ""}
+                          onValueChange={(v) => assignPdv(u.user_id, v)}
+                          disabled={locked || busy}
+                        >
+                          <SelectTrigger className="w-[150px]">
+                            <SelectValue placeholder="Point de vente" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {pdvs.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                       <Select value={r} onValueChange={(v) => setUserRole(u.user_id, v as AppRole)} disabled={isMe || locked}>
                         <SelectTrigger className="w-[140px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="admin">Admin</SelectItem>
+                          <SelectItem value="regional_admin">Admin régional</SelectItem>
                           <SelectItem value="manager">Manager</SelectItem>
                           <SelectItem value="operator">Opérateur</SelectItem>
                           <SelectItem value="viewer">Lecteur</SelectItem>
@@ -296,6 +335,34 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       </Card>
 
       {multiPdvEnabled && <PdvManagement onChanged={load} />}
+
+      <Dialog open={!!pdvEditing} onOpenChange={(o) => !o && setPdvEditing(null)}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Points de vente — {pdvEditing?.display_name || pdvEditing?.email}</DialogTitle>
+          </DialogHeader>
+          {pdvEditing && (
+            <div className="space-y-1">
+              {pdvs.map((p) => {
+                const checked = (userPdvs[pdvEditing.user_id] ?? []).includes(p.id);
+                return (
+                  <label key={p.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
+                    <Checkbox
+                      checked={checked}
+                      onCheckedChange={() => toggleUserPdv(pdvEditing.user_id, p.id)}
+                      disabled={busy}
+                    />
+                    <span className="text-sm">{p.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setPdvEditing(null)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!pwdTarget} onOpenChange={(o) => !o && setPwdTarget(null)}>
         <DialogContent className="max-w-sm">

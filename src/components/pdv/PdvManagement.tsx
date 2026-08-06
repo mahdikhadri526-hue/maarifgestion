@@ -13,6 +13,7 @@ import { ALL_PERMISSIONS, AppRole, useAuth } from "@/contexts/AuthContext";
 
 const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
   admin: ALL_PERMISSIONS.map((p) => p.key),
+  regional_admin: ALL_PERMISSIONS.map((p) => p.key),
   manager: [
     "view_dashboard", "view_stock", "edit_stock",
     "view_movements", "edit_movements", "delete_movements",

@@ -1209,13 +1209,14 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_regional_admin: { Args: { _user_id: string }; Returns: boolean }
       verify_pdv_code: {
         Args: { _code: string; _pdv_id: string }
         Returns: boolean
       }
     }
     Enums: {
-      app_role: "admin" | "manager" | "operator" | "viewer"
+      app_role: "admin" | "manager" | "operator" | "viewer" | "regional_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1343,7 +1344,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "manager", "operator", "viewer"],
+      app_role: ["admin", "manager", "operator", "viewer", "regional_admin"],
     },
   },
 } as const
