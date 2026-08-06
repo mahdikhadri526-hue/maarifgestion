@@ -1209,6 +1209,7 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_regional_admin: { Args: { _user_id: string }; Returns: boolean }
       verify_pdv_code: {
         Args: { _code: string; _pdv_id: string }
         Returns: boolean
