@@ -901,7 +901,6 @@ const DAYS_FOR_GLACE = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Same
 export async function getGlaceAggregateForRange(startDate?: string, endDate?: string): Promise<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number }> {
   const [rows, gramRes] = await Promise.all([
     getGlaceWeeklyRows(),
-    ),
     getGlaceGrammageRes(),
   ]);
 
@@ -1067,7 +1066,6 @@ export async function getGlaceBreakdownForRange(
 ): Promise<AggregateBreakdownRow[]> {
   const [rows, gramRes] = await Promise.all([
     getGlaceWeeklyRows(),
-    ),
     getGlaceGrammageRes(),
   ]);
   const grams: Record<string, number> = {};
