@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/db";
 import { fetchAllRows } from "@/lib/supabasePaginate";
+import { cached, invalidateTables } from "@/lib/requestCache";
 
 type LotRow = {
   id: string;
@@ -40,7 +41,20 @@ const isLotAvailableForMovement = (lot: LotRow, movement: MovementRow) => {
   return lot.created_at <= movement.created_at;
 };
 
-export async function syncLotBalances(productId?: string): Promise<Map<string, number>> {
+/**
+ * Recalcule les soldes FIFO des lots.
+ * Le calcul est partagé pendant quelques secondes entre les composants qui
+ * l'appellent simultanément (alertes, tables de lots...) ; `force` le relance
+ * immédiatement après une écriture.
+ */
+export async function syncLotBalances(productId?: string, force = false): Promise<Map<string, number>> {
+  if (force) invalidateTables(["lot_entries", "stock_movements"]);
+  return cached(`lotBalances:${productId ?? "__all__"}`, ["lot_entries", "stock_movements"], () =>
+    computeLotBalances(productId),
+  );
+}
+
+async function computeLotBalances(productId?: string): Promise<Map<string, number>> {
   const buildLots = () =>
     productId
       ? supabase.from("lot_entries").select("*").eq("product_id", productId)

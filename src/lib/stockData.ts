@@ -367,7 +367,7 @@ export async function saveMovement(movement: Omit<StockMovement, "id">): Promise
   if (movement.type === "sortie" && movement.category === "alimentaire" && movement.quantity > 0) {
     try {
       const { syncLotBalances } = await import("./lotBalance");
-      await syncLotBalances(movement.productId);
+      await syncLotBalances(movement.productId, true);
     } catch (e) {
       console.error("FIFO consumption failed", e);
     }
