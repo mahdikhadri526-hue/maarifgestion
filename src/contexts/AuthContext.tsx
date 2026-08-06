@@ -130,18 +130,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setPdvPermissions(null);
       return;
     }
+    setPdvPermissions(null);
     supabase
       .from("pdv_permissions" as any)
       .select("permission_key, allowed")
       .eq("pdv_id", pdvId)
       .then(({ data }) => {
         if (cancelled) return;
-        if (!data || data.length === 0) {
-          setPdvPermissions(null);
-          return;
-        }
         const set = new Set<string>();
-        (data as any[]).forEach((p) => p.allowed && set.add(p.permission_key));
+        ((data ?? []) as any[]).forEach((p) => p.allowed && set.add(p.permission_key));
         setPdvPermissions(set);
       });
     return () => {
@@ -226,10 +223,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!user) return false;
       if (isAdmin) return true;
       if (isRegionalAdmin) return permissions.has(key);
-      if (pdvPermissions) return pdvPermissions.has(key);
+      if (assignedPdvIds.length > 0) return pdvPermissions?.has(key) ?? false;
       return permissions.has(key);
     },
-    [user, isAdmin, isRegionalAdmin, permissions, pdvPermissions],
+    [user, isAdmin, isRegionalAdmin, assignedPdvIds, permissions, pdvPermissions],
   );
 
   const signOut = async () => {
