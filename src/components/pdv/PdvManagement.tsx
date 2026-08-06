@@ -226,7 +226,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
               )}
               {isRegionalAdmin && (
                 <p className="text-xs text-muted-foreground">
-                  Vous pouvez accorder uniquement les permissions qui vous ont été attribuées.
+                  Vous gérez les permissions de vos points de vente.
                 </p>
               )}
               {ALL_PERMISSIONS.map((perm) => {
