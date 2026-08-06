@@ -408,6 +408,7 @@ export async function getProductUnitConfigs(): Promise<Record<string, ProductUni
     };
   });
   return result;
+  });
 }
 
 export async function setProductUnitConfig(productId: string, config: Partial<ProductUnitConfig>) {
