@@ -12,6 +12,7 @@ Ne PAS publier les modifications du jour tant que l'utilisateur n'a pas tapé le
 
 ## Memories
 - [Architecture multi-PDV](mem://features/multi-pdv) — Cloisonnement par pdv_id, tables partagées, client @/lib/db obligatoire
+- [Rôle Admin régional](mem://features/admin-regional) — 2 comptes max, PDV attribués et permissions données par l'admin principal
 - [Gestion des stocks](mem://features/gestion-stock) — Formule de calcul, stock de départ, historique et règles de suppression
 - [Rapports et analyses](mem://features/rapports) — Vue détaillée quotidienne par produit et option de synthèse globale
 - [Réquisitions automatiques](mem://features/requisitions) — Saisies de consommation différées au lendemain (Salle/Emporter)
