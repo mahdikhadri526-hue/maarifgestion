@@ -49,8 +49,15 @@ Deno.serve(async (req) => {
       const password = String(body.password ?? "");
       const pdvId = body.pdv_id ? String(body.pdv_id) : null;
       const role = String(body.role ?? "viewer");
+      const pdvIds: string[] = Array.isArray(body.pdv_ids) ? body.pdv_ids.map(String) : [];
       if (!email || password.length < 6) return json({ error: "Email et mot de passe (6+ caractères) requis" }, 400);
       if (isProtected(email)) return json({ error: "Ce compte est protégé" }, 403);
+
+      if (role === "regional_admin") {
+        const { data: existing } = await admin.from("user_roles").select("user_id").eq("role", "regional_admin");
+        const count = new Set((existing ?? []).map((r: any) => r.user_id)).size;
+        if (count >= 2) return json({ error: "Limite atteinte : 2 comptes Admin régional maximum" }, 400);
+      }
 
       const { data, error } = await admin.auth.admin.createUser({
         email, password, email_confirm: true,
@@ -59,10 +66,12 @@ Deno.serve(async (req) => {
       const newId = data.user!.id;
 
       await admin.from("user_roles").delete().eq("user_id", newId);
-      await admin.from("user_roles").insert({ user_id: newId, role });
-      if (pdvId) {
+      const { error: roleErr } = await admin.from("user_roles").insert({ user_id: newId, role });
+      if (roleErr) return json({ error: roleErr.message }, 400);
+      const targets = pdvIds.length > 0 ? pdvIds : pdvId ? [pdvId] : [];
+      if (targets.length > 0) {
         await admin.from("user_pdvs").delete().eq("user_id", newId);
-        await admin.from("user_pdvs").insert({ user_id: newId, pdv_id: pdvId });
+        await admin.from("user_pdvs").insert(targets.map((p) => ({ user_id: newId, pdv_id: p })));
       }
       return json({ ok: true, user_id: newId });
     }
@@ -98,6 +107,22 @@ Deno.serve(async (req) => {
       await admin.from("user_pdvs").delete().eq("user_id", userId);
       if (pdvId) {
         const { error } = await admin.from("user_pdvs").insert({ user_id: userId, pdv_id: pdvId });
+        if (error) return json({ error: error.message }, 400);
+      }
+      return json({ ok: true });
+    }
+
+    if (action === "assign_pdvs") {
+      const userId = String(body.user_id ?? "");
+      const pdvIds: string[] = Array.isArray(body.pdv_ids) ? body.pdv_ids.map(String) : [];
+      if (!userId) return json({ error: "Utilisateur manquant" }, 400);
+      const email = await getTargetEmail(userId);
+      if (isProtected(email)) return json({ error: "Ce compte est protégé" }, 403);
+      await admin.from("user_pdvs").delete().eq("user_id", userId);
+      if (pdvIds.length > 0) {
+        const { error } = await admin
+          .from("user_pdvs")
+          .insert(pdvIds.map((p) => ({ user_id: userId, pdv_id: p })));
         if (error) return json({ error: error.message }, 400);
       }
       return json({ ok: true });
