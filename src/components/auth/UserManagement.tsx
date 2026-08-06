@@ -222,6 +222,8 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
         </h2>
       </div>
 
+      {multiPdvEnabled && !isAdmin && <PdvManagement />}
+
       {isAdmin && (<>
       <Card>
         <CardHeader>
@@ -338,7 +340,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       </Card>
       </>)}
 
-      {multiPdvEnabled && <PdvManagement onChanged={isAdmin ? load : undefined} />}
+      {multiPdvEnabled && isAdmin && <PdvManagement onChanged={load} />}
 
       <Dialog open={!!pdvEditing} onOpenChange={(o) => !o && setPdvEditing(null)}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
