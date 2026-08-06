@@ -38,7 +38,9 @@ const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
 };
 
 export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
-  const { pdvs, refreshPdvs, pdvId, isAdmin } = useAuth();
+  const { pdvs, refreshPdvs, pdvId, isAdmin, isRegionalAdmin, permissions } = useAuth();
+  const canEditPerms = isAdmin || isRegionalAdmin;
+  const canTogglePerm = (key: string) => isAdmin || (isRegionalAdmin && permissions.has(key));
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [accessCode, setAccessCode] = useState("");
@@ -88,13 +90,16 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
   };
 
   const togglePdvPerm = async (id: string, key: string, current: boolean) => {
+    if (!canTogglePerm(key)) return;
     if (current) {
-      await supabase.from("pdv_permissions" as any).delete().eq("pdv_id", id).eq("permission_key", key);
+      const { error } = await supabase.from("pdv_permissions" as any).delete().eq("pdv_id", id).eq("permission_key", key);
+      if (error) { toast.error("Erreur : " + error.message); return; }
     } else {
-      await supabase.from("pdv_permissions" as any).upsert(
+      const { error } = await supabase.from("pdv_permissions" as any).upsert(
         { pdv_id: id, permission_key: key, allowed: true },
         { onConflict: "pdv_id,permission_key" },
       );
+      if (error) { toast.error("Erreur : " + error.message); return; }
     }
     loadRights();
   };
@@ -190,7 +195,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
               className="shrink-0"
               onClick={() => setEditing({ id: p.id, name: p.name })}
             >
-              {isAdmin ? <Settings2 className="h-4 w-4 mr-1" /> : <Lock className="h-4 w-4 mr-1" />}
+              {canEditPerms ? <Settings2 className="h-4 w-4 mr-1" /> : <Lock className="h-4 w-4 mr-1" />}
               Permissions ({pdvPerms[p.id]?.size ?? 0})
             </Button>
             {p.id === pdvId && <Badge className="shrink-0">Actuel</Badge>}
@@ -216,8 +221,13 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
           </DialogHeader>
           {editing && (
             <div className="space-y-2">
-              {!isAdmin && (
+              {!canEditPerms && (
                 <p className="text-xs text-muted-foreground">Lecture seule — seul l'administrateur peut modifier.</p>
+              )}
+              {isRegionalAdmin && (
+                <p className="text-xs text-muted-foreground">
+                  Vous pouvez accorder uniquement les permissions qui vous ont été attribuées.
+                </p>
               )}
               {ALL_PERMISSIONS.map((perm) => {
                 const has = pdvPerms[editing.id]?.has(perm.key) ?? false;
@@ -225,7 +235,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
                   <label key={perm.key} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
                     <Checkbox
                       checked={has}
-                      disabled={!isAdmin}
+                      disabled={!canTogglePerm(perm.key)}
                       onCheckedChange={() => togglePdvPerm(editing.id, perm.key, has)}
                     />
                     <div className="flex-1">

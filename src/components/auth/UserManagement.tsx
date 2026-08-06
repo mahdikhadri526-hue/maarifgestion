@@ -46,7 +46,7 @@ const ROLE_PRESETS: Record<AppRole, string[]> = {
 };
 
 export function UserManagement({ onBack }: { onBack: () => void }) {
-  const { user: currentUser, multiPdvEnabled, pdvs, isAdmin, isRegionalAdmin } = useAuth();
+  const { user: currentUser, multiPdvEnabled, pdvs, isAdmin } = useAuth();
   const [users, setUsers] = useState<ProfileRow[]>([]);
   const [roles, setRoles] = useState<Record<string, AppRole | null>>({});
   const [perms, setPerms] = useState<Record<string, Set<string>>>({});
