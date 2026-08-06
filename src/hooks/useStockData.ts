@@ -20,8 +20,10 @@ function useRealtimeData<T>(
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const inFlightRef = useRef<Promise<void> | null>(null);
 
-  const refresh = useCallback(async () => {
-    invalidateTables(tables);
+  const load = useCallback(async (bypassCache: boolean) => {
+    // Un rafraîchissement explicite (bouton, écriture) repart de données fraîches ;
+    // le premier chargement peut réutiliser le cache court partagé entre modules.
+    if (bypassCache) invalidateTables(tables);
     // Coalesce concurrent refreshes to a single in-flight request
     if (inFlightRef.current) return inFlightRef.current;
     const p = (async () => {
@@ -39,17 +41,19 @@ function useRealtimeData<T>(
     return p;
   }, deps);
 
+  const refresh = useCallback(() => load(true), [load]);
+
   // Debounce burst realtime events (e.g. bulk inserts) to a single refresh
   const scheduleRefresh = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       debounceRef.current = null;
-      refresh();
+      load(false);
     }, 250);
-  }, [refresh]);
+  }, [load]);
 
   useEffect(() => {
-    refresh();
+    load(false);
 
     const channels = tables.map((table) =>
       supabase
@@ -65,7 +69,7 @@ function useRealtimeData<T>(
       if (debounceRef.current) clearTimeout(debounceRef.current);
       channels.forEach((ch) => supabase.removeChannel(ch));
     };
-  }, [refresh, scheduleRefresh]);
+  }, [load, scheduleRefresh]);
 
   return { data, loading, refresh };
 }
