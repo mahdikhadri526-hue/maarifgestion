@@ -1,5 +1,16 @@
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+import type jsPDF from "jspdf";
+
+// jsPDF + autotable pèsent plusieurs centaines de Ko : on ne les charge
+// qu'au moment réel d'une impression / d'un téléchargement.
+let pdfLibPromise: Promise<{ JsPDF: any; autoTable: any }> | null = null;
+function loadPdfLib() {
+  if (!pdfLibPromise) {
+    pdfLibPromise = Promise.all([import("jspdf"), import("jspdf-autotable")]).then(
+      ([pdf, table]) => ({ JsPDF: pdf.default, autoTable: (table as any).default }),
+    );
+  }
+  return pdfLibPromise;
+}
 
 type PdfTone = "entry" | "exit" | "lot" | "warning";
 
@@ -63,9 +74,10 @@ function addHeaderAndFooter(doc: jsPDF, title: string, subtitle?: string) {
  * Generate a professional A4 landscape PDF from structured data.
  * This is fully vector-based: selectable text, real paginated tables, no screenshots.
  */
-function createStructuredPdf(options: StructuredPdfOptions) {
+async function createStructuredPdf(options: StructuredPdfOptions) {
+  const { JsPDF, autoTable } = await loadPdfLib();
   const orientation = options.orientation ?? "landscape";
-  const doc = new jsPDF({ orientation, unit: "mm", format: "a4" });
+  const doc = new JsPDF({ orientation, unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 10;
@@ -191,7 +203,7 @@ function createStructuredPdf(options: StructuredPdfOptions) {
 }
 
 export async function printStructuredPdf(options: StructuredPdfOptions) {
-  const doc = createStructuredPdf(options);
+  const doc = await createStructuredPdf(options);
   doc.autoPrint();
   const url = doc.output("bloburl").toString();
   const win = window.open(url, "_blank", "noopener,noreferrer");
@@ -199,7 +211,7 @@ export async function printStructuredPdf(options: StructuredPdfOptions) {
 }
 
 export async function downloadStructuredPdf(options: StructuredPdfOptions) {
-  const doc = createStructuredPdf(options);
+  const doc = await createStructuredPdf(options);
   doc.save(options.filename.endsWith(".pdf") ? options.filename : `${options.filename}.pdf`);
 }
 
@@ -254,7 +266,8 @@ export function printElement(node: HTMLElement) {
  * with proper page breaks. No screenshots involved.
  */
 export async function downloadElementAsPdf(node: HTMLElement, filename: string) {
-  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const { JsPDF, autoTable } = await loadPdfLib();
+  const doc = new JsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 12;
