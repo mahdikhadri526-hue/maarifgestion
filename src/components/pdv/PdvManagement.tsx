@@ -40,7 +40,7 @@ const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
 export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
   const { pdvs, refreshPdvs, pdvId, isAdmin, isRegionalAdmin, permissions } = useAuth();
   const canEditPerms = isAdmin || isRegionalAdmin;
-  const canTogglePerm = (key: string) => isAdmin || (isRegionalAdmin && permissions.has(key));
+  const canTogglePerm = (_key: string) => isAdmin || isRegionalAdmin;
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [accessCode, setAccessCode] = useState("");
@@ -226,7 +226,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
               )}
               {isRegionalAdmin && (
                 <p className="text-xs text-muted-foreground">
-                  Vous pouvez accorder uniquement les permissions qui vous ont été attribuées.
+                  Vous gérez les permissions de vos points de vente.
                 </p>
               )}
               {ALL_PERMISSIONS.map((perm) => {
