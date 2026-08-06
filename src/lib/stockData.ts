@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/db";
 import { fetchAllRows } from "@/lib/supabasePaginate";
+import { dedupe } from "@/lib/requestCache";
 
 export type Category = "alimentaire" | "emballage";
 export type UnitType = "PIECE" | "KILO" | "LITRE" | "PAQUET" | "COLIS" | "ROULEAU";
@@ -297,6 +298,7 @@ export function detectProductUnit(name: string): string {
 // ===== Async Supabase functions =====
 
 export async function getMovements(): Promise<StockMovement[]> {
+  return dedupe("movements", async () => {
   const data = await fetchAllRows<any>(() =>
     supabase.from("stock_movements").select("*").order("created_at", { ascending: false }),
   );
@@ -314,6 +316,7 @@ export async function getMovements(): Promise<StockMovement[]> {
     createdAt: row.created_at || undefined,
     source: row.source || undefined,
   }));
+  });
 }
 
 export async function saveMovement(movement: Omit<StockMovement, "id">): Promise<StockMovement> {
@@ -366,6 +369,7 @@ export async function deleteMovement(id: string) {
 }
 
 export async function getInitialStocks(): Promise<Record<string, number>> {
+  return dedupe("initialStocks", async () => {
   const { data, error } = await supabase.from("initial_stocks").select("*");
   if (error) throw error;
   const result: Record<string, number> = {};
@@ -373,9 +377,11 @@ export async function getInitialStocks(): Promise<Record<string, number>> {
     result[row.product_id] = row.quantity;
   });
   return result;
+  });
 }
 
 export async function getProductUnits(): Promise<Record<string, UnitType>> {
+  return dedupe("productUnits", async () => {
   const { data, error } = await supabase.from("initial_stocks").select("product_id, unit");
   if (error) throw error;
   const result: Record<string, UnitType> = {};
@@ -383,9 +389,11 @@ export async function getProductUnits(): Promise<Record<string, UnitType>> {
     result[row.product_id] = (row.unit as UnitType) || "PIECE";
   });
   return result;
+  });
 }
 
 export async function getProductUnitConfigs(): Promise<Record<string, ProductUnitConfig>> {
+  return dedupe("productUnitConfigs", async () => {
   const { data, error } = await supabase
     .from("initial_stocks")
     .select("product_id, carton_enabled, paquet_enabled, pieces_per_carton, pieces_per_paquet");
