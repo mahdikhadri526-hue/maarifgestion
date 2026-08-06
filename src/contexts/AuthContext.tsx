@@ -222,6 +222,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (key: string) => {
       if (!user) return false;
       if (isAdmin) return true;
+      // Compte protégé : conserve ses permissions personnelles
+      if ((user.email ?? "").toLowerCase() === "gestionmaarif1@gmail.com") {
+        return permissions.has(key) || (pdvPermissions?.has(key) ?? false);
+      }
       if (isRegionalAdmin) return permissions.has(key);
       if (assignedPdvIds.length > 0) return pdvPermissions?.has(key) ?? false;
       return permissions.has(key);
