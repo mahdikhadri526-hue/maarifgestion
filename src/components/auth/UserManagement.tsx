@@ -46,7 +46,7 @@ const ROLE_PRESETS: Record<AppRole, string[]> = {
 };
 
 export function UserManagement({ onBack }: { onBack: () => void }) {
-  const { user: currentUser, multiPdvEnabled, pdvs } = useAuth();
+  const { user: currentUser, multiPdvEnabled, pdvs, isAdmin } = useAuth();
   const [users, setUsers] = useState<ProfileRow[]>([]);
   const [roles, setRoles] = useState<Record<string, AppRole | null>>({});
   const [perms, setPerms] = useState<Record<string, Set<string>>>({});
@@ -112,7 +112,8 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   };
 
   useEffect(() => {
-    load();
+    if (isAdmin) load();
+    else setLoading(false);
   }, []);
 
   const setUserRole = async (userId: string, role: AppRole) => {
@@ -216,10 +217,12 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
           <ArrowLeft className="h-4 w-4 mr-2" /> Retour
         </Button>
         <h2 className="text-lg font-semibold flex items-center gap-2">
-          <ShieldCheck className="h-5 w-5 text-primary" /> Gestion des utilisateurs
+          <ShieldCheck className="h-5 w-5 text-primary" />
+          {isAdmin ? "Gestion des utilisateurs" : "Permissions de mes points de vente"}
         </h2>
       </div>
 
+      {isAdmin && (<>
       <Card>
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
@@ -333,8 +336,9 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
           )}
         </CardContent>
       </Card>
+      </>)}
 
-      {multiPdvEnabled && <PdvManagement onChanged={load} />}
+      {multiPdvEnabled && <PdvManagement onChanged={isAdmin ? load : undefined} />}
 
       <Dialog open={!!pdvEditing} onOpenChange={(o) => !o && setPdvEditing(null)}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
