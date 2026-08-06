@@ -11,7 +11,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 export function UserMenu({ onOpenAdmin }: { onOpenAdmin: () => void }) {
-  const { user, role, isAdmin, signOut, pdv, selectPdv, multiPdvEnabled } = useAuth();
+  const { user, role, isAdmin, isRegionalAdmin, signOut, pdv, selectPdv, multiPdvEnabled } = useAuth();
   if (!user) return null;
   return (
     <DropdownMenu>
@@ -35,9 +35,10 @@ export function UserMenu({ onOpenAdmin }: { onOpenAdmin: () => void }) {
             <Building2 className="h-4 w-4 mr-2" /> Changer de point de vente
           </DropdownMenuItem>
         )}
-        {isAdmin && (
+        {(isAdmin || isRegionalAdmin) && (
           <DropdownMenuItem onClick={onOpenAdmin}>
-            <Shield className="h-4 w-4 mr-2" /> Gestion des utilisateurs
+            <Shield className="h-4 w-4 mr-2" />
+            {isAdmin ? "Gestion des utilisateurs" : "Permissions de mes PDV"}
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onClick={signOut}>

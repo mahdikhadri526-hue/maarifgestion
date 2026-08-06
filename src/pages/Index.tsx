@@ -27,7 +27,7 @@ const Index = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [showStock, setShowStock] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
-  const { can, isAdmin } = useAuth();
+  const { can, isAdmin, isRegionalAdmin } = useAuth();
 
   const refresh = () => setRefreshKey((k) => k + 1);
 
@@ -66,7 +66,7 @@ const Index = () => {
         </div>
       </header>
 
-      {showAdmin && isAdmin ? (
+      {showAdmin && (isAdmin || isRegionalAdmin) ? (
         <main className="max-w-5xl mx-auto px-4 py-6">
           <Suspense fallback={<TabFallback />}>
             <UserManagement onBack={() => setShowAdmin(false)} />
