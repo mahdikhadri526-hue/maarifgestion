@@ -490,17 +490,24 @@ export const TOPPINGS_WEEKLY_ARTICLES = [
   "Kiwi fruits",
 ];
 
+
+function getToppingsWeeklyRes(): Promise<any> {
+  return cached("weeklyToppingsRows", ["weekly_tracking"], async () =>
+    supabase
+      .from("weekly_tracking")
+      .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
+      .eq("fiche_type", "Mouvement glaces & tartes")
+      .in("article", TOPPINGS_WEEKLY_ARTICLES),
+  );
+}
+
 export async function getToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
   const [movements, initialStocks, units, configs, weeklyRes] = await Promise.all([
     getMovements(),
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
-    supabase
-      .from("weekly_tracking")
-      .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
-      .eq("fiche_type", "Mouvement glaces & tartes")
-      .in("article", TOPPINGS_WEEKLY_ARTICLES),
+    getToppingsWeeklyRes(),
   ]);
 
   let stockInitial = 0;
@@ -584,11 +591,7 @@ export async function getToppingsDailyHistory(): Promise<DailyStockRecord[]> {
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
-    supabase
-      .from("weekly_tracking")
-      .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
-      .eq("fiche_type", "Mouvement glaces & tartes")
-      .in("article", TOPPINGS_WEEKLY_ARTICLES),
+    getToppingsWeeklyRes(),
   ]);
 
   // Stock initial global = somme des stocks initiaux SMARTIES + OREO

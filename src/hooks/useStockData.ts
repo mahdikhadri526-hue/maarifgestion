@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateTables } from "@/lib/requestCache";
 import {
   StockMovement, StockLevel, DailyStockRecord, Category, UnitType,
   getMovements, getStockLevels, getProductDailyHistory, getInitialStocks, getProductUnits,
@@ -20,6 +21,7 @@ function useRealtimeData<T>(
   const inFlightRef = useRef<Promise<void> | null>(null);
 
   const refresh = useCallback(async () => {
+    invalidateTables(tables);
     // Coalesce concurrent refreshes to a single in-flight request
     if (inFlightRef.current) return inFlightRef.current;
     const p = (async () => {
@@ -53,6 +55,7 @@ function useRealtimeData<T>(
       supabase
         .channel(`realtime-${table}-${Math.random()}`)
         .on("postgres_changes", { event: "*", schema: "public", table }, () => {
+          invalidateTables([table]);
           scheduleRefresh();
         })
         .subscribe()
