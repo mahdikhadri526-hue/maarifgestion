@@ -169,7 +169,11 @@ const Index = () => {
                   {showStock ? "Masquer" : "Consulter"}
                 </button>
               </div>
-              {showStock && <StockTable variant="order" />}
+              {showStock && (
+                <Suspense fallback={<TabFallback />}>
+                  <StockTable variant="order" />
+                </Suspense>
+              )}
             </div>
             )}
 
