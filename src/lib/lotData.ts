@@ -62,7 +62,7 @@ export async function consumeFromLots(productId: string, quantity: number): Prom
     .eq("product_id", productId);
   if (beforeSyncError) throw beforeSyncError;
 
-  const remainingByLot = await syncLotBalances(productId);
+  const remainingByLot = await syncLotBalances(productId, true);
   const consumedLots = (beforeSync || [])
     .map((lot: any) => {
       const afterRemaining = remainingByLot.get(lot.id) ?? lot.remaining_quantity;

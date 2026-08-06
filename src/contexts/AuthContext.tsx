@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback, useRef } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentPdvId, getStoredPdvId, setCurrentPdvId } from "@/lib/pdvStore";
@@ -146,12 +146,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, [pdvId]);
 
+  const multiPdvEnabledRef = useRef(multiPdvEnabled);
+  multiPdvEnabledRef.current = multiPdvEnabled;
+
   const loadPdvs = useCallback(async () => {
     setPdvLoading(true);
     const { data } = await supabase.from("pdvs").select("id, code, name, active").order("name");
     const list = ((data ?? []) as Pdv[]).filter((p) => p.active);
     setPdvs(list);
-    if (multiPdvEnabled) {
+    if (multiPdvEnabledRef.current) {
       const stored = getCurrentPdvId();
       if (stored && !list.some((p) => p.id === stored)) {
         setCurrentPdvId(null);
@@ -159,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     setPdvLoading(false);
-  }, [multiPdvEnabled]);
+  }, []);
 
   const loadRoleAndPerms = useCallback(async (uid: string) => {
     const [{ data: roles }, { data: perms }, { data: userPdvs }] = await Promise.all([
@@ -181,11 +184,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAssignedLoaded(true);
   }, []);
 
+  const bootRef = useRef(false);
+
   useEffect(() => {
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, sess) => {
+    if (bootRef.current) return;
+    bootRef.current = true;
+    const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
+        // INITIAL_SESSION / TOKEN_REFRESHED n'apportent rien de neuf :
+        // getSession() ci-dessous charge déjà rôle + PDV.
+        if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
         setTimeout(() => {
           loadRoleAndPerms(sess.user.id);
           loadPdvs();
@@ -216,7 +226,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => sub.subscription.unsubscribe();
-  }, [loadRoleAndPerms, loadPdvs]);
+    // Volontairement monté une seule fois : évite de relancer les requêtes
+    // d'auth/PDV à chaque changement de rôle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const can = useCallback(
     (key: string) => {

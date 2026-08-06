@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/db";
 import { fetchAllRows } from "@/lib/supabasePaginate";
+import { cached, invalidateTables } from "@/lib/requestCache";
 
 export type Category = "alimentaire" | "emballage";
 export type UnitType = "PIECE" | "KILO" | "LITRE" | "PAQUET" | "COLIS" | "ROULEAU";
@@ -296,7 +297,32 @@ export function detectProductUnit(name: string): string {
 
 // ===== Async Supabase functions =====
 
+// Lignes « Mouvement glaces & tartes » du suivi hebdo : table volumineuse,
+// partagée entre plusieurs calculs → mise en cache courte.
+export function getGlaceWeeklyRows(): Promise<any[]> {
+  return cached("weeklyGlaceRows", ["weekly_tracking"], () =>
+    fetchAllRows<any>(() =>
+      supabase
+        .from("weekly_tracking")
+        .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
+        .eq("fiche_type", "Mouvement glaces & tartes"),
+    ),
+  );
+}
+
+function getGlaceGrammageRes(): Promise<any> {
+  return cached("glaceGrammage", ["glace_grammage"], async () =>
+    supabase.from("glace_grammage").select("article, grammage_grams"),
+  );
+}
+
+export function invalidateStockCaches(tables: string[]) {
+  invalidateTables(tables);
+}
+
+
 export async function getMovements(): Promise<StockMovement[]> {
+  return cached("movements", ["stock_movements"], async () => {
   const data = await fetchAllRows<any>(() =>
     supabase.from("stock_movements").select("*").order("created_at", { ascending: false }),
   );
@@ -314,6 +340,7 @@ export async function getMovements(): Promise<StockMovement[]> {
     createdAt: row.created_at || undefined,
     source: row.source || undefined,
   }));
+  });
 }
 
 export async function saveMovement(movement: Omit<StockMovement, "id">): Promise<StockMovement> {
@@ -340,7 +367,7 @@ export async function saveMovement(movement: Omit<StockMovement, "id">): Promise
   if (movement.type === "sortie" && movement.category === "alimentaire" && movement.quantity > 0) {
     try {
       const { syncLotBalances } = await import("./lotBalance");
-      await syncLotBalances(movement.productId);
+      await syncLotBalances(movement.productId, true);
     } catch (e) {
       console.error("FIFO consumption failed", e);
     }
@@ -366,6 +393,7 @@ export async function deleteMovement(id: string) {
 }
 
 export async function getInitialStocks(): Promise<Record<string, number>> {
+  return cached("initialStocks", ["initial_stocks"], async () => {
   const { data, error } = await supabase.from("initial_stocks").select("*");
   if (error) throw error;
   const result: Record<string, number> = {};
@@ -373,9 +401,11 @@ export async function getInitialStocks(): Promise<Record<string, number>> {
     result[row.product_id] = row.quantity;
   });
   return result;
+  });
 }
 
 export async function getProductUnits(): Promise<Record<string, UnitType>> {
+  return cached("productUnits", ["initial_stocks"], async () => {
   const { data, error } = await supabase.from("initial_stocks").select("product_id, unit");
   if (error) throw error;
   const result: Record<string, UnitType> = {};
@@ -383,9 +413,11 @@ export async function getProductUnits(): Promise<Record<string, UnitType>> {
     result[row.product_id] = (row.unit as UnitType) || "PIECE";
   });
   return result;
+  });
 }
 
 export async function getProductUnitConfigs(): Promise<Record<string, ProductUnitConfig>> {
+  return cached("productUnitConfigs", ["initial_stocks"], async () => {
   const { data, error } = await supabase
     .from("initial_stocks")
     .select("product_id, carton_enabled, paquet_enabled, pieces_per_carton, pieces_per_paquet");
@@ -400,6 +432,7 @@ export async function getProductUnitConfigs(): Promise<Record<string, ProductUni
     };
   });
   return result;
+  });
 }
 
 export async function setProductUnitConfig(productId: string, config: Partial<ProductUnitConfig>) {
@@ -457,17 +490,24 @@ export const TOPPINGS_WEEKLY_ARTICLES = [
   "Kiwi fruits",
 ];
 
+
+function getToppingsWeeklyRes(): Promise<any> {
+  return cached("weeklyToppingsRows", ["weekly_tracking"], async () =>
+    supabase
+      .from("weekly_tracking")
+      .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
+      .eq("fiche_type", "Mouvement glaces & tartes")
+      .in("article", TOPPINGS_WEEKLY_ARTICLES),
+  );
+}
+
 export async function getToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
   const [movements, initialStocks, units, configs, weeklyRes] = await Promise.all([
     getMovements(),
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
-    supabase
-      .from("weekly_tracking")
-      .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
-      .eq("fiche_type", "Mouvement glaces & tartes")
-      .in("article", TOPPINGS_WEEKLY_ARTICLES),
+    getToppingsWeeklyRes(),
   ]);
 
   let stockInitial = 0;
@@ -551,11 +591,7 @@ export async function getToppingsDailyHistory(): Promise<DailyStockRecord[]> {
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
-    supabase
-      .from("weekly_tracking")
-      .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
-      .eq("fiche_type", "Mouvement glaces & tartes")
-      .in("article", TOPPINGS_WEEKLY_ARTICLES),
+    getToppingsWeeklyRes(),
   ]);
 
   // Stock initial global = somme des stocks initiaux SMARTIES + OREO
@@ -752,7 +788,7 @@ export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: n
         .eq("fiche_type", "Mouvement glaces & tartes")
         .in("week_start", [weekStart, nextWeekStart]),
     ),
-    supabase.from("glace_grammage").select("article, grammage_grams"),
+    getGlaceGrammageRes(),
   ]);
   const grams: Record<string, number> = {};
   ((gramRes as any).data || []).forEach((r: any) => {
@@ -864,13 +900,8 @@ const DAYS_FOR_GLACE = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Same
 
 export async function getGlaceAggregateForRange(startDate?: string, endDate?: string): Promise<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number }> {
   const [rows, gramRes] = await Promise.all([
-    fetchAllRows<any>(() =>
-      supabase
-        .from("weekly_tracking")
-        .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
-        .eq("fiche_type", "Mouvement glaces & tartes"),
-    ),
-    supabase.from("glace_grammage").select("article, grammage_grams"),
+    getGlaceWeeklyRows(),
+    getGlaceGrammageRes(),
   ]);
 
   const grams: Record<string, number> = {};
@@ -1034,13 +1065,8 @@ export async function getGlaceBreakdownForRange(
   endDate?: string,
 ): Promise<AggregateBreakdownRow[]> {
   const [rows, gramRes] = await Promise.all([
-    fetchAllRows<any>(() =>
-      supabase
-        .from("weekly_tracking")
-        .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
-        .eq("fiche_type", "Mouvement glaces & tartes"),
-    ),
-    supabase.from("glace_grammage").select("article, grammage_grams"),
+    getGlaceWeeklyRows(),
+    getGlaceGrammageRes(),
   ]);
   const grams: Record<string, number> = {};
   ((gramRes as any).data || []).forEach((r: any) => {
