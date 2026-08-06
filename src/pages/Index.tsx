@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from "react";
-import { StockTable } from "@/components/StockTable";
 import { ExpiryAlerts, StockOutAlerts, LowStockAlerts, PendingAutocontrolAlerts } from "@/components/LotManagement";
 // Lazy-loaded heavy tab modules — réduit le bundle initial et accélère le premier affichage.
+const StockTable = lazy(() => import("@/components/StockTable").then((m) => ({ default: m.StockTable })));
 const MovementForm = lazy(() => import("@/components/MovementForm").then((m) => ({ default: m.MovementForm })));
 const MovementHistory = lazy(() => import("@/components/MovementHistory").then((m) => ({ default: m.MovementHistory })));
 const InitialStockForm = lazy(() => import("@/components/InitialStockForm").then((m) => ({ default: m.InitialStockForm })));
@@ -169,7 +169,11 @@ const Index = () => {
                   {showStock ? "Masquer" : "Consulter"}
                 </button>
               </div>
-              {showStock && <StockTable variant="order" />}
+              {showStock && (
+                <Suspense fallback={<TabFallback />}>
+                  <StockTable variant="order" />
+                </Suspense>
+              )}
             </div>
             )}
 
