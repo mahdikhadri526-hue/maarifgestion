@@ -40,7 +40,7 @@ const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
 export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
   const { pdvs, refreshPdvs, pdvId, isAdmin, isRegionalAdmin, permissions } = useAuth();
   const canEditPerms = isAdmin || isRegionalAdmin;
-  const canTogglePerm = (key: string) => isAdmin || (isRegionalAdmin && permissions.has(key));
+  const canTogglePerm = (_key: string) => isAdmin || isRegionalAdmin;
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [accessCode, setAccessCode] = useState("");
