@@ -8,16 +8,30 @@ export async function fetchAllRows<T = any>(
   buildQuery: () => any,
 ): Promise<T[]> {
   const all: T[] = [];
-  let from = 0;
-  // Cap iterations defensively (1M rows max)
-  for (let i = 0; i < 1000; i++) {
-    const to = from + PAGE_SIZE - 1;
-    const { data, error } = await buildQuery().range(from, to);
-    if (error) throw error;
-    const batch = (data || []) as T[];
-    all.push(...batch);
-    if (batch.length < PAGE_SIZE) break;
-    from += PAGE_SIZE;
+  // Première page : la plupart des tables tiennent dedans.
+  const first = await buildQuery().range(0, PAGE_SIZE - 1);
+  if (first.error) throw first.error;
+  const firstBatch = (first.data || []) as T[];
+  all.push(...firstBatch);
+  if (firstBatch.length < PAGE_SIZE) return all;
+
+  // Pages suivantes récupérées par lots parallèles (au lieu d'une par une).
+  const PARALLEL = 4;
+  let from = PAGE_SIZE;
+  for (let round = 0; round < 250; round++) {
+    const ranges = Array.from({ length: PARALLEL }, (_, i) => from + i * PAGE_SIZE);
+    const results = await Promise.all(
+      ranges.map((start) => buildQuery().range(start, start + PAGE_SIZE - 1)),
+    );
+    let done = false;
+    for (const res of results) {
+      if (res.error) throw res.error;
+      const batch = (res.data || []) as T[];
+      all.push(...batch);
+      if (batch.length < PAGE_SIZE) done = true;
+    }
+    if (done) break;
+    from += PARALLEL * PAGE_SIZE;
   }
   return all;
 }
