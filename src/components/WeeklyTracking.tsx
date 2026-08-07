@@ -13,6 +13,7 @@ import { cn, formatDateFR } from "@/lib/utils";
 import { PhotoScanEntry, type ScannedEntry } from "./PhotoScanEntry";
 import { OPERATORS } from "@/lib/operators";
 import { MANAGERS } from "@/lib/managers";
+import { useOperators, useManagers } from "@/lib/roster";
 import { useAuth } from "@/contexts/AuthContext";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 import { fetchAllRows } from "@/lib/supabasePaginate";
@@ -359,6 +360,8 @@ export function WeeklyTracking() {
   const [unlockedDays, setUnlockedDays] = useState<Set<string>>(new Set());
   const [scanDay, setScanDay] = useState<string>("today");
   const { can, user } = useAuth();
+  const operatorOptions = useOperators();
+  const managerOptions = useManagers();
   const restrictedEmail = "gestionmaarif1@gmail.com";
   const isRestrictedUser = (user?.email ?? "").toLowerCase() === restrictedEmail;
   const ficheRef = useRef<HTMLDivElement>(null);
@@ -1755,7 +1758,7 @@ export function WeeklyTracking() {
                           >
                             <SelectTrigger className="h-8 min-w-[140px]"><SelectValue placeholder="—" /></SelectTrigger>
                             <SelectContent>
-                              {OPERATORS.map((o) => (
+                              {operatorOptions.map((o) => (
                                 <SelectItem key={o} value={o}>{o}</SelectItem>
                               ))}
                             </SelectContent>
@@ -1770,7 +1773,7 @@ export function WeeklyTracking() {
                             >
                               <SelectTrigger className="h-8 min-w-[140px]"><SelectValue placeholder="—" /></SelectTrigger>
                               <SelectContent>
-                                {MANAGERS.map((m) => (
+                                {managerOptions.map((m) => (
                                   <SelectItem key={m} value={m}>{m}</SelectItem>
                                 ))}
                               </SelectContent>

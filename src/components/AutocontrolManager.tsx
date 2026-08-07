@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/select";
 import { ClipboardCheck, Trash2, Plus, FileCheck, Printer, FileDown, Eye } from "lucide-react";
 import { OPERATORS } from "@/lib/operators";
+import { useOperators, useManagers } from "@/lib/roster";
 import { getProducts } from "@/lib/stockData";
 import {
   Dialog,
@@ -430,6 +431,8 @@ export function AutocontrolManager() {
   const [submitting, setSubmitting] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { can } = useAuth();
+  const operatorOptions = useOperators();
+  const managerOptions = useManagers();
   const [ctgProducts, setCtgProducts] = useState<Record<CtgProductKey, CtgProductRow>>(initialCtgProducts());
   const [decoProducts, setDecoProducts] = useState<Record<string, DecoProductRow>>(initialDecoProducts());
   const [editEntry, setEditEntry] = useState<AutocontrolEntry | null>(null);
@@ -1089,7 +1092,7 @@ export function AutocontrolManager() {
             >
               <SelectTrigger><SelectValue placeholder="Sélectionner un opérateur" /></SelectTrigger>
               <SelectContent>
-                {OPERATORS.map((o) => (
+                {operatorOptions.map((o) => (
                   <SelectItem key={o} value={o}>{o}</SelectItem>
                 ))}
               </SelectContent>
@@ -1608,7 +1611,7 @@ export function AutocontrolManager() {
             >
               <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
               <SelectContent>
-                {MANAGERS.map((m) => (
+                {managerOptions.map((m) => (
                   <SelectItem key={m} value={m}>{m}</SelectItem>
                 ))}
               </SelectContent>
@@ -2076,7 +2079,7 @@ export function AutocontrolManager() {
                 >
                   <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                   <SelectContent>
-                    {MANAGERS.map((m) => (
+                    {managerOptions.map((m) => (
                       <SelectItem key={m} value={m}>{m}</SelectItem>
                     ))}
                   </SelectContent>

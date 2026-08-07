@@ -3,6 +3,7 @@ import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG, PAQUET_LABEL_
 import { addLotEntry } from "@/lib/lotData";
 import { useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
+import { useOperators } from "@/lib/roster";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -47,7 +48,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const [performedBy, setPerformedBy] = useState("");
   const [destination, setDestination] = useState("");
   const [customDestination, setCustomDestination] = useState("");
-  const [operators, setOperators] = useState<string[]>(() => getOperators());
+  const operators = useOperators();
   const [submitting, setSubmitting] = useState(false);
 
   const products = getProducts(category);

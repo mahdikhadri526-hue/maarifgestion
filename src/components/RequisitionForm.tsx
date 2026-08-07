@@ -3,6 +3,7 @@ import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabelForProduct, PAQUET_LABEL
 import { saveRequisition, setRequisitionTotal, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
 import { useRequisitionsByDate, useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
+import { useOperators } from "@/lib/roster";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -44,7 +45,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<MultiUnitValues>(EMPTY_MULTI);
-  const [operators, setOperators] = useState<string[]>(() => getOperators());
+  const operators = useOperators();
   const [showAdded, setShowAdded] = useState(true);
   const { data: configs } = useProductUnitConfigs();
 
