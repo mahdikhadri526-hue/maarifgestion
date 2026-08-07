@@ -906,6 +906,41 @@ export type Database = {
           },
         ]
       }
+      roster_names: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          pdv_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          name: string
+          pdv_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          pdv_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roster_names_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_orders: {
         Row: {
           category: string

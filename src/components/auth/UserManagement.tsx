@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ALL_PERMISSIONS, AppRole, useAuth } from "@/contexts/AuthContext";
 import { PdvManagement } from "@/components/pdv/PdvManagement";
+import { RosterManagement } from "@/components/roster/RosterManagement";
 
 const PROTECTED_EMAILS = ["gestionmaarif1@gmail.com"];
 
@@ -46,7 +47,7 @@ const ROLE_PRESETS: Record<AppRole, string[]> = {
 };
 
 export function UserManagement({ onBack }: { onBack: () => void }) {
-  const { user: currentUser, multiPdvEnabled, pdvs, isAdmin } = useAuth();
+  const { user: currentUser, multiPdvEnabled, pdvs, isAdmin, can } = useAuth();
   const [users, setUsers] = useState<ProfileRow[]>([]);
   const [roles, setRoles] = useState<Record<string, AppRole | null>>({});
   const [perms, setPerms] = useState<Record<string, Set<string>>>({});
@@ -341,6 +342,8 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       </>)}
 
       {multiPdvEnabled && isAdmin && <PdvManagement onChanged={load} />}
+
+      {(isAdmin || can("manage_roster")) && <RosterManagement />}
 
       <Dialog open={!!pdvEditing} onOpenChange={(o) => !o && setPdvEditing(null)}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
