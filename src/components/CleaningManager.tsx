@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { CLEANING_ZONES, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs, updateCleaningLog, arOf } from "@/lib/cleaningData";
 import { OPERATORS } from "@/lib/operators";
 import { MANAGERS } from "@/lib/managers";
+import { useRosterAllowed } from "@/lib/roster";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -277,7 +278,7 @@ export function CleaningManager() {
               <Select value={visa} onValueChange={setVisa}>
                 <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
                 <SelectContent>
-                  {CLEANING_MANAGERS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  {managerOptions.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -389,7 +390,7 @@ export function CleaningManager() {
                           <Select value={editVisa} onValueChange={setEditVisa}>
                             <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
                             <SelectContent>
-                              {CLEANING_MANAGERS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                              {managerOptions.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                             </SelectContent>
                           </Select>
                         </div>
