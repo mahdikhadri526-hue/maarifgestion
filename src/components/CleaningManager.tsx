@@ -3,7 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { CLEANING_ZONES, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs, updateCleaningLog, arOf } from "@/lib/cleaningData";
 import { OPERATORS } from "@/lib/operators";
 import { MANAGERS } from "@/lib/managers";
-import { useRosterAllowed } from "@/lib/roster";
+import { useRosterAllowed, usePdvRoster } from "@/lib/roster";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -70,7 +70,7 @@ export function CleaningManager() {
   const { rows: rosterRows } = usePdvRoster();
   const customOperators = rosterRows.filter((r) => r.kind === "operator").map((r) => r.name);
   const customManagers = rosterRows.filter((r) => r.kind === "manager").map((r) => r.name);
-  const managerOptions = Array.from(
+  const managerOptions: string[] = Array.from(
     new Set(rosterAllowed ? [...CLEANING_MANAGERS, ...customManagers] : customManagers),
   );
 
