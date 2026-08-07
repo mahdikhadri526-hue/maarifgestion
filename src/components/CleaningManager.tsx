@@ -65,6 +65,8 @@ export function CleaningManager() {
   const [editVisa, setEditVisa] = useState("");
   const [savingEdit, setSavingEdit] = useState(false);
   const { user, isAdmin } = useAuth();
+  const rosterAllowed = useRosterAllowed();
+  const managerOptions = rosterAllowed ? CLEANING_MANAGERS : [];
 
   const refresh = async () => {
     try {
@@ -203,7 +205,7 @@ export function CleaningManager() {
             <Select value={collaborateur} onValueChange={setCollaborateur}>
               <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
               <SelectContent>
-                {(zoneKey === "toilettes_client_salle" ? TOILETTES_SALLE_OPERATORS : CLEANING_OPERATORS).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                {(!rosterAllowed ? [] : zoneKey === "toilettes_client_salle" ? TOILETTES_SALLE_OPERATORS : CLEANING_OPERATORS).map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
