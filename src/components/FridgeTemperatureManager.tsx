@@ -13,6 +13,7 @@ import { Thermometer, Save, AlertTriangle, CheckCircle2, FileDown, Volume2, Volu
 import { EQUIPMENTS, SLOTS, ZONES, formatDisplayTemp, parseDisplayTemp, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
 import { OPERATORS } from "@/lib/operators";
 import { MANAGERS } from "@/lib/managers";
+import { useOperators, useManagers } from "@/lib/roster";
 import { useAuth } from "@/contexts/AuthContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -119,6 +120,8 @@ function formatTime(ts?: string): string {
 
 export function FridgeTemperatureManager() {
   const { can, user, isAdmin } = useAuth();
+  const operatorOptions = useOperators();
+  const managerOptions = useManagers();
   const isNoDeleteUser = user?.email === "gestionmaarif1@gmail.com";
   const canEdit = can("edit_temperatures");
   const canDelete = can("delete_temperatures") && !isNoDeleteUser;
@@ -640,7 +643,7 @@ export function FridgeTemperatureManager() {
               <Select value={slotOperator} onValueChange={setSlotOperator} disabled={!canEdit}>
                 <SelectTrigger><SelectValue placeholder="Sélectionner l'opérateur" /></SelectTrigger>
                 <SelectContent>
-                  {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                  {operatorOptions.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
@@ -1051,7 +1054,7 @@ export function FridgeTemperatureManager() {
                         <SelectTrigger className="h-9"><SelectValue placeholder="Opérateur" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none">—</SelectItem>
-                          {OPERATORS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                          {operatorOptions.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -1065,7 +1068,7 @@ export function FridgeTemperatureManager() {
                         <SelectTrigger className="h-9"><SelectValue placeholder="Manager" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none">—</SelectItem>
-                          {MANAGERS.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                          {managerOptions.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>

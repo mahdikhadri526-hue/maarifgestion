@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
 import { getOperators } from "@/lib/operators";
+import { useOperators } from "@/lib/roster";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger,
@@ -349,6 +350,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [chantillyAgg, setChantillyAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const [amandesAgg, setAmandesAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const { can, isAdmin } = useAuth();
+  const operatorOptions = useOperators();
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustData, setAdjustData] = useState<{
@@ -1795,7 +1797,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <option value="">Choisir...</option>
-                    {getOperators().map((op) => (
+                    {operatorOptions.map((op) => (
                       <option key={op} value={op}>{op}</option>
                     ))}
                   </select>
@@ -2037,7 +2039,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
                 <option value="">Choisir...</option>
-                {getOperators().map((op) => (
+                {operatorOptions.map((op) => (
                   <option key={op} value={op}>{op}</option>
                 ))}
               </select>
