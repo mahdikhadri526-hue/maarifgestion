@@ -122,7 +122,7 @@ export function RequisitionForm({ onUpdated }: Props) {
           unitUsed,
         });
       }
-      setOperators(rememberOperator(operatorName));
+      rememberOperator(operatorName);
       toast.success(`${entries.length} réquisition(s) enregistrée(s) — sorties créées automatiquement`);
       setQuantities({});
       onUpdated();
@@ -171,7 +171,7 @@ export function RequisitionForm({ onUpdated }: Props) {
         performedBy: operatorName,
         unitUsed: dominantUnit(v, cfg),
       });
-      setOperators(rememberOperator(operatorName));
+      rememberOperator(operatorName);
       toast.success(`${product.name} enregistré`);
       setQuantities((q) => ({ ...q, [productId]: EMPTY_MULTI }));
       onUpdated();
@@ -235,7 +235,7 @@ export function RequisitionForm({ onUpdated }: Props) {
     try {
       const operatorName = performedBy.trim();
       await setRequisitionTotal(date, reqType, productId, product.name, val, operatorName);
-      setOperators(rememberOperator(operatorName));
+      rememberOperator(operatorName);
       toast.success(`${product.name} mis à jour`);
       setEditingId(null);
       setEditValue(EMPTY_MULTI);

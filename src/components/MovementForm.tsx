@@ -133,7 +133,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         unitUsed,
         destination: destinationValue,
       });
-      setOperators(rememberOperator(operatorName));
+      rememberOperator(operatorName);
 
       if (isAlimentaire) {
         if (type === "entree") {
