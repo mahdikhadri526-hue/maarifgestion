@@ -239,6 +239,144 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
     load();
   };
 
+  const setGroupPerms = async (userId: string, keys: string[], enable: boolean) => {
+    if (enable) {
+      await supabase.from("user_permissions").upsert(
+        keys.map((k) => ({ user_id: userId, permission_key: k, allowed: true })),
+        { onConflict: "user_id,permission_key" },
+      );
+    } else {
+      await supabase.from("user_permissions").delete().eq("user_id", userId).in("permission_key", keys);
+    }
+    load();
+  };
+
+  const permLabel = (key: string) =>
+    ALL_PERMISSIONS.find((p) => p.key === key)?.label ?? key;
+
+  const filteredUsers = users.filter((u) => {
+    const q = search.trim().toLowerCase();
+    const matchQ =
+      !q ||
+      (u.email ?? "").toLowerCase().includes(q) ||
+      (u.display_name ?? "").toLowerCase().includes(q);
+    const matchRole = roleFilter === "all" || (roles[u.user_id] ?? "viewer") === roleFilter;
+    return matchQ && matchRole;
+  });
+
+  const renderUserRow = (u: ProfileRow) => {
+    const r = roles[u.user_id] ?? "viewer";
+    const isMe = u.user_id === currentUser?.id;
+    const locked = isProtected(u.email);
+    const assigned = userPdvs[u.user_id] ?? [];
+    const permCount = perms[u.user_id]?.size ?? 0;
+    return (
+      <div
+        key={u.user_id}
+        className="rounded-lg border bg-card p-3 space-y-3 transition-colors hover:border-primary/40"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-medium text-sm truncate">{u.display_name || u.email}</span>
+              {isMe && <Badge variant="secondary">Vous</Badge>}
+              {locked && <Badge variant="outline">Protégé</Badge>}
+              <Badge variant={r === "admin" || r === "regional_admin" ? "default" : "secondary"}>
+                {ROLE_LABELS[r]}
+              </Badge>
+            </div>
+            <div className="text-xs text-muted-foreground truncate">{u.email}</div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {assigned.length > 0
+                ? assigned.map((id) => pdvs.find((p) => p.id === id)?.name ?? "—").join(" · ")
+                : "Aucun point de vente"}
+              {r !== "admin" && ` — ${permCount} permission${permCount > 1 ? "s" : ""}`}
+            </div>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="outline"
+              size="icon"
+              title="Changer le mot de passe"
+              onClick={() => { setPwdTarget(u); setPwdValue(""); }}
+              disabled={locked}
+            >
+              <KeyRound className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="destructive"
+              size="icon"
+              title="Supprimer l'utilisateur"
+              onClick={() => deleteUser(u)}
+              disabled={isMe || locked || busy}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div className="grid gap-2 sm:grid-cols-3">
+          <div className="space-y-1">
+            <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Rôle</label>
+            <Select value={r} onValueChange={(v) => setUserRole(u.user_id, v as AppRole)} disabled={isMe || locked}>
+              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="admin">Admin</SelectItem>
+                <SelectItem value="regional_admin">Admin régional</SelectItem>
+                <SelectItem value="manager">Manager</SelectItem>
+                <SelectItem value="operator">Opérateur</SelectItem>
+                <SelectItem value="viewer">Lecteur</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Point(s) de vente</label>
+            {r === "regional_admin" ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full h-9 justify-start"
+                onClick={() => setPdvEditing(u)}
+                disabled={locked || busy}
+              >
+                <Store className="h-4 w-4 mr-2" /> {assigned.length} sélectionné(s)
+              </Button>
+            ) : (
+              <Select
+                value={assigned[0] ?? ""}
+                onValueChange={(v) => assignPdv(u.user_id, v)}
+                disabled={locked || busy}
+              >
+                <SelectTrigger className="h-9"><SelectValue placeholder="Point de vente" /></SelectTrigger>
+                <SelectContent>
+                  {pdvs.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[11px] uppercase tracking-wide text-muted-foreground">Permissions</label>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-9 justify-start"
+              onClick={() => { setPermSearch(""); setEditing(u); }}
+              disabled={isMe || r === "admin" || locked}
+            >
+              <Settings2 className="h-4 w-4 mr-2" /> Configurer
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -251,127 +389,113 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
         </h2>
       </div>
 
-      {multiPdvEnabled && !isAdmin && <PdvManagement />}
+      {!isAdmin && (
+        <div className="space-y-4">
+          {multiPdvEnabled && <PdvManagement />}
+          {can("manage_roster") && <RosterManagement />}
+        </div>
+      )}
 
-      {isAdmin && (<>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <UserPlus className="h-4 w-4 text-primary" /> Ajouter un utilisateur
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="grid gap-2 sm:grid-cols-5">
-          <Input placeholder="Email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
-          <Input placeholder="Mot de passe" type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
-          <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="regional_admin">Admin régional</SelectItem>
-              <SelectItem value="manager">Manager</SelectItem>
-              <SelectItem value="operator">Opérateur</SelectItem>
-              <SelectItem value="viewer">Lecteur</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={newPdv} onValueChange={setNewPdv}>
-            <SelectTrigger><SelectValue placeholder="Point de vente" /></SelectTrigger>
-            <SelectContent>
-              {pdvs.map((p) => (
-                <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button onClick={createUser} disabled={busy}>Créer</Button>
-        </CardContent>
-      </Card>
+      {isAdmin && (
+        <Tabs defaultValue="users" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="users" className="gap-2">
+              <Users className="h-4 w-4" /> Utilisateurs
+            </TabsTrigger>
+            <TabsTrigger value="pdvs" className="gap-2">
+              <Store className="h-4 w-4" /> Points de vente
+            </TabsTrigger>
+            <TabsTrigger value="roster" className="gap-2">
+              <ListChecks className="h-4 w-4" /> Listes de noms
+            </TabsTrigger>
+          </TabsList>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Utilisateurs ({users.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <p className="text-sm text-muted-foreground">Chargement…</p>
-          ) : (
-            <div className="space-y-3">
-              {users.map((u) => {
-                const r = roles[u.user_id] ?? "viewer";
-                const isMe = u.user_id === currentUser?.id;
-                const locked = isProtected(u.email);
-                return (
-                  <div key={u.user_id} className="flex items-center justify-between gap-3 p-3 border rounded-lg flex-wrap">
-                    <div className="min-w-0 flex-1">
-                      <div className="font-medium text-sm truncate">{u.display_name || u.email}</div>
-                      <div className="text-xs text-muted-foreground truncate">{u.email}</div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {isMe && <Badge variant="secondary">Vous</Badge>}
-                      {locked && <Badge variant="outline">Protégé</Badge>}
-                      {r === "regional_admin" ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-[150px]"
-                          onClick={() => setPdvEditing(u)}
-                          disabled={locked || busy}
-                        >
-                          PDV ({(userPdvs[u.user_id] ?? []).length})
-                        </Button>
-                      ) : (
-                        <Select
-                          value={userPdvs[u.user_id]?.[0] ?? ""}
-                          onValueChange={(v) => assignPdv(u.user_id, v)}
-                          disabled={locked || busy}
-                        >
-                          <SelectTrigger className="w-[150px]">
-                            <SelectValue placeholder="Point de vente" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {pdvs.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                      <Select value={r} onValueChange={(v) => setUserRole(u.user_id, v as AppRole)} disabled={isMe || locked}>
-                        <SelectTrigger className="w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="admin">Admin</SelectItem>
-                          <SelectItem value="regional_admin">Admin régional</SelectItem>
-                          <SelectItem value="manager">Manager</SelectItem>
-                          <SelectItem value="operator">Opérateur</SelectItem>
-                          <SelectItem value="viewer">Lecteur</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <Button variant="outline" size="sm" onClick={() => setEditing(u)} disabled={isMe || r === "admin" || locked}>
-                        <Settings2 className="h-4 w-4 mr-1" /> Permissions
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => { setPwdTarget(u); setPwdValue(""); }} disabled={locked}>
-                        <KeyRound className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => deleteUser(u)}
-                        disabled={isMe || locked || busy}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+          <TabsContent value="users" className="space-y-4 mt-0">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <UserPlus className="h-4 w-4 text-primary" /> Ajouter un utilisateur
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-2 sm:grid-cols-5">
+                <Input placeholder="Email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
+                <Input placeholder="Mot de passe" type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="regional_admin">Admin régional</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                    <SelectItem value="operator">Opérateur</SelectItem>
+                    <SelectItem value="viewer">Lecteur</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={newPdv} onValueChange={setNewPdv}>
+                  <SelectTrigger><SelectValue placeholder="Point de vente" /></SelectTrigger>
+                  <SelectContent>
+                    {pdvs.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button onClick={createUser} disabled={busy}>Créer</Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3 space-y-3">
+                <CardTitle className="text-base">
+                  Utilisateurs ({filteredUsers.length}/{users.length})
+                </CardTitle>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Rechercher un utilisateur…"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-8"
+                    />
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      </>)}
+                  <Select value={roleFilter} onValueChange={setRoleFilter}>
+                    <SelectTrigger className="sm:w-[180px]"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les rôles</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                      <SelectItem value="regional_admin">Admin régional</SelectItem>
+                      <SelectItem value="manager">Manager</SelectItem>
+                      <SelectItem value="operator">Opérateur</SelectItem>
+                      <SelectItem value="viewer">Lecteur</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <p className="text-sm text-muted-foreground">Chargement…</p>
+                ) : filteredUsers.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucun utilisateur trouvé.</p>
+                ) : (
+                  <div className="space-y-3">{filteredUsers.map(renderUserRow)}</div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-      {multiPdvEnabled && isAdmin && <PdvManagement onChanged={load} />}
+          <TabsContent value="pdvs" className="mt-0">
+            {multiPdvEnabled ? (
+              <PdvManagement onChanged={load} />
+            ) : (
+              <Card><CardContent className="py-6 text-sm text-muted-foreground">Le mode multi-PDV est désactivé.</CardContent></Card>
+            )}
+          </TabsContent>
 
-      {(isAdmin || can("manage_roster")) && <RosterManagement />}
+          <TabsContent value="roster" className="mt-0">
+            <RosterManagement />
+          </TabsContent>
+        </Tabs>
+      )}
+
 
       <Dialog open={!!pdvEditing} onOpenChange={(o) => !o && setPdvEditing(null)}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
