@@ -186,22 +186,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const bootRef = useRef(false);
+  const loadedUidRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (bootRef.current) return;
     bootRef.current = true;
     const { data: sub } = supabase.auth.onAuthStateChange((event, sess) => {
+      // Événements transitoires (refresh de jeton en échec réseau, retour
+      // d'onglet…) : ne rien réinitialiser tant que ce n'est pas une vraie
+      // déconnexion, sinon l'application semble « redémarrer » toute seule.
+      if (!sess && event !== "SIGNED_OUT") return;
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
         // INITIAL_SESSION / TOKEN_REFRESHED n'apportent rien de neuf :
         // getSession() ci-dessous charge déjà rôle + PDV.
         if (event === "INITIAL_SESSION" || event === "TOKEN_REFRESHED") return;
+        // Même utilisateur déjà chargé : évite un rechargement complet
+        // (et le remontage de l'interface) à chaque retour d'onglet.
+        if (loadedUidRef.current === sess.user.id) return;
+        loadedUidRef.current = sess.user.id;
         setTimeout(() => {
           loadRoleAndPerms(sess.user.id);
           loadPdvs();
         }, 0);
       } else {
+        loadedUidRef.current = null;
         setRole(null);
         setPermissions(new Set());
         setPdvs([]);
@@ -218,6 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(sess);
       setUser(sess?.user ?? null);
       if (sess?.user) {
+        loadedUidRef.current = sess.user.id;
         loadRoleAndPerms(sess.user.id).finally(() => setLoading(false));
         loadPdvs();
       } else {
