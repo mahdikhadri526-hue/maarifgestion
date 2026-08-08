@@ -6,7 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, ShieldCheck, Settings2, UserPlus, Trash2, KeyRound } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowLeft, ShieldCheck, Settings2, UserPlus, Trash2, KeyRound, Search, Store, Users, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ALL_PERMISSIONS, AppRole, useAuth } from "@/contexts/AuthContext";
@@ -14,6 +16,29 @@ import { PdvManagement } from "@/components/pdv/PdvManagement";
 import { RosterManagement } from "@/components/roster/RosterManagement";
 
 const PROTECTED_EMAILS = ["gestionmaarif1@gmail.com"];
+
+const ROLE_LABELS: Record<AppRole, string> = {
+  admin: "Admin",
+  regional_admin: "Admin régional",
+  manager: "Manager",
+  operator: "Opérateur",
+  viewer: "Lecteur",
+};
+
+const PERMISSION_GROUPS: { title: string; keys: string[] }[] = [
+  { title: "Tableau de bord & rapports", keys: ["view_dashboard", "view_reports"] },
+  { title: "Stock", keys: ["view_stock", "edit_stock", "delete_stock", "edit_remaining_stock"] },
+  { title: "Mouvements", keys: ["view_movements", "edit_movements", "delete_movements"] },
+  { title: "Réquisitions", keys: ["view_requisitions", "edit_requisitions", "delete_requisitions"] },
+  { title: "Lots & DLC", keys: ["view_lots", "edit_lots", "delete_lots"] },
+  { title: "Autocontrôle", keys: ["view_autocontrol", "edit_autocontrol", "delete_autocontrol"] },
+  { title: "Suivi hebdomadaire", keys: ["view_weekly", "edit_weekly", "delete_weekly"] },
+  { title: "Températures", keys: ["view_temperatures", "edit_temperatures", "delete_temperatures"] },
+  { title: "Nettoyage", keys: ["view_cleaning", "edit_cleaning", "delete_cleaning"] },
+  { title: "Inventaire", keys: ["view_inventory", "manage_inventory"] },
+  { title: "Recettes", keys: ["view_recipes", "edit_recipes"] },
+  { title: "Administration", keys: ["manage_roster"] },
+];
 
 interface ProfileRow {
   user_id: string;
