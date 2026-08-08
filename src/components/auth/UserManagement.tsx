@@ -87,6 +87,9 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   const [newPdv, setNewPdv] = useState<string>("");
   const [pwdTarget, setPwdTarget] = useState<ProfileRow | null>(null);
   const [pwdValue, setPwdValue] = useState("");
+  const [search, setSearch] = useState("");
+  const [permSearch, setPermSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
 
   const isProtected = (email?: string | null) =>
     !!email && PROTECTED_EMAILS.includes(email.toLowerCase());
