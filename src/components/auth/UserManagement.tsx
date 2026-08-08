@@ -543,22 +543,57 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Permissions de {editing?.display_name || editing?.email}</DialogTitle>
+            <DialogTitle>Permissions — {editing?.display_name || editing?.email}</DialogTitle>
           </DialogHeader>
           {editing && (
-            <div className="space-y-2">
-              {ALL_PERMISSIONS.map((p) => {
-                const has = perms[editing.user_id]?.has(p.key) ?? false;
+            <div className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Filtrer les permissions…"
+                  value={permSearch}
+                  onChange={(e) => setPermSearch(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              {PERMISSION_GROUPS.map((g) => {
+                const q = permSearch.trim().toLowerCase();
+                const keys = g.keys.filter(
+                  (k) => !q || permLabel(k).toLowerCase().includes(q) || k.includes(q),
+                );
+                if (keys.length === 0) return null;
+                const userPerms = perms[editing.user_id];
+                const allOn = keys.every((k) => userPerms?.has(k));
                 return (
-                  <label key={p.key} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
-                    <Checkbox checked={has} onCheckedChange={() => togglePerm(editing.user_id, p.key, has)} />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{p.label}</div>
-                      <div className="text-xs text-muted-foreground">{p.key}</div>
+                  <div key={g.title} className="rounded-lg border">
+                    <div className="flex items-center justify-between gap-2 px-3 py-2 bg-muted/50 rounded-t-lg">
+                      <span className="text-sm font-semibold">{g.title}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs"
+                        onClick={() => setGroupPerms(editing.user_id, keys, !allOn)}
+                      >
+                        {allOn ? "Tout décocher" : "Tout cocher"}
+                      </Button>
                     </div>
-                  </label>
+                    <div className="p-1">
+                      {keys.map((k) => {
+                        const has = userPerms?.has(k) ?? false;
+                        return (
+                          <label
+                            key={k}
+                            className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer"
+                          >
+                            <Checkbox checked={has} onCheckedChange={() => togglePerm(editing.user_id, k, has)} />
+                            <span className="text-sm flex-1">{permLabel(k)}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
                 );
               })}
             </div>
@@ -568,6 +603,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </div>
   );
 }
