@@ -19,12 +19,10 @@ function AuthGate() {
   if (!user) return <AuthPage />;
   if (multiPdvEnabled && !pdvId) return <PdvSelector />;
   return (
-    <BrowserRouter key={pdvId}>
-      <Routes>
-        <Route path="/" element={<Index />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Index key={pdvId} />} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 }
 
@@ -34,9 +32,11 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
-        <AuthProvider>
-          <AuthGate />
-        </AuthProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <AuthGate />
+          </AuthProvider>
+        </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
