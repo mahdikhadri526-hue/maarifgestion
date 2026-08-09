@@ -14,11 +14,13 @@ import { toast } from "sonner";
 import { useManagers } from "@/lib/roster";
 import { cn, formatDateFR } from "@/lib/utils";
 import { printStructuredPdf } from "@/lib/printExport";
+import { GLACE_PARFUMS, fetchGlaceFifoLots } from "@/lib/glaceLotFifo";
 
 const SLOTS = ["08h00", "10h00", "12h00", "14h00", "16h00", "18h00", "20h00", "22h00", "00h00"];
 const LINES = [0, 1, 2];
 const ZONES = ["Salle", "Emporter"] as const;
 type Zone = (typeof ZONES)[number];
+const ANOMALIES = ["Fissure", "Cassure"] as const;
 
 type Row = {
   slot: string;
@@ -53,6 +55,17 @@ export function GlaceStuffControl() {
   const [rows, setRows] = useState<Record<string, Row>>({});
   const [loading, setLoading] = useState(false);
   const managerOptions = useManagers();
+  const [fifoLots, setFifoLots] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    let active = true;
+    fetchGlaceFifoLots().then((m) => {
+      if (active) setFifoLots(m);
+    });
+    return () => {
+      active = false;
+    };
+  }, [date]);
 
   const load = useCallback(async () => {
     setLoading(true);
