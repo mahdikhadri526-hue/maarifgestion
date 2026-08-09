@@ -56,6 +56,12 @@ export function GlaceStuffControl() {
   const [loading, setLoading] = useState(false);
   const managerOptions = useManagers();
   const [fifoLots, setFifoLots] = useState<Record<string, string>>({});
+  const [lineCounts, setLineCounts] = useState<Record<string, number>>({});
+
+  const linesOf = useCallback(
+    (slot: string) => Array.from({ length: lineCounts[slot] ?? 1 }, (_, i) => i),
+    [lineCounts],
+  );
 
   useEffect(() => {
     let active = true;
@@ -80,10 +86,15 @@ export function GlaceStuffControl() {
       return;
     }
     const next: Record<string, Row> = {};
-    for (const slot of SLOTS) for (const l of LINES) next[keyOf(slot, l)] = emptyRow(slot, l);
+    const counts: Record<string, number> = {};
+    for (const slot of SLOTS) {
+      counts[slot] = 1;
+      next[keyOf(slot, 0)] = emptyRow(slot, 0);
+    }
     for (const r of (data ?? []) as any[]) {
       const k = keyOf(r.slot, r.line_index);
-      if (!next[k]) continue;
+      if (!SLOTS.includes(r.slot)) continue;
+      counts[r.slot] = Math.max(counts[r.slot] ?? 1, (r.line_index ?? 0) + 1);
       next[k] = {
         slot: r.slot,
         line_index: r.line_index,
@@ -97,6 +108,7 @@ export function GlaceStuffControl() {
       };
     }
     setRows(next);
+    setLineCounts(counts);
   }, [date, zone]);
 
   useEffect(() => {
