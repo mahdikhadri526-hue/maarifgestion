@@ -37,6 +37,7 @@ export const EQUIPMENTS: FridgeEquipment[] = [
   { code: "ETS-C06", name: "Congélateur 6", type: "Congélateur", zone: "Entre-sol" },
   { code: "ETS-C07", name: "Congélateur 7", type: "Congélateur", zone: "Entre-sol" },
   { code: "ETS-C08", name: "Congélateur 8", type: "Congélateur", zone: "Entre-sol" },
+  { code: "ETS-C09", name: "Congélateur 9", type: "Congélateur", zone: "Entre-sol" },
   { code: "ETS-I01", name: "Congélateur inox 1", type: "Congélateur inox", zone: "Entre-sol" },
   { code: "ETS-I02", name: "Congélateur inox 2", type: "Congélateur inox", zone: "Entre-sol" },
   { code: "PAS-CP01", name: "Chambre positive", type: "Chambre positive", zone: "Passe" },
