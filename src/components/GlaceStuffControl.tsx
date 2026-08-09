@@ -200,18 +200,22 @@ export function GlaceStuffControl() {
   const YesNo = ({
     value,
     onChange,
+    disabled,
   }: {
     value: boolean | null;
     onChange: (v: boolean | null) => void;
+    disabled?: boolean;
   }) => (
     <div className="flex gap-1 justify-center">
       {[true, false].map((v) => (
         <button
           key={String(v)}
           type="button"
+          disabled={disabled}
           onClick={() => onChange(value === v ? null : v)}
           className={cn(
             "px-2 py-0.5 rounded border text-[11px] leading-4",
+            disabled && "opacity-40 cursor-not-allowed",
             value === v
               ? v
                 ? "bg-destructive text-destructive-foreground border-destructive"
@@ -276,6 +280,7 @@ export function GlaceStuffControl() {
               const slotLines = linesOf(slot);
               return slotLines.map((l) => {
                 const r = get(slot, l);
+                const blocked = get(slot, 0).non_conformite === false;
                 return (
                   <tr key={keyOf(slot, l)} className={l === 0 ? "border-t-2 border-t-primary/30" : ""}>
                     {l === 0 && (
@@ -306,18 +311,32 @@ export function GlaceStuffControl() {
                       <td rowSpan={slotLines.length} className="border p-2">
                         <YesNo
                           value={get(slot, 0).non_conformite}
-                          onChange={(v) => update(slot, 0, { non_conformite: v })}
+                          onChange={(v) => {
+                            update(slot, 0, { non_conformite: v });
+                            if (v === false) {
+                              for (const li of slotLines) {
+                                update(slot, li, {
+                                  parfum: "",
+                                  lot_number: "",
+                                  anomalie: "",
+                                  plastique: null,
+                                  action_corrective: "",
+                                });
+                              }
+                            }
+                          }}
                         />
                       </td>
                     )}
                     <td className="border p-1">
                       <Select
                         value={r.parfum}
+                        disabled={blocked}
                         onValueChange={(v) =>
                           update(slot, l, { parfum: v, lot_number: fifoLots[v] ?? "" })
                         }
                       >
-                        <SelectTrigger className="h-8 text-xs">
+                        <SelectTrigger className={cn("h-8 text-xs", blocked && "bg-muted/50")}>
                           <SelectValue placeholder="Parfum" />
                         </SelectTrigger>
                         <SelectContent>
@@ -343,9 +362,11 @@ export function GlaceStuffControl() {
                           <button
                             key={a}
                             type="button"
+                            disabled={blocked}
                             onClick={() => update(slot, l, { anomalie: r.anomalie === a ? "" : a })}
                             className={cn(
                               "px-2 py-0.5 rounded border text-[11px] leading-4",
+                              blocked && "opacity-40 cursor-not-allowed",
                               r.anomalie === a
                                 ? "bg-destructive text-destructive-foreground border-destructive"
                                 : "bg-background text-muted-foreground",
@@ -357,7 +378,11 @@ export function GlaceStuffControl() {
                       </div>
                     </td>
                     <td className="border p-1">
-                      <YesNo value={r.plastique} onChange={(v) => update(slot, l, { plastique: v })} />
+                      <YesNo
+                        value={r.plastique}
+                        disabled={blocked}
+                        onChange={(v) => update(slot, l, { plastique: v })}
+                      />
                     </td>
                     <td className="border p-1">
                       <div className="flex gap-1 justify-center">
@@ -365,11 +390,13 @@ export function GlaceStuffControl() {
                           <button
                             key={a}
                             type="button"
+                            disabled={blocked}
                             onClick={() =>
                               update(slot, l, { action_corrective: r.action_corrective === a ? "" : a })
                             }
                             className={cn(
                               "px-2 py-0.5 rounded border text-[11px] leading-4",
+                              blocked && "opacity-40 cursor-not-allowed",
                               r.action_corrective === a
                                 ? "bg-primary text-primary-foreground border-primary"
                                 : "bg-background text-muted-foreground",
