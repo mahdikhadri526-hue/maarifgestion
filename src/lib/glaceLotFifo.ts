@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/db";
+import { fetchAllRows } from "@/lib/supabasePaginate";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 const FICHE = "Mouvement glaces & tartes";
@@ -20,15 +21,23 @@ const num = (v: unknown) => {
  * d'après le suivi hebdomadaire « Mouvement glaces ».
  */
 export async function fetchGlaceFifoLots(): Promise<Record<string, string>> {
-  const { data, error } = await supabase
-    .from("weekly_tracking")
-    .select("article, week_start, day_of_week, row_index, stock_initial, entrees, sorties, lot_number")
-    .eq("fiche_type", FICHE)
-    .in("article", GLACE_PARFUMS);
-  if (error || !data) return {};
+  let data: any[];
+  try {
+    data = await fetchAllRows<any>(() =>
+      supabase
+        .from("weekly_tracking")
+        .select("article, week_start, day_of_week, row_index, stock_initial, entrees, sorties, lot_number")
+        .eq("fiche_type", FICHE)
+        .in("article", GLACE_PARFUMS)
+        .order("week_start", { ascending: true })
+        .order("row_index", { ascending: true }),
+    );
+  } catch {
+    return {};
+  }
 
   const byArticle = new Map<string, any[]>();
-  for (const r of data as any[]) {
+  for (const r of data) {
     if (!r.article) continue;
     const list = byArticle.get(r.article) ?? [];
     list.push(r);
