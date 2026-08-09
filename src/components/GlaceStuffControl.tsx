@@ -17,7 +17,7 @@ import { printStructuredPdf } from "@/lib/printExport";
 import { GLACE_PARFUMS, fetchGlaceFifoLots } from "@/lib/glaceLotFifo";
 
 const SLOTS = ["08h00", "10h00", "12h00", "14h00", "16h00", "18h00", "20h00", "22h00", "00h00"];
-const LINES = [0, 1, 2];
+const MAX_LINES = 12;
 const ZONES = ["Salle", "Emporter"] as const;
 type Zone = (typeof ZONES)[number];
 const ANOMALIES = ["Fissure", "Cassure"] as const;
