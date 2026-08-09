@@ -48,7 +48,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
-import { GlaceStuffControl } from "@/components/GlaceStuffControl";
 
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Oranges/Bigarreaux confits": "Orange confit",
@@ -1040,9 +1039,6 @@ export function AutocontrolManager() {
 
   return (
     <div className="space-y-6">
-      {/* Contrôle des STUFFS de glace */}
-      <GlaceStuffControl />
-
       {/* Form */}
       <div className="bg-card rounded-xl border p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
