@@ -283,7 +283,7 @@ export function GlaceStuffControl() {
                     )}
                     <td className="border p-1">
                       <Select
-                        value={r.parfum || undefined}
+                        value={r.parfum}
                         onValueChange={(v) =>
                           update(slot, l, { parfum: v, lot_number: fifoLots[v] ?? "" })
                         }
@@ -355,7 +355,7 @@ export function GlaceStuffControl() {
                       <td rowSpan={LINES.length} className="border p-1">
                         {managerOptions.length > 0 ? (
                           <Select
-                            value={get(slot, 0).visa_manager || undefined}
+                            value={get(slot, 0).visa_manager}
                             onValueChange={(v) => update(slot, 0, { visa_manager: v })}
                           >
                             <SelectTrigger className="h-8 text-xs">
