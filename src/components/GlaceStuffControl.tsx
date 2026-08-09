@@ -17,7 +17,7 @@ import { printStructuredPdf } from "@/lib/printExport";
 import { GLACE_PARFUMS, fetchGlaceFifoLots } from "@/lib/glaceLotFifo";
 
 const SLOTS = ["08h00", "10h00", "12h00", "14h00", "16h00", "18h00", "20h00", "22h00", "00h00"];
-const LINES = [0, 1, 2];
+const MAX_LINES = 12;
 const ZONES = ["Salle", "Emporter"] as const;
 type Zone = (typeof ZONES)[number];
 const ANOMALIES = ["Fissure", "Cassure"] as const;
@@ -56,6 +56,12 @@ export function GlaceStuffControl() {
   const [loading, setLoading] = useState(false);
   const managerOptions = useManagers();
   const [fifoLots, setFifoLots] = useState<Record<string, string>>({});
+  const [lineCounts, setLineCounts] = useState<Record<string, number>>({});
+
+  const linesOf = useCallback(
+    (slot: string) => Array.from({ length: lineCounts[slot] ?? 1 }, (_, i) => i),
+    [lineCounts],
+  );
 
   useEffect(() => {
     let active = true;
@@ -80,10 +86,15 @@ export function GlaceStuffControl() {
       return;
     }
     const next: Record<string, Row> = {};
-    for (const slot of SLOTS) for (const l of LINES) next[keyOf(slot, l)] = emptyRow(slot, l);
+    const counts: Record<string, number> = {};
+    for (const slot of SLOTS) {
+      counts[slot] = 1;
+      next[keyOf(slot, 0)] = emptyRow(slot, 0);
+    }
     for (const r of (data ?? []) as any[]) {
       const k = keyOf(r.slot, r.line_index);
-      if (!next[k]) continue;
+      if (!SLOTS.includes(r.slot)) continue;
+      counts[r.slot] = Math.max(counts[r.slot] ?? 1, (r.line_index ?? 0) + 1);
       next[k] = {
         slot: r.slot,
         line_index: r.line_index,
@@ -97,6 +108,7 @@ export function GlaceStuffControl() {
       };
     }
     setRows(next);
+    setLineCounts(counts);
   }, [date, zone]);
 
   useEffect(() => {
@@ -166,7 +178,7 @@ export function GlaceStuffControl() {
             { header: "Signature manager", dataKey: "visa", width: 32 },
           ],
           rows: SLOTS.flatMap((slot) =>
-            LINES.map((l) => {
+            linesOf(slot).map((l) => {
               const r = get(slot, l);
               return {
                 slot: l === 0 ? slot : "",
@@ -260,21 +272,38 @@ export function GlaceStuffControl() {
             </tr>
           </thead>
           <tbody>
-            {SLOTS.map((slot) =>
-              LINES.map((l) => {
+            {SLOTS.map((slot) => {
+              const slotLines = linesOf(slot);
+              return slotLines.map((l) => {
                 const r = get(slot, l);
                 return (
                   <tr key={keyOf(slot, l)} className={l === 0 ? "border-t-2 border-t-primary/30" : ""}>
                     {l === 0 && (
                       <td
-                        rowSpan={LINES.length}
+                        rowSpan={slotLines.length}
                         className="sticky left-0 z-10 bg-card border p-2 text-center font-semibold"
                       >
-                        {slot}
+                        <div className="flex flex-col items-center gap-1">
+                          <span>{slot}</span>
+                          {slotLines.length < MAX_LINES && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setLineCounts((prev) => ({
+                                  ...prev,
+                                  [slot]: Math.min(MAX_LINES, (prev[slot] ?? 1) + 1),
+                                }))
+                              }
+                              className="px-1.5 py-0.5 rounded border text-[10px] leading-4 text-primary border-primary/40 hover:bg-primary/10"
+                            >
+                              + Ajouter
+                            </button>
+                          )}
+                        </div>
                       </td>
                     )}
                     {l === 0 && (
-                      <td rowSpan={LINES.length} className="border p-2">
+                      <td rowSpan={slotLines.length} className="border p-2">
                         <YesNo
                           value={get(slot, 0).non_conformite}
                           onChange={(v) => update(slot, 0, { non_conformite: v })}
@@ -352,7 +381,7 @@ export function GlaceStuffControl() {
                       </div>
                     </td>
                     {l === 0 && (
-                      <td rowSpan={LINES.length} className="border p-1">
+                      <td rowSpan={slotLines.length} className="border p-1">
                         {managerOptions.length > 0 ? (
                           <Select
                             value={get(slot, 0).visa_manager}
@@ -381,8 +410,8 @@ export function GlaceStuffControl() {
                     )}
                   </tr>
                 );
-              }),
-            )}
+              });
+            })}
           </tbody>
         </table>
       </div>
