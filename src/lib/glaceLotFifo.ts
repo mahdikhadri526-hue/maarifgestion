@@ -89,6 +89,25 @@ export async function fetchGlaceFifoLots(): Promise<Record<string, string>> {
 
     const oldest = batches.find((b) => b.lot);
     if (oldest) result[article] = oldest.lot;
+    else {
+      // Repli : dernier n° de lot connu pour ce parfum (aucun lot tracé restant)
+      const sorted = [...rows].sort((a, b) => {
+        const ka = `${a.week_start}`;
+        const kb = `${b.week_start}`;
+        return (
+          ka.localeCompare(kb) ||
+          DAYS.indexOf(a.day_of_week) - DAYS.indexOf(b.day_of_week) ||
+          (a.row_index ?? 0) - (b.row_index ?? 0)
+        );
+      });
+      for (let i = sorted.length - 1; i >= 0; i--) {
+        const lot = (sorted[i].lot_number ?? "").toString().trim();
+        if (lot) {
+          result[article] = lot;
+          break;
+        }
+      }
+    }
   }
 
   return result;
