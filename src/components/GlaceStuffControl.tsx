@@ -282,28 +282,50 @@ export function GlaceStuffControl() {
                       </td>
                     )}
                     <td className="border p-1">
-                      <Input
-                        className="h-8 text-xs"
-                        value={r.parfum}
-                        onChange={(e) => update(slot, l, { parfum: e.target.value }, false)}
-                        onBlur={() => save(get(slot, l))}
-                      />
+                      <Select
+                        value={r.parfum || undefined}
+                        onValueChange={(v) =>
+                          update(slot, l, { parfum: v, lot_number: fifoLots[v] ?? "" })
+                        }
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue placeholder="Parfum" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {GLACE_PARFUMS.map((p) => (
+                            <SelectItem key={p} value={p}>
+                              {p}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="border p-1">
                       <Input
-                        className="h-8 text-xs"
+                        className="h-8 text-xs bg-muted/50"
+                        readOnly
+                        placeholder={r.parfum ? "Aucun lot dispo" : "Choisir un parfum"}
                         value={r.lot_number}
-                        onChange={(e) => update(slot, l, { lot_number: e.target.value }, false)}
-                        onBlur={() => save(get(slot, l))}
                       />
                     </td>
                     <td className="border p-1">
-                      <Input
-                        className="h-8 text-xs"
-                        value={r.anomalie}
-                        onChange={(e) => update(slot, l, { anomalie: e.target.value }, false)}
-                        onBlur={() => save(get(slot, l))}
-                      />
+                      <div className="flex gap-1 justify-center">
+                        {ANOMALIES.map((a) => (
+                          <button
+                            key={a}
+                            type="button"
+                            onClick={() => update(slot, l, { anomalie: r.anomalie === a ? "" : a })}
+                            className={cn(
+                              "px-2 py-0.5 rounded border text-[11px] leading-4",
+                              r.anomalie === a
+                                ? "bg-destructive text-destructive-foreground border-destructive"
+                                : "bg-background text-muted-foreground",
+                            )}
+                          >
+                            {a}
+                          </button>
+                        ))}
+                      </div>
                     </td>
                     <td className="border p-1">
                       <YesNo value={r.plastique} onChange={(v) => update(slot, l, { plastique: v })} />
