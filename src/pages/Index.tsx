@@ -12,15 +12,16 @@ const WeeklyTracking = lazy(() => import("@/components/WeeklyTracking").then((m)
 const FridgeTemperatureManager = lazy(() => import("@/components/FridgeTemperatureManager").then((m) => ({ default: m.FridgeTemperatureManager })));
 const RecipeManager = lazy(() => import("@/components/RecipeManager").then((m) => ({ default: m.RecipeManager })));
 const CleaningManager = lazy(() => import("@/components/CleaningManager").then((m) => ({ default: m.CleaningManager })));
+const GlaceStuffControl = lazy(() => import("@/components/GlaceStuffControl").then((m) => ({ default: m.GlaceStuffControl })));
 const InventoryModule = lazy(() => import("@/components/inventory/InventoryModule").then((m) => ({ default: m.InventoryModule })));
 const UserManagement = lazy(() => import("@/components/auth/UserManagement").then((m) => ({ default: m.UserManagement })));
-import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck } from "lucide-react";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck, Snowflake } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
 
-type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire";
+type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -40,6 +41,7 @@ const Index = () => {
     { id: "lots" as Tab, label: "Lots / DLC", icon: Boxes, perm: "view_lots" },
     { id: "requisition" as Tab, label: "Réquisition", icon: ClipboardList, perm: "view_requisitions" },
     { id: "autocontrole" as Tab, label: "Autocontrôle", icon: ClipboardCheck, perm: "view_autocontrol" },
+    { id: "stuffs-glace" as Tab, label: "Contrôle STUFFS de glace", icon: Snowflake, perm: "view_autocontrol" },
     { id: "hebdo" as Tab, label: "Suivi hebdomadaire", icon: CalendarDays, perm: "view_weekly" },
     { id: "temperatures" as Tab, label: "Températures frigos", icon: Thermometer, perm: "view_temperatures" },
     { id: "nettoyage" as Tab, label: "Nettoyage", icon: Sparkles, perm: "view_cleaning" },
@@ -194,6 +196,7 @@ const Index = () => {
             {tab === "requisition" && <RequisitionForm onUpdated={refresh} />}
             {tab === "lots" && <LotManager />}
             {tab === "autocontrole" && <AutocontrolManager />}
+            {tab === "stuffs-glace" && <GlaceStuffControl />}
             {tab === "hebdo" && <WeeklyTracking />}
             {tab === "temperatures" && <FridgeTemperatureManager />}
             {tab === "recettes" && <RecipeManager />}
