@@ -200,18 +200,22 @@ export function GlaceStuffControl() {
   const YesNo = ({
     value,
     onChange,
+    disabled,
   }: {
     value: boolean | null;
     onChange: (v: boolean | null) => void;
+    disabled?: boolean;
   }) => (
     <div className="flex gap-1 justify-center">
       {[true, false].map((v) => (
         <button
           key={String(v)}
           type="button"
+          disabled={disabled}
           onClick={() => onChange(value === v ? null : v)}
           className={cn(
             "px-2 py-0.5 rounded border text-[11px] leading-4",
+            disabled && "opacity-40 cursor-not-allowed",
             value === v
               ? v
                 ? "bg-destructive text-destructive-foreground border-destructive"
