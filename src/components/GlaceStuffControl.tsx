@@ -272,21 +272,38 @@ export function GlaceStuffControl() {
             </tr>
           </thead>
           <tbody>
-            {SLOTS.map((slot) =>
-              LINES.map((l) => {
+            {SLOTS.map((slot) => {
+              const slotLines = linesOf(slot);
+              return slotLines.map((l) => {
                 const r = get(slot, l);
                 return (
                   <tr key={keyOf(slot, l)} className={l === 0 ? "border-t-2 border-t-primary/30" : ""}>
                     {l === 0 && (
                       <td
-                        rowSpan={LINES.length}
+                        rowSpan={slotLines.length}
                         className="sticky left-0 z-10 bg-card border p-2 text-center font-semibold"
                       >
-                        {slot}
+                        <div className="flex flex-col items-center gap-1">
+                          <span>{slot}</span>
+                          {slotLines.length < MAX_LINES && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setLineCounts((prev) => ({
+                                  ...prev,
+                                  [slot]: Math.min(MAX_LINES, (prev[slot] ?? 1) + 1),
+                                }))
+                              }
+                              className="px-1.5 py-0.5 rounded border text-[10px] leading-4 text-primary border-primary/40 hover:bg-primary/10"
+                            >
+                              + Ajouter
+                            </button>
+                          )}
+                        </div>
                       </td>
                     )}
                     {l === 0 && (
-                      <td rowSpan={LINES.length} className="border p-2">
+                      <td rowSpan={slotLines.length} className="border p-2">
                         <YesNo
                           value={get(slot, 0).non_conformite}
                           onChange={(v) => update(slot, 0, { non_conformite: v })}
@@ -364,7 +381,7 @@ export function GlaceStuffControl() {
                       </div>
                     </td>
                     {l === 0 && (
-                      <td rowSpan={LINES.length} className="border p-1">
+                      <td rowSpan={slotLines.length} className="border p-1">
                         {managerOptions.length > 0 ? (
                           <Select
                             value={get(slot, 0).visa_manager}
@@ -393,8 +410,8 @@ export function GlaceStuffControl() {
                     )}
                   </tr>
                 );
-              }),
-            )}
+              });
+            })}
           </tbody>
         </table>
       </div>
