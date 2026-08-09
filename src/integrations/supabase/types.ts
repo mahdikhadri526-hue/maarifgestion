@@ -266,6 +266,66 @@ export type Database = {
         }
         Relationships: []
       }
+      glace_stuff_controls: {
+        Row: {
+          action_corrective: string | null
+          anomalie: string | null
+          collaborateur: string | null
+          control_date: string
+          created_at: string
+          id: string
+          line_index: number
+          lot_number: string | null
+          non_conformite: boolean | null
+          notes: string | null
+          parfum: string | null
+          pdv_id: string
+          plastique: boolean | null
+          slot: string
+          updated_at: string
+          visa_manager: string | null
+          zone: string
+        }
+        Insert: {
+          action_corrective?: string | null
+          anomalie?: string | null
+          collaborateur?: string | null
+          control_date: string
+          created_at?: string
+          id?: string
+          line_index?: number
+          lot_number?: string | null
+          non_conformite?: boolean | null
+          notes?: string | null
+          parfum?: string | null
+          pdv_id?: string
+          plastique?: boolean | null
+          slot: string
+          updated_at?: string
+          visa_manager?: string | null
+          zone?: string
+        }
+        Update: {
+          action_corrective?: string | null
+          anomalie?: string | null
+          collaborateur?: string | null
+          control_date?: string
+          created_at?: string
+          id?: string
+          line_index?: number
+          lot_number?: string | null
+          non_conformite?: boolean | null
+          notes?: string | null
+          parfum?: string | null
+          pdv_id?: string
+          plastique?: boolean | null
+          slot?: string
+          updated_at?: string
+          visa_manager?: string | null
+          zone?: string
+        }
+        Relationships: []
+      }
       initial_stocks: {
         Row: {
           carton_enabled: boolean
