@@ -178,7 +178,7 @@ export function GlaceStuffControl() {
             { header: "Signature manager", dataKey: "visa", width: 32 },
           ],
           rows: SLOTS.flatMap((slot) =>
-            LINES.map((l) => {
+            linesOf(slot).map((l) => {
               const r = get(slot, l);
               return {
                 slot: l === 0 ? slot : "",
