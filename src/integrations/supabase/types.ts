@@ -156,6 +156,53 @@ export type Database = {
         }
         Relationships: []
       }
+      fridge_equipments: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          id: string
+          name: string
+          pdv_id: string
+          sort_order: number
+          type: string
+          updated_at: string
+          zone: string
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          pdv_id: string
+          sort_order?: number
+          type: string
+          updated_at?: string
+          zone: string
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          pdv_id?: string
+          sort_order?: number
+          type?: string
+          updated_at?: string
+          zone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fridge_equipments_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fridge_temperatures: {
         Row: {
           action_corrective: string | null

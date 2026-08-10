@@ -10,6 +10,7 @@ const PDV_SCOPED_TABLES = new Set<string>([
   "autocontrols",
   "cleaning_logs",
   "fridge_temperatures",
+  "fridge_equipments",
   "glace_stuff_controls",
   "initial_stocks",
   "inventory_counts",

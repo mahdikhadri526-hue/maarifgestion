@@ -34,6 +34,7 @@ const PERMISSION_GROUPS: { title: string; keys: string[] }[] = [
   { title: "Autocontrôle", keys: ["view_autocontrol", "edit_autocontrol", "delete_autocontrol"] },
   { title: "Suivi hebdomadaire", keys: ["view_weekly", "edit_weekly", "delete_weekly"] },
   { title: "Températures", keys: ["view_temperatures", "edit_temperatures", "delete_temperatures"] },
+  { title: "Gestion des matériels – Température", keys: ["view_equipments", "edit_equipments", "delete_equipments"] },
   { title: "Nettoyage", keys: ["view_cleaning", "edit_cleaning", "delete_cleaning"] },
   { title: "Inventaire", keys: ["view_inventory", "manage_inventory"] },
   { title: "Recettes", keys: ["view_recipes", "edit_recipes"] },

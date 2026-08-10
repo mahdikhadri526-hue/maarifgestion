@@ -10,11 +10,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Thermometer, Save, AlertTriangle, CheckCircle2, FileDown, Volume2, VolumeX } from "lucide-react";
-import { EQUIPMENTS, SLOTS, ZONES, formatDisplayTemp, parseDisplayTemp, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
+import { EQUIPMENTS as BASE_EQUIPMENTS, SLOTS, ZONES, formatDisplayTemp, parseDisplayTemp, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
 import { OPERATORS } from "@/lib/operators";
 import { MANAGERS } from "@/lib/managers";
 import { useOperators, useManagers } from "@/lib/roster";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFridgeEquipments } from "@/lib/fridgeEquipments";
+import { FridgeEquipmentManager } from "@/components/FridgeEquipmentManager";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -31,7 +33,7 @@ interface RowState {
 
 interface MissingTemperatureAlert {
   slot: FridgeSlot;
-  equipments: typeof EQUIPMENTS;
+  equipments: typeof BASE_EQUIPMENTS;
 }
 
 function emptyRow(): RowState {
@@ -120,6 +122,7 @@ function formatTime(ts?: string): string {
 
 export function FridgeTemperatureManager() {
   const { can, user, isAdmin } = useAuth();
+  const { custom: customEquipments, equipments: EQUIPMENTS, reload: reloadEquipments } = useFridgeEquipments();
   const operatorOptions = useOperators();
   const managerOptions = useManagers();
   const isNoDeleteUser = user?.email === "gestionmaarif1@gmail.com";
@@ -152,12 +155,12 @@ export function FridgeTemperatureManager() {
 
   const visibleEquipments = useMemo(
     () => (zoneFilter === "" ? [] : EQUIPMENTS.filter((e) => e.zone === zoneFilter)),
-    [zoneFilter]
+    [zoneFilter, EQUIPMENTS]
   );
 
 
   const equipmentsByZone = useMemo(() => {
-    const groups: Record<string, typeof EQUIPMENTS> = {};
+    const groups: Record<string, typeof BASE_EQUIPMENTS> = {};
     visibleEquipments.forEach((e) => {
       (groups[e.zone] ||= []).push(e);
     });
@@ -214,7 +217,7 @@ export function FridgeTemperatureManager() {
         };
       })
       .filter((alert) => alert.equipments.length > 0);
-  }, [currentServiceDate, date, overdueSlots, rows, savedTodayBySlot, slot]);
+  }, [currentServiceDate, date, overdueSlots, rows, savedTodayBySlot, slot, EQUIPMENTS]);
 
   const missingTempCount = useMemo(
     () => missingTempAlerts.reduce((total, alert) => total + alert.equipments.length, 0),
@@ -369,7 +372,7 @@ export function FridgeTemperatureManager() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [date, slot]);
+  }, [date, slot, customEquipments.length]);
 
   async function loadHistory() {
     if (!historyDate) { setHistoryRows([]); return; }
@@ -647,9 +650,12 @@ export function FridgeTemperatureManager() {
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="outline" onClick={exportPdf}>
-              <FileDown className="h-4 w-4 mr-1" /> Exporter PDF
-            </Button>
+            <div className="flex gap-2">
+              <FridgeEquipmentManager custom={customEquipments} onChanged={reloadEquipments} />
+              <Button variant="outline" onClick={exportPdf}>
+                <FileDown className="h-4 w-4 mr-1" /> Exporter PDF
+              </Button>
+            </div>
           </div>
           <div className="mt-3 flex flex-col gap-2 rounded-md border border-border bg-muted/40 p-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm">
