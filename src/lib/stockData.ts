@@ -507,6 +507,14 @@ function getToppingsWeeklyRes(): Promise<any> {
 }
 
 export async function getToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
+  return cached(
+    "toppingsAggregate",
+    ["stock_movements", "initial_stocks", "weekly_tracking"],
+    computeToppingsAggregate,
+  );
+}
+
+async function computeToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
   const [movements, initialStocks, units, configs, weeklyRes] = await Promise.all([
     getMovements(),
     getInitialStocks(),
