@@ -784,6 +784,14 @@ function currentMondayISO(): string {
 }
 
 export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockFinal: number }> {
+  return cached(
+    "glaceAggregate",
+    ["weekly_tracking", "glace_grammage"],
+    computeGlaceAggregate,
+  );
+}
+
+async function computeGlaceAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockFinal: number }> {
   const weekStart = currentMondayISO();
   const nextWeekStart = (() => {
     const d = new Date(weekStart);
