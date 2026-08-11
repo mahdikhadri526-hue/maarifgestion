@@ -815,11 +815,20 @@ export function WeeklyTracking() {
   };
 
   const getSortie = (dayIdx: number, article: string, wkStart: string = weekStart): number | "" => {
+    // Un produit nouvellement ajouté peut n'avoir aucun Stock Initial saisi alors
+    // qu'il a déjà des entrées : on considère alors le SI comme 0 pour permettre
+    // le calcul automatique des sorties.
+    const siEff = (dIdx: number, wk: string): number | "" => {
+      const si = getSI(dIdx, article, wk);
+      if (si !== "") return si;
+      const hasEntries = entriesForAt(wk, DAYS[dIdx], article).some((e) => num(e.entree) > 0);
+      return hasEntries ? 0 : "";
+    };
     if (dayIdx >= DAYS.length - 1) {
       // Dimanche : si la semaine suivante a un Stock Initial Lundi, en déduire la sortie implicite
       const nextWk = (() => { const d = parseISO(wkStart); d.setDate(d.getDate() + 7); return fmt(d); })();
       const siNextMon = getSI(0, article, nextWk);
-      const siCur = getSI(6, article, wkStart);
+      const siCur = siEff(6, wkStart);
       if (siNextMon !== "" && siCur !== "") {
         const eCur = entriesForAt(wkStart, DAYS[6], article).reduce((s, e) => s + num(e.entree), 0);
         return Number(siCur) + eCur - Number(siNextMon);
@@ -828,7 +837,7 @@ export function WeeklyTracking() {
       return v === "" || v == null ? "" : Number(v);
     }
     const siNext = getSI(dayIdx + 1, article, wkStart);
-    const siCur = getSI(dayIdx, article, wkStart);
+    const siCur = siEff(dayIdx, wkStart);
     if (siNext === "" || siCur === "") return "";
     const eCur = entriesForAt(wkStart, DAYS[dayIdx], article).reduce((s, e) => s + num(e.entree), 0);
     return Number(siCur) + eCur - Number(siNext);
