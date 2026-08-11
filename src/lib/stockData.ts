@@ -324,7 +324,12 @@ export function invalidateStockCaches(tables: string[]) {
 export async function getMovements(): Promise<StockMovement[]> {
   return cached("movements", ["stock_movements"], async () => {
   const data = await fetchAllRows<any>(() =>
-    supabase.from("stock_movements").select("*").order("created_at", { ascending: false }),
+    supabase
+      .from("stock_movements")
+      .select(
+        "id, date, product_id, product_name, category, type, quantity, performed_by, unit_used, destination, created_at, source",
+      )
+      .order("created_at", { ascending: false }),
   );
   return data.map((row: any) => ({
     id: row.id,
