@@ -324,7 +324,12 @@ export function invalidateStockCaches(tables: string[]) {
 export async function getMovements(): Promise<StockMovement[]> {
   return cached("movements", ["stock_movements"], async () => {
   const data = await fetchAllRows<any>(() =>
-    supabase.from("stock_movements").select("*").order("created_at", { ascending: false }),
+    supabase
+      .from("stock_movements")
+      .select(
+        "id, date, product_id, product_name, category, type, quantity, performed_by, unit_used, destination, created_at, source",
+      )
+      .order("created_at", { ascending: false }),
   );
   return data.map((row: any) => ({
     id: row.id,
@@ -502,6 +507,14 @@ function getToppingsWeeklyRes(): Promise<any> {
 }
 
 export async function getToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
+  return cached(
+    "toppingsAggregate",
+    ["stock_movements", "initial_stocks", "weekly_tracking"],
+    computeToppingsAggregate,
+  );
+}
+
+async function computeToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
   const [movements, initialStocks, units, configs, weeklyRes] = await Promise.all([
     getMovements(),
     getInitialStocks(),
@@ -680,6 +693,14 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
     getToppingsAggregate().catch(() => ({ entrees: 0, sorties: 0, stockInitial: 0, stockRestant: 0 })),
   ]);
 
+  // Indexation des mouvements par produit (évite un filtre complet par produit)
+  const movementsByProduct = new Map<string, StockMovement[]>();
+  for (const m of movements) {
+    const list = movementsByProduct.get(m.productId);
+    if (list) list.push(m);
+    else movementsByProduct.set(m.productId, [m]);
+  }
+
   return products.map((product) => {
     const initial = initialStocks[product.id] || 0;
     const unit = units[product.id] || "PIECE";
@@ -722,7 +743,7 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
       };
     }
 
-    const productMovements = movements.filter((m) => m.productId === product.id);
+    const productMovements = movementsByProduct.get(product.id) || [];
     // Régularisations de stock : n'apparaissent pas dans les Entrées,
     // elles sont décomptées des Sorties (positif = stock augmenté → sorties diminuées).
     const totalEntrees = productMovements
@@ -771,6 +792,14 @@ function currentMondayISO(): string {
 }
 
 export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockFinal: number }> {
+  return cached(
+    "glaceAggregate",
+    ["weekly_tracking", "glace_grammage"],
+    computeGlaceAggregate,
+  );
+}
+
+async function computeGlaceAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockFinal: number }> {
   const weekStart = currentMondayISO();
   const nextWeekStart = (() => {
     const d = new Date(weekStart);
