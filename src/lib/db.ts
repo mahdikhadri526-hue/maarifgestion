@@ -24,6 +24,7 @@ const PDV_SCOPED_TABLES = new Set<string>([
   "saved_orders",
   "stock_movements",
   "weekly_tracking",
+  "weekly_transfers",
 ]);
 
 function attachPdv(values: any, pdvId: string) {

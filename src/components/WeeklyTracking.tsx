@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { MaterielTracking } from "./MaterielTracking";
+import { WeeklyTransfers } from "./WeeklyTransfers";
 
 const SHOW_KG_BAC = false; // colonne Kg/bac masquée
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
@@ -1796,6 +1797,7 @@ export function WeeklyTracking() {
               </tbody>
             </table>
           </div>
+          <WeeklyTransfers ficheKey="Crème fraîche" weekStart={weekStart} articles={["Crème fraîche (mousse fouettée)"]} />
         </TabsContent>
 
         {(["glace", "tarte"] as const).map((t) => (
@@ -2120,10 +2122,16 @@ export function WeeklyTracking() {
             <span className="text-destructive font-medium">Sorties en rouge</span> · La colonne{" "}
             <strong>Lot existant</strong> cumule le SI du lundi et les entrées, puis déduit les sorties en FIFO.
           </div>
+          <WeeklyTransfers
+            ficheKey={t === "glace" ? "Mouvement glaces" : "Mouvement tartes"}
+            weekStart={weekStart}
+            articles={t === "glace" ? GLACE_ARTICLES : TARTE_ARTICLES}
+          />
         </TabsContent>
         ))}
         <TabsContent value="materiel" className="mt-4 min-w-0">
           <MaterielTracking weekStart={weekStart} />
+          <WeeklyTransfers ficheKey="Suivi matériel" weekStart={weekStart} />
         </TabsContent>
         </div>
       </Tabs>
