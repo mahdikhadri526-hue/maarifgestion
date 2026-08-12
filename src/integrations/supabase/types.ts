@@ -1317,6 +1317,65 @@ export type Database = {
           },
         ]
       }
+      weekly_transfers: {
+        Row: {
+          article: string | null
+          created_at: string
+          direction: string
+          fiche_type: string
+          id: string
+          location: string | null
+          lot_number: string | null
+          notes: string | null
+          pdv_id: string
+          performed_by: string | null
+          quantity: number | null
+          transfer_date: string
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          article?: string | null
+          created_at?: string
+          direction: string
+          fiche_type: string
+          id?: string
+          location?: string | null
+          lot_number?: string | null
+          notes?: string | null
+          pdv_id: string
+          performed_by?: string | null
+          quantity?: number | null
+          transfer_date: string
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          article?: string | null
+          created_at?: string
+          direction?: string
+          fiche_type?: string
+          id?: string
+          location?: string | null
+          lot_number?: string | null
+          notes?: string | null
+          pdv_id?: string
+          performed_by?: string | null
+          quantity?: number | null
+          transfer_date?: string
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_transfers_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
