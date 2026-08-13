@@ -1,4 +1,4 @@
-import { Building2, LogOut, Shield, User as UserIcon } from "lucide-react";
+import { AlertTriangle, Building2, LogOut, Shield, User as UserIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 
-export function UserMenu({ onOpenAdmin }: { onOpenAdmin: () => void }) {
+export function UserMenu({ onOpenAdmin, onOpenAnomalies }: { onOpenAdmin: () => void; onOpenAnomalies?: () => void }) {
   const { user, role, isAdmin, isRegionalAdmin, signOut, pdv, selectPdv, multiPdvEnabled } = useAuth();
   if (!user) return null;
   return (
@@ -39,6 +39,11 @@ export function UserMenu({ onOpenAdmin }: { onOpenAdmin: () => void }) {
           <DropdownMenuItem onClick={onOpenAdmin}>
             <Shield className="h-4 w-4 mr-2" />
             {isAdmin ? "Gestion des utilisateurs" : "Permissions de mes PDV"}
+          </DropdownMenuItem>
+        )}
+        {(isAdmin || isRegionalAdmin) && onOpenAnomalies && (
+          <DropdownMenuItem onClick={onOpenAnomalies}>
+            <AlertTriangle className="h-4 w-4 mr-2" /> Centre des anomalies
           </DropdownMenuItem>
         )}
         <DropdownMenuItem onClick={signOut}>

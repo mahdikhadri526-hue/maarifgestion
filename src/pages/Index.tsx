@@ -15,6 +15,7 @@ const CleaningManager = lazy(() => import("@/components/CleaningManager").then((
 const GlaceStuffControl = lazy(() => import("@/components/GlaceStuffControl").then((m) => ({ default: m.GlaceStuffControl })));
 const InventoryModule = lazy(() => import("@/components/inventory/InventoryModule").then((m) => ({ default: m.InventoryModule })));
 const UserManagement = lazy(() => import("@/components/auth/UserManagement").then((m) => ({ default: m.UserManagement })));
+const AnomalyCenter = lazy(() => import("@/components/anomalies/AnomalyCenter").then((m) => ({ default: m.AnomalyCenter })));
 import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck, Snowflake } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
@@ -28,6 +29,7 @@ const Index = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [showStock, setShowStock] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showAnomalies, setShowAnomalies] = useState(false);
   const { can, isAdmin, isRegionalAdmin } = useAuth();
 
   const refresh = () => setRefreshKey((k) => k + 1);
@@ -64,11 +66,20 @@ const Index = () => {
             <h1 className="text-lg font-bold tracking-tight">Gestion de Stock Maarif</h1>
             <p className="text-xs text-sidebar-foreground/60">Suivi des entrées, sorties et stock restant</p>
           </div>
-          <UserMenu onOpenAdmin={() => setShowAdmin(true)} />
+          <UserMenu
+            onOpenAdmin={() => { setShowAnomalies(false); setShowAdmin(true); }}
+            onOpenAnomalies={() => { setShowAdmin(false); setShowAnomalies(true); }}
+          />
         </div>
       </header>
 
-      {showAdmin && (isAdmin || isRegionalAdmin) ? (
+      {showAnomalies && (isAdmin || isRegionalAdmin) ? (
+        <main className="max-w-5xl mx-auto px-4 py-6">
+          <Suspense fallback={<TabFallback />}>
+            <AnomalyCenter onBack={() => setShowAnomalies(false)} />
+          </Suspense>
+        </main>
+      ) : showAdmin && (isAdmin || isRegionalAdmin) ? (
         <main className="max-w-5xl mx-auto px-4 py-6">
           <Suspense fallback={<TabFallback />}>
             <UserManagement onBack={() => setShowAdmin(false)} />
