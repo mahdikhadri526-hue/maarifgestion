@@ -4,11 +4,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { getProducts } from "@/lib/stockData";
 
+export type Severity = "urgent" | "attention";
+
 export interface Anomaly {
   id: string;
-  date: string; // ISO, géré en arrière-plan (non affiché)
+  severity: Severity;
+  date: string;   // ISO yyyy-mm-dd
+  time: string;   // "07h00", "08h00 → 12h00", ou "—"
   label: string;
   product?: string | null;
+  details?: string | null;
 }
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
@@ -20,6 +25,9 @@ const TEMP_SLOTS: { slot: string; hour: number }[] = [
 ];
 
 const STUFF_SLOTS = ["08h00", "10h00", "12h00", "14h00", "16h00", "18h00", "20h00", "22h00", "00h00"];
+
+/** Heure (locale) après laquelle la journée de travail est considérée terminée. */
+const END_OF_WORKDAY_HOUR = 27; // 03h00 du lendemain
 
 const GLACE_ARTICLES = new Set([
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
@@ -70,19 +78,41 @@ export function datesInRange(start: string, end: string) {
 
 const filled = (v: any) => v !== null && v !== undefined && String(v).trim() !== "";
 
+function hourAt(dateISO: string, hour: number) {
+  const d = parseISO(dateISO);
+  d.setHours(hour, 0, 0, 0);
+  return d;
+}
+
 /** Un créneau est « échu » si son heure limite (+2h de tolérance) est dépassée. */
 function slotPassed(dateISO: string, hour: number, now: Date) {
-  const deadline = parseISO(dateISO);
-  deadline.setHours(hour, 0, 0, 0);
+  const deadline = hourAt(dateISO, hour);
   deadline.setHours(deadline.getHours() + 2);
   return now.getTime() > deadline.getTime();
+}
+
+function workdayEnded(dateISO: string, now: Date) {
+  return now.getTime() > hourAt(dateISO, END_OF_WORKDAY_HOUR).getTime();
+}
+
+function hhmm(ts?: string | null) {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return "—";
+  return `${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+/** Regroupe une liste de créneaux en une plage lisible. */
+function slotRange(slots: string[]) {
+  if (slots.length === 0) return "—";
+  if (slots.length === 1) return slots[0];
+  return `${slots[0]} → ${slots[slots.length - 1]}`;
 }
 
 export async function detectAnomalies(pdvId: string, start: string, end: string): Promise<Anomaly[]> {
   const now = new Date();
   const days = datesInRange(start, end);
   const weekStarts = Array.from(new Set(days.map(mondayOf).concat(mondayOf(addDaysISO(end, 1)))));
-  const endPlus1 = addDaysISO(end, 1);
 
   const [temps, stuffs, weekly, cleaning, autoc, initialStocks, movements] = await Promise.all([
     fetchAllRows(() =>
@@ -109,10 +139,9 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
   ]);
 
   const out: Anomaly[] = [];
-  const push = (date: string, label: string, product?: string | null) =>
-    out.push({ id: `${date}|${label}|${product ?? ""}`, date, label, product: product ?? null });
+  const push = (a: Omit<Anomaly, "id">) =>
+    out.push({ ...a, id: `${a.date}|${a.time}|${a.label}|${a.product ?? ""}` });
 
-  // Index températures : date|slot
   const tempBySlot = new Map<string, any[]>();
   (temps as any[]).forEach((r) => {
     const k = `${r.control_date}|${r.slot}`;
@@ -128,24 +157,43 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
   });
 
   for (const date of days) {
-    // 1/2 — Températures
+    // 1/2 — Températures (regroupées par jour)
+    const missingTemp: string[] = [];
+    const lateTemp: { slot: string; at: string }[] = [];
     for (const { slot, hour } of TEMP_SLOTS) {
       if (!slotPassed(date, hour, now)) continue;
       const rows = (tempBySlot.get(`${date}|${slot}`) ?? []).filter(
         (r) => r.temperature_haut !== null || r.temperature_bas !== null,
       );
       if (rows.length === 0) {
-        push(date, `Température non saisie (créneau ${slot})`);
+        missingTemp.push(`${slot}00`);
       } else {
         const first = Math.min(...rows.map((r) => new Date(r.created_at).getTime()));
-        const limit = parseISO(date);
-        limit.setHours(hour + 2, 0, 0, 0);
-        if (first > limit.getTime()) push(date, `Retard de saisie de la température (créneau ${slot})`);
+        const limit = hourAt(date, hour + 2).getTime();
+        if (first > limit) lateTemp.push({ slot: `${slot}00`, at: hhmm(new Date(first).toISOString()) });
       }
     }
+    if (missingTemp.length)
+      push({
+        severity: "urgent",
+        date,
+        time: slotRange(missingTemp),
+        label: "Température non saisie",
+        product: "Frigos / Congélateurs",
+        details: `${missingTemp.length} créneau(x) manquant(s) : ${missingTemp.join(", ")}`,
+      });
+    if (lateTemp.length)
+      push({
+        severity: "attention",
+        date,
+        time: slotRange(lateTemp.map((l) => l.slot)),
+        label: "Retard de saisie de la température",
+        product: "Frigos / Congélateurs",
+        details: lateTemp.map((l) => `${l.slot} saisi à ${l.at}`).join(" · "),
+      });
 
-    // 5 — Contrôle cassures/fissures des bacs de glace (toutes les 2 heures)
-    const missingStuff = STUFF_SLOTS.filter((s, i) => {
+    // 5 — Contrôle cassures/fissures des bacs de glace (regroupé)
+    const missingStuff = STUFF_SLOTS.filter((s) => {
       const hour = s === "00h00" ? 24 : Number(s.slice(0, 2));
       if (!slotPassed(date, hour, now)) return false;
       const rows = (stuffBySlot.get(`${date}|${s}`) ?? []).filter(
@@ -153,31 +201,66 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
       );
       return rows.length === 0;
     });
-    missingStuff.forEach((s) =>
-      push(date, `Contrôle des cassures/fissures des bacs de glace non effectué (créneau ${s})`),
-    );
+    if (missingStuff.length)
+      push({
+        severity: missingStuff.length >= 3 ? "urgent" : "attention",
+        date,
+        time: slotRange(missingStuff),
+        label: "Contrôle cassure/fissure des bacs de glace non effectué",
+        product: "Bacs de glace",
+        details: `${missingStuff.length} contrôle(s) manquant(s) sur ${STUFF_SLOTS.length} : ${missingStuff.join(", ")}`,
+      });
 
-    // 9 — Visa manager non effectué
+    // 9 — Visas manager (regroupés par module)
     const tempDay = (temps as any[]).filter(
       (r) => r.control_date === date && (r.temperature_haut !== null || r.temperature_bas !== null),
     );
     if (tempDay.length > 0 && !tempDay.some((r) => filled(r.visa_manager)))
-      push(date, "Visa du manager non effectué (Températures frigos)");
+      push({
+        severity: "attention", date, time: "—",
+        label: "Visa du manager non effectué",
+        product: "Températures frigos",
+        details: `${tempDay.length} relevé(s) sans visa`,
+      });
 
-    const cleanDay = (cleaning as any[]).filter((r) => String(r.log_date) === date);
-    cleanDay.filter((r) => !filled(r.visa_manager)).forEach((r) =>
-      push(date, `Visa du manager non effectué (Nettoyage — ${r.zone})`),
+    const cleanNoVisa = (cleaning as any[]).filter(
+      (r) => String(r.log_date) === date && !filled(r.visa_manager),
     );
+    if (cleanNoVisa.length)
+      push({
+        severity: "attention", date, time: "—",
+        label: "Visa du manager non effectué",
+        product: "Nettoyage",
+        details: `Zone(s) : ${cleanNoVisa.map((r) => r.zone).join(", ")}`,
+      });
 
-    (autoc as any[])
-      .filter((r) => r.control_date === date && !filled(r.visa_manager))
-      .forEach((r) => push(date, `Visa du manager non effectué (Autocontrôle — ${r.fiche_type})`, r.article));
+    const autocNoVisa = (autoc as any[]).filter(
+      (r) => r.control_date === date && !filled(r.visa_manager),
+    );
+    const byFiche = new Map<string, string[]>();
+    autocNoVisa.forEach((r) => {
+      if (!byFiche.has(r.fiche_type)) byFiche.set(r.fiche_type, []);
+      if (filled(r.article)) byFiche.get(r.fiche_type)!.push(r.article);
+    });
+    byFiche.forEach((articles, fiche) =>
+      push({
+        severity: "attention", date, time: "—",
+        label: "Visa du manager non effectué",
+        product: `Autocontrôle — ${fiche}`,
+        details: articles.length ? `Article(s) : ${Array.from(new Set(articles)).join(", ")}` : null,
+      }),
+    );
 
     const stuffDay = (stuffs as any[]).filter(
       (r) => r.control_date === date && (filled(r.parfum) || r.non_conformite !== null),
     );
     if (stuffDay.length > 0 && !stuffDay.some((r) => filled(r.visa_manager)))
-      push(date, "Visa du manager non effectué (Contrôle STUFFS de glace)");
+      push({
+        severity: "attention", date, time: "—",
+        label: "Visa du manager non effectué",
+        product: "Contrôle STUFFS de glace",
+        details: `${stuffDay.length} ligne(s) sans visa`,
+      });
 
     // Suivi hebdomadaire du jour
     const wk = mondayOf(date);
@@ -186,15 +269,18 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
       (r) => r.fiche_type === "Mouvement glaces & tartes" && r.week_start === wk && r.day_of_week === dn,
     );
 
-    // 3 — Sortie négative (Glace et Tarte uniquement)
+    // 3 — Sortie négative (Glace et Tarte uniquement) — toutes les occurrences
     mvtDay
-      .filter((r) => r.sorties !== null && Number(r.sorties) < 0)
+      .filter((r) => r.sorties !== null && Number(r.sorties) < 0 && filled(r.article))
       .forEach((r) =>
-        push(
+        push({
+          severity: "urgent",
           date,
-          `Sortie négative (${GLACE_ARTICLES.has(r.article) ? "Glace" : "Tarte"})`,
-          r.article,
-        ),
+          time: "—",
+          label: "Sortie négative",
+          product: r.article,
+          details: `${GLACE_ARTICLES.has(r.article) ? "Glace" : "Tarte"} · Sortie ${Number(r.sorties)} · SI ${r.stock_initial ?? 0} · Entrées ${r.entrees ?? 0}`,
+        }),
       );
 
     // 6 — Suivi crème chantilly (matin / soir)
@@ -208,23 +294,43 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
           (r.row_index ?? 0) <= to &&
           (filled(r.couleur) || filled(r.odeur) || filled(r.texture) || filled(r.quantity) || filled(r.entrees)),
       );
-    if (!shiftFilled(0, 1)) push(date, "Suivi de la crème chantilly non rempli (matin)");
-    if (!shiftFilled(2, 3)) push(date, "Suivi de la crème chantilly non rempli (soir)");
+    const missingShifts: string[] = [];
+    if (slotPassed(date, 12, now) && !shiftFilled(0, 1)) missingShifts.push("matin");
+    if (workdayEnded(date, now) && !shiftFilled(2, 3)) missingShifts.push("soir");
+    if (missingShifts.length)
+      push({
+        severity: "attention", date, time: "—",
+        label: "Suivi de la crème chantilly non rempli",
+        product: "Crème chantilly",
+        details: `Non rempli : ${missingShifts.join(" et ")}`,
+      });
 
-    // 7/8 — Stock initial du lendemain
-    const nextDate = addDaysISO(date, 1);
-    const nextRows = (weekly as any[]).filter(
-      (r) =>
-        r.fiche_type === "Mouvement glaces & tartes" &&
-        r.week_start === mondayOf(nextDate) &&
-        r.day_of_week === dayName(nextDate) &&
-        (r.row_index ?? 0) === 0 &&
-        r.stock_initial !== null,
-    );
-    if (!nextRows.some((r) => GLACE_ARTICLES.has(r.article)))
-      push(date, "Stock initial du lendemain (Glace) non renseigné");
-    if (!nextRows.some((r) => !GLACE_ARTICLES.has(r.article)))
-      push(date, "Stock initial du lendemain (Tarte) non renseigné");
+    // 7/8 — Stock initial du lendemain (seulement après la fin de la journée de travail)
+    if (workdayEnded(date, now)) {
+      const nextDate = addDaysISO(date, 1);
+      const nextRows = (weekly as any[]).filter(
+        (r) =>
+          r.fiche_type === "Mouvement glaces & tartes" &&
+          r.week_start === mondayOf(nextDate) &&
+          r.day_of_week === dayName(nextDate) &&
+          (r.row_index ?? 0) === 0 &&
+          r.stock_initial !== null,
+      );
+      if (!nextRows.some((r) => GLACE_ARTICLES.has(r.article)))
+        push({
+          severity: "urgent", date, time: "—",
+          label: "Stock initial du lendemain non renseigné",
+          product: "Glace",
+          details: `Stock initial du ${nextDate.split("-").reverse().join(".")} manquant`,
+        });
+      if (!nextRows.some((r) => !GLACE_ARTICLES.has(r.article)))
+        push({
+          severity: "urgent", date, time: "—",
+          label: "Stock initial du lendemain non renseigné",
+          product: "Tarte",
+          details: `Stock initial du ${nextDate.split("-").reverse().join(".")} manquant`,
+        });
+    }
   }
 
   // 4 — Produits en rupture (état actuel, listé si la période inclut aujourd'hui)
@@ -241,14 +347,29 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
       deltas.set(m.product_id, (deltas.get(m.product_id) ?? 0) + (m.type === "entree" ? q : -q));
       if (m.product_name) names.set(m.product_id, m.product_name);
     });
-    getProducts().forEach((p) => names.set(p.id, names.get(p.id) ?? p.name));
+    getProducts().forEach((p) => names.set(p.id, p.name || names.get(p.id) || p.id));
     const ids = new Set<string>([...initMap.keys(), ...deltas.keys()]);
     ids.forEach((pid) => {
+      const name = names.get(pid);
+      if (!name) return; // on n'affiche jamais un code produit inconnu
       const remaining = (initMap.get(pid) ?? 0) + (deltas.get(pid) ?? 0);
       if (remaining <= 0 && (initMap.has(pid) || deltas.has(pid)))
-        push(today, "Produit en rupture", names.get(pid) ?? pid);
+        push({
+          severity: remaining < 0 ? "urgent" : "attention",
+          date: today,
+          time: "—",
+          label: "Produit en rupture",
+          product: name,
+          details: `Stock restant : ${remaining}`,
+        });
     });
   }
 
-  return out.sort((a, b) => (a.date === b.date ? a.label.localeCompare(b.label) : a.date.localeCompare(b.date)));
+  const sevRank = (s: Severity) => (s === "urgent" ? 0 : 1);
+  return out.sort(
+    (a, b) =>
+      b.date.localeCompare(a.date) ||
+      sevRank(a.severity) - sevRank(b.severity) ||
+      a.label.localeCompare(b.label),
+  );
 }
