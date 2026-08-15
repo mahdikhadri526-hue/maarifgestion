@@ -121,7 +121,7 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
         .eq("pdv_id", pdvId).gte("control_date", start).lte("control_date", end)),
     fetchAllRows(() =>
       supabase.from("glace_stuff_controls")
-        .select("control_date, slot, parfum, non_conformite, visa_manager")
+        .select("control_date, slot, parfum, non_conformite, visa_manager, created_at")
         .eq("pdv_id", pdvId).gte("control_date", start).lte("control_date", end)),
     fetchAllRows(() =>
       supabase.from("weekly_tracking")
@@ -211,6 +211,28 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
         details: `${missingStuff.length} contrôle(s) manquant(s) sur ${STUFF_SLOTS.length} : ${missingStuff.join(", ")}`,
       });
 
+    // 5 bis — Retard de saisie des contrôles STUFFS (plus de 2 h après le créneau)
+    const lateStuff: { slot: string; at: string }[] = [];
+    for (const s of STUFF_SLOTS) {
+      const hour = s === "00h00" ? 24 : Number(s.slice(0, 2));
+      const rows = (stuffBySlot.get(`${date}|${s}`) ?? []).filter(
+        (r) => (filled(r.parfum) || r.non_conformite !== null) && r.created_at,
+      );
+      if (rows.length === 0) continue;
+      const first = Math.min(...rows.map((r) => new Date(r.created_at).getTime()));
+      if (first > hourAt(date, hour + 2).getTime())
+        lateStuff.push({ slot: s, at: hhmm(new Date(first).toISOString()) });
+    }
+    if (lateStuff.length)
+      push({
+        severity: "attention",
+        date,
+        time: slotRange(lateStuff.map((l) => l.slot)),
+        label: "Retard de saisie du contrôle des STUFFS de glace",
+        product: "Bacs de glace",
+        details: lateStuff.map((l) => `${l.slot} saisi à ${l.at}`).join(" · "),
+      });
+
     // 9 — Visas manager (regroupés par module)
     const tempDay = (temps as any[]).filter(
       (r) => r.control_date === date && (r.temperature_haut !== null || r.temperature_bas !== null),
@@ -282,6 +304,50 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
           details: `${GLACE_ARTICLES.has(r.article) ? "Glace" : "Tarte"} · Sortie ${Number(r.sorties)} · SI ${r.stock_initial ?? 0} · Entrées ${r.entrees ?? 0}`,
         }),
       );
+
+    // 3 bis — Sortie négative CALCULÉE du suivi hebdomadaire Glaces & Tartes
+    // (SI du jour + entrées du jour − SI du lendemain), comme dans le tableau.
+    {
+      const nextDate = addDaysISO(date, 1);
+      const wkNext = mondayOf(nextDate);
+      const dnNext = dayName(nextDate);
+      const articles = Array.from(
+        new Set(
+          (weekly as any[])
+            .filter((r) => r.fiche_type === "Mouvement glaces & tartes" && filled(r.article))
+            .map((r) => r.article as string),
+        ),
+      ).filter((a) => a !== "Crème fraîche (mousse fouettée)");
+      for (const article of articles) {
+        const dayRows = mvtDay.filter((r) => r.article === article);
+        if (dayRows.length === 0) continue;
+        // sortie déjà saisie manuellement : déjà traitée plus haut
+        if (dayRows.some((r) => r.sorties !== null)) continue;
+        const siRow = dayRows.find((r) => (r.row_index ?? 0) === 0 && r.stock_initial !== null);
+        const nextRow = (weekly as any[]).find(
+          (r) =>
+            r.fiche_type === "Mouvement glaces & tartes" &&
+            r.week_start === wkNext &&
+            r.day_of_week === dnNext &&
+            r.article === article &&
+            (r.row_index ?? 0) === 0 &&
+            r.stock_initial !== null,
+        );
+        if (!nextRow) continue;
+        const si = Number(siRow?.stock_initial ?? 0);
+        const entrees = dayRows.reduce((s, r) => s + (Number(r.entrees) || 0), 0);
+        const sortie = si + entrees - Number(nextRow.stock_initial);
+        if (sortie < 0)
+          push({
+            severity: "urgent",
+            date,
+            time: "—",
+            label: "Sortie négative",
+            product: article,
+            details: `${GLACE_ARTICLES.has(article) ? "Glace" : "Tarte"} · Sortie calculée ${sortie} · SI ${si} · Entrées ${entrees} · SI lendemain ${Number(nextRow.stock_initial)}`,
+          });
+      }
+    }
 
     // 6 — Suivi crème chantilly (matin / soir)
     const cremeDay = (weekly as any[]).filter(
