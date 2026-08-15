@@ -50,7 +50,15 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
     } else if (mode === "mois") {
       const [y, m] = month.split("-").map(Number);
       start = toISO(new Date(y, m - 1, 1));
-      end = toISO(new Date(y, m, 0));
+      // On s'arrête à J-1 (la journée en cours n'est pas encore terminée).
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const monthEnd = toISO(new Date(y, m, 0));
+      end = monthEnd > toISO(yesterday) ? toISO(yesterday) : monthEnd;
+      if (end < start) {
+        toast.error("Aucune journée terminée pour ce mois");
+        return;
+      }
     } else {
       if (from > to) {
         toast.error("La date de début doit précéder la date de fin");
