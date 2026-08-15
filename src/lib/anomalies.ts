@@ -159,7 +159,7 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
   for (const date of days) {
     // 1/2 — Températures (regroupées par jour)
     const missingTemp: string[] = [];
-    const lateTemp: { slot: string; at: string }[] = [];
+    const lateTemp: { slot: string; at: string; count: number; names: string[] }[] = [];
     for (const { slot, hour } of TEMP_SLOTS) {
       if (!slotPassed(date, hour, now)) continue;
       const rows = (tempBySlot.get(`${date}|${slot}`) ?? []).filter(
@@ -168,9 +168,14 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
       if (rows.length === 0) {
         missingTemp.push(`${slot}00`);
       } else {
-        const first = Math.min(...rows.map((r) => new Date(r.created_at).getTime()));
         const limit = hourAt(date, hour + 2).getTime();
-        if (first > limit) lateTemp.push({ slot: `${slot}00`, at: hhmm(new Date(first).toISOString()) });
+        // Un relevé est en retard dès qu'UN matériel est saisi après la limite.
+        const lateRows = rows.filter((r) => r.created_at && new Date(r.created_at).getTime() > limit);
+        if (lateRows.length) {
+          const last = Math.max(...lateRows.map((r) => new Date(r.created_at).getTime()));
+          const names = Array.from(new Set(lateRows.map((r) => r.equipment_name).filter(Boolean)));
+          lateTemp.push({ slot: `${slot}00`, at: hhmm(new Date(last).toISOString()), count: lateRows.length, names });
+        }
       }
     }
     if (missingTemp.length)
@@ -189,7 +194,9 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
         time: slotRange(lateTemp.map((l) => l.slot)),
         label: "Retard de saisie de la température",
         product: "Frigos / Congélateurs",
-        details: lateTemp.map((l) => `${l.slot} saisi à ${l.at}`).join(" · "),
+        details: lateTemp
+          .map((l) => `${l.slot} : ${l.count} relevé(s) en retard (dernier ${l.at})${l.names.length ? ` — ${l.names.slice(0, 6).join(", ")}${l.names.length > 6 ? "…" : ""}` : ""}`)
+          .join(" · "),
       });
 
     // 5 — Contrôle cassures/fissures des bacs de glace (regroupé)
