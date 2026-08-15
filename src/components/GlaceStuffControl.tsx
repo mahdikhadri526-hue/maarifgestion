@@ -322,6 +322,9 @@ export function GlaceStuffControl() {
                         </div>
                       </td>
                     )}
+                    <td className="border p-2 text-center text-[11px] text-muted-foreground whitespace-nowrap">
+                      {hhmm(r.created_at) || "—"}
+                    </td>
                     {l === 0 && (
                       <td rowSpan={slotLines.length} className="border p-2">
                         <YesNo
