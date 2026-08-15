@@ -32,6 +32,7 @@ type Row = {
   plastique: boolean | null;
   action_corrective: string;
   visa_manager: string;
+  created_at?: string | null;
 };
 
 const emptyRow = (slot: string, line_index: number): Row => ({
@@ -44,9 +45,17 @@ const emptyRow = (slot: string, line_index: number): Row => ({
   plastique: null,
   action_corrective: "",
   visa_manager: "",
+  created_at: null,
 });
 
 const keyOf = (slot: string, line: number) => `${slot}#${line}`;
+
+const hhmm = (ts?: string | null) => {
+  if (!ts) return "";
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return "";
+  return `${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`;
+};
 
 export function GlaceStuffControl() {
   const today = new Date().toISOString().slice(0, 10);
@@ -105,6 +114,7 @@ export function GlaceStuffControl() {
         plastique: r.plastique,
         action_corrective: r.action_corrective ?? "",
         visa_manager: r.visa_manager ?? "",
+        created_at: r.created_at ?? null,
       };
     }
     setRows(next);
@@ -130,6 +140,7 @@ export function GlaceStuffControl() {
           plastique: row.plastique,
           action_corrective: row.action_corrective || null,
           visa_manager: row.visa_manager || null,
+          created_at: row.created_at ?? new Date().toISOString(),
         },
         { onConflict: "control_date,zone,slot,line_index" },
       );
@@ -143,6 +154,7 @@ export function GlaceStuffControl() {
     setRows((prev) => {
       const current = prev[k] ?? emptyRow(slot, line);
       const next = { ...current, ...patch };
+      if (!next.created_at) next.created_at = new Date().toISOString();
       if (persist) void save(next);
       return { ...prev, [k]: next };
     });
@@ -169,6 +181,7 @@ export function GlaceStuffControl() {
           title: "Prévenir tout risque de contamination par des corps étrangers",
           columns: [
             { header: "Heure", dataKey: "slot", width: 18, halign: "center" },
+            { header: "Heure de saisie", dataKey: "filled", width: 24, halign: "center" },
             { header: "Non-conformité", dataKey: "nc", width: 26, halign: "center" },
             { header: "Parfum", dataKey: "parfum" },
             { header: "N° de Lot", dataKey: "lot" },
@@ -182,6 +195,7 @@ export function GlaceStuffControl() {
               const r = get(slot, l);
               return {
                 slot: l === 0 ? slot : "",
+                filled: hhmm(r.created_at),
                 nc: r.non_conformite === null ? "" : r.non_conformite ? "Oui" : "Non",
                 parfum: r.parfum,
                 lot: r.lot_number,
@@ -266,6 +280,7 @@ export function GlaceStuffControl() {
           <thead className="bg-muted/60">
             <tr>
               <th className="sticky left-0 z-10 bg-muted/60 border p-2 w-[70px]">Heure</th>
+              <th className="border p-2 w-[80px]">Heure de saisie</th>
               <th className="border p-2 w-[110px]">Non-conformité</th>
               <th className="border p-2">Parfum</th>
               <th className="border p-2 w-[130px]">N° de Lot</th>
@@ -307,6 +322,9 @@ export function GlaceStuffControl() {
                         </div>
                       </td>
                     )}
+                    <td className="border p-2 text-center text-[11px] text-muted-foreground whitespace-nowrap">
+                      {hhmm(r.created_at) || "—"}
+                    </td>
                     {l === 0 && (
                       <td rowSpan={slotLines.length} className="border p-2">
                         <YesNo
