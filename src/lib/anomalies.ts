@@ -399,9 +399,8 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
     }
   }
 
-  // 4 — Produits en rupture (état actuel, listé si la période inclut aujourd'hui)
-  const today = toISO(now);
-  if (today >= start && today <= end) {
+  // 4 — Produits en rupture (état actuel) — une seule ligne groupée, affichée chaque jour
+  {
     const initMap = new Map<string, number>();
     ((initialStocks as any).data ?? []).forEach((r: any) =>
       initMap.set(r.product_id, Number(r.quantity) || 0),
@@ -415,20 +414,29 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
     });
     getProducts().forEach((p) => names.set(p.id, p.name || names.get(p.id) || p.id));
     const ids = new Set<string>([...initMap.keys(), ...deltas.keys()]);
+    const ruptures: { name: string; remaining: number }[] = [];
     ids.forEach((pid) => {
       const name = names.get(pid);
       if (!name) return; // on n'affiche jamais un code produit inconnu
       const remaining = (initMap.get(pid) ?? 0) + (deltas.get(pid) ?? 0);
       if (remaining <= 0 && (initMap.has(pid) || deltas.has(pid)))
-        push({
-          severity: remaining < 0 ? "urgent" : "attention",
-          date: today,
-          time: "—",
-          label: "Produit en rupture",
-          product: name,
-          details: `Stock restant : ${remaining}`,
-        });
+        ruptures.push({ name, remaining });
     });
+    if (ruptures.length) {
+      ruptures.sort((a, b) => a.name.localeCompare(b.name));
+      const hasNegative = ruptures.some((r) => r.remaining < 0);
+      const list = ruptures.map((r) => r.name).join(", ");
+      for (const date of days) {
+        push({
+          severity: hasNegative ? "urgent" : "attention",
+          date,
+          time: "—",
+          label: "Produits en rupture",
+          product: `${ruptures.length} produit(s)`,
+          details: list,
+        });
+      }
+    }
   }
 
   const sevRank = (s: Severity) => (s === "urgent" ? 0 : 1);
