@@ -459,6 +459,7 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
       ids.forEach((pid) => {
         const name = names.get(pid);
         if (!name) return; // on n'affiche jamais un code produit inconnu
+        if (isExcludedFromRupture(name)) return;
         const initial = initMap.get(pid) ?? 0;
         let remaining = initial;
         const byDate = movementsByProduct.get(pid);
