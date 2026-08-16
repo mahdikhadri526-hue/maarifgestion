@@ -172,7 +172,7 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
   for (const date of days) {
     // 1/2 — Températures (regroupées par jour)
     const missingTemp: string[] = [];
-    const lateTemp: { slot: string; at: string; count: number; names: string[] }[] = [];
+    const lateTemp: { slot: string; at: string; count: number; items: string[] }[] = [];
     for (const { slot, hour } of TEMP_SLOTS) {
       if (!slotPassed(date, hour, now)) continue;
       const rows = (tempBySlot.get(`${date}|${slot}`) ?? []).filter(
@@ -181,13 +181,19 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
       if (rows.length === 0) {
         missingTemp.push(`${slot}00`);
       } else {
-        const limit = hourAt(date, hour + 2).getTime();
+        const limit = hourAt(date, hour, LATE_TOLERANCE_MIN).getTime();
         // Un relevé est en retard dès qu'UN matériel est saisi après la limite.
         const lateRows = rows.filter((r) => r.created_at && new Date(r.created_at).getTime() > limit);
         if (lateRows.length) {
           const last = Math.max(...lateRows.map((r) => new Date(r.created_at).getTime()));
-          const names = Array.from(new Set(lateRows.map((r) => r.equipment_name).filter(Boolean)));
-          lateTemp.push({ slot: `${slot}00`, at: hhmm(new Date(last).toISOString()), count: lateRows.length, names });
+          const items = Array.from(
+            new Set(
+              lateRows
+                .map((r) => (r.zone ? `${r.zone} — ${r.equipment_name ?? "?"}` : r.equipment_name))
+                .filter(Boolean),
+            ),
+          ) as string[];
+          lateTemp.push({ slot: `${slot}00`, at: hhmm(new Date(last).toISOString()), count: lateRows.length, items });
         }
       }
     }
@@ -208,7 +214,7 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
         label: "Retard de saisie de la température",
         product: "Frigos / Congélateurs",
         details: lateTemp
-          .map((l) => `${l.slot} : ${l.count} relevé(s) en retard (dernier ${l.at})${l.names.length ? ` — ${l.names.slice(0, 6).join(", ")}${l.names.length > 6 ? "…" : ""}` : ""}`)
+          .map((l) => `${l.slot} : ${l.count} relevé(s) en retard (dernier ${l.at})${l.items.length ? ` — ${l.items.join(" · ")}` : ""}`)
           .join(" · "),
       });
 
@@ -232,16 +238,19 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
       });
 
     // 5 bis — Retard de saisie des contrôles STUFFS (plus de 2 h après le créneau)
-    const lateStuff: { slot: string; at: string }[] = [];
+    const lateStuff: { slot: string; at: string; zones: string[] }[] = [];
     for (const s of STUFF_SLOTS) {
       const hour = s === "00h00" ? 24 : Number(s.slice(0, 2));
       const rows = (stuffBySlot.get(`${date}|${s}`) ?? []).filter(
         (r) => (filled(r.parfum) || r.non_conformite !== null) && r.created_at,
       );
       if (rows.length === 0) continue;
-      const first = Math.min(...rows.map((r) => new Date(r.created_at).getTime()));
-      if (first > hourAt(date, hour + 2).getTime())
-        lateStuff.push({ slot: s, at: hhmm(new Date(first).toISOString()) });
+      const limit = hourAt(date, hour, LATE_TOLERANCE_MIN).getTime();
+      const lateRows = rows.filter((r) => new Date(r.created_at).getTime() > limit);
+      if (lateRows.length === 0) continue;
+      const first = Math.min(...lateRows.map((r) => new Date(r.created_at).getTime()));
+      const zones = Array.from(new Set(lateRows.map((r) => r.zone).filter(Boolean))) as string[];
+      lateStuff.push({ slot: s, at: hhmm(new Date(first).toISOString()), zones });
     }
     if (lateStuff.length)
       push({
@@ -250,7 +259,9 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
         time: slotRange(lateStuff.map((l) => l.slot)),
         label: "Retard de saisie du contrôle des STUFFS de glace",
         product: "Bacs de glace",
-        details: lateStuff.map((l) => `${l.slot} saisi à ${l.at}`).join(" · "),
+        details: lateStuff
+          .map((l) => `${l.slot} saisi à ${l.at}${l.zones.length ? ` — ${l.zones.join(", ")}` : ""}`)
+          .join(" · "),
       });
 
     // 9 — Visas manager (regroupés par module)
