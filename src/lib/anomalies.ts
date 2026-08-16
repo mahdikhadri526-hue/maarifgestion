@@ -409,34 +409,50 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
     }
   }
 
-  // 4 — Produits en rupture (état actuel) — une seule ligne groupée, affichée chaque jour
+  // 4 — Produits en rupture (état au jour le jour) — une seule ligne groupée par jour
   {
     const initMap = new Map<string, number>();
     ((initialStocks as any).data ?? []).forEach((r: any) =>
       initMap.set(r.product_id, Number(r.quantity) || 0),
     );
-    const deltas = new Map<string, number>();
     const names = new Map<string, string>();
     (movements as any[]).forEach((m) => {
-      const q = Number(m.quantity) || 0;
-      deltas.set(m.product_id, (deltas.get(m.product_id) ?? 0) + (m.type === "entree" ? q : -q));
       if (m.product_name) names.set(m.product_id, m.product_name);
     });
     getProducts().forEach((p) => names.set(p.id, p.name || names.get(p.id) || p.id));
-    const ids = new Set<string>([...initMap.keys(), ...deltas.keys()]);
-    const ruptures: { name: string; remaining: number }[] = [];
-    ids.forEach((pid) => {
-      const name = names.get(pid);
-      if (!name) return; // on n'affiche jamais un code produit inconnu
-      const remaining = (initMap.get(pid) ?? 0) + (deltas.get(pid) ?? 0);
-      if (remaining <= 0 && (initMap.has(pid) || deltas.has(pid)))
-        ruptures.push({ name, remaining });
+
+    // Mouvements regroupés par produit puis par date (date au format ISO yyyy-mm-dd)
+    const movementsByProduct = new Map<string, Map<string, number>>();
+    (movements as any[]).forEach((m) => {
+      const q = Number(m.quantity) || 0;
+      const delta = m.type === "entree" ? q : -q;
+      if (!movementsByProduct.has(m.product_id)) movementsByProduct.set(m.product_id, new Map());
+      const byDate = movementsByProduct.get(m.product_id)!;
+      byDate.set(m.date, (byDate.get(m.date) ?? 0) + delta);
     });
-    if (ruptures.length) {
-      ruptures.sort((a, b) => a.name.localeCompare(b.name));
-      const hasNegative = ruptures.some((r) => r.remaining < 0);
-      const list = ruptures.map((r) => r.name).join(", ");
-      for (const date of days) {
+
+    const ids = new Set<string>([...initMap.keys(), ...movementsByProduct.keys()]);
+
+    for (const date of days) {
+      const ruptures: { name: string; remaining: number }[] = [];
+      ids.forEach((pid) => {
+        const name = names.get(pid);
+        if (!name) return; // on n'affiche jamais un code produit inconnu
+        const initial = initMap.get(pid) ?? 0;
+        let remaining = initial;
+        const byDate = movementsByProduct.get(pid);
+        if (byDate) {
+          byDate.forEach((delta, mDate) => {
+            if (mDate <= date) remaining += delta;
+          });
+        }
+        if (remaining <= 0 && (initMap.has(pid) || byDate?.size))
+          ruptures.push({ name, remaining });
+      });
+      if (ruptures.length) {
+        ruptures.sort((a, b) => a.name.localeCompare(b.name));
+        const hasNegative = ruptures.some((r) => r.remaining < 0);
+        const list = ruptures.map((r) => r.name).join(", ");
         push({
           severity: hasNegative ? "urgent" : "attention",
           date,
