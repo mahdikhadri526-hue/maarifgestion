@@ -127,11 +127,11 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
   const [temps, stuffs, weekly, cleaning, autoc, initialStocks, movements] = await Promise.all([
     fetchAllRows(() =>
       supabase.from("fridge_temperatures")
-        .select("control_date, slot, equipment_name, temperature_haut, temperature_bas, visa_manager, created_at")
+        .select("control_date, slot, zone, equipment_name, temperature_haut, temperature_bas, visa_manager, created_at")
         .eq("pdv_id", pdvId).gte("control_date", start).lte("control_date", end)),
     fetchAllRows(() =>
       supabase.from("glace_stuff_controls")
-        .select("control_date, slot, parfum, non_conformite, visa_manager, created_at")
+        .select("control_date, slot, zone, parfum, non_conformite, visa_manager, created_at")
         .eq("pdv_id", pdvId).gte("control_date", start).lte("control_date", end)),
     fetchAllRows(() =>
       supabase.from("weekly_tracking")
