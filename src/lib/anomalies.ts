@@ -112,6 +112,21 @@ function hhmm(ts?: string | null) {
   return `${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
+/** Heure réelle de saisie : dernière écriture connue (updated_at), sinon création. */
+function entryTime(r: any): number | null {
+  const ts = r?.updated_at ?? r?.created_at;
+  if (!ts) return null;
+  const t = new Date(ts).getTime();
+  return isNaN(t) ? null : t;
+}
+
+function hhmmOld(ts?: string | null) {
+  if (!ts) return "—";
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return "—";
+  return `${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
 /** Regroupe une liste de créneaux en une plage lisible. */
 function slotRange(slots: string[]) {
   if (slots.length === 0) return "—";
