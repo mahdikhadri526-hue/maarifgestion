@@ -135,7 +135,10 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
         .eq("pdv_id", pdvId).gte("control_date", start).lte("control_date", end)),
     supabase.from("initial_stocks").select("product_id, quantity").eq("pdv_id", pdvId),
     fetchAllRows(() =>
-      supabase.from("stock_movements").select("product_id, product_name, type, quantity").eq("pdv_id", pdvId)),
+      supabase.from("stock_movements")
+        .select("product_id, product_name, type, quantity, date")
+        .eq("pdv_id", pdvId)
+        .lte("date", end)),
   ]);
 
   const out: Anomaly[] = [];
