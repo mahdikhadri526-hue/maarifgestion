@@ -127,11 +127,11 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
   const [temps, stuffs, weekly, cleaning, autoc, initialStocks, movements] = await Promise.all([
     fetchAllRows(() =>
       supabase.from("fridge_temperatures")
-        .select("control_date, slot, zone, equipment_name, temperature_haut, temperature_bas, visa_manager, created_at")
+        .select("control_date, slot, zone, equipment_name, temperature_haut, temperature_bas, visa_manager, created_at, updated_at")
         .eq("pdv_id", pdvId).gte("control_date", start).lte("control_date", end)),
     fetchAllRows(() =>
       supabase.from("glace_stuff_controls")
-        .select("control_date, slot, zone, parfum, non_conformite, visa_manager, created_at")
+        .select("control_date, slot, zone, parfum, non_conformite, visa_manager, created_at, updated_at")
         .eq("pdv_id", pdvId).gte("control_date", start).lte("control_date", end)),
     fetchAllRows(() =>
       supabase.from("weekly_tracking")
@@ -183,9 +183,9 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
       } else {
         const limit = hourAt(date, hour, LATE_TOLERANCE_MIN).getTime();
         // Un relevé est en retard dès qu'UN matériel est saisi après la limite.
-        const lateRows = rows.filter((r) => r.created_at && new Date(r.created_at).getTime() > limit);
+        const lateRows = rows.filter((r) => entryTime(r) !== null && (entryTime(r) as number) > limit);
         if (lateRows.length) {
-          const last = Math.max(...lateRows.map((r) => new Date(r.created_at).getTime()));
+          const last = Math.max(...lateRows.map((r) => entryTime(r) as number));
           const items = Array.from(
             new Set(
               lateRows
@@ -242,13 +242,13 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
     for (const s of STUFF_SLOTS) {
       const hour = s === "00h00" ? 24 : Number(s.slice(0, 2));
       const rows = (stuffBySlot.get(`${date}|${s}`) ?? []).filter(
-        (r) => (filled(r.parfum) || r.non_conformite !== null) && r.created_at,
+        (r) => (filled(r.parfum) || r.non_conformite !== null) && entryTime(r) !== null,
       );
       if (rows.length === 0) continue;
       const limit = hourAt(date, hour, LATE_TOLERANCE_MIN).getTime();
-      const lateRows = rows.filter((r) => new Date(r.created_at).getTime() > limit);
+      const lateRows = rows.filter((r) => (entryTime(r) as number) > limit);
       if (lateRows.length === 0) continue;
-      const first = Math.min(...lateRows.map((r) => new Date(r.created_at).getTime()));
+      const first = Math.min(...lateRows.map((r) => entryTime(r) as number));
       const zones = Array.from(new Set(lateRows.map((r) => r.zone).filter(Boolean))) as string[];
       lateStuff.push({ slot: s, at: hhmm(new Date(first).toISOString()), zones });
     }
