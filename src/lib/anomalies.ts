@@ -78,11 +78,21 @@ export function datesInRange(start: string, end: string) {
 
 const filled = (v: any) => v !== null && v !== undefined && String(v).trim() !== "";
 
-function hourAt(dateISO: string, hour: number) {
+function hourAt(dateISO: string, hour: number, minutes = 0) {
   const d = parseISO(dateISO);
-  d.setHours(hour, 0, 0, 0);
+  d.setHours(hour, minutes, 0, 0);
   return d;
 }
+
+/** Tolérance de retard de saisie : 30 minutes après l'heure prévue. */
+const LATE_TOLERANCE_MIN = 30;
+
+/** Produits exclus de la liste des ruptures (mots-clés sur le nom). */
+const RUPTURE_EXCLUDED = ["fraise", "ananas", "glace", "topping"];
+const isExcludedFromRupture = (name: string) => {
+  const n = name.toLowerCase();
+  return RUPTURE_EXCLUDED.some((k) => n.includes(k));
+};
 
 /** Un créneau est « échu » si son heure limite (+2h de tolérance) est dépassée. */
 function slotPassed(dateISO: string, hour: number, now: Date) {
