@@ -69,9 +69,8 @@ export function EcartModule() {
       setHistory(entries);
       if (mode === "jour") {
         const prev = await fetchPreviousFinals(date);
-        const saved = new Map(
-          entries.map((e) => [`${e.produit}|${e.zone}`, e] as const),
-        );
+        const saved = new Map<string, EcartEntry>();
+        for (const e of entries) saved.set(`${e.produit}|${e.zone}`, e);
         const next: Row[] = [];
         for (const zone of ECART_ZONES) {
           for (const p of ECART_PRODUCTS) {
