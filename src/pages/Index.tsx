@@ -14,15 +14,16 @@ const RecipeManager = lazy(() => import("@/components/RecipeManager").then((m) =
 const CleaningManager = lazy(() => import("@/components/CleaningManager").then((m) => ({ default: m.CleaningManager })));
 const GlaceStuffControl = lazy(() => import("@/components/GlaceStuffControl").then((m) => ({ default: m.GlaceStuffControl })));
 const InventoryModule = lazy(() => import("@/components/inventory/InventoryModule").then((m) => ({ default: m.InventoryModule })));
+const EcartModule = lazy(() => import("@/components/EcartModule").then((m) => ({ default: m.EcartModule })));
 const UserManagement = lazy(() => import("@/components/auth/UserManagement").then((m) => ({ default: m.UserManagement })));
 const AnomalyCenter = lazy(() => import("@/components/anomalies/AnomalyCenter").then((m) => ({ default: m.AnomalyCenter })));
-import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck, Snowflake } from "lucide-react";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck, Snowflake, Scale } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
 
-type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire";
+type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -47,6 +48,7 @@ const Index = () => {
     { id: "hebdo" as Tab, label: "Suivi hebdomadaire", icon: CalendarDays, perm: "view_weekly" },
     { id: "temperatures" as Tab, label: "Températures frigos", icon: Thermometer, perm: "view_temperatures" },
     { id: "nettoyage" as Tab, label: "Nettoyage", icon: Sparkles, perm: "view_cleaning" },
+    { id: "ecarts" as Tab, label: "Calcul des écarts", icon: Scale, perm: "view_ecarts" },
   ];
   const tabs = allTabs.filter((t) => can(t.perm));
 
@@ -213,6 +215,7 @@ const Index = () => {
             {tab === "recettes" && <RecipeManager />}
             {tab === "nettoyage" && <CleaningManager />}
             {tab === "inventaire" && <InventoryModule />}
+            {tab === "ecarts" && <EcartModule />}
           </Suspense>
         )}
       </main>

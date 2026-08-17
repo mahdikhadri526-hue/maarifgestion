@@ -24,6 +24,7 @@ const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
     "view_temperatures", "edit_temperatures",
     "view_cleaning", "edit_cleaning",
     "view_reports", "view_recipes", "edit_recipes",
+    "view_ecarts", "edit_ecarts",
   ],
   operator: [
     "view_dashboard", "view_movements", "edit_movements",

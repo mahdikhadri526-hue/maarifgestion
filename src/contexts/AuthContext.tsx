@@ -59,6 +59,8 @@ export const ALL_PERMISSIONS = [
   { key: "view_inventory", label: "Participer à l'inventaire" },
   { key: "manage_inventory", label: "Gérer / rapprocher les inventaires" },
   { key: "manage_roster", label: "Ajouter / supprimer des noms (collaborateurs, effectué par, visa manager)" },
+  { key: "view_ecarts", label: "Voir le calcul des écarts" },
+  { key: "edit_ecarts", label: "Saisir / modifier le calcul des écarts" },
 ] as const;
 
 export type PermissionKey = (typeof ALL_PERMISSIONS)[number]["key"];

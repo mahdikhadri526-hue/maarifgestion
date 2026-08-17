@@ -120,6 +120,65 @@ export type Database = {
           },
         ]
       }
+      ecart_entries: {
+        Row: {
+          categorie: string
+          created_at: string
+          entrees: number
+          entry_date: string
+          id: string
+          notes: string | null
+          pdv_id: string
+          performed_by: string | null
+          produit: string
+          stock_final: number
+          stock_initial: number
+          updated_at: string
+          ventes: number
+          zone: string
+        }
+        Insert: {
+          categorie?: string
+          created_at?: string
+          entrees?: number
+          entry_date: string
+          id?: string
+          notes?: string | null
+          pdv_id: string
+          performed_by?: string | null
+          produit: string
+          stock_final?: number
+          stock_initial?: number
+          updated_at?: string
+          ventes?: number
+          zone?: string
+        }
+        Update: {
+          categorie?: string
+          created_at?: string
+          entrees?: number
+          entry_date?: string
+          id?: string
+          notes?: string | null
+          pdv_id?: string
+          performed_by?: string | null
+          produit?: string
+          stock_final?: number
+          stock_initial?: number
+          updated_at?: string
+          ventes?: number
+          zone?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecart_entries_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finished_products: {
         Row: {
           active: boolean
