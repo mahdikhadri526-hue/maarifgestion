@@ -179,6 +179,47 @@ export type Database = {
           },
         ]
       }
+      ecart_lines: {
+        Row: {
+          created_at: string
+          entry_date: string
+          id: string
+          item: string
+          pdv_id: string
+          qty: number
+          section: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entry_date: string
+          id?: string
+          item: string
+          pdv_id: string
+          qty?: number
+          section: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entry_date?: string
+          id?: string
+          item?: string
+          pdv_id?: string
+          qty?: number
+          section?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecart_lines_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       finished_products: {
         Row: {
           active: boolean
