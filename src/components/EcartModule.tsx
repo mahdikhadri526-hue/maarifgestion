@@ -24,7 +24,7 @@ type Mode = "jour" | "mois" | "periode";
 const today = () => new Date().toISOString().slice(0, 10);
 const VIEW_SECTIONS: Record<Exclude<View, "ecarts">, Section[]> = {
   ventes: ["VENTE_EMP", "VENTE_SP"],
-  entrees: ["ENTREE_EMP", "ENTREE_SP"],
+  entrees: ["ENTREE_EMP"],
   final: ["SF_FRIGO_EMP", "SF_TRANSIT_EMP", "SF_CHAMBRE_EMP", "SF_SP"],
   initial: ["SI_EMP", "SI_SP"],
 };
@@ -296,7 +296,6 @@ export function EcartModule() {
       ) : view === "entrees" ? (
         <div className="grid gap-4 lg:grid-cols-2">
           <SectionTable section="ENTREE_EMP" title="Entrées Emporter (stuffs)" subtitle="Saisir le nombre de stuffs par parfum — grammage déjà enregistré." />
-          <SectionTable section="ENTREE_SP" title="Entrées Salle / Surplace" subtitle="Saisir les grammes transférés vers la salle, par parfum." />
         </div>
       ) : view === "final" ? (
         <div className="space-y-4">
