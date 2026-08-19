@@ -18,14 +18,15 @@ import {
   type Section,
 } from "@/lib/ecartRatio";
 
-type View = "ventes" | "entrees" | "final" | "ecarts";
+type View = "ventes" | "entrees" | "final" | "initial" | "ecarts";
 type Mode = "jour" | "mois" | "periode";
 
 const today = () => new Date().toISOString().slice(0, 10);
 const VIEW_SECTIONS: Record<Exclude<View, "ecarts">, Section[]> = {
   ventes: ["VENTE_EMP", "VENTE_SP"],
   entrees: ["ENTREE_EMP", "ENTREE_SP"],
-  final: ["SF_FRIGO_EMP", "SF_TRANSIT_EMP", "SF_CHAMBRE_EMP", "SF_SP", "SI_EMP", "SI_SP"],
+  final: ["SF_FRIGO_EMP", "SF_TRANSIT_EMP", "SF_CHAMBRE_EMP", "SF_SP"],
+  initial: ["SI_EMP", "SI_SP"],
 };
 
 export function EcartModule() {
