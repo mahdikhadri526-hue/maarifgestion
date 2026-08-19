@@ -25,7 +25,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 const VIEW_SECTIONS: Record<Exclude<View, "ecarts">, Section[]> = {
   ventes: ["VENTE_EMP", "VENTE_SP"],
   entrees: ["ENTREE_EMP"],
-  final: ["SF_FRIGO_EMP", "SF_TRANSIT_EMP", "SF_CHAMBRE_EMP", "SF_SP"],
+  final: ["SF_FRIGO_EMP", "SF_CHAMBRE_EMP", "SF_SP"],
   initial: ["SI_EMP", "SI_SP"],
 };
 
