@@ -300,18 +300,6 @@ export function EcartModule() {
         </div>
       ) : view === "final" ? (
         <div className="space-y-4">
-          {needsSeed && (
-            <div className="bg-card border rounded-xl p-3 shadow-sm">
-              <p className="text-xs text-muted-foreground mb-2">
-                Aucun stock final la veille : saisir ici le premier stock initial. Les jours suivants, le stock
-                final devient automatiquement le stock initial du lendemain.
-              </p>
-              <div className="grid gap-4 lg:grid-cols-2">
-                <SectionTable section="SI_EMP" title="Stock initial Emporter (départ)" subtitle="Total en grammes." />
-                <SectionTable section="SI_SP" title="Stock initial Salle (départ)" subtitle="Grammes par parfum." />
-              </div>
-            </div>
-          )}
           <div className="grid gap-4 lg:grid-cols-2">
             <SectionTable section="SF_FRIGO_EMP" title="Stock final Emporter — Frigos" subtitle="Grammes pesés par parfum." />
             <SectionTable section="SF_TRANSIT_EMP" title="Stock final Emporter — Transit" subtitle="Nombre de stuffs par parfum." />
@@ -324,6 +312,24 @@ export function EcartModule() {
             <Stat label="Chambre (g)" value={result.sfChambreG} />
             <Stat label="Total stock final Emporter (g)" value={result.sfEmpG} strong />
             <Stat label="Total stock final Salle (g)" value={result.sfSpG} strong />
+          </div>
+        </div>
+      ) : view === "initial" ? (
+        <div className="space-y-4">
+          {needsSeed ? (
+            <div className="bg-card border rounded-xl p-3 shadow-sm text-xs text-muted-foreground">
+              Aucun stock final la veille : saisir ci-dessous le premier stock initial. Les jours suivants, le stock
+              final devient automatiquement le stock initial du lendemain.
+            </div>
+          ) : (
+            <div className="bg-card border rounded-xl p-3 shadow-sm text-xs text-muted-foreground">
+              Le stock initial est repris automatiquement depuis le stock final de la veille. Il n'est modifiable ici
+              que si aucun stock final n'a été saisi la veille.
+            </div>
+          )}
+          <div className="grid gap-4 lg:grid-cols-2">
+            <SectionTable section="SI_EMP" title="Stock initial Emporter (départ)" subtitle="Total en grammes." />
+            <SectionTable section="SI_SP" title="Stock initial Salle (départ)" subtitle="Grammes par parfum." />
           </div>
         </div>
       ) : (
