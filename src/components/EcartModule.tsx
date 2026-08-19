@@ -296,7 +296,6 @@ export function EcartModule() {
       ) : view === "entrees" ? (
         <div className="grid gap-4 lg:grid-cols-2">
           <SectionTable section="ENTREE_EMP" title="Entrées Emporter (stuffs)" subtitle="Saisir le nombre de stuffs par parfum — grammage déjà enregistré." />
-          <SectionTable section="ENTREE_SP" title="Entrées Salle / Surplace" subtitle="Saisir les grammes transférés vers la salle, par parfum." />
         </div>
       ) : view === "final" ? (
         <div className="space-y-4">
