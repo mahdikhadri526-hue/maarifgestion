@@ -203,10 +203,10 @@ export function EcartModule() {
 
         <div className="flex flex-wrap gap-2">
           {([
-            ["ventes", "Ventes", ShoppingCart],
-            ["entrees", "Entrées", Package],
-            ["final", "Stock final", Boxes],
             ["initial", "Stock initial", Boxes],
+            ["entrees", "Entrées", Package],
+            ["ventes", "Ventes", ShoppingCart],
+            ["final", "Stock final", Boxes],
             ["ecarts", "Écarts", Scale],
           ] as const).map(([id, label, Icon]) => (
             <button
