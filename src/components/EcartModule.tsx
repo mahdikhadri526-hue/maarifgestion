@@ -206,6 +206,7 @@ export function EcartModule() {
             ["ventes", "Ventes", ShoppingCart],
             ["entrees", "Entrées", Package],
             ["final", "Stock final", Boxes],
+            ["initial", "Stock initial", Boxes],
             ["ecarts", "Écarts", Scale],
           ] as const).map(([id, label, Icon]) => (
             <button
