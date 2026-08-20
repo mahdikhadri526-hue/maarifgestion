@@ -113,7 +113,7 @@ export async function getRequisitionsByDate(date: string, type: "salle" | "empor
 }
 
 export function isRequisitionProduct(productId: string): boolean {
-  return ALL_REQUISITION_IDS.has(productId);
+  return new Set([...getRequisitionSalleIds(), ...getRequisitionEmporterIds()]).has(productId);
 }
 
 /**
