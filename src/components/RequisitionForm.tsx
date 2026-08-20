@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabelForProduct, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, formatQuantityForProduct, getProductAvailableStockInBasePieces } from "@/lib/stockData";
-import { saveRequisition, setRequisitionTotal, REQUISITION_SALLE_IDS, REQUISITION_EMPORTER_IDS } from "@/lib/requisitionData";
+import { saveRequisition, setRequisitionTotal, getRequisitionSalleIds, getRequisitionEmporterIds } from "@/lib/requisitionData";
 import { useRequisitionsByDate, useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
 import { useOperators } from "@/lib/roster";
@@ -50,7 +50,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   const { data: configs } = useProductUnitConfigs();
 
   const allProducts = getProducts();
-  const productIds = reqType === "salle" ? REQUISITION_SALLE_IDS : REQUISITION_EMPORTER_IDS;
+  const productIds = reqType === "salle" ? getRequisitionSalleIds() : getRequisitionEmporterIds();
   const products = productIds
     .map((id) => allProducts.find((p) => p.id === id))
     .filter(Boolean) as typeof allProducts;

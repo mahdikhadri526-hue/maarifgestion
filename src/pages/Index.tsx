@@ -1,4 +1,5 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
+import { loadProductCatalog } from "@/lib/productCatalog";
 import { ExpiryAlerts, StockOutAlerts, LowStockAlerts, PendingAutocontrolAlerts } from "@/components/LotManagement";
 // Lazy-loaded heavy tab modules — réduit le bundle initial et accélère le premier affichage.
 const StockTable = lazy(() => import("@/components/StockTable").then((m) => ({ default: m.StockTable })));
@@ -31,6 +32,11 @@ const Index = () => {
   const [showStock, setShowStock] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAnomalies, setShowAnomalies] = useState(false);
+
+  // Charge le catalogue produits personnalisé (ajouts / modifications / suppressions)
+  useEffect(() => {
+    void loadProductCatalog().then(() => setRefreshKey((k) => k + 1));
+  }, []);
   const { can, isAdmin, isRegionalAdmin } = useAuth();
 
   const refresh = () => setRefreshKey((k) => k + 1);

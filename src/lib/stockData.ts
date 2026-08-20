@@ -257,6 +257,60 @@ const EMBALLAGE_PRODUCTS = [
   "ETIQUETTES MERINGUE",
 ];
 
+export interface ProductCatalogRow {
+  id: string;
+  productId: string;
+  category: Category;
+  name: string;
+  conditionnement: string;
+  hidden: boolean;
+  sortOrder: number;
+}
+
+let PRODUCT_CATALOG: ProductCatalogRow[] = [];
+
+/** Remplace le catalogue personnalisé en mémoire (chargé depuis la base). */
+export function setProductCatalog(rows: ProductCatalogRow[]): void {
+  PRODUCT_CATALOG = rows;
+}
+
+export function getProductCatalog(): ProductCatalogRow[] {
+  return PRODUCT_CATALOG;
+}
+
+/** Applique les modifications, masquages et ajouts du catalogue aux produits d'origine. */
+function applyCatalog(base: Product[]): Product[] {
+  if (PRODUCT_CATALOG.length === 0) return base;
+  const byId = new Map(PRODUCT_CATALOG.map((r) => [r.productId, r]));
+  const result: Product[] = [];
+  base.forEach((p) => {
+    const o = byId.get(p.id);
+    if (!o) {
+      result.push(p);
+      return;
+    }
+    byId.delete(p.id);
+    if (o.hidden) return;
+    result.push({
+      ...p,
+      name: o.name || p.name,
+      conditionnement: o.conditionnement ?? p.conditionnement,
+      category: o.category || p.category,
+    });
+  });
+  byId.forEach((o) => {
+    if (o.hidden) return;
+    result.push({
+      id: o.productId,
+      name: o.name,
+      conditionnement: o.conditionnement ?? "",
+      category: o.category,
+      initialStock: 0,
+    });
+  });
+  return result;
+}
+
 export function getProducts(category?: Category): Product[] {
   const ali = ALIMENTAIRE_PRODUCTS.map((raw, i) => {
     const { name, conditionnement } = parseProduct(raw);
@@ -268,9 +322,12 @@ export function getProducts(category?: Category): Product[] {
   }).filter((p) => p.name !== "__HIDDEN__" && !isHiddenProduct(p));
   const sortByName = (a: Product, b: Product) =>
     a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
-  if (category === "alimentaire") return ali.sort(sortByName);
-  if (category === "emballage") return emb.sort(sortByName);
-  return [...ali.sort(sortByName), ...emb.sort(sortByName)];
+  const applied = applyCatalog([...ali, ...emb]);
+  const aliF = applied.filter((p) => p.category === "alimentaire").sort(sortByName);
+  const embF = applied.filter((p) => p.category === "emballage").sort(sortByName);
+  if (category === "alimentaire") return aliF;
+  if (category === "emballage") return embF;
+  return [...aliF, ...embF];
 }
 
 // Détecte l'unité naturelle d'un produit selon son nom (huile→Litre, sucre→Kg, etc.)
