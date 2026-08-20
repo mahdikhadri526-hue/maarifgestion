@@ -257,8 +257,61 @@ const EMBALLAGE_PRODUCTS = [
   "ETIQUETTES MERINGUE",
 ];
 
+export interface ProductCatalogRow {
+  id: string;
+  productId: string;
+  category: Category;
+  name: string;
+  conditionnement: string;
+  hidden: boolean;
+  sortOrder: number;
+}
+
+let PRODUCT_CATALOG: ProductCatalogRow[] = [];
+
+/** Remplace le catalogue personnalisé en mémoire (chargé depuis la base). */
+export function setProductCatalog(rows: ProductCatalogRow[]): void {
+  PRODUCT_CATALOG = rows;
+}
+
+export function getProductCatalog(): ProductCatalogRow[] {
+  return PRODUCT_CATALOG;
+}
+
+/** Applique les modifications, masquages et ajouts du catalogue aux produits d'origine. */
+function applyCatalog(base: Product[]): Product[] {
+  if (PRODUCT_CATALOG.length === 0) return base;
+  const byId = new Map(PRODUCT_CATALOG.map((r) => [r.productId, r]));
+  const result: Product[] = [];
+  base.forEach((p) => {
+    const o = byId.get(p.id);
+    if (!o) {
+      result.push(p);
+      return;
+    }
+    byId.delete(p.id);
+    if (o.hidden) return;
+    result.push({
+      ...p,
+      name: o.name || p.name,
+      conditionnement: o.conditionnement ?? p.conditionnement,
+      category: o.category || p.category,
+    });
+  });
+  byId.forEach((o) => {
+    if (o.hidden) return;
+    result.push({
+      id: o.productId,
+      name: o.name,
+      conditionnement: o.conditionnement ?? "",
+      category: o.category,
+      initialStock: 0,
+    });
+  });
+  return result;
+}
+
 export function getProducts(category?: Category): Product[] {
-  // catalogue personnalisé (ajouts / modifications / suppressions) appliqué ci-dessous
   const ali = ALIMENTAIRE_PRODUCTS.map((raw, i) => {
     const { name, conditionnement } = parseProduct(raw);
     return { id: `ali-${i}`, name, conditionnement, category: "alimentaire" as Category, initialStock: 0 };
