@@ -27,17 +27,17 @@ export interface RequisitionEntry {
 }
 
 // Tous les produits alimentaires → Réquisition Alimentaire (sauf exclus)
-export const REQUISITION_SALLE_IDS: string[] = getProducts("alimentaire")
-  .filter((p) => !REQUISITION_EXCLUDED_NAMES.includes(p.name))
-  .map((p) => p.id);
+// Calculé à la demande pour tenir compte du catalogue produits personnalisé.
+export function getRequisitionSalleIds(): string[] {
+  return getProducts("alimentaire")
+    .filter((p) => !REQUISITION_EXCLUDED_NAMES.includes(p.name))
+    .map((p) => p.id);
+}
 
 // Tous les produits emballage → Réquisition Emballage
-export const REQUISITION_EMPORTER_IDS: string[] = getProducts("emballage").map((p) => p.id);
-
-export const ALL_REQUISITION_IDS = new Set<string>([
-  ...REQUISITION_SALLE_IDS,
-  ...REQUISITION_EMPORTER_IDS,
-]);
+export function getRequisitionEmporterIds(): string[] {
+  return getProducts("emballage").map((p) => p.id);
+}
 
 export async function getRequisitions(): Promise<RequisitionEntry[]> {
   const data = await fetchAllRows<any>(() => supabase.from("requisitions").select("*"));
