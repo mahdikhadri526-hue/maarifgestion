@@ -896,6 +896,42 @@ export type Database = {
         }
         Relationships: []
       }
+      product_catalog: {
+        Row: {
+          category: string
+          conditionnement: string
+          created_at: string
+          hidden: boolean
+          id: string
+          name: string
+          product_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          conditionnement?: string
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          name: string
+          product_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          conditionnement?: string
+          created_at?: string
+          hidden?: boolean
+          id?: string
+          name?: string
+          product_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       production_entries: {
         Row: {
           created_at: string
