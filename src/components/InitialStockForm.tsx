@@ -7,6 +7,7 @@ import { Search, Save, Lock, Unlock } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/contexts/AuthContext";
+import { ProductCatalogManager } from "@/components/inventory/ProductCatalogManager";
 
 interface Props {
   onUpdated: () => void;
@@ -20,6 +21,7 @@ export function InitialStockForm({ onUpdated }: Props) {
   const [lotNumbers, setLotNumbers] = useState<Record<string, string>>({});
   const [expiryDates, setExpiryDates] = useState<Record<string, string>>({});
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
+  const [catalogTick, setCatalogTick] = useState(0);
   const { can } = useAuth();
   const { data: savedStocks, loading } = useInitialStocks();
 
@@ -39,6 +41,7 @@ export function InitialStockForm({ onUpdated }: Props) {
     }).catch((e) => console.error(e));
   }, []);
 
+  void catalogTick;
   const products = getProducts(category === "all" ? undefined : category);
   const filtered = products.filter((p) =>
     p.name.toLowerCase().includes(search.toLowerCase())
@@ -112,6 +115,7 @@ export function InitialStockForm({ onUpdated }: Props) {
             </div>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
+            <ProductCatalogManager onChanged={() => { setCatalogTick((t) => t + 1); onUpdated(); }} />
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-48" />
