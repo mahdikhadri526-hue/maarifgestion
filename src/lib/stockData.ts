@@ -268,9 +268,12 @@ export function getProducts(category?: Category): Product[] {
   }).filter((p) => p.name !== "__HIDDEN__" && !isHiddenProduct(p));
   const sortByName = (a: Product, b: Product) =>
     a.name.localeCompare(b.name, "fr", { sensitivity: "base" });
-  if (category === "alimentaire") return ali.sort(sortByName);
-  if (category === "emballage") return emb.sort(sortByName);
-  return [...ali.sort(sortByName), ...emb.sort(sortByName)];
+  const applied = applyCatalog([...ali, ...emb]);
+  const aliF = applied.filter((p) => p.category === "alimentaire").sort(sortByName);
+  const embF = applied.filter((p) => p.category === "emballage").sort(sortByName);
+  if (category === "alimentaire") return aliF;
+  if (category === "emballage") return embF;
+  return [...aliF, ...embF];
 }
 
 // Détecte l'unité naturelle d'un produit selon son nom (huile→Litre, sucre→Kg, etc.)
