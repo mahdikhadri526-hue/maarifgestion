@@ -35,6 +35,7 @@ const PERMISSION_GROUPS: { title: string; keys: string[] }[] = [
   { title: "Suivi hebdomadaire", keys: ["view_weekly", "edit_weekly", "delete_weekly"] },
   { title: "Températures", keys: ["view_temperatures", "edit_temperatures", "delete_temperatures"] },
   { title: "Gestion des matériels – Température", keys: ["view_equipments", "edit_equipments", "delete_equipments"] },
+  { title: "Catalogue produits – Alimentaire & Emballage", keys: ["view_products", "edit_products", "delete_products"] },
   { title: "Nettoyage", keys: ["view_cleaning", "edit_cleaning", "delete_cleaning"] },
   { title: "Inventaire", keys: ["view_inventory", "manage_inventory"] },
   { title: "Calcul des écarts", keys: ["view_ecarts", "edit_ecarts"] },
