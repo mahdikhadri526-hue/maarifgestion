@@ -258,6 +258,7 @@ const EMBALLAGE_PRODUCTS = [
 ];
 
 export function getProducts(category?: Category): Product[] {
+  // catalogue personnalisé appliqué ci-dessous
   const ali = ALIMENTAIRE_PRODUCTS.map((raw, i) => {
     const { name, conditionnement } = parseProduct(raw);
     return { id: `ali-${i}`, name, conditionnement, category: "alimentaire" as Category, initialStock: 0 };
