@@ -290,19 +290,19 @@ export function EcartModule() {
         <div className="py-16 text-center text-sm text-muted-foreground">Chargement…</div>
       ) : view === "ventes" ? (
         <div className="grid gap-4 lg:grid-cols-2">
-          <SectionTable section="VENTE_EMP" title="Ventes Emporter" subtitle="Saisir les quantités vendues — les grammes sont calculés automatiquement." />
-          <SectionTable section="VENTE_SP" title="Ventes Salle / Surplace" subtitle="Saisir les quantités vendues — les grammes sont calculés automatiquement." />
+          {sectionTable({ section: "VENTE_EMP", title: "Ventes Emporter", subtitle: "Saisir les quantités vendues — les grammes sont calculés automatiquement." })}
+          {sectionTable({ section: "VENTE_SP", title: "Ventes Salle / Surplace", subtitle: "Saisir les quantités vendues — les grammes sont calculés automatiquement." })}
         </div>
       ) : view === "entrees" ? (
         <div className="grid gap-4 lg:grid-cols-2">
-          <SectionTable section="ENTREE_EMP" title="Entrées Emporter (stuffs)" subtitle="Saisir le nombre de stuffs par parfum — grammage déjà enregistré." />
+          {sectionTable({ section: "ENTREE_EMP", title: "Entrées Emporter (stuffs)", subtitle: "Saisir le nombre de stuffs par parfum — grammage déjà enregistré." })}
         </div>
       ) : view === "final" ? (
         <div className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-2">
-            <SectionTable section="SF_FRIGO_EMP" title="Stock final Emporter — Frigos" subtitle="Grammes pesés par parfum." />
-            <SectionTable section="SF_CHAMBRE_EMP" title="Stock final Emporter — Chambre" subtitle="Nombre de stuffs par parfum." />
-            <SectionTable section="SF_SP" title="Stock final Salle / Surplace" subtitle="Grammes par parfum." />
+            {sectionTable({ section: "SF_FRIGO_EMP", title: "Stock final Emporter — Frigos", subtitle: "Grammes pesés par parfum." })}
+            {sectionTable({ section: "SF_CHAMBRE_EMP", title: "Stock final Emporter — Chambre", subtitle: "Nombre de stuffs par parfum." })}
+            {sectionTable({ section: "SF_SP", title: "Stock final Salle / Surplace", subtitle: "Grammes par parfum." })}
           </div>
           <div className="bg-card border rounded-xl p-4 shadow-sm text-sm">
             <Stat label="Frigos (g)" value={result.sfFrigoG} />
@@ -325,8 +325,8 @@ export function EcartModule() {
             </div>
           )}
           <div className="grid gap-4 lg:grid-cols-2">
-            <SectionTable section="SI_EMP" title="Stock initial Emporter (départ)" subtitle="Total en grammes." />
-            <SectionTable section="SI_SP" title="Stock initial Salle (départ)" subtitle="Grammes par parfum." />
+            {sectionTable({ section: "SI_EMP", title: "Stock initial Emporter (départ)", subtitle: "Total en grammes." })}
+            {sectionTable({ section: "SI_SP", title: "Stock initial Salle (départ)", subtitle: "Grammes par parfum." })}
           </div>
         </div>
       ) : (
