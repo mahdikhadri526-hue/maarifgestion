@@ -102,15 +102,11 @@ export function EcartModule() {
   );
   const sum = shown.reduce(
     (a, r) => ({
-      consoEmpG: a.consoEmpG + r.consoEmpG,
-      consoSpG: a.consoSpG + r.consoSpG,
-      ventesEmpG: a.ventesEmpG + r.ventesEmpG,
-      ventesSpG: a.ventesSpG + r.ventesSpG,
-      ecartEmpG: a.ecartEmpG + r.ecartEmpG,
-      ecartSpG: a.ecartSpG + r.ecartSpG,
+      consoTotalG: a.consoTotalG + r.consoTotalG,
+      ventesTotalG: a.ventesTotalG + r.ventesTotalG,
       ecartTotalG: a.ecartTotalG + r.ecartTotalG,
     }),
-    { consoEmpG: 0, consoSpG: 0, ventesEmpG: 0, ventesSpG: 0, ecartEmpG: 0, ecartSpG: 0, ecartTotalG: 0 },
+    { consoTotalG: 0, ventesTotalG: 0, ecartTotalG: 0 },
   );
 
   const sectionTable = ({
