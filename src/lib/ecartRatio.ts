@@ -198,10 +198,10 @@ export function hasFinalStock(day: DayData | undefined): boolean {
 }
 
 /**
- * Calcul d'une journée, formules strictement identiques à la feuille ECART GLACE :
- *  Conso Emporter = Stock initial Emp + Entrée Emporter − Stock final Emp − Entrée Surplace
- *  Conso Surplace = Stock initial SP  + Entrée Surplace − Stock final SP
- *  Écart = Ventes − Consommation ; Total = somme des deux zones.
+ * Calcul d'une journée, formule globale demandée :
+ *  Consommation = Total stocks initiaux (Emporter + Salle) + Entrées (Emporter + Salle) − Total stocks finaux (Emporter + Salle)
+ *  Ventes = Total des ventes (Surplace + Emporter)
+ *  Écart = Consommation − Ventes
  * Le stock initial d'un jour est le stock final de la veille (sinon la saisie manuelle de départ).
  */
 export function computeDay(date: string, day: DayData, prev: DayData | undefined): DayResult {
@@ -210,23 +210,26 @@ export function computeDay(date: string, day: DayData, prev: DayData | undefined
   const siEmpG = prevTotals && hasFinalStock(prev) ? prevTotals.sfEmpG : sumSection(day, "SI_EMP");
   const siSpG = prevTotals && hasFinalStock(prev) ? prevTotals.sfSpG : sumSection(day, "SI_SP");
 
-  const consoEmpG = siEmpG + t.entreeEmpG - t.sfEmpG - t.entreeSpG;
-  const consoSpG = siSpG + t.entreeSpG - t.sfSpG;
-  const ecartEmpG = t.ventesEmpG - consoEmpG;
-  const ecartSpG = t.ventesSpG - consoSpG;
+  const siTotalG = siEmpG + siSpG;
+  const entreeTotalG = t.entreeEmpG + t.entreeSpG;
+  const sfTotalG = t.sfEmpG + t.sfSpG;
+
+  const consoTotalG = siTotalG + entreeTotalG - sfTotalG;
+  const ventesTotalG = t.ventesEmpG + t.ventesSpG;
+  const ecartTotalG = consoTotalG - ventesTotalG;
 
   return {
     date,
     ...t,
     siEmpG,
     siSpG,
-    consoEmpG,
-    consoSpG,
-    consoTotalG: consoEmpG + consoSpG,
-    ventesTotalG: t.ventesEmpG + t.ventesSpG,
-    ecartEmpG,
-    ecartSpG,
-    ecartTotalG: ecartEmpG + ecartSpG,
+    consoEmpG: 0,
+    consoSpG: 0,
+    consoTotalG,
+    ventesTotalG,
+    ecartEmpG: 0,
+    ecartSpG: 0,
+    ecartTotalG,
   };
 }
 

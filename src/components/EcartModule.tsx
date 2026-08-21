@@ -102,15 +102,11 @@ export function EcartModule() {
   );
   const sum = shown.reduce(
     (a, r) => ({
-      consoEmpG: a.consoEmpG + r.consoEmpG,
-      consoSpG: a.consoSpG + r.consoSpG,
-      ventesEmpG: a.ventesEmpG + r.ventesEmpG,
-      ventesSpG: a.ventesSpG + r.ventesSpG,
-      ecartEmpG: a.ecartEmpG + r.ecartEmpG,
-      ecartSpG: a.ecartSpG + r.ecartSpG,
+      consoTotalG: a.consoTotalG + r.consoTotalG,
+      ventesTotalG: a.ventesTotalG + r.ventesTotalG,
       ecartTotalG: a.ecartTotalG + r.ecartTotalG,
     }),
-    { consoEmpG: 0, consoSpG: 0, ventesEmpG: 0, ventesSpG: 0, ecartEmpG: 0, ecartSpG: 0, ecartTotalG: 0 },
+    { consoTotalG: 0, ventesTotalG: 0, ecartTotalG: 0 },
   );
 
   const sectionTable = ({
@@ -333,22 +329,13 @@ export function EcartModule() {
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">
             {[
-              { t: "Écart Emporter", conso: sum.consoEmpG, ventes: sum.ventesEmpG, ecart: sum.ecartEmpG },
-              { t: "Écart Surplace", conso: sum.consoSpG, ventes: sum.ventesSpG, ecart: sum.ecartSpG },
-              {
-                t: "Écart Total",
-                conso: sum.consoEmpG + sum.consoSpG,
-                ventes: sum.ventesEmpG + sum.ventesSpG,
-                ecart: sum.ecartTotalG,
-              },
+              { t: "Consommation", value: sum.consoTotalG },
+              { t: "Ventes", value: sum.ventesTotalG },
+              { t: "Écart", value: sum.ecartTotalG, strong: true },
             ].map((b) => (
               <div key={b.t} className="bg-card border rounded-xl p-4 shadow-sm text-sm">
                 <h3 className="font-semibold mb-2">{b.t}</h3>
-                <Stat label="Consommation (g)" value={b.conso} />
-                <Stat label="Ventes (g)" value={b.ventes} />
-                <div className="border-t mt-1 pt-1">
-                  <Stat label="Écart journalier (g)" value={b.ecart} strong />
-                </div>
+                <Stat label={`${b.t} (g)`} value={b.value} strong={b.strong} />
               </div>
             ))}
           </div>
@@ -365,23 +352,21 @@ export function EcartModule() {
           )}
 
           <div className="bg-card border rounded-xl shadow-sm overflow-x-auto">
-            <table className="w-full text-xs sm:text-sm border-collapse min-w-[860px]">
+            <table className="w-full text-xs sm:text-sm border-collapse min-w-[600px]">
               <thead className="bg-muted/60">
                 <tr>
                   <th className="sticky left-0 z-10 bg-muted/60 px-2 py-2 text-left">Date</th>
-                  <th className="px-2 py-2 text-right">Conso Emp. (g)</th>
                   <th className="px-2 py-2 text-right">Ventes Emp. (g)</th>
-                  <th className="px-2 py-2 text-right">Écart Emp. (g)</th>
-                  <th className="px-2 py-2 text-right">Conso Srp. (g)</th>
                   <th className="px-2 py-2 text-right">Ventes Srp. (g)</th>
-                  <th className="px-2 py-2 text-right">Écart Srp. (g)</th>
-                  <th className="px-2 py-2 text-right">Écart total (g)</th>
+                  <th className="px-2 py-2 text-right">Ventes total (g)</th>
+                  <th className="px-2 py-2 text-right">Consommation (g)</th>
+                  <th className="px-2 py-2 text-right">Écart (g)</th>
                 </tr>
               </thead>
               <tbody>
                 {shown.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
+                    <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
                       Aucune saisie sur la période.
                     </td>
                   </tr>
@@ -389,33 +374,28 @@ export function EcartModule() {
                 {shown.map((r) => (
                   <tr key={r.date} className="border-t">
                     <td className="sticky left-0 z-10 bg-card px-2 py-1 whitespace-nowrap">{formatDateFR(r.date)}</td>
-                    <td className="px-2 py-1 text-right tabular-nums">{fmtG(r.consoEmpG)}</td>
                     <td className="px-2 py-1 text-right tabular-nums">{fmtG(r.ventesEmpG)}</td>
-                    <td className={`px-2 py-1 text-right tabular-nums font-semibold ${r.ecartEmpG < 0 ? "text-destructive" : ""}`}>{fmtG(r.ecartEmpG)}</td>
-                    <td className="px-2 py-1 text-right tabular-nums">{fmtG(r.consoSpG)}</td>
                     <td className="px-2 py-1 text-right tabular-nums">{fmtG(r.ventesSpG)}</td>
-                    <td className={`px-2 py-1 text-right tabular-nums font-semibold ${r.ecartSpG < 0 ? "text-destructive" : ""}`}>{fmtG(r.ecartSpG)}</td>
+                    <td className="px-2 py-1 text-right tabular-nums font-semibold">{fmtG(r.ventesTotalG)}</td>
+                    <td className="px-2 py-1 text-right tabular-nums">{fmtG(r.consoTotalG)}</td>
                     <td className={`px-2 py-1 text-right tabular-nums font-bold ${r.ecartTotalG < 0 ? "text-destructive" : ""}`}>{fmtG(r.ecartTotalG)}</td>
                   </tr>
                 ))}
                 {shown.length > 0 && (
                   <tr className="border-t bg-muted/40 font-semibold">
                     <td className="sticky left-0 z-10 bg-muted/40 px-2 py-2">Total</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.consoEmpG)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesEmpG)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ecartEmpG)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.consoSpG)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesSpG)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ecartSpG)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesTotalG)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesTotalG)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesTotalG)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.consoTotalG)}</td>
                     <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ecartTotalG)}</td>
                   </tr>
                 )}
               </tbody>
             </table>
             <p className="px-3 py-2 text-xs text-muted-foreground">
-              Consommation Emporter = Stock initial + Entrées Emporter − Stock final Emporter − Entrées Salle ·
-              Consommation Salle = Stock initial Salle + Entrées Salle − Stock final Salle · Écart = Ventes −
-              Consommation.
+              Consommation = Stock initial total + Entrées total − Stock final total · Ventes = Ventes Emporter +
+              Ventes Surplace · Écart = Consommation − Ventes.
             </p>
           </div>
         </div>
