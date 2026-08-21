@@ -30,15 +30,24 @@ export function ProductCatalogManager({ onChanged }: Props) {
     category: "alimentaire",
   });
 
+  const [dirty, setDirty] = useState(false);
+
+  // Recharge le catalogue sans prévenir le parent : notifier pendant que la
+  // boîte de dialogue est ouverte la ferme (re-render/remontage du parent).
   const refresh = useCallback(async () => {
     await loadProductCatalog();
     setTick((t) => t + 1);
-    onChanged?.();
-  }, [onChanged]);
+    setDirty(true);
+  }, []);
 
   useEffect(() => {
-    if (open) void refresh();
-  }, [open, refresh]);
+    if (open) {
+      void loadProductCatalog().then(() => setTick((t) => t + 1));
+    } else if (dirty) {
+      setDirty(false);
+      onChanged?.();
+    }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const products = useMemo(() => {
     void tick;
