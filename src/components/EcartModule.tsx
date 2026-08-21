@@ -113,7 +113,7 @@ export function EcartModule() {
     { consoEmpG: 0, consoSpG: 0, ventesEmpG: 0, ventesSpG: 0, ecartEmpG: 0, ecartSpG: 0, ecartTotalG: 0 },
   );
 
-  const SectionTable = ({
+  const sectionTable = ({
     section,
     title,
     subtitle,
