@@ -103,10 +103,12 @@ export function EcartModule() {
   const sum = shown.reduce(
     (a, r) => ({
       consoTotalG: a.consoTotalG + r.consoTotalG,
+      ventesEmpG: a.ventesEmpG + r.ventesEmpG,
+      ventesSpG: a.ventesSpG + r.ventesSpG,
       ventesTotalG: a.ventesTotalG + r.ventesTotalG,
       ecartTotalG: a.ecartTotalG + r.ecartTotalG,
     }),
-    { consoTotalG: 0, ventesTotalG: 0, ecartTotalG: 0 },
+    { consoTotalG: 0, ventesEmpG: 0, ventesSpG: 0, ventesTotalG: 0, ecartTotalG: 0 },
   );
 
   const sectionTable = ({
@@ -384,8 +386,8 @@ export function EcartModule() {
                 {shown.length > 0 && (
                   <tr className="border-t bg-muted/40 font-semibold">
                     <td className="sticky left-0 z-10 bg-muted/40 px-2 py-2">Total</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesTotalG)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesTotalG)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesEmpG)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesSpG)}</td>
                     <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesTotalG)}</td>
                     <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.consoTotalG)}</td>
                     <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ecartTotalG)}</td>

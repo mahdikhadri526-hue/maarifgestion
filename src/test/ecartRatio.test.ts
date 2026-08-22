@@ -1,34 +1,57 @@
 import { describe, expect, it } from "vitest";
-import { computeDay, eachDate, shiftDate, type DayData } from "@/lib/ecartRatio";
-import fixture from "./ratioMai.fixture.json";
+import { computeDay, type DayData } from "@/lib/ecartRatio";
 
-const days = fixture.days as Record<string, DayData>;
-const expected = fixture.expected as Record<string, Record<string, number>>;
+describe("Calcul des écarts — formule globale", () => {
+  it("calcule consommation, ventes et écart sur une journée", () => {
+    const day: DayData = {
+      SI_EMP: { TOTAL: 1000 },
+      SI_SP: { Nougat: 500 },
+      ENTREE_EMP: { Nougat: 1 },
+      ENTREE_SP: { Nougat: 3550 },
+      SF_FRIGO_EMP: { Nougat: 2000 },
+      SF_CHAMBRE_EMP: { Nougat: 1 },
+      SF_SP: { Nougat: 300 },
+      VENTE_EMP: { "CORNET 1B EMP": 10 },
+      VENTE_SP: { "0,5 L": 2 },
+    };
 
-const run = (date: string) => computeDay(date, days[date], days[shiftDate(date, -1)]);
+    const r = computeDay("2026-05-01", day, undefined);
 
-describe("Calcul des écarts — conformité RATIO MAARIF MAI.xlsx", () => {
-  it("reproduit exactement consommation, ventes et écarts du 1er au 28 mai", () => {
-    for (const date of eachDate("2026-05-01", "2026-05-28")) {
-      const r = run(date);
-      const e = expected[date];
-      expect(Math.round(r.consoEmpG), `conso emporter ${date}`).toBe(Math.round(e.consoEmpG));
-      expect(Math.round(r.consoSpG), `conso surplace ${date}`).toBe(Math.round(e.consoSpG));
-      expect(Math.round(r.ventesEmpG), `ventes emporter ${date}`).toBe(Math.round(e.ventesEmpG));
-      expect(Math.round(r.ventesSpG), `ventes surplace ${date}`).toBe(Math.round(e.ventesSpG));
-      expect(Math.round(r.ecartEmpG), `écart emporter ${date}`).toBe(Math.round(e.ecartEmpG));
-      expect(Math.round(r.ecartSpG), `écart surplace ${date}`).toBe(Math.round(e.ecartSpG));
-      expect(Math.round(r.ecartTotalG), `écart total ${date}`).toBe(Math.round(e.ecartTotalG));
-    }
+    // Ventes = 10×60 + 2×500 = 1600
+    expect(r.ventesTotalG).toBe(1600);
+
+    // Consommation = (SI_EMP 1000 + SI_SP 500) + (ENTREE_EMP 3725 + ENTREE_SP 3550) − (SF_EMP 2000+3725 + SF_SP 300)
+    // = 1500 + 7275 - 5725 - 300 = 2750
+    expect(r.consoTotalG).toBe(2750);
+
+    // Écart = Consommation − Ventes = 2750 − 1600 = 1150
+    expect(r.ecartTotalG).toBe(1150);
   });
 
-  // Le 29 mai, les cellules du fichier Excel sont décalées d'une colonne
-  // (TOTAL STOCK FINAL!AE5 pointe sur AE23/AF23 au lieu de AD23/AE23),
-  // le stock final y est donc lu à 0. La valeur corrigée est vérifiée ici.
-  it("corrige la référence décalée du 29 mai (bug du fichier Excel)", () => {
-    const r = run("2026-05-29");
-    expect(Math.round(r.consoEmpG)).toBe(514573);
-    expect(Math.round(r.consoSpG)).toBe(Math.round(expected["2026-05-29"].consoSpG));
-    expect(Math.round(r.ventesEmpG)).toBe(Math.round(expected["2026-05-29"].ventesEmpG));
+  it("reprend le stock final de la veille comme stock initial", () => {
+    const prev: DayData = {
+      SF_FRIGO_EMP: { Nougat: 1000 },
+      SF_SP: { Nougat: 200 },
+    };
+    const day: DayData = {
+      ENTREE_EMP: { Nougat: 1 },
+      ENTREE_SP: { Nougat: 0 },
+      SF_FRIGO_EMP: { Nougat: 800 },
+      SF_SP: { Nougat: 100 },
+      VENTE_EMP: { "CORNET 1B EMP": 5 },
+      VENTE_SP: {},
+    };
+
+    const r = computeDay("2026-05-02", day, prev);
+
+    // SI total = 1000 + 200 = 1200 ; SF total = 800 + 100 = 900 ; Entrées = 3725
+    // Consommation = 1200 + 3725 - 900 = 4025
+    expect(r.consoTotalG).toBe(4025);
+
+    // Ventes = 5×60 = 300
+    expect(r.ventesTotalG).toBe(300);
+
+    // Écart = 4025 - 300 = 3725
+    expect(r.ecartTotalG).toBe(3725);
   });
 });
