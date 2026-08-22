@@ -427,14 +427,15 @@ export function WeeklyTracking() {
           supabase
             .from("weekly_tracking")
             .select("*")
-            .eq("fiche_type", ficheType),
+            .eq("fiche_type", ficheType)
+            .in("week_start", weeksToLoad),
         );
         setRows(normalizeWeeklyRows(data || []));
       } catch (error) {
         toast.error("Erreur de chargement");
       }
     })();
-  }, [ficheType]);
+  }, [ficheType, weeksToLoad]);
 
   useEffect(() => {
     (async () => {
@@ -444,14 +445,15 @@ export function WeeklyTracking() {
             .from("weekly_tracking")
             .select("*")
             .eq("fiche_type", "Mouvement glaces & tartes")
-            .eq("article", "Crème fraîche (mousse fouettée)"),
+            .eq("article", "Crème fraîche (mousse fouettée)")
+            .in("week_start", weeksToLoad),
         );
         setCremeGlaceRows(normalizeWeeklyRows(data || []));
       } catch {
         /* ignore */
       }
     })();
-  }, [weekStart, tab]);
+  }, [weeksToLoad, tab]);
 
   const CREME_ARTICLE = "Crème fraîche (mousse fouettée)";
 
