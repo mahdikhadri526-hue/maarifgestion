@@ -356,14 +356,32 @@ export function detectProductUnit(name: string): string {
 
 // Lignes « Mouvement glaces & tartes » du suivi hebdo : table volumineuse,
 // partagée entre plusieurs calculs → mise en cache courte.
-export function getGlaceWeeklyRows(): Promise<any[]> {
-  return cached("weeklyGlaceRows", ["weekly_tracking"], () =>
-    fetchAllRows<any>(() =>
-      supabase
+function mondayISO(iso: string, offsetDays = 0): string {
+  const d = new Date(`${iso}T00:00:00`);
+  const day = d.getDay();
+  d.setDate(d.getDate() - ((day + 6) % 7) + offsetDays);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+export function getGlaceWeeklyRows(startDate?: string, endDate?: string): Promise<any[]> {
+  // Bornes de semaines : évite de télécharger tout l'historique quand une
+  // période est demandée (± 1 semaine pour les reports lundi/dimanche).
+  const from = startDate ? mondayISO(startDate, -7) : null;
+  const to = endDate ? mondayISO(endDate, 7) : null;
+  const key = `weeklyGlaceRows:${from || ""}:${to || ""}`;
+  return cached(key, ["weekly_tracking"], () =>
+    fetchAllRows<any>(() => {
+      let q = supabase
         .from("weekly_tracking")
         .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
-        .eq("fiche_type", "Mouvement glaces & tartes"),
-    ),
+        .eq("fiche_type", "Mouvement glaces & tartes");
+      if (from) q = q.gte("week_start", from);
+      if (to) q = q.lte("week_start", to);
+      return q;
+    }),
   );
 }
 
@@ -377,6 +395,36 @@ export function invalidateStockCaches(tables: string[]) {
   invalidateTables(tables);
 }
 
+
+export interface MovementAggregate {
+  entrees: number;
+  sorties: number;
+  regularisationsNet: number;
+  entreesAll: number;
+  sortiesAll: number;
+}
+
+/**
+ * Totaux par produit calculés directement en base (RPC) : évite de télécharger
+ * l'intégralité de la table des mouvements côté navigateur.
+ */
+export async function getMovementAggregates(): Promise<Record<string, MovementAggregate>> {
+  return cached("movementAggregates", ["stock_movements"], async () => {
+    const { data, error } = await (supabase as any).rpc("stock_movement_aggregates");
+    if (error) throw error;
+    const map: Record<string, MovementAggregate> = {};
+    (data || []).forEach((r: any) => {
+      map[r.product_id] = {
+        entrees: Number(r.entrees) || 0,
+        sorties: Number(r.sorties) || 0,
+        regularisationsNet: Number(r.regularisations_net) || 0,
+        entreesAll: Number(r.entrees_all) || 0,
+        sortiesAll: Number(r.sorties_all) || 0,
+      };
+    });
+    return map;
+  });
+}
 
 export async function getMovements(): Promise<StockMovement[]> {
   return cached("movements", ["stock_movements"], async () => {
@@ -572,8 +620,8 @@ export async function getToppingsAggregate(): Promise<{ entrees: number; sorties
 }
 
 async function computeToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
-  const [movements, initialStocks, units, configs, weeklyRes] = await Promise.all([
-    getMovements(),
+  const [aggregates, initialStocks, units, configs, weeklyRes] = await Promise.all([
+    getMovementAggregates(),
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
@@ -588,15 +636,9 @@ async function computeToppingsAggregate(): Promise<{ entrees: number; sorties: n
   // 1) Source : table alimentaire (SMARTIES + OREO)
   for (const pid of TOPPINGS_ALI_PRODUCT_IDS) {
     const init = initialStocks[pid] || 0;
-    const unit = units[pid] || "PIECE";
-    const config = configs[pid];
-    const ms = movements.filter((m) => m.productId === pid);
-    const e = ms
-      .filter((m) => m.type === "entree")
-      .reduce((s, m) => s + movementPiecesToDisplay(m.quantity, unit, config, pid), 0);
-    const s = ms
-      .filter((m) => m.type === "sortie")
-      .reduce((acc, m) => acc + movementPiecesToDisplay(m.quantity, unit, config, pid), 0);
+    const agg = aggregates[pid];
+    const e = roundStockQuantity(agg?.entreesAll || 0);
+    const s = roundStockQuantity(agg?.sortiesAll || 0);
     stockInitial += init;
     entrees += e;
     sorties += s;
@@ -741,8 +783,8 @@ export async function getToppingsDailyHistory(): Promise<DailyStockRecord[]> {
 
 export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
   const products = getProducts(category);
-  const [movements, initialStocks, units, configs, glaceAgg, toppingsAgg] = await Promise.all([
-    getMovements(),
+  const [aggregates, initialStocks, units, configs, glaceAgg, toppingsAgg] = await Promise.all([
+    getMovementAggregates(),
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
@@ -750,13 +792,6 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
     getToppingsAggregate().catch(() => ({ entrees: 0, sorties: 0, stockInitial: 0, stockRestant: 0 })),
   ]);
 
-  // Indexation des mouvements par produit (évite un filtre complet par produit)
-  const movementsByProduct = new Map<string, StockMovement[]>();
-  for (const m of movements) {
-    const list = movementsByProduct.get(m.productId);
-    if (list) list.push(m);
-    else movementsByProduct.set(m.productId, [m]);
-  }
 
   return products.map((product) => {
     const initial = initialStocks[product.id] || 0;
@@ -800,22 +835,11 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
       };
     }
 
-    const productMovements = movementsByProduct.get(product.id) || [];
+    const agg = aggregates[product.id];
     // Régularisations de stock : n'apparaissent pas dans les Entrées,
     // elles sont décomptées des Sorties (positif = stock augmenté → sorties diminuées).
-    const totalEntrees = productMovements
-      .filter((m) => m.type === "entree" && m.source !== "regularisation")
-      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config, product.id), 0);
-    const sortiesBrutes = productMovements
-      .filter((m) => m.type === "sortie" && m.source !== "regularisation")
-      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config, product.id), 0);
-    const regularisationsNet = productMovements
-      .filter((m) => m.source === "regularisation")
-      .reduce((sum, m) => {
-        const q = movementPiecesToDisplay(m.quantity, unit, config, product.id);
-        return sum + (m.type === "entree" ? q : -q);
-      }, 0);
-    const totalSorties = sortiesBrutes - regularisationsNet;
+    const totalEntrees = roundStockQuantity(agg?.entrees || 0);
+    const totalSorties = roundStockQuantity((agg?.sorties || 0) - (agg?.regularisationsNet || 0));
 
     return {
       productId: product.id,
@@ -986,7 +1010,7 @@ const DAYS_FOR_GLACE = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Same
 
 export async function getGlaceAggregateForRange(startDate?: string, endDate?: string): Promise<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number }> {
   const [rows, gramRes] = await Promise.all([
-    getGlaceWeeklyRows(),
+    getGlaceWeeklyRows(startDate, endDate),
     getGlaceGrammageRes(),
   ]);
 
@@ -1151,7 +1175,7 @@ export async function getGlaceBreakdownForRange(
   endDate?: string,
 ): Promise<AggregateBreakdownRow[]> {
   const [rows, gramRes] = await Promise.all([
-    getGlaceWeeklyRows(),
+    getGlaceWeeklyRows(startDate, endDate),
     getGlaceGrammageRes(),
   ]);
   const grams: Record<string, number> = {};

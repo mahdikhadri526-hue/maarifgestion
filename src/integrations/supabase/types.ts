@@ -1551,6 +1551,17 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_regional_admin: { Args: { _user_id: string }; Returns: boolean }
+      stock_movement_aggregates: {
+        Args: never
+        Returns: {
+          entrees: number
+          entrees_all: number
+          product_id: string
+          regularisations_net: number
+          sorties: number
+          sorties_all: number
+        }[]
+      }
       verify_pdv_code: {
         Args: { _code: string; _pdv_id: string }
         Returns: boolean
