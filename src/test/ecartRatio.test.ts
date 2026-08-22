@@ -7,7 +7,7 @@ describe("Calcul des écarts — formule globale", () => {
       SI_EMP: { TOTAL: 1000 },
       SI_SP: { Nougat: 500 },
       ENTREE_EMP: { Nougat: 1 },
-      ENTREE_SP: { Nougat: 1 },
+      ENTREE_SP: { Nougat: 3550 },
       SF_FRIGO_EMP: { Nougat: 2000 },
       SF_CHAMBRE_EMP: { Nougat: 1 },
       SF_SP: { Nougat: 300 },
@@ -20,12 +20,12 @@ describe("Calcul des écarts — formule globale", () => {
     // Ventes = 10×60 + 2×500 = 1600
     expect(r.ventesTotalG).toBe(1600);
 
-    // Consommation = (SI_EMP 1000 + SI_SP 500) + (ENTREE_EMP 3725 + ENTREE_SP 3550) − (SF_EMP 2000+3616 + SF_SP 300)
-    // = 1500 + 7275 - 5616 - 300 = 2859
-    expect(r.consoTotalG).toBe(2859);
+    // Consommation = (SI_EMP 1000 + SI_SP 500) + (ENTREE_EMP 3725 + ENTREE_SP 3550) − (SF_EMP 2000+3725 + SF_SP 300)
+    // = 1500 + 7275 - 5725 - 300 = 2750
+    expect(r.consoTotalG).toBe(2750);
 
-    // Écart = Consommation − Ventes = 2859 − 1600 = 1259
-    expect(r.ecartTotalG).toBe(1259);
+    // Écart = Consommation − Ventes = 2750 − 1600 = 1150
+    expect(r.ecartTotalG).toBe(1150);
   });
 
   it("reprend le stock final de la veille comme stock initial", () => {
@@ -46,14 +46,14 @@ describe("Calcul des écarts — formule globale", () => {
 
     const r = computeDay("2026-05-02", day, prev);
 
-    // SI total = 1000+500+200 = 1700 ; SF total = 800+400+100 = 1300 ; Entrées = 3725
-    // Consommation = 1700 + 3725 - 1300 = 4125
-    expect(r.consoTotalG).toBe(4125);
+    // SI total = 1000+500+200 = 1700 ; SF total = 800+400×3725+100 = 149900 ; Entrées = 3725
+    // Consommation = 1700 + 3725 - 149900 = -144475
+    expect(r.consoTotalG).toBe(-144475);
 
     // Ventes = 5×60 = 300
     expect(r.ventesTotalG).toBe(300);
 
-    // Écart = 4125 - 300 = 3825
-    expect(r.ecartTotalG).toBe(3825);
+    // Écart = -144475 - 300 = -144775
+    expect(r.ecartTotalG).toBe(-144775);
   });
 });
