@@ -103,10 +103,12 @@ export function EcartModule() {
   const sum = shown.reduce(
     (a, r) => ({
       consoTotalG: a.consoTotalG + r.consoTotalG,
+      ventesEmpG: a.ventesEmpG + r.ventesEmpG,
+      ventesSpG: a.ventesSpG + r.ventesSpG,
       ventesTotalG: a.ventesTotalG + r.ventesTotalG,
       ecartTotalG: a.ecartTotalG + r.ecartTotalG,
     }),
-    { consoTotalG: 0, ventesTotalG: 0, ecartTotalG: 0 },
+    { consoTotalG: 0, ventesEmpG: 0, ventesSpG: 0, ventesTotalG: 0, ecartTotalG: 0 },
   );
 
   const sectionTable = ({
