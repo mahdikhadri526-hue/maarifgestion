@@ -356,14 +356,32 @@ export function detectProductUnit(name: string): string {
 
 // Lignes « Mouvement glaces & tartes » du suivi hebdo : table volumineuse,
 // partagée entre plusieurs calculs → mise en cache courte.
-export function getGlaceWeeklyRows(): Promise<any[]> {
-  return cached("weeklyGlaceRows", ["weekly_tracking"], () =>
-    fetchAllRows<any>(() =>
-      supabase
+function mondayISO(iso: string, offsetDays = 0): string {
+  const d = new Date(`${iso}T00:00:00`);
+  const day = d.getDay();
+  d.setDate(d.getDate() - ((day + 6) % 7) + offsetDays);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+export function getGlaceWeeklyRows(startDate?: string, endDate?: string): Promise<any[]> {
+  // Bornes de semaines : évite de télécharger tout l'historique quand une
+  // période est demandée (± 1 semaine pour les reports lundi/dimanche).
+  const from = startDate ? mondayISO(startDate, -7) : null;
+  const to = endDate ? mondayISO(endDate, 7) : null;
+  const key = `weeklyGlaceRows:${from || ""}:${to || ""}`;
+  return cached(key, ["weekly_tracking"], () =>
+    fetchAllRows<any>(() => {
+      let q = supabase
         .from("weekly_tracking")
         .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
-        .eq("fiche_type", "Mouvement glaces & tartes"),
-    ),
+        .eq("fiche_type", "Mouvement glaces & tartes");
+      if (from) q = q.gte("week_start", from);
+      if (to) q = q.lte("week_start", to);
+      return q;
+    }),
   );
 }
 
@@ -992,7 +1010,7 @@ const DAYS_FOR_GLACE = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Same
 
 export async function getGlaceAggregateForRange(startDate?: string, endDate?: string): Promise<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number }> {
   const [rows, gramRes] = await Promise.all([
-    getGlaceWeeklyRows(),
+    getGlaceWeeklyRows(startDate, endDate),
     getGlaceGrammageRes(),
   ]);
 
@@ -1157,7 +1175,7 @@ export async function getGlaceBreakdownForRange(
   endDate?: string,
 ): Promise<AggregateBreakdownRow[]> {
   const [rows, gramRes] = await Promise.all([
-    getGlaceWeeklyRows(),
+    getGlaceWeeklyRows(startDate, endDate),
     getGlaceGrammageRes(),
   ]);
   const grams: Record<string, number> = {};
