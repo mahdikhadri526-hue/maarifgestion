@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useDeferredValue } from "react";
 import {
   Category,
   UnitType,
@@ -336,6 +336,9 @@ const monthEndISO = (month: string) => {
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
   const [category, setCategory] = useState<Category | "all" | "tarte" | "glace">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
+  // Rendu différé : la frappe reste fluide même si le tableau est volumineux.
+  const deferredSearch = useDeferredValue(search);
+  const searchLower = deferredSearch.trim().toLowerCase();
   const [mode, setMode] = useState<FilterMode>("month");
   const [day, setDay] = useState<string>(todayISO());
   const [month, setMonth] = useState<string>(currentMonthISO());
@@ -681,9 +684,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
     if (extras.length) withAgg = [...withAgg, ...extras];
   }
-  const filtered = withAgg.filter((l) =>
-    l.productName.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = searchLower
+    ? withAgg.filter((l) => l.productName.toLowerCase().includes(searchLower))
+    : withAgg;
 
   // Load weekly_tracking data for Tarte/Glace categories
   useEffect(() => {
@@ -1483,7 +1486,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             </thead>
             <tbody>
               {weeklyRows
-                .filter((r) => r.article.toLowerCase().includes(search.toLowerCase()))
+                .filter((r) => !searchLower || r.article.toLowerCase().includes(searchLower))
                 .map((r, rowI) => (
                   <tr key={r.article} className={cn("border-b last:border-0 hover:bg-muted/30 transition-colors", rowI % 2 === 1 && "bg-muted/30")}>
                     <td className="p-3 text-sm font-medium weekly-sticky-column border-r bg-card w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>{r.article}</td>
