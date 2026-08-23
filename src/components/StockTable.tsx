@@ -1459,6 +1459,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           )}
         </div>
       </div>
+      {(loading || periodLoading || weeklyLoading) && (levels || weeklyRows.length > 0) && (
+        <p className="text-xs text-muted-foreground animate-pulse">Actualisation…</p>
+      )}
       {/* Loader plein écran uniquement au tout premier chargement :
           les rafraîchissements suivants gardent le tableau visible. */}
       {(isWeeklyCat ? (weeklyLoading && weeklyRows.length === 0) : (!levels && loading)) ? (
