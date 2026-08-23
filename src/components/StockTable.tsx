@@ -939,7 +939,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     return () => {
       cancelled = true;
     };
-  }, [mode, day, month, start, end, levels, variant, isWeeklyCat]);
+  }, [mode, day, month, start, end, levelsKey, variant, isWeeklyCat]);
 
   const cycleUnit = async (productId: string, currentUnit: UnitType) => {
     const nextIndex = (UNITS.indexOf(currentUnit) + 1) % UNITS.length;
