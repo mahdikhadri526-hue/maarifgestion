@@ -797,7 +797,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   }, [variant, category, mode, day, month, start, end]);
 
   // Recalcule les totaux par produit selon le filtre période
+  // `levels` change d'identité à chaque rafraîchissement : on dépend d'une clé
+  // stable (liste des produits) pour éviter un recalcul + un second "Chargement…".
+  const levelsRef = useRef(levels);
+  levelsRef.current = levels;
+  const levelsKey = (levels || []).map((l) => l.productId).join("|");
   useEffect(() => {
+    const levels = levelsRef.current;
     if (mode === "all" || !levels || isWeeklyCat) {
       setPeriodTotals({});
       return;
