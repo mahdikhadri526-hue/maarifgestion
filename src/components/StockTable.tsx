@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useDeferredValue } from "react";
+import { useState, useEffect } from "react";
 import {
   Category,
   UnitType,
@@ -336,9 +336,6 @@ const monthEndISO = (month: string) => {
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
   const [category, setCategory] = useState<Category | "all" | "tarte" | "glace">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
-  // Rendu différé : la frappe reste fluide même si le tableau est volumineux.
-  const deferredSearch = useDeferredValue(search);
-  const searchLower = deferredSearch.trim().toLowerCase();
   const [mode, setMode] = useState<FilterMode>("month");
   const [day, setDay] = useState<string>(todayISO());
   const [month, setMonth] = useState<string>(currentMonthISO());
@@ -684,9 +681,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
     if (extras.length) withAgg = [...withAgg, ...extras];
   }
-  const filtered = searchLower
-    ? withAgg.filter((l) => l.productName.toLowerCase().includes(searchLower))
-    : withAgg;
+  const filtered = withAgg.filter((l) =>
+    l.productName.toLowerCase().includes(search.toLowerCase())
+  );
 
   // Load weekly_tracking data for Tarte/Glace categories
   useEffect(() => {
@@ -800,13 +797,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   }, [variant, category, mode, day, month, start, end]);
 
   // Recalcule les totaux par produit selon le filtre période
-  // `levels` change d'identité à chaque rafraîchissement : on dépend d'une clé
-  // stable (liste des produits) pour éviter un recalcul + un second "Chargement…".
-  const levelsRef = useRef(levels);
-  levelsRef.current = levels;
-  const levelsKey = (levels || []).map((l) => l.productId).join("|");
   useEffect(() => {
-    const levels = levelsRef.current;
     if (mode === "all" || !levels || isWeeklyCat) {
       setPeriodTotals({});
       return;
@@ -942,7 +933,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     return () => {
       cancelled = true;
     };
-  }, [mode, day, month, start, end, levelsKey, variant, isWeeklyCat]);
+  }, [mode, day, month, start, end, levels, variant, isWeeklyCat]);
 
   const cycleUnit = async (productId: string, currentUnit: UnitType) => {
     const nextIndex = (UNITS.indexOf(currentUnit) + 1) % UNITS.length;
@@ -1462,12 +1453,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           )}
         </div>
       </div>
-      {(loading || periodLoading || weeklyLoading) && (levels || weeklyRows.length > 0) && (
-        <p className="text-xs text-muted-foreground animate-pulse">Actualisation…</p>
-      )}
-      {/* Loader plein écran uniquement au tout premier chargement :
-          les rafraîchissements suivants gardent le tableau visible. */}
-      {(isWeeklyCat ? (weeklyLoading && weeklyRows.length === 0) : (!levels && loading)) ? (
+      {(loading || periodLoading || weeklyLoading) ? (
         <p className="text-center text-muted-foreground py-8">Chargement...</p>
       ) : isWeeklyCat ? (
         <div className="bg-card rounded-lg border overflow-x-auto max-w-full">
@@ -1486,7 +1472,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             </thead>
             <tbody>
               {weeklyRows
-                .filter((r) => !searchLower || r.article.toLowerCase().includes(searchLower))
+                .filter((r) => r.article.toLowerCase().includes(search.toLowerCase()))
                 .map((r, rowI) => (
                   <tr key={r.article} className={cn("border-b last:border-0 hover:bg-muted/30 transition-colors", rowI % 2 === 1 && "bg-muted/30")}>
                     <td className="p-3 text-sm font-medium weekly-sticky-column border-r bg-card w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>{r.article}</td>
