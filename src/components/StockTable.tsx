@@ -1459,7 +1459,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           )}
         </div>
       </div>
-      {(loading || periodLoading || weeklyLoading) ? (
+      {/* Loader plein écran uniquement au tout premier chargement :
+          les rafraîchissements suivants gardent le tableau visible. */}
+      {(isWeeklyCat ? (weeklyLoading && weeklyRows.length === 0) : (!levels && loading)) ? (
         <p className="text-center text-muted-foreground py-8">Chargement...</p>
       ) : isWeeklyCat ? (
         <div className="bg-card rounded-lg border overflow-x-auto max-w-full">
