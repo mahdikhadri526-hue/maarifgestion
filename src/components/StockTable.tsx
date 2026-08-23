@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Category,
   UnitType,
@@ -797,7 +797,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   }, [variant, category, mode, day, month, start, end]);
 
   // Recalcule les totaux par produit selon le filtre période
+  // `levels` change d'identité à chaque rafraîchissement : on dépend d'une clé
+  // stable (liste des produits) pour éviter un recalcul + un second "Chargement…".
+  const levelsRef = useRef(levels);
+  levelsRef.current = levels;
+  const levelsKey = (levels || []).map((l) => l.productId).join("|");
   useEffect(() => {
+    const levels = levelsRef.current;
     if (mode === "all" || !levels || isWeeklyCat) {
       setPeriodTotals({});
       return;
@@ -933,7 +939,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     return () => {
       cancelled = true;
     };
-  }, [mode, day, month, start, end, levels, variant, isWeeklyCat]);
+  }, [mode, day, month, start, end, levelsKey, variant, isWeeklyCat]);
 
   const cycleUnit = async (productId: string, currentUnit: UnitType) => {
     const nextIndex = (UNITS.indexOf(currentUnit) + 1) % UNITS.length;
@@ -1453,7 +1459,12 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           )}
         </div>
       </div>
-      {(loading || periodLoading || weeklyLoading) ? (
+      {(loading || periodLoading || weeklyLoading) && (levels || weeklyRows.length > 0) && (
+        <p className="text-xs text-muted-foreground animate-pulse">Actualisation…</p>
+      )}
+      {/* Loader plein écran uniquement au tout premier chargement :
+          les rafraîchissements suivants gardent le tableau visible. */}
+      {(isWeeklyCat ? (weeklyLoading && weeklyRows.length === 0) : (!levels && loading)) ? (
         <p className="text-center text-muted-foreground py-8">Chargement...</p>
       ) : isWeeklyCat ? (
         <div className="bg-card rounded-lg border overflow-x-auto max-w-full">
