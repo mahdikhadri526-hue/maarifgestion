@@ -9,6 +9,8 @@ import {
   getInitialStocks,
   getProductUnits,
   getProductUnitConfigs,
+  getStockPeriodAggregates,
+  getFilteredWeeklyTracking,
   movementPiecesToDisplay,
   roundStockQuantity,
   setInitialStock,
@@ -697,15 +699,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       try {
         const list = category === "tarte" ? TARTE_ARTICLES : GLACE_ARTICLES;
         const wr = weekRangeFilter(mode, day, month, start, end);
-        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() => {
-          let q = supabase
-            .from("weekly_tracking")
-            .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
-            .eq("fiche_type", "Mouvement glaces & tartes")
-            .in("article", list as unknown as string[]);
-          if (wr.from) q = q.gte("week_start", wr.from);
-          return q;
-        });
+        const data = await getFilteredWeeklyTracking(list, wr.from);
         if (cancelled) return;
         const isInSelectedPeriod = (date: string) => {
           if (mode === "day") return day ? date === day : true;
@@ -748,15 +742,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           AMANDES_WEEKLY_ARTICLE,
         ];
         const wr = weekRangeFilter(mode, day, month, start, end);
-        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() => {
-          let q = supabase
-            .from("weekly_tracking")
-            .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
-            .eq("fiche_type", "Mouvement glaces & tartes")
-            .in("article", [...MACARON_ARTICLES, ...extraArticles] as unknown as string[]);
-          if (wr.from) q = q.gte("week_start", wr.from);
-          return q;
-        });
+        const data = await getFilteredWeeklyTracking([...MACARON_ARTICLES, ...extraArticles], wr.from);
         if (cancelled) return;
         const isInSelectedPeriod = (date: string) => {
           if (mode === "day") return day ? date === day : true;
@@ -823,68 +809,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         if (mode === "period") return start ? dd < start : false;
         return false;
       };
-      // Fetch global data ONCE instead of per-product (avoids N+1 round-trips)
-      const [allMovements, initialStocks, units, configs] = await Promise.all([
-        getMovements(),
-        getInitialStocks(),
-        getProductUnits(),
-        getProductUnitConfigs(),
-      ]);
-      // Group movements by productId -> date -> { entrees, sorties }
-      const byProduct: Record<string, Record<string, { entrees: number; sorties: number }>> = {};
-      const productIds = new Set<string>();
-      levels.forEach((l) => productIds.add(l.productId));
-      allMovements.forEach((m) => {
-        if (!productIds.has(m.productId)) return;
-        const unit = units[m.productId] || "PIECE";
-        const cfg = configs[m.productId];
-        const dq = movementPiecesToDisplay(m.quantity, unit, cfg, m.productId);
-        const d = m.date.split("T")[0];
-        if (!byProduct[m.productId]) byProduct[m.productId] = {};
-        const bd = byProduct[m.productId];
-        if (!bd[d]) bd[d] = { entrees: 0, sorties: 0 };
-        if (m.type === "entree") bd[d].entrees += dq;
-        else bd[d].sorties += dq;
-      });
-      const results: Record<string, { stockInitial: number; entrees: number; sorties: number; stockRestant: number }> = {};
-      levels.forEach((lvl) => {
-        const initial = initialStocks[lvl.productId] || 0;
-        const byDate = byProduct[lvl.productId] || {};
-        const dates = Object.keys(byDate).sort();
-        let cumul = initial;
-        let stockInitialPeriod: number | null = null;
-        let stockRestantPeriod = initial;
-        let entreesPeriod = 0;
-        let sortiesPeriod = 0;
-        let lastBeforeRestant = initial;
-        for (const date of dates) {
-          const stockInitialDay = cumul;
-          const { entrees, sorties } = byDate[date];
-          cumul = stockInitialDay + entrees - sorties;
-          if (matchDate(date)) {
-            if (stockInitialPeriod === null) stockInitialPeriod = stockInitialDay;
-            entreesPeriod += entrees;
-            sortiesPeriod += sorties;
-            stockRestantPeriod = cumul;
-          } else if (isBefore(date)) {
-            lastBeforeRestant = cumul;
-          }
-        }
-        if (stockInitialPeriod === null) {
-          stockInitialPeriod = lastBeforeRestant;
-          stockRestantPeriod = lastBeforeRestant;
-        }
-        results[lvl.productId] = {
-          stockInitial: roundStockQuantity(stockInitialPeriod),
-          entrees: roundStockQuantity(entreesPeriod),
-          sorties: roundStockQuantity(sortiesPeriod),
-          stockRestant: roundStockQuantity(stockRestantPeriod),
-        };
-      });
+      const rangeStart = mode === "day" ? day : mode === "month" ? `${month}-01` : start;
+      const rangeEnd = mode === "day" ? day : mode === "month" ? monthEndISO(month) : end;
+      const results = await getStockPeriodAggregates(rangeStart || "1900-01-01", rangeEnd || todayISO());
       const glaceLevel = levels.find((lvl) => lvl.productName === "GLACE" && lvl.category === "alimentaire");
       if (glaceLevel) {
-        const rangeStart = mode === "day" ? day : mode === "month" ? `${month}-01` : mode === "period" ? start : undefined;
-        const rangeEnd = mode === "day" ? day : mode === "month" ? monthEndISO(month) : mode === "period" ? end : undefined;
         const glaceAgg = await getGlaceAggregateForRange(rangeStart || undefined, rangeEnd || undefined);
         results[glaceLevel.productId] = {
           stockInitial: roundStockQuantity(glaceAgg.stockInitial),
