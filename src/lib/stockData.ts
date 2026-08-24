@@ -1,6 +1,7 @@
 import { supabase } from "@/lib/db";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { cached, invalidateTables } from "@/lib/requestCache";
+import { requireCurrentPdvId } from "@/lib/pdvStore";
 
 export type Category = "alimentaire" | "emballage";
 export type UnitType = "PIECE" | "KILO" | "LITRE" | "PAQUET" | "COLIS" | "ROULEAU";
@@ -410,7 +411,9 @@ export interface MovementAggregate {
  */
 export async function getMovementAggregates(): Promise<Record<string, MovementAggregate>> {
   return cached("movementAggregates", ["stock_movements"], async () => {
-    const { data, error } = await (supabase as any).rpc("stock_movement_aggregates");
+    const { data, error } = await (supabase as any).rpc("stock_movement_aggregates", {
+      _pdv_id: requireCurrentPdvId(),
+    });
     if (error) throw error;
     const map: Record<string, MovementAggregate> = {};
     (data || []).forEach((r: any) => {
@@ -423,6 +426,57 @@ export async function getMovementAggregates(): Promise<Record<string, MovementAg
       };
     });
     return map;
+  });
+}
+
+export interface StockPeriodAggregate {
+  stockInitial: number;
+  entrees: number;
+  sorties: number;
+  stockRestant: number;
+}
+
+/** Totaux d'une période calculés en base, sans télécharger l'historique. */
+export async function getStockPeriodAggregates(
+  startDate: string,
+  endDate: string,
+): Promise<Record<string, StockPeriodAggregate>> {
+  return cached(`stockPeriod:${startDate}:${endDate}`, ["stock_movements", "initial_stocks"], async () => {
+    const { data, error } = await (supabase as any).rpc("stock_period_aggregates", {
+      _pdv_id: requireCurrentPdvId(),
+      _start_date: startDate,
+      _end_date: endDate,
+    });
+    if (error) throw error;
+    const result: Record<string, StockPeriodAggregate> = {};
+    (data || []).forEach((row: any) => {
+      result[row.product_id] = {
+        stockInitial: roundStockQuantity(Number(row.stock_initial) || 0),
+        entrees: roundStockQuantity(Number(row.entrees) || 0),
+        sorties: roundStockQuantity(Number(row.sorties) || 0),
+        stockRestant: roundStockQuantity(Number(row.stock_restant) || 0),
+      };
+    });
+    return result;
+  });
+}
+
+export async function getFilteredWeeklyTracking(
+  articles: readonly string[],
+  fromWeek?: string,
+  toWeek?: string,
+): Promise<any[]> {
+  const key = `weeklyFiltered:${articles.join("|")}:${fromWeek ?? ""}:${toWeek ?? ""}`;
+  return cached(key, ["weekly_tracking"], async () => {
+    const { data, error } = await (supabase as any).rpc("weekly_tracking_filtered", {
+      _pdv_id: requireCurrentPdvId(),
+      _fiche_type: "Mouvement glaces & tartes",
+      _articles: [...articles],
+      _from_week: fromWeek ?? null,
+      _to_week: toWeek ?? null,
+    });
+    if (error) throw error;
+    return data || [];
   });
 }
 
@@ -602,13 +656,9 @@ export const TOPPINGS_WEEKLY_ARTICLES = [
 
 
 function getToppingsWeeklyRes(): Promise<any> {
-  return cached("weeklyToppingsRows", ["weekly_tracking"], async () =>
-    supabase
-      .from("weekly_tracking")
-      .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
-      .eq("fiche_type", "Mouvement glaces & tartes")
-      .in("article", TOPPINGS_WEEKLY_ARTICLES),
-  );
+  return cached("weeklyToppingsRows", ["weekly_tracking"], async () => ({
+    data: await getFilteredWeeklyTracking(TOPPINGS_WEEKLY_ARTICLES),
+  }));
 }
 
 export async function getToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
@@ -698,13 +748,23 @@ function addDaysISO(iso: string, days: number): string {
 
 // Historique quotidien agrégé pour le produit calculé TOPPINGS.
 export async function getToppingsDailyHistory(): Promise<DailyStockRecord[]> {
-  const [allMovements, initialStocks, units, configs, weeklyRes] = await Promise.all([
-    getMovements(),
+  const [movementRes, initialStocks, units, configs, weeklyRes] = await Promise.all([
+    supabase
+      .from("stock_movements")
+      .select("date, product_id, type, quantity")
+      .in("product_id", TOPPINGS_ALI_PRODUCT_IDS),
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
     getToppingsWeeklyRes(),
   ]);
+  if (movementRes.error) throw movementRes.error;
+  const allMovements = (movementRes.data || []).map((row: any) => ({
+    date: row.date,
+    productId: row.product_id,
+    type: row.type,
+    quantity: Number(row.quantity) || 0,
+  }));
 
   // Stock initial global = somme des stocks initiaux SMARTIES + OREO
   // + 1er stock_initial saisi (par article) dans le Suivi Hebdo.

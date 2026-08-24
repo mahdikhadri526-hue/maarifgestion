@@ -1,3 +1,5 @@
+import { getCurrentPdvId } from "@/lib/pdvStore";
+
 /**
  * Cache mémoire court + déduplication des requêtes Supabase.
  *
@@ -18,14 +20,15 @@ export function cached<T>(
   fn: () => Promise<T>,
   ttlMs: number = DEFAULT_TTL,
 ): Promise<T> {
+  const scopedKey = `${getCurrentPdvId() ?? "no-pdv"}:${key}`;
   const now = Date.now();
-  const hit = store.get(key);
+  const hit = store.get(scopedKey);
   if (hit && now - hit.ts < ttlMs) return hit.promise as Promise<T>;
   const promise = fn().catch((err) => {
-    store.delete(key);
+    store.delete(scopedKey);
     throw err;
   });
-  store.set(key, { promise, ts: now, tables });
+  store.set(scopedKey, { promise, ts: now, tables });
   return promise;
 }
 
