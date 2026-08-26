@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useDeferredValue } from "react";
 import {
   Category,
   UnitType,
@@ -336,6 +336,9 @@ const monthEndISO = (month: string) => {
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
   const [category, setCategory] = useState<Category | "all" | "tarte" | "glace">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
+  // Saisie non bloquante : le filtrage de la longue liste suit la frappe sans la figer.
+  const deferredSearch = useDeferredValue(search);
+
   // Le stock restant courant est la vue principale : elle utilise directement
   // les agrégats rapides. Les commandes conservent leur filtre mensuel.
   const [mode, setMode] = useState<FilterMode>(variant === "stock" ? "all" : "month");
@@ -566,11 +569,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   const isWeeklyCat = category === "tarte" || category === "glace";
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
-  const { data: levels, loading, refresh } = useStockLevels(stockCategory);
+  // Un seul chargement pour toutes les catégories : le filtre Alim./Emb. est
+  // appliqué côté client pour un basculement instantané (pas de refetch).
+  const { data: levels, loading, refresh } = useStockLevels();
   const NESPRESSO_IDS = ["ali-29", "ali-30", "ali-31", "ali-32"];
   const NESPRESSO_AGG_ID = "__nespresso_agg__";
-  const baseLevels = isWeeklyCat ? [] : (levels || []);
+  const baseLevels = isWeeklyCat
+    ? []
+    : (levels || []).filter((l) => !stockCategory || l.category === stockCategory);
   const nespressoSources = baseLevels.filter((l) => NESPRESSO_IDS.includes(l.productId));
+
   let withAgg = baseLevels;
   if ((category === "all" || category === "alimentaire") && nespressoSources.length > 0) {
     const agg = {
@@ -683,9 +691,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
     if (extras.length) withAgg = [...withAgg, ...extras];
   }
-  const filtered = withAgg.filter((l) =>
-    l.productName.toLowerCase().includes(search.toLowerCase())
-  );
+  const normalizeText = (s: string) =>
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const searchQuery = normalizeText(deferredSearch);
+  const filtered = searchQuery
+    ? withAgg.filter((l) => normalizeText(l.productName).includes(searchQuery))
+    : withAgg;
+
 
   // Load weekly_tracking data for Tarte/Glace categories
   useEffect(() => {
