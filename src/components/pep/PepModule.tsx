@@ -390,10 +390,13 @@ function CompleteDialog({
             <Textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3} />
           </div>
           <div>
-            <Label className="text-xs">Photo / justificatif</Label>
+            <Label className="text-xs">
+              Photo / justificatif {row.task?.requires_photo ? <span className="text-destructive">*</span> : "(facultatif)"}
+            </Label>
             <Input
               type="file"
               accept="image/*"
+              capture="environment"
               onChange={async (e) => {
                 const f = e.target.files?.[0];
                 if (!f) return;
@@ -405,12 +408,16 @@ function CompleteDialog({
               }}
             />
             {photo && <img src={photo} alt="Justificatif" className="mt-2 h-24 rounded border object-cover" />}
+            {row.task?.requires_photo && !photo && (
+              <p className="text-[11px] text-destructive mt-1">Une photo est obligatoire pour cette tâche.</p>
+            )}
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Annuler</Button>
           <Button
-            disabled={busy}
+            disabled={busy || (!!row.task?.requires_photo && !photo)}
+
             onClick={async () => {
               setBusy(true);
               try {
