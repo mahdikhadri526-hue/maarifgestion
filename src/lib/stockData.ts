@@ -608,11 +608,9 @@ export async function getToppingsAggregate(): Promise<{ entrees: number; sorties
 }
 
 async function computeToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
-  const [movements, initialStocks, units, configs, weeklyRes] = await Promise.all([
-    getMovements(),
+  const [aggregates, initialStocks, weeklyRes] = await Promise.all([
+    getMovementAggregates().catch(() => new Map<string, MovementAggregate>()),
     getInitialStocks(),
-    getProductUnits(),
-    getProductUnitConfigs(),
     getToppingsWeeklyRes(),
   ]);
 
@@ -624,15 +622,10 @@ async function computeToppingsAggregate(): Promise<{ entrees: number; sorties: n
   // 1) Source : table alimentaire (SMARTIES + OREO)
   for (const pid of TOPPINGS_ALI_PRODUCT_IDS) {
     const init = initialStocks[pid] || 0;
-    const unit = units[pid] || "PIECE";
-    const config = configs[pid];
-    const ms = movements.filter((m) => m.productId === pid);
-    const e = ms
-      .filter((m) => m.type === "entree")
-      .reduce((s, m) => s + movementPiecesToDisplay(m.quantity, unit, config, pid), 0);
-    const s = ms
-      .filter((m) => m.type === "sortie")
-      .reduce((acc, m) => acc + movementPiecesToDisplay(m.quantity, unit, config, pid), 0);
+    const agg = aggregates.get(pid);
+    const e = roundStockQuantity(agg?.entreesAll ?? 0);
+    const s = roundStockQuantity(agg?.sortiesAll ?? 0);
+
     stockInitial += init;
     entrees += e;
     sorties += s;
