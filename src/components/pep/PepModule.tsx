@@ -348,7 +348,17 @@ function TaskCard({
           )}
         </div>
       )}
+
+      {photoPreview && (
+        <Dialog open onOpenChange={(o) => !o && setPhotoPreview(null)}>
+          <DialogContent className="max-w-[95vw] sm:max-w-lg">
+            <DialogHeader><DialogTitle>Photo justificative</DialogTitle></DialogHeader>
+            <img src={photoPreview} alt="Justificatif" className="w-full rounded border object-contain max-h-[70vh]" />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
+
   );
 }
 
