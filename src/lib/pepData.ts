@@ -216,6 +216,20 @@ function rawDueDates(task: PepTask, from: string, to: string): string[] {
     return out;
   }
 
+  if (task.frequency === "biweekly") {
+    // Tous les 15 jours : ancrage déterministe sur la quinzaine.
+    let cur = addDays(task.start_date, (h % 14));
+    let g = 0;
+    while (cur < start && g++ < 400) cur = addDays(cur, 14);
+    while (cur <= to && g++ < 400) {
+      if (cur >= task.start_date) out.push(cur);
+      cur = addDays(cur, 14);
+    }
+    return out;
+  }
+
+
+
   const period = PERIOD_MONTHS[task.frequency] ?? 1;
   // Répartition dans la période : décalage de mois + jour du mois déterministes.
   const monthOffset = h % period;
