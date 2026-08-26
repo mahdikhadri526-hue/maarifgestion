@@ -375,6 +375,7 @@ export async function postponeOccurrence(
 }
 
 export async function saveTask(task: Partial<PepTask> & { name: string; frequency: PepFrequency }) {
+  const active = task.active ?? true;
   const payload: any = {
     name: task.name,
     equipment: task.equipment ?? null,
@@ -383,7 +384,7 @@ export async function saveTask(task: Partial<PepTask> & { name: string; frequenc
     category: task.category ?? null,
     weekend_allowed: !!task.weekend_allowed,
     requires_photo: !!task.requires_photo,
-    active: task.active ?? true,
+    active,
     start_date: task.start_date ?? todayISO(),
     next_due_date: task.next_due_date ?? null,
     notes: task.notes ?? null,
@@ -391,11 +392,24 @@ export async function saveTask(task: Partial<PepTask> & { name: string; frequenc
   if (task.id) {
     const { error } = await supabase.from("pep_tasks" as any).update(payload).eq("id", task.id);
     if (error) throw error;
+    if (!active) {
+      // Tâche désactivée : on retire les occurrences futures non réalisées.
+      await supabase
+        .from("pep_occurrences" as any)
+        .delete()
+        .eq("task_id", task.id)
+        .gte("due_date", todayISO())
+        .in("status", ["todo", "in_progress", "postponed"]);
+    } else {
+      await ensurePlanning();
+    }
   } else {
     const { error } = await supabase.from("pep_tasks" as any).insert(payload);
     if (error) throw error;
+    if (active) await ensurePlanning();
   }
 }
+
 
 export async function deleteTask(id: string) {
   const { error } = await supabase.from("pep_tasks" as any).delete().eq("id", id);
