@@ -11,9 +11,14 @@ import { toast } from "sonner";
 
 interface Props {
   onChanged?: () => void;
+  /** Catégorie sélectionnée dans l'écran parent (filtre initial du catalogue). */
+  category?: Category | "all";
 }
 
-export function ProductCatalogManager({ onChanged }: Props) {
+const normalize = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+export function ProductCatalogManager({ onChanged, category = "all" }: Props) {
   const { can } = useAuth();
   const canEdit = can("edit_products");
   const canDelete = can("delete_products");
@@ -21,14 +26,16 @@ export function ProductCatalogManager({ onChanged }: Props) {
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [filterCat, setFilterCat] = useState<Category | "all">(category);
   const [tick, setTick] = useState(0);
   const [busy, setBusy] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, { name: string; conditionnement: string }>>({});
   const [newProduct, setNewProduct] = useState<{ name: string; conditionnement: string; category: Category }>({
     name: "",
     conditionnement: "",
-    category: "alimentaire",
+    category: category === "emballage" ? "emballage" : "alimentaire",
   });
+
 
   const [dirty, setDirty] = useState(false);
 
