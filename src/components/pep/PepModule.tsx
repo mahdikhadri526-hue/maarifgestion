@@ -542,7 +542,14 @@ function CompleteDialog({
                 }
               }}
             />
-            {photo && <img src={photo} alt="Justificatif" className="mt-2 h-24 rounded border object-cover" />}
+            {photo && (
+              <div className="mt-2 flex items-end gap-2">
+                <img src={photo} alt="Justificatif" className="h-24 rounded border object-cover" />
+                <Button size="sm" variant="ghost" className="text-destructive h-7 px-2" onClick={() => setPhoto(null)}>
+                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Retirer
+                </Button>
+              </div>
+            )}
             {row.task?.requires_photo && !photo && (
               <p className="text-[11px] text-destructive mt-1">Une photo est obligatoire pour cette tâche.</p>
             )}
