@@ -198,6 +198,30 @@ function AgendaView({
   const [completing, setCompleting] = useState<Row | null>(null);
   const [postponing, setPostponing] = useState<Row | null>(null);
 
+  // Compteurs de synthèse sur la plage affichée.
+  const counts = useMemo(() => {
+    const c = { total: visible.length, todo: 0, done: 0, late: 0 };
+    visible.forEach((r) => {
+      if (r.status === "done") c.done++;
+      else if (r.status === "late") c.late++;
+      else c.todo++;
+    });
+    return c;
+  }, [visible]);
+
+  const [freqFilter, setFreqFilter] = useState<string>("all");
+  const [hideDone, setHideDone] = useState(false);
+
+  const applyFilters = useCallback(
+    (list: Row[]) =>
+      list.filter(
+        (r) =>
+          (freqFilter === "all" || r.task?.frequency === freqFilter) &&
+          (!hideDone || r.status !== "done"),
+      ),
+    [freqFilter, hideDone],
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2 flex-wrap">
@@ -218,11 +242,38 @@ function AgendaView({
         <Button size="sm" variant="ghost" onClick={() => setAnchor(today)}>Aujourd'hui</Button>
       </div>
 
-      {view === "day" && anchor === today && lateRows.length > 0 && (
+      {/* Synthèse de la période */}
+      <div className="grid grid-cols-4 gap-2">
+        <Kpi label="Total" value={counts.total} className="bg-muted/40" />
+        <Kpi label="À faire" value={counts.todo} className="bg-orange-50 border-orange-200 text-orange-700" />
+        <Kpi label="En retard" value={counts.late} className="bg-red-50 border-red-200 text-red-700" />
+        <Kpi label="Réalisées" value={counts.done} className="bg-green-50 border-green-200 text-green-700" />
+      </div>
+
+      {/* Filtres de lecture */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex gap-1 flex-wrap">
+          <FreqChip active={freqFilter === "all"} onClick={() => setFreqFilter("all")}>Toutes</FreqChip>
+          {PEP_FREQUENCIES.filter((f) => rows.some((r) => r.task?.frequency === f.key)).map((f) => (
+            <FreqChip key={f.key} active={freqFilter === f.key} onClick={() => setFreqFilter(f.key)}>
+              {f.label}
+            </FreqChip>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={() => setHideDone((v) => !v)}
+          className={`ml-auto text-[11px] px-2 py-1 rounded-full border ${hideDone ? "bg-primary text-primary-foreground" : "bg-background"}`}
+        >
+          Masquer les réalisées
+        </button>
+      </div>
+
+      {view === "day" && anchor === today && applyFilters(lateRows).length > 0 && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-          <p className="text-sm font-semibold text-red-700 mb-2">🔴 {lateRows.length} tâche(s) PEP en retard</p>
+          <p className="text-sm font-semibold text-red-700 mb-2">🔴 {applyFilters(lateRows).length} tâche(s) PEP en retard</p>
           <div className="space-y-2">
-            {lateRows.map((r) => (
+            {applyFilters(lateRows).map((r) => (
               <TaskCard key={r.occ.id} row={r} onComplete={() => setCompleting(r)} onPostpone={() => setPostponing(r)} onChanged={onChanged} posts={posts} />
             ))}
           </div>
@@ -230,31 +281,49 @@ function AgendaView({
       )}
 
       {range.map((d) => {
-        const dayRows = visible.filter((r) => r.occ.due_date === d);
+        const dayRows = applyFilters(visible.filter((r) => r.occ.due_date === d));
         if (view !== "day" && dayRows.length === 0) return null;
+        const groups = groupByFrequency(dayRows);
+        const doneCount = dayRows.filter((r) => r.status === "done").length;
         return (
-          <div key={d} className="rounded-lg border bg-card p-3">
-            <div className="flex items-center justify-between mb-2">
+          <div key={d} className="rounded-lg border bg-card overflow-hidden">
+            <div className="flex items-center justify-between gap-2 flex-wrap px-3 py-2 bg-muted/50 border-b">
               <h3 className="text-sm font-semibold">
-                {fmtFR(d)}
+                {dayLabelFR(d)}
                 {d === today && <span className="ml-2 text-xs text-primary">(aujourd'hui)</span>}
                 {isWeekend(d) && <span className="ml-2 text-xs text-muted-foreground">week-end</span>}
                 {holidays.has(d) && <span className="ml-2 text-xs text-purple-600">jour férié</span>}
               </h3>
-              <span className="text-xs text-muted-foreground">{dayRows.length} tâche(s)</span>
+              <span className="text-xs text-muted-foreground">
+                {doneCount}/{dayRows.length} réalisée(s)
+              </span>
             </div>
             {dayRows.length === 0 ? (
-              <p className="text-xs text-muted-foreground">Aucune tâche PEP planifiée.</p>
+              <p className="text-xs text-muted-foreground p-3">Aucune tâche PEP planifiée.</p>
             ) : (
-              <div className="space-y-2">
-                {dayRows.map((r) => (
-                  <TaskCard key={r.occ.id} row={r} onComplete={() => setCompleting(r)} onPostpone={() => setPostponing(r)} onChanged={onChanged} posts={posts} />
+              <div className="divide-y">
+                {groups.map(([freq, list]) => (
+                  <div key={freq} className="p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        {FREQ_LABEL[freq] ?? "Autre"}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground">({list.length})</span>
+                      <span className="flex-1 h-px bg-border" />
+                    </div>
+                    <div className="space-y-2">
+                      {list.map((r) => (
+                        <TaskCard key={r.occ.id} row={r} onComplete={() => setCompleting(r)} onPostpone={() => setPostponing(r)} onChanged={onChanged} posts={posts} />
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
           </div>
         );
       })}
+
 
       {completing && (
         <CompleteDialog row={completing} userName={userName} onClose={() => setCompleting(null)} onDone={onChanged} />
@@ -265,6 +334,51 @@ function AgendaView({
     </div>
   );
 }
+
+function Kpi({ label, value, className = "" }: { label: string; value: number; className?: string }) {
+  return (
+    <div className={`rounded-lg border p-2 text-center ${className}`}>
+      <div className="text-lg font-bold leading-none">{value}</div>
+      <div className="text-[10px] text-muted-foreground mt-1">{label}</div>
+    </div>
+  );
+}
+
+function FreqChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-[11px] px-2 py-1 rounded-full border ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+const FREQ_ORDER = PEP_FREQUENCIES.map((f) => f.key as string);
+
+/** Regroupe les tâches d'une journée par fréquence (quotidien d'abord). */
+function groupByFrequency(list: Row[]): [string, Row[]][] {
+  const map = new Map<string, Row[]>();
+  for (const r of list) {
+    const key = r.task?.frequency ?? "autre";
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(r);
+  }
+  return [...map.entries()].sort(
+    (a, b) => (FREQ_ORDER.indexOf(a[0]) + 1 || 99) - (FREQ_ORDER.indexOf(b[0]) + 1 || 99),
+  );
+}
+
+const WEEKDAYS_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+
+/** « Lundi 26.08.2026 » */
+function dayLabelFR(iso: string) {
+  return `${WEEKDAYS_FR[parseISO(iso).getDay()]} ${fmtFR(iso)}`;
+}
+
+
 
 function TaskCard({
   row,
