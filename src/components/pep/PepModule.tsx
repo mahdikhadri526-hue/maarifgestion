@@ -335,6 +335,51 @@ function AgendaView({
   );
 }
 
+function Kpi({ label, value, className = "" }: { label: string; value: number; className?: string }) {
+  return (
+    <div className={`rounded-lg border p-2 text-center ${className}`}>
+      <div className="text-lg font-bold leading-none">{value}</div>
+      <div className="text-[10px] text-muted-foreground mt-1">{label}</div>
+    </div>
+  );
+}
+
+function FreqChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-[11px] px-2 py-1 rounded-full border ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+const FREQ_ORDER = PEP_FREQUENCIES.map((f) => f.key as string);
+
+/** Regroupe les tâches d'une journée par fréquence (quotidien d'abord). */
+function groupByFrequency(list: Row[]): [string, Row[]][] {
+  const map = new Map<string, Row[]>();
+  for (const r of list) {
+    const key = r.task?.frequency ?? "autre";
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(r);
+  }
+  return [...map.entries()].sort(
+    (a, b) => (FREQ_ORDER.indexOf(a[0]) + 1 || 99) - (FREQ_ORDER.indexOf(b[0]) + 1 || 99),
+  );
+}
+
+const WEEKDAYS_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+
+/** « Lundi 26.08.2026 » */
+function dayLabelFR(iso: string) {
+  return `${WEEKDAYS_FR[parseISO(iso).getDay()]} ${fmtFR(iso)}`;
+}
+
+
+
 function TaskCard({
   row,
   onComplete,
