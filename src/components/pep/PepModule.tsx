@@ -662,9 +662,34 @@ function TasksAdmin({ tasks, onChanged }: { tasks: PepTask[]; onChanged: () => P
 
   return (
     <div className="space-y-3">
-      <Button size="sm" onClick={() => setEditing({ ...EMPTY })}>
-        <Plus className="h-4 w-4 mr-1" /> Nouvelle tâche PEP
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button size="sm" onClick={() => setEditing({ ...EMPTY })}>
+          <Plus className="h-4 w-4 mr-1" /> Nouvelle tâche PEP
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={busy}
+          onClick={async () => {
+            if (!confirm("Importer le catalogue PEP standard (matériels + fréquences) ? Les tâches déjà existantes ne seront pas modifiées.")) return;
+            setBusy(true);
+            try {
+              const { importPepCatalog, ensurePlanning: plan } = await import("@/lib/pepData");
+              const res = await importPepCatalog();
+              await plan();
+              toast({ title: "Catalogue PEP importé", description: `${res.added} tâche(s) ajoutée(s), ${res.skipped} déjà présente(s).` });
+              await onChanged();
+            } catch (e: any) {
+              toast({ title: "Erreur", description: e?.message, variant: "destructive" });
+            } finally {
+              setBusy(false);
+            }
+          }}
+        >
+          Importer le catalogue PEP
+        </Button>
+      </div>
+
 
       <div className="overflow-x-auto rounded-lg border">
         <table className="w-full text-xs">
