@@ -4,7 +4,8 @@ import { invalidateTables } from "@/lib/requestCache";
 import {
   StockMovement, StockLevel, DailyStockRecord, Category, UnitType,
   getMovements, getStockLevels, getProductDailyHistory, getInitialStocks, getProductUnits,
-  getProductUnitConfigs
+  getProductUnitConfigs, getMovementAggregates
+
 } from "@/lib/stockData";
 import { LotEntry, getExpiringLots, getProductLots, getLotEntries } from "@/lib/lotData";
 import { RequisitionEntry, getRequisitionsByDate, getRequisitions } from "@/lib/requisitionData";
@@ -88,10 +89,17 @@ export function useStockLevels(category?: Category) {
 
 export function useStockDashboard() {
   return useRealtimeData(async () => {
-    const [levels, movements] = await Promise.all([getStockLevels(), getMovements()]);
-    return { levels, movements };
+    const [levels, aggregates] = await Promise.all([getStockLevels(), getMovementAggregates()]);
+    let totalEntrees = 0;
+    let totalSorties = 0;
+    for (const a of aggregates.values()) {
+      totalEntrees += a.entreesAll;
+      totalSorties += a.sortiesAll;
+    }
+    return { levels, totalEntrees, totalSorties };
   }, ["stock_movements", "initial_stocks", "weekly_tracking", "glace_grammage"]);
 }
+
 
 export function useProductDailyHistory(productId: string) {
   return useRealtimeData(

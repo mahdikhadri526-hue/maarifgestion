@@ -1,4 +1,6 @@
 import { supabase } from "@/lib/db";
+import { supabase as rawSupabase } from "@/integrations/supabase/client";
+import { requireCurrentPdvId } from "@/lib/pdvStore";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { cached, invalidateTables } from "@/lib/requestCache";
 
@@ -377,6 +379,40 @@ export function invalidateStockCaches(tables: string[]) {
   invalidateTables(tables);
 }
 
+export interface MovementAggregate {
+  entrees: number;
+  sorties: number;
+  regularisationsNet: number;
+  entreesAll: number;
+  sortiesAll: number;
+}
+
+/**
+ * Agrégats des mouvements calculés côté base (RPC) : évite de télécharger
+ * l'intégralité de `stock_movements` pour afficher le stock restant.
+ */
+export function getMovementAggregates(): Promise<Map<string, MovementAggregate>> {
+  return cached("movementAggregates", ["stock_movements"], async () => {
+    const { data, error } = await rawSupabase.rpc("stock_movement_aggregates", {
+      _pdv_id: requireCurrentPdvId(),
+    });
+    if (error) throw error;
+    const map = new Map<string, MovementAggregate>();
+    for (const r of (data as any[]) || []) {
+      map.set(r.product_id, {
+        entrees: Number(r.entrees) || 0,
+        sorties: Number(r.sorties) || 0,
+        regularisationsNet: Number(r.regularisations_net) || 0,
+        entreesAll: Number(r.entrees_all) || 0,
+        sortiesAll: Number(r.sorties_all) || 0,
+      });
+    }
+    return map;
+  });
+}
+
+
+
 
 export async function getMovements(): Promise<StockMovement[]> {
   return cached("movements", ["stock_movements"], async () => {
@@ -572,11 +608,9 @@ export async function getToppingsAggregate(): Promise<{ entrees: number; sorties
 }
 
 async function computeToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
-  const [movements, initialStocks, units, configs, weeklyRes] = await Promise.all([
-    getMovements(),
+  const [aggregates, initialStocks, weeklyRes] = await Promise.all([
+    getMovementAggregates().catch(() => new Map<string, MovementAggregate>()),
     getInitialStocks(),
-    getProductUnits(),
-    getProductUnitConfigs(),
     getToppingsWeeklyRes(),
   ]);
 
@@ -588,15 +622,10 @@ async function computeToppingsAggregate(): Promise<{ entrees: number; sorties: n
   // 1) Source : table alimentaire (SMARTIES + OREO)
   for (const pid of TOPPINGS_ALI_PRODUCT_IDS) {
     const init = initialStocks[pid] || 0;
-    const unit = units[pid] || "PIECE";
-    const config = configs[pid];
-    const ms = movements.filter((m) => m.productId === pid);
-    const e = ms
-      .filter((m) => m.type === "entree")
-      .reduce((s, m) => s + movementPiecesToDisplay(m.quantity, unit, config, pid), 0);
-    const s = ms
-      .filter((m) => m.type === "sortie")
-      .reduce((acc, m) => acc + movementPiecesToDisplay(m.quantity, unit, config, pid), 0);
+    const agg = aggregates.get(pid);
+    const e = roundStockQuantity(agg?.entreesAll ?? 0);
+    const s = roundStockQuantity(agg?.sortiesAll ?? 0);
+
     stockInitial += init;
     entrees += e;
     sorties += s;
@@ -741,8 +770,8 @@ export async function getToppingsDailyHistory(): Promise<DailyStockRecord[]> {
 
 export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
   const products = getProducts(category);
-  const [movements, initialStocks, units, configs, glaceAgg, toppingsAgg] = await Promise.all([
-    getMovements(),
+  const [aggregates, initialStocks, units, configs, glaceAgg, toppingsAgg] = await Promise.all([
+    getMovementAggregates().catch(() => new Map<string, MovementAggregate>()),
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
@@ -750,13 +779,6 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
     getToppingsAggregate().catch(() => ({ entrees: 0, sorties: 0, stockInitial: 0, stockRestant: 0 })),
   ]);
 
-  // Indexation des mouvements par produit (évite un filtre complet par produit)
-  const movementsByProduct = new Map<string, StockMovement[]>();
-  for (const m of movements) {
-    const list = movementsByProduct.get(m.productId);
-    if (list) list.push(m);
-    else movementsByProduct.set(m.productId, [m]);
-  }
 
   return products.map((product) => {
     const initial = initialStocks[product.id] || 0;
@@ -800,22 +822,12 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
       };
     }
 
-    const productMovements = movementsByProduct.get(product.id) || [];
+    const agg = aggregates.get(product.id);
     // Régularisations de stock : n'apparaissent pas dans les Entrées,
     // elles sont décomptées des Sorties (positif = stock augmenté → sorties diminuées).
-    const totalEntrees = productMovements
-      .filter((m) => m.type === "entree" && m.source !== "regularisation")
-      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config, product.id), 0);
-    const sortiesBrutes = productMovements
-      .filter((m) => m.type === "sortie" && m.source !== "regularisation")
-      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config, product.id), 0);
-    const regularisationsNet = productMovements
-      .filter((m) => m.source === "regularisation")
-      .reduce((sum, m) => {
-        const q = movementPiecesToDisplay(m.quantity, unit, config, product.id);
-        return sum + (m.type === "entree" ? q : -q);
-      }, 0);
-    const totalSorties = sortiesBrutes - regularisationsNet;
+    const totalEntrees = roundStockQuantity(agg?.entrees ?? 0);
+    const totalSorties = roundStockQuantity((agg?.sorties ?? 0) - (agg?.regularisationsNet ?? 0));
+
 
     return {
       productId: product.id,
