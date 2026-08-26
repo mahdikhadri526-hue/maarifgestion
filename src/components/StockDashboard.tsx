@@ -6,11 +6,10 @@ export function StockDashboard() {
 
   if (loading || !data) return <div className="text-center py-8 text-muted-foreground">Chargement...</div>;
 
-  const { levels, movements } = data;
+  const { levels, totalEntrees, totalSorties } = data;
   const totalProducts = levels.length;
-  const totalEntrees = movements.filter(m => m.type === "entree").reduce((s, m) => s + m.quantity, 0);
-  const totalSorties = movements.filter(m => m.type === "sortie").reduce((s, m) => s + m.quantity, 0);
   const lowStock = levels.filter(l => l.stockRestant < 0).length;
+
 
   const stats = [
     { label: "Produits", value: totalProducts, bg: "bg-primary/10", text: "text-primary" },
