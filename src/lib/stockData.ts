@@ -380,6 +380,8 @@ export function invalidateStockCaches(tables: string[]) {
 }
 
 export interface MovementAggregate {
+  productName?: string;
+  category?: Category;
   entrees: number;
   sorties: number;
   regularisationsNet: number;
@@ -392,14 +394,17 @@ export interface MovementAggregate {
  * l'intégralité de `stock_movements` pour afficher le stock restant.
  */
 export function getMovementAggregates(): Promise<Map<string, MovementAggregate>> {
-  return cached("movementAggregates", ["stock_movements"], async () => {
+  const pdvId = requireCurrentPdvId();
+  return cached(`movementAggregates:${pdvId}`, ["stock_movements"], async () => {
     const { data, error } = await rawSupabase.rpc("stock_movement_aggregates", {
-      _pdv_id: requireCurrentPdvId(),
+      _pdv_id: pdvId,
     });
     if (error) throw error;
     const map = new Map<string, MovementAggregate>();
     for (const r of (data as any[]) || []) {
       map.set(r.product_id, {
+        productName: r.product_name || undefined,
+        category: r.category === "emballage" ? "emballage" : "alimentaire",
         entrees: Number(r.entrees) || 0,
         sorties: Number(r.sorties) || 0,
         regularisationsNet: Number(r.regularisations_net) || 0,
@@ -422,7 +427,8 @@ type InitialStockRecord = {
 };
 
 function getInitialStockRecords(): Promise<InitialStockRecord[]> {
-  return cached("initialStockRecords", ["initial_stocks"], async () => {
+  const pdvId = requireCurrentPdvId();
+  return cached(`initialStockRecords:${pdvId}`, ["initial_stocks"], async () => {
     const { data, error } = await supabase
       .from("initial_stocks")
       .select("product_id, quantity, unit, carton_enabled, paquet_enabled, pieces_per_carton, pieces_per_paquet");
@@ -435,7 +441,8 @@ function getInitialStockRecords(): Promise<InitialStockRecord[]> {
 
 
 export async function getMovements(): Promise<StockMovement[]> {
-  return cached("movements", ["stock_movements"], async () => {
+  const pdvId = requireCurrentPdvId();
+  return cached(`movements:${pdvId}`, ["stock_movements"], async () => {
   const data = await fetchAllRows<any>(() =>
     supabase
       .from("stock_movements")
@@ -511,7 +518,8 @@ export async function deleteMovement(id: string) {
 }
 
 export async function getInitialStocks(): Promise<Record<string, number>> {
-  return cached("initialStocks", ["initial_stocks"], async () => {
+  const pdvId = requireCurrentPdvId();
+  return cached(`initialStocks:${pdvId}`, ["initial_stocks"], async () => {
   const data = await getInitialStockRecords();
   const result: Record<string, number> = {};
   data.forEach((row) => {
@@ -522,7 +530,8 @@ export async function getInitialStocks(): Promise<Record<string, number>> {
 }
 
 export async function getProductUnits(): Promise<Record<string, UnitType>> {
-  return cached("productUnits", ["initial_stocks"], async () => {
+  const pdvId = requireCurrentPdvId();
+  return cached(`productUnits:${pdvId}`, ["initial_stocks"], async () => {
   const data = await getInitialStockRecords();
   const result: Record<string, UnitType> = {};
   data.forEach((row) => {
@@ -533,7 +542,8 @@ export async function getProductUnits(): Promise<Record<string, UnitType>> {
 }
 
 export async function getProductUnitConfigs(): Promise<Record<string, ProductUnitConfig>> {
-  return cached("productUnitConfigs", ["initial_stocks"], async () => {
+  const pdvId = requireCurrentPdvId();
+  return cached(`productUnitConfigs:${pdvId}`, ["initial_stocks"], async () => {
   const data = await getInitialStockRecords();
   const result: Record<string, ProductUnitConfig> = {};
   data.forEach((row) => {
@@ -784,9 +794,9 @@ export async function getToppingsDailyHistory(): Promise<DailyStockRecord[]> {
 }
 
 export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
-  const products = getProducts(category);
-  const needsGlace = products.some((product) => product.name === "GLACE" && product.category === "alimentaire");
-  const needsToppings = products.some((product) => product.name === "TOPPINGS" && product.category === "alimentaire");
+  const baseProducts = getProducts(category);
+  const needsGlace = baseProducts.some((product) => product.name === "GLACE" && product.category === "alimentaire");
+  const needsToppings = baseProducts.some((product) => product.name === "TOPPINGS" && product.category === "alimentaire");
   const [aggregates, initialStocks, units, configs, glaceAgg, toppingsAgg] = await Promise.all([
     getMovementAggregates(),
     getInitialStocks(),
@@ -800,6 +810,25 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
       : Promise.resolve({ entrees: 0, sorties: 0, stockInitial: 0, stockRestant: 0 }),
   ]);
 
+  // Les anciennes listes statiques ne contiennent pas tous les produits réellement
+  // utilisés par un PDV. Ajoute ceux présents dans ses mouvements afin qu'ils ne
+  // disparaissent ni du stock restant, ni des alertes de rupture.
+  const productsById = new Map(baseProducts.map((product) => [product.id, product]));
+  for (const [productId, aggregate] of aggregates) {
+    if (productsById.has(productId) || !aggregate.productName || !aggregate.category) continue;
+    if (category && aggregate.category !== category) continue;
+    const product = {
+      id: productId,
+      name: aggregate.productName,
+      conditionnement: "",
+      category: aggregate.category,
+      initialStock: 0,
+    } satisfies Product;
+    if (!isHiddenProduct(product)) productsById.set(productId, product);
+  }
+  const products = Array.from(productsById.values()).sort((a, b) =>
+    a.name.localeCompare(b.name, "fr", { sensitivity: "base" }),
+  );
 
   return products.map((product) => {
     const initial = initialStocks[product.id] || 0;
