@@ -283,6 +283,9 @@ function TaskCard({
   const meta = STATUS_META[status];
   const history = posts.filter((p) => p.occurrence_id === occ.id);
   const done = status === "done";
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+
 
   return (
     <div className="rounded-lg border bg-background p-3">
