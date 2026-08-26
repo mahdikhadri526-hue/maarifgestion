@@ -336,7 +336,9 @@ const monthEndISO = (month: string) => {
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
   const [category, setCategory] = useState<Category | "all" | "tarte" | "glace">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
-  const [mode, setMode] = useState<FilterMode>("month");
+  // Le stock restant courant est la vue principale : elle utilise directement
+  // les agrégats rapides. Les commandes conservent leur filtre mensuel.
+  const [mode, setMode] = useState<FilterMode>(variant === "stock" ? "all" : "month");
   const [day, setDay] = useState<string>(todayISO());
   const [month, setMonth] = useState<string>(currentMonthISO());
   const [start, setStart] = useState<string>("");

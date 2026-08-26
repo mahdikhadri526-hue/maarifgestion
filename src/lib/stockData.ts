@@ -417,6 +417,44 @@ export function getMovementAggregates(): Promise<Map<string, MovementAggregate>>
   });
 }
 
+/**
+ * Métadonnées des produits réellement enregistrés pour le PDV. Cette source
+ * complète le catalogue même lorsqu'un produit n'a encore aucun mouvement.
+ */
+function getPdvProductMetadata(): Promise<Map<string, Pick<Product, "name" | "conditionnement" | "category">>> {
+  const pdvId = requireCurrentPdvId();
+  return cached(`pdvProductMetadata:${pdvId}`, ["initial_stocks", "stock_movements", "product_catalog"], async () => {
+    const [initialRows, catalogResult] = await Promise.all([
+      getInitialStockRecords(),
+      supabase
+        .from("product_catalog" as any)
+        .select("product_id, name, conditionnement, category, hidden"),
+    ]);
+    if (catalogResult.error) throw catalogResult.error;
+
+    const baseById = new Map(getProducts().map((product) => [product.id, product]));
+    const catalogById = new Map<string, any>(
+      ((catalogResult.data || []) as any[]).map((row) => [row.product_id, row]),
+    );
+    const result = new Map<string, Pick<Product, "name" | "conditionnement" | "category">>();
+
+    for (const row of initialRows) {
+      const catalog = catalogById.get(row.product_id);
+      if (catalog?.hidden === true) continue;
+      const base = baseById.get(row.product_id);
+      const name = catalog?.name || base?.name;
+      const category = catalog?.category || base?.category;
+      if (!name || (category !== "alimentaire" && category !== "emballage")) continue;
+      result.set(row.product_id, {
+        name,
+        conditionnement: catalog?.conditionnement ?? base?.conditionnement ?? "",
+        category,
+      });
+    }
+    return result;
+  });
+}
+
 type InitialStockRecord = {
   product_id: string;
   quantity: number;
@@ -800,11 +838,12 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
   const baseProducts = getProducts(category);
   const needsGlace = baseProducts.some((product) => product.name === "GLACE" && product.category === "alimentaire");
   const needsToppings = baseProducts.some((product) => product.name === "TOPPINGS" && product.category === "alimentaire");
-  const [aggregates, initialStocks, units, configs, glaceAgg, toppingsAgg] = await Promise.all([
+  const [aggregates, initialStocks, units, configs, pdvProducts, glaceAgg, toppingsAgg] = await Promise.all([
     getMovementAggregates(),
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
+    getPdvProductMetadata(),
     needsGlace
       ? getGlaceAggregate()
       : Promise.resolve({ entrees: 0, sorties: 0, stockInitial: 0, stockFinal: 0 }),
@@ -817,6 +856,16 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
   // utilisés par un PDV. Ajoute ceux présents dans ses mouvements afin qu'ils ne
   // disparaissent ni du stock restant, ni des alertes de rupture.
   const productsById = new Map(baseProducts.map((product) => [product.id, product]));
+  for (const [productId, metadata] of pdvProducts) {
+    if (productsById.has(productId)) continue;
+    if (category && metadata.category !== category) continue;
+    const product = {
+      id: productId,
+      ...metadata,
+      initialStock: 0,
+    } satisfies Product;
+    if (!isHiddenProduct(product)) productsById.set(productId, product);
+  }
   for (const [productId, aggregate] of aggregates) {
     if (productsById.has(productId) || !aggregate.productName || !aggregate.category) continue;
     if (category && aggregate.category !== category) continue;
