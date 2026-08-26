@@ -359,7 +359,8 @@ export function detectProductUnit(name: string): string {
 // Lignes « Mouvement glaces & tartes » du suivi hebdo : table volumineuse,
 // partagée entre plusieurs calculs → mise en cache courte.
 export function getGlaceWeeklyRows(): Promise<any[]> {
-  return cached("weeklyGlaceRows", ["weekly_tracking"], () =>
+  const pdvId = requireCurrentPdvId();
+  return cached(`weeklyGlaceRows:${pdvId}`, ["weekly_tracking"], () =>
     fetchAllRows<any>(() =>
       supabase
         .from("weekly_tracking")
@@ -615,7 +616,8 @@ export const TOPPINGS_WEEKLY_ARTICLES = [
 
 
 function getToppingsWeeklyRes(): Promise<any> {
-  return cached("weeklyToppingsRows", ["weekly_tracking"], async () =>
+  const pdvId = requireCurrentPdvId();
+  return cached(`weeklyToppingsRows:${pdvId}`, ["weekly_tracking"], async () =>
     supabase
       .from("weekly_tracking")
       .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
@@ -625,8 +627,9 @@ function getToppingsWeeklyRes(): Promise<any> {
 }
 
 export async function getToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
+  const pdvId = requireCurrentPdvId();
   return cached(
-    "toppingsAggregate",
+    `toppingsAggregate:${pdvId}`,
     ["stock_movements", "initial_stocks", "weekly_tracking"],
     computeToppingsAggregate,
   );
@@ -911,8 +914,9 @@ function currentMondayISO(): string {
 }
 
 export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockFinal: number }> {
+  const pdvId = requireCurrentPdvId();
   return cached(
-    "glaceAggregate",
+    `glaceAggregate:${pdvId}`,
     ["weekly_tracking", "glace_grammage"],
     computeGlaceAggregate,
   );
