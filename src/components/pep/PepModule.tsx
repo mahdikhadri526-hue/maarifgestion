@@ -33,6 +33,7 @@ import {
   saveHoliday,
   saveTask,
   setOccurrenceStatus,
+  removeOccurrencePhoto,
   todayISO,
   toISO,
   parseISO,
