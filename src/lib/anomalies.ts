@@ -496,6 +496,39 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
     }
   }
 
+  // 9 — Tâches PEP non réalisées (échéance dépassée, ni réalisée ni reportée)
+  try {
+    const todayISO = toISO(now);
+    const { data: pepOcc } = await supabase
+      .from("pep_occurrences" as any)
+      .select("id, due_date, status, task_id, pep_tasks(name, equipment, frequency, responsable)")
+      .eq("pdv_id", pdvId)
+      .gte("due_date", start)
+      .lte("due_date", end < todayISO ? end : todayISO);
+    ((pepOcc ?? []) as any[]).forEach((o) => {
+      if (o.status === "done" || o.status === "missed") return;
+      if (o.due_date >= todayISO) return;
+      const t = o.pep_tasks ?? {};
+      push({
+        severity: "urgent",
+        date: o.due_date,
+        time: "—",
+        label: "Tâche PEP non réalisée",
+        product: t.name ?? "Tâche PEP",
+        details: [
+          t.equipment ? `Matériel : ${t.equipment}` : null,
+          t.frequency ? `Fréquence : ${t.frequency}` : null,
+          t.responsable ? `Responsable : ${t.responsable}` : null,
+          `Prévue le ${o.due_date.split("-").reverse().join(".")}`,
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      });
+    });
+  } catch {
+    // module PEP indisponible : aucune anomalie ajoutée
+  }
+
   const sevRank = (s: Severity) => (s === "urgent" ? 0 : 1);
   return out.sort(
     (a, b) =>
