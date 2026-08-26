@@ -411,6 +411,26 @@ export function getMovementAggregates(): Promise<Map<string, MovementAggregate>>
   });
 }
 
+type InitialStockRecord = {
+  product_id: string;
+  quantity: number;
+  unit: string | null;
+  carton_enabled: boolean | null;
+  paquet_enabled: boolean | null;
+  pieces_per_carton: number | null;
+  pieces_per_paquet: number | null;
+};
+
+function getInitialStockRecords(): Promise<InitialStockRecord[]> {
+  return cached("initialStockRecords", ["initial_stocks"], async () => {
+    const { data, error } = await supabase
+      .from("initial_stocks")
+      .select("product_id, quantity, unit, carton_enabled, paquet_enabled, pieces_per_carton, pieces_per_paquet");
+    if (error) throw error;
+    return (data || []) as InitialStockRecord[];
+  });
+}
+
 
 
 
@@ -492,10 +512,9 @@ export async function deleteMovement(id: string) {
 
 export async function getInitialStocks(): Promise<Record<string, number>> {
   return cached("initialStocks", ["initial_stocks"], async () => {
-  const { data, error } = await supabase.from("initial_stocks").select("*");
-  if (error) throw error;
+  const data = await getInitialStockRecords();
   const result: Record<string, number> = {};
-  (data || []).forEach((row) => {
+  data.forEach((row) => {
     result[row.product_id] = row.quantity;
   });
   return result;
@@ -504,10 +523,9 @@ export async function getInitialStocks(): Promise<Record<string, number>> {
 
 export async function getProductUnits(): Promise<Record<string, UnitType>> {
   return cached("productUnits", ["initial_stocks"], async () => {
-  const { data, error } = await supabase.from("initial_stocks").select("product_id, unit");
-  if (error) throw error;
+  const data = await getInitialStockRecords();
   const result: Record<string, UnitType> = {};
-  (data || []).forEach((row) => {
+  data.forEach((row) => {
     result[row.product_id] = (row.unit as UnitType) || "PIECE";
   });
   return result;
@@ -516,12 +534,9 @@ export async function getProductUnits(): Promise<Record<string, UnitType>> {
 
 export async function getProductUnitConfigs(): Promise<Record<string, ProductUnitConfig>> {
   return cached("productUnitConfigs", ["initial_stocks"], async () => {
-  const { data, error } = await supabase
-    .from("initial_stocks")
-    .select("product_id, carton_enabled, paquet_enabled, pieces_per_carton, pieces_per_paquet");
-  if (error) throw error;
+  const data = await getInitialStockRecords();
   const result: Record<string, ProductUnitConfig> = {};
-  (data || []).forEach((row: any) => {
+  data.forEach((row) => {
     result[row.product_id] = {
       cartonEnabled: !!row.carton_enabled,
       paquetEnabled: !!row.paquet_enabled,
@@ -609,7 +624,7 @@ export async function getToppingsAggregate(): Promise<{ entrees: number; sorties
 
 async function computeToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
   const [aggregates, initialStocks, weeklyRes] = await Promise.all([
-    getMovementAggregates().catch(() => new Map<string, MovementAggregate>()),
+    getMovementAggregates(),
     getInitialStocks(),
     getToppingsWeeklyRes(),
   ]);
@@ -770,13 +785,19 @@ export async function getToppingsDailyHistory(): Promise<DailyStockRecord[]> {
 
 export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
   const products = getProducts(category);
+  const needsGlace = products.some((product) => product.name === "GLACE" && product.category === "alimentaire");
+  const needsToppings = products.some((product) => product.name === "TOPPINGS" && product.category === "alimentaire");
   const [aggregates, initialStocks, units, configs, glaceAgg, toppingsAgg] = await Promise.all([
-    getMovementAggregates().catch(() => new Map<string, MovementAggregate>()),
+    getMovementAggregates(),
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
-    getGlaceAggregate().catch(() => ({ entrees: 0, sorties: 0, stockInitial: 0, stockFinal: 0 })),
-    getToppingsAggregate().catch(() => ({ entrees: 0, sorties: 0, stockInitial: 0, stockRestant: 0 })),
+    needsGlace
+      ? getGlaceAggregate()
+      : Promise.resolve({ entrees: 0, sorties: 0, stockInitial: 0, stockFinal: 0 }),
+    needsToppings
+      ? getToppingsAggregate()
+      : Promise.resolve({ entrees: 0, sorties: 0, stockInitial: 0, stockRestant: 0 }),
   ]);
 
 
