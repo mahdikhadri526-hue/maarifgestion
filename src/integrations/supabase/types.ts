@@ -1551,9 +1551,60 @@ export type Database = {
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
       is_regional_admin: { Args: { _user_id: string }; Returns: boolean }
+      stock_movement_aggregates:
+        | {
+            Args: never
+            Returns: {
+              entrees: number
+              entrees_all: number
+              product_id: string
+              regularisations_net: number
+              sorties: number
+              sorties_all: number
+            }[]
+          }
+        | {
+            Args: { _pdv_id: string }
+            Returns: {
+              entrees: number
+              entrees_all: number
+              product_id: string
+              regularisations_net: number
+              sorties: number
+              sorties_all: number
+            }[]
+          }
+      stock_period_aggregates: {
+        Args: { _end_date: string; _pdv_id: string; _start_date: string }
+        Returns: {
+          entrees: number
+          product_id: string
+          sorties: number
+          stock_initial: number
+          stock_restant: number
+        }[]
+      }
       verify_pdv_code: {
         Args: { _code: string; _pdv_id: string }
         Returns: boolean
+      }
+      weekly_tracking_filtered: {
+        Args: {
+          _articles?: string[]
+          _fiche_type: string
+          _from_week?: string
+          _pdv_id: string
+          _to_week?: string
+        }
+        Returns: {
+          article: string
+          day_of_week: string
+          entrees: number
+          row_index: number
+          sorties: number
+          stock_initial: number
+          week_start: string
+        }[]
       }
     }
     Enums: {
