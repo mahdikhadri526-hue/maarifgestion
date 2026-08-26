@@ -688,9 +688,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
     if (extras.length) withAgg = [...withAgg, ...extras];
   }
-  const filtered = withAgg.filter((l) =>
-    l.productName.toLowerCase().includes(search.toLowerCase())
-  );
+  const normalizeText = (s: string) =>
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  const searchQuery = normalizeText(deferredSearch);
+  const filtered = searchQuery
+    ? withAgg.filter((l) => normalizeText(l.productName).includes(searchQuery))
+    : withAgg;
+
 
   // Load weekly_tracking data for Tarte/Glace categories
   useEffect(() => {
