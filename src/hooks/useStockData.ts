@@ -4,7 +4,8 @@ import { invalidateTables } from "@/lib/requestCache";
 import {
   StockMovement, StockLevel, DailyStockRecord, Category, UnitType,
   getMovements, getStockLevels, getProductDailyHistory, getInitialStocks, getProductUnits,
-  getProductUnitConfigs
+  getProductUnitConfigs, getMovementAggregates
+
 } from "@/lib/stockData";
 import { LotEntry, getExpiringLots, getProductLots, getLotEntries } from "@/lib/lotData";
 import { RequisitionEntry, getRequisitionsByDate, getRequisitions } from "@/lib/requisitionData";
