@@ -1566,9 +1566,11 @@ export type Database = {
         | {
             Args: { _pdv_id: string }
             Returns: {
+              category: string
               entrees: number
               entrees_all: number
               product_id: string
+              product_name: string
               regularisations_net: number
               sorties: number
               sorties_all: number
