@@ -9,6 +9,7 @@ export type PepFrequency =
   | "daily"
   | "twice_week"
   | "weekly"
+  | "biweekly"
   | "monthly"
   | "bimonthly"
   | "quarterly"
@@ -20,6 +21,7 @@ export const PEP_FREQUENCIES: { key: PepFrequency; label: string }[] = [
   { key: "daily", label: "Quotidienne" },
   { key: "twice_week", label: "2 fois par semaine" },
   { key: "weekly", label: "Hebdomadaire" },
+  { key: "biweekly", label: "Tous les 15 jours" },
   { key: "monthly", label: "Mensuelle" },
   { key: "bimonthly", label: "Tous les 2 mois" },
   { key: "quarterly", label: "Trimestrielle" },
@@ -27,6 +29,7 @@ export const PEP_FREQUENCIES: { key: PepFrequency; label: string }[] = [
   { key: "annual", label: "Annuelle" },
   { key: "five_years", label: "Tous les 5 ans" },
 ];
+
 
 export const FREQ_LABEL: Record<string, string> = Object.fromEntries(
   PEP_FREQUENCIES.map((f) => [f.key, f.label]),
