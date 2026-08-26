@@ -896,6 +896,227 @@ export type Database = {
         }
         Relationships: []
       }
+      pep_holidays: {
+        Row: {
+          created_at: string
+          holiday_date: string
+          id: string
+          label: string
+          pdv_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          holiday_date: string
+          id?: string
+          label: string
+          pdv_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          holiday_date?: string
+          id?: string
+          label?: string
+          pdv_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pep_holidays_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pep_occurrences: {
+        Row: {
+          comment: string | null
+          completed_at: string | null
+          completed_by: string | null
+          completed_by_name: string | null
+          created_at: string
+          due_date: string
+          id: string
+          original_due_date: string
+          pdv_id: string
+          photo_url: string | null
+          status: string
+          task_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completed_by_name?: string | null
+          created_at?: string
+          due_date: string
+          id?: string
+          original_due_date: string
+          pdv_id: string
+          photo_url?: string | null
+          status?: string
+          task_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          completed_at?: string | null
+          completed_by?: string | null
+          completed_by_name?: string | null
+          created_at?: string
+          due_date?: string
+          id?: string
+          original_due_date?: string
+          pdv_id?: string
+          photo_url?: string | null
+          status?: string
+          task_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pep_occurrences_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pep_occurrences_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "pep_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pep_postponements: {
+        Row: {
+          created_at: string
+          from_date: string
+          id: string
+          occurrence_id: string
+          pdv_id: string
+          postponed_by: string | null
+          postponed_by_name: string | null
+          reason: string | null
+          task_id: string
+          to_date: string
+        }
+        Insert: {
+          created_at?: string
+          from_date: string
+          id?: string
+          occurrence_id: string
+          pdv_id: string
+          postponed_by?: string | null
+          postponed_by_name?: string | null
+          reason?: string | null
+          task_id: string
+          to_date: string
+        }
+        Update: {
+          created_at?: string
+          from_date?: string
+          id?: string
+          occurrence_id?: string
+          pdv_id?: string
+          postponed_by?: string | null
+          postponed_by_name?: string | null
+          reason?: string | null
+          task_id?: string
+          to_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pep_postponements_occurrence_id_fkey"
+            columns: ["occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "pep_occurrences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pep_postponements_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pep_postponements_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "pep_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pep_tasks: {
+        Row: {
+          active: boolean
+          category: string | null
+          created_at: string
+          equipment: string | null
+          frequency: string
+          id: string
+          name: string
+          next_due_date: string | null
+          notes: string | null
+          pdv_id: string
+          requires_photo: boolean
+          responsable: string | null
+          start_date: string
+          updated_at: string
+          weekend_allowed: boolean
+        }
+        Insert: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          equipment?: string | null
+          frequency: string
+          id?: string
+          name: string
+          next_due_date?: string | null
+          notes?: string | null
+          pdv_id: string
+          requires_photo?: boolean
+          responsable?: string | null
+          start_date?: string
+          updated_at?: string
+          weekend_allowed?: boolean
+        }
+        Update: {
+          active?: boolean
+          category?: string | null
+          created_at?: string
+          equipment?: string | null
+          frequency?: string
+          id?: string
+          name?: string
+          next_due_date?: string | null
+          notes?: string | null
+          pdv_id?: string
+          requires_photo?: boolean
+          responsable?: string | null
+          start_date?: string
+          updated_at?: string
+          weekend_allowed?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pep_tasks_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_catalog: {
         Row: {
           category: string
