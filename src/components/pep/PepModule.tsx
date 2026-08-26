@@ -782,7 +782,7 @@ function TasksAdmin({ tasks, onChanged }: { tasks: PepTask[]; onChanged: () => P
               <div><Label className="text-xs">Date de début</Label><Input type="date" value={editing.start_date ?? todayISO()} onChange={(e) => setEditing({ ...editing, start_date: e.target.value })} /></div>
               {([
                 { key: "weekend_allowed", label: "Peut être planifiée le week-end" },
-                { key: "requires_photo", label: "Photo / justificatif attendu" },
+                ...(editing.frequency === "daily" ? [] : [{ key: "requires_photo" as const, label: "Photo / justificatif attendu" }]),
                 { key: "active", label: "Tâche active" },
               ] as const).map(({ key, label }) => {
                 const value = key === "active" ? editing.active !== false : !!(editing as any)[key];
