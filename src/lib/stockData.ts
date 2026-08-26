@@ -377,6 +377,40 @@ export function invalidateStockCaches(tables: string[]) {
   invalidateTables(tables);
 }
 
+export interface MovementAggregate {
+  entrees: number;
+  sorties: number;
+  regularisationsNet: number;
+  entreesAll: number;
+  sortiesAll: number;
+}
+
+/**
+ * Agrégats des mouvements calculés côté base (RPC) : évite de télécharger
+ * l'intégralité de `stock_movements` pour afficher le stock restant.
+ */
+export function getMovementAggregates(): Promise<Map<string, MovementAggregate>> {
+  return cached("movementAggregates", ["stock_movements"], async () => {
+    const { data, error } = await rawSupabase.rpc("stock_movement_aggregates", {
+      _pdv_id: requireCurrentPdvId(),
+    });
+    if (error) throw error;
+    const map = new Map<string, MovementAggregate>();
+    for (const r of (data as any[]) || []) {
+      map.set(r.product_id, {
+        entrees: Number(r.entrees) || 0,
+        sorties: Number(r.sorties) || 0,
+        regularisationsNet: Number(r.regularisations_net) || 0,
+        entreesAll: Number(r.entrees_all) || 0,
+        sortiesAll: Number(r.sorties_all) || 0,
+      });
+    }
+    return map;
+  });
+}
+
+
+
 
 export async function getMovements(): Promise<StockMovement[]> {
   return cached("movements", ["stock_movements"], async () => {
