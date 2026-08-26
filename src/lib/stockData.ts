@@ -836,22 +836,12 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
       };
     }
 
-    const productMovements = movementsByProduct.get(product.id) || [];
+    const agg = aggregates.get(product.id);
     // Régularisations de stock : n'apparaissent pas dans les Entrées,
     // elles sont décomptées des Sorties (positif = stock augmenté → sorties diminuées).
-    const totalEntrees = productMovements
-      .filter((m) => m.type === "entree" && m.source !== "regularisation")
-      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config, product.id), 0);
-    const sortiesBrutes = productMovements
-      .filter((m) => m.type === "sortie" && m.source !== "regularisation")
-      .reduce((sum, m) => sum + movementPiecesToDisplay(m.quantity, unit, config, product.id), 0);
-    const regularisationsNet = productMovements
-      .filter((m) => m.source === "regularisation")
-      .reduce((sum, m) => {
-        const q = movementPiecesToDisplay(m.quantity, unit, config, product.id);
-        return sum + (m.type === "entree" ? q : -q);
-      }, 0);
-    const totalSorties = sortiesBrutes - regularisationsNet;
+    const totalEntrees = roundStockQuantity(agg?.entrees ?? 0);
+    const totalSorties = roundStockQuantity((agg?.sorties ?? 0) - (agg?.regularisationsNet ?? 0));
+
 
     return {
       productId: product.id,
