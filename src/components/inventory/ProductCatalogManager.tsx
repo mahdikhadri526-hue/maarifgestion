@@ -11,9 +11,14 @@ import { toast } from "sonner";
 
 interface Props {
   onChanged?: () => void;
+  /** Catégorie sélectionnée dans l'écran parent (filtre initial du catalogue). */
+  category?: Category | "all";
 }
 
-export function ProductCatalogManager({ onChanged }: Props) {
+const normalize = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+
+export function ProductCatalogManager({ onChanged, category = "all" }: Props) {
   const { can } = useAuth();
   const canEdit = can("edit_products");
   const canDelete = can("delete_products");
@@ -21,14 +26,16 @@ export function ProductCatalogManager({ onChanged }: Props) {
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [filterCat, setFilterCat] = useState<Category | "all">(category);
   const [tick, setTick] = useState(0);
   const [busy, setBusy] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, { name: string; conditionnement: string }>>({});
   const [newProduct, setNewProduct] = useState<{ name: string; conditionnement: string; category: Category }>({
     name: "",
     conditionnement: "",
-    category: "alimentaire",
+    category: category === "emballage" ? "emballage" : "alimentaire",
   });
+
 
   const [dirty, setDirty] = useState(false);
 
@@ -42,6 +49,8 @@ export function ProductCatalogManager({ onChanged }: Props) {
 
   useEffect(() => {
     if (open) {
+      setFilterCat(category);
+      setSearch("");
       void loadProductCatalog().then(() => setTick((t) => t + 1));
     } else if (dirty) {
       setDirty(false);
@@ -56,7 +65,15 @@ export function ProductCatalogManager({ onChanged }: Props) {
     );
   }, [tick]);
 
-  const filtered = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+  const q = normalize(search);
+  const filtered = products.filter(
+    (p) =>
+      (filterCat === "all" || p.category === filterCat) &&
+      (q === "" ||
+        normalize(p.name).includes(q) ||
+        normalize(p.conditionnement ?? "").includes(q)),
+  );
+
 
   const draftOf = (id: string, name: string, cond: string) =>
     drafts[id] ?? { name, conditionnement: cond ?? "" };
@@ -212,10 +229,27 @@ export function ProductCatalogManager({ onChanged }: Props) {
           </div>
         )}
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          </div>
+          <div className="flex rounded-md border overflow-hidden self-start">
+            {(["all", "alimentaire", "emballage"] as const).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setFilterCat(c)}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  filterCat === c ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {c === "all" ? "Tout" : c === "alimentaire" ? "Alim." : "Emb."}
+              </button>
+            ))}
+          </div>
         </div>
+
 
         <div className="max-h-[45vh] overflow-y-auto border rounded-md">
           <table className="w-full text-sm">
