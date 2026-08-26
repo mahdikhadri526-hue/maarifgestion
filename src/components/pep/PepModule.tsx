@@ -780,9 +780,25 @@ function TasksAdmin({ tasks, onChanged }: { tasks: PepTask[]; onChanged: () => P
               </div>
               <div><Label className="text-xs">Responsable</Label><Input value={editing.responsable ?? ""} onChange={(e) => setEditing({ ...editing, responsable: e.target.value })} /></div>
               <div><Label className="text-xs">Date de début</Label><Input type="date" value={editing.start_date ?? todayISO()} onChange={(e) => setEditing({ ...editing, start_date: e.target.value })} /></div>
-              <div className="flex items-center justify-between"><Label className="text-xs">Peut être planifiée le week-end</Label><Switch checked={!!editing.weekend_allowed} onCheckedChange={(v) => setEditing({ ...editing, weekend_allowed: v })} /></div>
-              <div className="flex items-center justify-between"><Label className="text-xs">Photo / justificatif attendu</Label><Switch checked={!!editing.requires_photo} onCheckedChange={(v) => setEditing({ ...editing, requires_photo: v })} /></div>
-              <div className="flex items-center justify-between"><Label className="text-xs">Tâche active</Label><Switch checked={editing.active !== false} onCheckedChange={(v) => setEditing({ ...editing, active: v })} /></div>
+              {([
+                { key: "weekend_allowed", label: "Peut être planifiée le week-end" },
+                { key: "requires_photo", label: "Photo / justificatif attendu" },
+                { key: "active", label: "Tâche active" },
+              ] as const).map(({ key, label }) => {
+                const value = key === "active" ? editing.active !== false : !!(editing as any)[key];
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    className="w-full flex items-center justify-between py-1 text-left"
+                    onClick={() => setEditing((prev) => ({ ...(prev ?? {}), [key]: !value }))}
+                  >
+                    <Label className="text-xs pointer-events-none">{label}</Label>
+                    <Switch checked={value} tabIndex={-1} className="pointer-events-none" onCheckedChange={() => {}} />
+                  </button>
+                );
+              })}
+
               <div><Label className="text-xs">Notes</Label><Textarea rows={2} value={editing.notes ?? ""} onChange={(e) => setEditing({ ...editing, notes: e.target.value })} /></div>
             </div>
             <DialogFooter>
