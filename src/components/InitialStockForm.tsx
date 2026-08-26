@@ -115,7 +115,7 @@ export function InitialStockForm({ onUpdated }: Props) {
             </div>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
-            <ProductCatalogManager onChanged={() => { setCatalogTick((t) => t + 1); onUpdated(); }} />
+            <ProductCatalogManager category={category} onChanged={() => { setCatalogTick((t) => t + 1); onUpdated(); }} />
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-48" />
