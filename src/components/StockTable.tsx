@@ -566,11 +566,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   const isWeeklyCat = category === "tarte" || category === "glace";
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
-  const { data: levels, loading, refresh } = useStockLevels(stockCategory);
+  // Un seul chargement pour toutes les catégories : le filtre Alim./Emb. est
+  // appliqué côté client pour un basculement instantané (pas de refetch).
+  const { data: levels, loading, refresh } = useStockLevels();
   const NESPRESSO_IDS = ["ali-29", "ali-30", "ali-31", "ali-32"];
   const NESPRESSO_AGG_ID = "__nespresso_agg__";
-  const baseLevels = isWeeklyCat ? [] : (levels || []);
+  const baseLevels = isWeeklyCat
+    ? []
+    : (levels || []).filter((l) => !stockCategory || l.category === stockCategory);
   const nespressoSources = baseLevels.filter((l) => NESPRESSO_IDS.includes(l.productId));
+
   let withAgg = baseLevels;
   if ((category === "all" || category === "alimentaire") && nespressoSources.length > 0) {
     const agg = {
