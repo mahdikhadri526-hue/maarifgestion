@@ -64,6 +64,8 @@ export const ALL_PERMISSIONS = [
   { key: "manage_roster", label: "Ajouter / supprimer des noms (collaborateurs, effectué par, visa manager)" },
   { key: "view_ecarts", label: "Voir le calcul des écarts" },
   { key: "edit_ecarts", label: "Saisir / modifier le calcul des écarts" },
+  { key: "view_pep", label: "Voir l'agenda PEP" },
+  { key: "manage_pep", label: "Gestion Agenda PEP (tâches, fréquences, jours fériés)" },
 ] as const;
 
 export type PermissionKey = (typeof ALL_PERMISSIONS)[number]["key"];
