@@ -345,6 +345,11 @@ export async function completeOccurrence(
   if (error) throw error;
 }
 
+export async function removeOccurrencePhoto(id: string) {
+  const { error } = await supabase.from("pep_occurrences" as any).update({ photo_url: null } as any).eq("id", id);
+  if (error) throw error;
+}
+
 export async function setOccurrenceStatus(id: string, status: PepStatus) {
   const { error } = await supabase.from("pep_occurrences" as any).update({ status } as any).eq("id", id);
   if (error) throw error;
