@@ -297,10 +297,17 @@ function TaskCard({
           </p>
           {occ.comment && <p className="text-xs mt-1">💬 {occ.comment}</p>}
           {occ.photo_url && (
-            <a href={occ.photo_url} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
-              Voir le justificatif
-            </a>
+            <button
+              type="button"
+              onClick={() => setPhotoPreview(occ.photo_url!)}
+              className="mt-1 block"
+              title="Voir le justificatif"
+            >
+              <img src={occ.photo_url} alt="Justificatif" className="h-16 w-16 rounded border object-cover" />
+              <span className="text-[11px] text-primary underline">Voir le justificatif</span>
+            </button>
           )}
+
           {history.map((h) => (
             <p key={h.id} className="text-[11px] text-purple-700 mt-1">
               Reportée du {fmtFR(h.from_date)} au {fmtFR(h.to_date)} — {h.reason || "sans motif"} ({h.postponed_by_name ?? "—"})
