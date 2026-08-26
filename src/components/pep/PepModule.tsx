@@ -391,7 +391,7 @@ function CompleteDialog({
           </div>
           <div>
             <Label className="text-xs">
-              Photo / justificatif {row.task?.requires_photo ? <span className="text-destructive">*</span> : "(facultatif)"}
+              Photo / justificatif {row.task?.frequency === "daily" || !row.task?.requires_photo ? "(facultatif)" : <span className="text-destructive">*</span>}
             </Label>
             <Input
               type="file"
@@ -408,7 +408,7 @@ function CompleteDialog({
               }}
             />
             {photo && <img src={photo} alt="Justificatif" className="mt-2 h-24 rounded border object-cover" />}
-            {row.task?.requires_photo && !photo && (
+            {row.task?.frequency !== "daily" && row.task?.requires_photo && !photo && (
               <p className="text-[11px] text-destructive mt-1">Une photo est obligatoire pour cette tâche.</p>
             )}
           </div>
@@ -416,7 +416,7 @@ function CompleteDialog({
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Annuler</Button>
           <Button
-            disabled={busy || (!!row.task?.requires_photo && !photo)}
+            disabled={busy || (row.task?.frequency !== "daily" && !!row.task?.requires_photo && !photo)}
 
             onClick={async () => {
               setBusy(true);
@@ -782,7 +782,7 @@ function TasksAdmin({ tasks, onChanged }: { tasks: PepTask[]; onChanged: () => P
               <div><Label className="text-xs">Date de début</Label><Input type="date" value={editing.start_date ?? todayISO()} onChange={(e) => setEditing({ ...editing, start_date: e.target.value })} /></div>
               {([
                 { key: "weekend_allowed", label: "Peut être planifiée le week-end" },
-                { key: "requires_photo", label: "Photo / justificatif attendu" },
+                ...(editing.frequency === "daily" ? [] : [{ key: "requires_photo" as const, label: "Photo / justificatif attendu" }]),
                 { key: "active", label: "Tâche active" },
               ] as const).map(({ key, label }) => {
                 const value = key === "active" ? editing.active !== false : !!(editing as any)[key];
