@@ -229,10 +229,27 @@ export function ProductCatalogManager({ onChanged, category = "all" }: Props) {
           </div>
         )}
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          </div>
+          <div className="flex rounded-md border overflow-hidden self-start">
+            {(["all", "alimentaire", "emballage"] as const).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => setFilterCat(c)}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  filterCat === c ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                {c === "all" ? "Tout" : c === "alimentaire" ? "Alim." : "Emb."}
+              </button>
+            ))}
+          </div>
         </div>
+
 
         <div className="max-h-[45vh] overflow-y-auto border rounded-md">
           <table className="w-full text-sm">
