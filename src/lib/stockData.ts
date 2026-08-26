@@ -777,8 +777,8 @@ export async function getToppingsDailyHistory(): Promise<DailyStockRecord[]> {
 
 export async function getStockLevels(category?: Category): Promise<StockLevel[]> {
   const products = getProducts(category);
-  const [movements, initialStocks, units, configs, glaceAgg, toppingsAgg] = await Promise.all([
-    getMovements(),
+  const [aggregates, initialStocks, units, configs, glaceAgg, toppingsAgg] = await Promise.all([
+    getMovementAggregates().catch(() => new Map<string, MovementAggregate>()),
     getInitialStocks(),
     getProductUnits(),
     getProductUnitConfigs(),
@@ -786,13 +786,6 @@ export async function getStockLevels(category?: Category): Promise<StockLevel[]>
     getToppingsAggregate().catch(() => ({ entrees: 0, sorties: 0, stockInitial: 0, stockRestant: 0 })),
   ]);
 
-  // Indexation des mouvements par produit (évite un filtre complet par produit)
-  const movementsByProduct = new Map<string, StockMovement[]>();
-  for (const m of movements) {
-    const list = movementsByProduct.get(m.productId);
-    if (list) list.push(m);
-    else movementsByProduct.set(m.productId, [m]);
-  }
 
   return products.map((product) => {
     const initial = initialStocks[product.id] || 0;
