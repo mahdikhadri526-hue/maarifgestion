@@ -49,6 +49,8 @@ export function ProductCatalogManager({ onChanged, category = "all" }: Props) {
 
   useEffect(() => {
     if (open) {
+      setFilterCat(category);
+      setSearch("");
       void loadProductCatalog().then(() => setTick((t) => t + 1));
     } else if (dirty) {
       setDirty(false);
@@ -63,7 +65,15 @@ export function ProductCatalogManager({ onChanged, category = "all" }: Props) {
     );
   }, [tick]);
 
-  const filtered = products.filter((p) => p.name.toLowerCase().includes(search.toLowerCase()));
+  const q = normalize(search);
+  const filtered = products.filter(
+    (p) =>
+      (filterCat === "all" || p.category === filterCat) &&
+      (q === "" ||
+        normalize(p.name).includes(q) ||
+        normalize(p.conditionnement ?? "").includes(q)),
+  );
+
 
   const draftOf = (id: string, name: string, cond: string) =>
     drafts[id] ?? { name, conditionnement: cond ?? "" };
