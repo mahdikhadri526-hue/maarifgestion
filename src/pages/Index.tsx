@@ -148,6 +148,9 @@ const Index = () => {
             {/* Pending autocontrol fiches (avant les ruptures) */}
             <PendingAutocontrolAlerts onOpen={() => setTab("autocontrole")} />
 
+            {/* Agenda PEP — uniquement les tâches du jour */}
+            {can("view_pep") && <PepTodayCard onOpen={() => setTab("pep")} />}
+
             {/* Stock Alerts */}
             <StockOutAlerts />
 
@@ -225,6 +228,7 @@ const Index = () => {
             {tab === "nettoyage" && <CleaningManager />}
             {tab === "inventaire" && <InventoryModule />}
             {tab === "ecarts" && <EcartModule />}
+            {tab === "pep" && <PepModule />}
           </Suspense>
         )}
       </main>
