@@ -283,6 +283,9 @@ function TaskCard({
   const meta = STATUS_META[status];
   const history = posts.filter((p) => p.occurrence_id === occ.id);
   const done = status === "done";
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+
 
   return (
     <div className="rounded-lg border bg-background p-3">
@@ -297,10 +300,17 @@ function TaskCard({
           </p>
           {occ.comment && <p className="text-xs mt-1">💬 {occ.comment}</p>}
           {occ.photo_url && (
-            <a href={occ.photo_url} target="_blank" rel="noreferrer" className="text-xs text-primary underline">
-              Voir le justificatif
-            </a>
+            <button
+              type="button"
+              onClick={() => setPhotoPreview(occ.photo_url!)}
+              className="mt-1 block"
+              title="Voir le justificatif"
+            >
+              <img src={occ.photo_url} alt="Justificatif" className="h-16 w-16 rounded border object-cover" />
+              <span className="text-[11px] text-primary underline">Voir le justificatif</span>
+            </button>
           )}
+
           {history.map((h) => (
             <p key={h.id} className="text-[11px] text-purple-700 mt-1">
               Reportée du {fmtFR(h.from_date)} au {fmtFR(h.to_date)} — {h.reason || "sans motif"} ({h.postponed_by_name ?? "—"})
@@ -338,7 +348,17 @@ function TaskCard({
           )}
         </div>
       )}
+
+      {photoPreview && (
+        <Dialog open onOpenChange={(o) => !o && setPhotoPreview(null)}>
+          <DialogContent className="max-w-[95vw] sm:max-w-lg">
+            <DialogHeader><DialogTitle>Photo justificative</DialogTitle></DialogHeader>
+            <img src={photoPreview} alt="Justificatif" className="w-full rounded border object-contain max-h-[70vh]" />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
+
   );
 }
 
@@ -370,10 +390,13 @@ function CompleteDialog({
             <Textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3} />
           </div>
           <div>
-            <Label className="text-xs">Photo / justificatif</Label>
+            <Label className="text-xs">
+              Photo / justificatif {row.task?.requires_photo ? <span className="text-destructive">*</span> : "(facultatif)"}
+            </Label>
             <Input
               type="file"
               accept="image/*"
+              capture="environment"
               onChange={async (e) => {
                 const f = e.target.files?.[0];
                 if (!f) return;
@@ -385,12 +408,16 @@ function CompleteDialog({
               }}
             />
             {photo && <img src={photo} alt="Justificatif" className="mt-2 h-24 rounded border object-cover" />}
+            {row.task?.requires_photo && !photo && (
+              <p className="text-[11px] text-destructive mt-1">Une photo est obligatoire pour cette tâche.</p>
+            )}
           </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Annuler</Button>
           <Button
-            disabled={busy}
+            disabled={busy || (!!row.task?.requires_photo && !photo)}
+
             onClick={async () => {
               setBusy(true);
               try {
