@@ -389,9 +389,10 @@ function CompleteDialog({
             <Label className="text-xs">Commentaire</Label>
             <Textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3} />
           </div>
+          {row.task?.frequency !== "daily" && (
           <div>
             <Label className="text-xs">
-              Photo / justificatif {row.task?.frequency === "daily" || !row.task?.requires_photo ? "(facultatif)" : <span className="text-destructive">*</span>}
+              Photo / justificatif {!row.task?.requires_photo ? "(facultatif)" : <span className="text-destructive">*</span>}
             </Label>
             <Input
               type="file"
@@ -408,10 +409,12 @@ function CompleteDialog({
               }}
             />
             {photo && <img src={photo} alt="Justificatif" className="mt-2 h-24 rounded border object-cover" />}
-            {row.task?.frequency !== "daily" && row.task?.requires_photo && !photo && (
+            {row.task?.requires_photo && !photo && (
               <p className="text-[11px] text-destructive mt-1">Une photo est obligatoire pour cette tâche.</p>
             )}
           </div>
+          )}
+
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Annuler</Button>
