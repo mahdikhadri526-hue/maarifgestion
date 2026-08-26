@@ -211,7 +211,7 @@ const Index = () => {
               </div>
             )}
             {tab === "historique" && <MovementHistory key={refreshKey} onMovementDeleted={refresh} />}
-            {tab === "produit" && <StockTable />}
+            {tab === "produit" && <StockTable key={refreshKey} />}
             {tab === "requisition" && <RequisitionForm onUpdated={refresh} />}
             {tab === "lots" && <LotManager />}
             {tab === "autocontrole" && <AutocontrolManager />}
