@@ -414,15 +414,34 @@ function TaskCard({
           </p>
           {occ.comment && <p className="text-xs mt-1">💬 {occ.comment}</p>}
           {occ.photo_url && (
-            <button
-              type="button"
-              onClick={() => setPhotoPreview(occ.photo_url!)}
-              className="mt-1 block"
-              title="Voir le justificatif"
-            >
-              <img src={occ.photo_url} alt="Justificatif" className="h-16 w-16 rounded border object-cover" />
-              <span className="text-[11px] text-primary underline">Voir le justificatif</span>
-            </button>
+            <div className="mt-1 flex items-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPhotoPreview(occ.photo_url!)}
+                className="block"
+                title="Voir le justificatif"
+              >
+                <img src={occ.photo_url} alt="Justificatif" className="h-16 w-16 rounded border object-cover" />
+                <span className="text-[11px] text-primary underline">Voir le justificatif</span>
+              </button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive h-7 px-2"
+                onClick={async () => {
+                  if (!confirm("Supprimer cette photo ?")) return;
+                  try {
+                    await removeOccurrencePhoto(occ.id);
+                    toast({ title: "Photo supprimée" });
+                    await onChanged();
+                  } catch (e: any) {
+                    toast({ title: "Erreur", description: e?.message, variant: "destructive" });
+                  }
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer
+              </Button>
+            </div>
           )}
 
           {history.map((h) => (
