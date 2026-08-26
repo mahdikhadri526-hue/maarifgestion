@@ -402,6 +402,41 @@ export async function deleteTask(id: string) {
   if (error) throw error;
 }
 
+/**
+ * Importe le catalogue PEP standard (matériels + fréquences) dans le PDV actif.
+ * Idempotent : les tâches déjà existantes (même intitulé) sont ignorées.
+ */
+export async function importPepCatalog(): Promise<{ added: number; skipped: number }> {
+  const { PEP_CATALOG, catalogEquipment } = await import("@/lib/pepCatalog");
+  const existing = await getPepTasks();
+  const norm = (s: string) =>
+    s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  const known = new Set(existing.map((t) => norm(t.name)));
+  const start = todayISO();
+
+  const rows = PEP_CATALOG.filter((c) => !known.has(norm(c.name))).map((c) => ({
+    name: c.name,
+    equipment: catalogEquipment(c.name),
+    frequency: c.frequency,
+    responsable: "Manager",
+    category: "PEP",
+    weekend_allowed: false,
+    requires_photo: false,
+    active: true,
+    start_date: start,
+    next_due_date: null,
+    notes: null,
+  }));
+
+  for (let i = 0; i < rows.length; i += 100) {
+    const { error } = await supabase.from("pep_tasks" as any).insert(rows.slice(i, i + 100) as any);
+    if (error) throw error;
+  }
+  return { added: rows.length, skipped: PEP_CATALOG.length - rows.length };
+}
+
+
+
 export async function saveHoliday(h: { id?: string; holiday_date: string; label: string }) {
   if (h.id) {
     const { error } = await supabase
