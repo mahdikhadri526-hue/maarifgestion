@@ -332,18 +332,19 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
   existing.forEach((o) => load.set(o.due_date, (load.get(o.due_date) ?? 0) + 1));
 
   const toInsert: any[] = [];
-  // Les quotidiennes d'abord (elles ne bougent jamais), puis les autres lissées.
-  const ordered = [...active].sort((a, b) => (a.frequency === "daily" ? -1 : 1) - (b.frequency === "daily" ? -1 : 1));
+  // Dates fixes (quotidiennes + « chaque <jour> ») : jamais déplacées.
+  const isFixed = (f: string) => f === "daily" || WEEKDAY_FREQUENCIES[f as PepFrequency] !== undefined;
+  const ordered = [...active].sort((a, b) => (isFixed(a.frequency) ? -1 : 1) - (isFixed(b.frequency) ? -1 : 1));
 
   for (const task of ordered) {
     for (const raw of rawDueDates(task, today, to)) {
       const key = `${task.id}|${raw}`;
       if (known.has(key)) continue;
       known.add(key);
-      const due =
-        task.frequency === "daily"
-          ? raw
-          : balancedDate(raw, holidays, load, task.weekend_allowed);
+      const due = isFixed(task.frequency)
+        ? raw
+        : balancedDate(raw, holidays, load, task.weekend_allowed);
+
       load.set(due, (load.get(due) ?? 0) + 1);
       toInsert.push({ task_id: task.id, due_date: due, original_due_date: raw, status: "todo" });
     }
