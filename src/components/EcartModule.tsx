@@ -304,8 +304,8 @@ export function EcartModule() {
       ) : view === "final" ? (
         <div className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-3">
-            {sectionTable({ section: "SF_EMP", title: "Stock final Emporter", subtitle: "Total en grammes (frigo + transit)." })}
-            {sectionTable({ section: "SF_CHAMBRE_EMP", title: "Stock final Chambre", subtitle: "Total en grammes." })}
+            {sectionTable({ section: "SF_EMP", title: "Stock final Emporter", subtitle: "Grammes par parfum (frigo + transit)." })}
+            {sectionTable({ section: "SF_CHAMBRE_EMP", title: "Stock final Chambre", subtitle: "Grammes par parfum." })}
             {sectionTable({ section: "SF_SP", title: "Stock final Salle / Surplace", subtitle: "Grammes par parfum." })}
           </div>
           <div className="bg-card border rounded-xl p-4 shadow-sm text-sm">
