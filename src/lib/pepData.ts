@@ -9,6 +9,13 @@ export type PepFrequency =
   | "daily"
   | "twice_week"
   | "weekly"
+  | "weekly_mon"
+  | "weekly_tue"
+  | "weekly_wed"
+  | "weekly_thu"
+  | "weekly_fri"
+  | "weekly_sat"
+  | "weekly_sun"
   | "biweekly"
   | "monthly"
   | "bimonthly"
@@ -17,10 +24,28 @@ export type PepFrequency =
   | "annual"
   | "five_years";
 
+/** Fréquences « chaque <jour> » → index JS du jour (0 = dimanche). */
+export const WEEKDAY_FREQUENCIES: Partial<Record<PepFrequency, number>> = {
+  weekly_mon: 1,
+  weekly_tue: 2,
+  weekly_wed: 3,
+  weekly_thu: 4,
+  weekly_fri: 5,
+  weekly_sat: 6,
+  weekly_sun: 0,
+};
+
 export const PEP_FREQUENCIES: { key: PepFrequency; label: string }[] = [
   { key: "daily", label: "Quotidienne" },
   { key: "twice_week", label: "2 fois par semaine" },
   { key: "weekly", label: "Hebdomadaire" },
+  { key: "weekly_mon", label: "Chaque lundi" },
+  { key: "weekly_tue", label: "Chaque mardi" },
+  { key: "weekly_wed", label: "Chaque mercredi" },
+  { key: "weekly_thu", label: "Chaque jeudi" },
+  { key: "weekly_fri", label: "Chaque vendredi" },
+  { key: "weekly_sat", label: "Chaque samedi" },
+  { key: "weekly_sun", label: "Chaque dimanche" },
   { key: "biweekly", label: "Tous les 15 jours" },
   { key: "monthly", label: "Mensuelle" },
   { key: "bimonthly", label: "Tous les 2 mois" },
@@ -29,6 +54,7 @@ export const PEP_FREQUENCIES: { key: PepFrequency; label: string }[] = [
   { key: "annual", label: "Annuelle" },
   { key: "five_years", label: "Tous les 5 ans" },
 ];
+
 
 
 export const FREQ_LABEL: Record<string, string> = Object.fromEntries(
