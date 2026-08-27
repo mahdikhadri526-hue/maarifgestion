@@ -11,6 +11,8 @@ import {
   fetchEcartLines,
   fmtG,
   hasFinalStock,
+  initialFromFinal,
+  lastFinalBefore,
   monthRange,
   saveEcartDay,
   shiftDate,
@@ -56,10 +58,10 @@ export function EcartModule() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const days = await fetchEcartLines(shiftDate(range.start, -1), range.end);
+      const days = await fetchEcartLines(shiftDate(range.start, -60), range.end);
       setHistory(days);
       setDay(days.get(date) ?? {});
-      setPrev(days.get(shiftDate(date, -1)));
+      setPrev(lastFinalBefore(days, date));
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
@@ -94,9 +96,10 @@ export function EcartModule() {
 
   const result = computeDay(date, day, prev);
   const needsSeed = !hasFinalStock(prev);
+  const carried = initialFromFinal(prev);
 
   const dates = eachDate(range.start, range.end);
-  const rows = dates.map((d) => computeDay(d, history.get(d) ?? {}, history.get(shiftDate(d, -1))));
+  const rows = dates.map((d) => computeDay(d, history.get(d) ?? {}, lastFinalBefore(history, d)));
   const shown = rows.filter(
     (r) => r.ventesTotalG !== 0 || r.consoTotalG !== 0 || r.sfEmpG !== 0 || r.sfSpG !== 0,
   );
@@ -115,14 +118,17 @@ export function EcartModule() {
     section,
     title,
     subtitle,
+    override,
   }: {
     section: Section;
     title: string;
     subtitle: string;
+    override?: Record<string, number>;
   }) => {
     const items = SECTION_ITEMS[section];
     const gramInput = GRAM_SECTIONS.includes(section);
-    const map = day[section] ?? {};
+    const locked = !!override;
+    const map = override ?? day[section] ?? {};
     const total = items.reduce((a, it) => {
       const q = Number(map[it.name] ?? 0);
       return a + (gramInput ? q : q * it.gram);
@@ -157,7 +163,7 @@ export function EcartModule() {
                         type="number"
                         inputMode="decimal"
                         value={q === 0 ? "" : q}
-                        disabled={!canEdit}
+                        disabled={!canEdit || locked}
                         onChange={(e) => setCell(section, it.name, e.target.value)}
                         className="w-24 border rounded px-1.5 py-1 text-right bg-background"
                       />
@@ -323,8 +329,18 @@ export function EcartModule() {
             </div>
           )}
           <div className="grid gap-4 lg:grid-cols-2">
-            {sectionTable({ section: "SI_EMP", title: "Stock initial Emporter (départ)", subtitle: "Total en grammes." })}
-            {sectionTable({ section: "SI_SP", title: "Stock initial Salle (départ)", subtitle: "Grammes par parfum." })}
+            {sectionTable({
+              section: "SI_EMP",
+              title: "Stock initial Emporter",
+              subtitle: carried ? "Reporté automatiquement du stock final de la veille." : "Total en grammes.",
+              override: carried?.SI_EMP,
+            })}
+            {sectionTable({
+              section: "SI_SP",
+              title: "Stock initial Salle",
+              subtitle: carried ? "Reporté automatiquement du stock final de la veille." : "Grammes par parfum.",
+              override: carried?.SI_SP,
+            })}
           </div>
         </div>
       ) : (

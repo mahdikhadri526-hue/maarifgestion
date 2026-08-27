@@ -233,6 +233,31 @@ export function computeDay(date: string, day: DayData, prev: DayData | undefined
   };
 }
 
+/** Dernière journée saisie (avec stock final) avant `date`, en remontant jusqu'à `lookback` jours. */
+export function lastFinalBefore(
+  history: Map<string, DayData>,
+  date: string,
+  lookback = 60,
+): DayData | undefined {
+  let cur = shiftDate(date, -1);
+  for (let i = 0; i < lookback; i++) {
+    const d = history.get(cur);
+    if (hasFinalStock(d)) return d;
+    cur = shiftDate(cur, -1);
+  }
+  return undefined;
+}
+
+/** Stock initial dérivé du stock final de la veille (report automatique). */
+export function initialFromFinal(prev: DayData | undefined): DayData | undefined {
+  if (!hasFinalStock(prev)) return undefined;
+  const t = computeTotals(prev as DayData);
+  const siSp: Record<string, number> = {};
+  const prevSfSp = (prev as DayData)["SF_SP"] ?? {};
+  for (const it of SECTION_ITEMS.SF_SP) siSp[it.name] = num(prevSfSp[it.name]);
+  return { SI_EMP: { TOTAL: t.sfEmpG }, SI_SP: siSp };
+}
+
 export interface EcartLine {
   entry_date: string;
   section: string;
