@@ -8,8 +8,8 @@ describe("Calcul des écarts — formule globale", () => {
       SI_SP: { Nougat: 500 },
       ENTREE_EMP: { Nougat: 1 },
       ENTREE_SP: { Nougat: 3550 },
-      SF_FRIGO_EMP: { Nougat: 2000 },
-      SF_CHAMBRE_EMP: { Nougat: 1 },
+      SF_EMP: { TOTAL: 2000 },
+      SF_CHAMBRE_EMP: { TOTAL: 3725 },
       SF_SP: { Nougat: 300 },
       VENTE_EMP: { "CORNET 1B EMP": 10 },
       VENTE_SP: { "0,5 L": 2 },
@@ -20,8 +20,8 @@ describe("Calcul des écarts — formule globale", () => {
     // Ventes = 10×60 + 2×500 = 1600
     expect(r.ventesTotalG).toBe(1600);
 
-    // Consommation = (SI_EMP 1000 + SI_SP 500) + (ENTREE_EMP 3725 + ENTREE_SP 3550) − (SF_EMP 2000+3725 + SF_SP 300)
-    // = 1500 + 7275 - 5725 - 300 = 2750
+    // Consommation = (SI_EMP 1000 + SI_SP 500) + (ENTREE_EMP 3725 + ENTREE_SP 3550) − (SF_EMP 2000 + SF_CHAMBRE 3725 + SF_SP 300)
+    // = 1500 + 7275 - 6025 = 2750
     expect(r.consoTotalG).toBe(2750);
 
     // Écart = Consommation − Ventes = 2750 − 1600 = 1150
@@ -30,13 +30,13 @@ describe("Calcul des écarts — formule globale", () => {
 
   it("reprend le stock final de la veille comme stock initial", () => {
     const prev: DayData = {
-      SF_FRIGO_EMP: { Nougat: 1000 },
+      SF_EMP: { TOTAL: 1000 },
       SF_SP: { Nougat: 200 },
     };
     const day: DayData = {
       ENTREE_EMP: { Nougat: 1 },
       ENTREE_SP: { Nougat: 0 },
-      SF_FRIGO_EMP: { Nougat: 800 },
+      SF_EMP: { TOTAL: 800 },
       SF_SP: { Nougat: 100 },
       VENTE_EMP: { "CORNET 1B EMP": 5 },
       VENTE_SP: {},

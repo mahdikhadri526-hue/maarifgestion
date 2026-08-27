@@ -11,6 +11,7 @@ export type Section =
   | "VENTE_SP"
   | "ENTREE_EMP"
   | "ENTREE_SP"
+  | "SF_EMP"
   | "SF_FRIGO_EMP"
   | "SF_TRANSIT_EMP"
   | "SF_CHAMBRE_EMP"
@@ -118,16 +119,17 @@ export const VENTES_SP: Item[] = [
 ];
 
 /** Sections saisies en grammes directement (pesée), pas en quantité. */
-export const GRAM_SECTIONS: Section[] = ["ENTREE_SP", "SF_FRIGO_EMP", "SF_SP", "SI_EMP", "SI_CHAMBRE_EMP", "SI_SP"];
+export const GRAM_SECTIONS: Section[] = ["ENTREE_SP", "SF_EMP", "SF_CHAMBRE_EMP", "SF_FRIGO_EMP", "SF_SP", "SI_EMP", "SI_CHAMBRE_EMP", "SI_SP"];
 
 export const SECTION_ITEMS: Record<Section, Item[]> = {
   VENTE_EMP: VENTES_EMP,
   VENTE_SP: VENTES_SP,
   ENTREE_EMP: PARFUMS,
   ENTREE_SP: PARFUMS,
+  SF_EMP: [{ name: "TOTAL", gram: 1 }],
   SF_FRIGO_EMP: PARFUMS,
   SF_TRANSIT_EMP: PARFUMS,
-  SF_CHAMBRE_EMP: PARFUMS,
+  SF_CHAMBRE_EMP: [{ name: "TOTAL", gram: 1 }],
   SF_SP: PARFUMS,
   SI_EMP: [{ name: "TOTAL", gram: 1 }],
   SI_CHAMBRE_EMP: [{ name: "TOTAL", gram: 1 }],
@@ -176,16 +178,19 @@ function sumSection(day: DayData, section: Section): number {
 }
 
 export function computeTotals(day: DayData): DayTotals {
+  const hasNewEmp = "SF_EMP" in (day ?? {});
+  const sfEmpCombined = hasNewEmp ? sumSection(day, "SF_EMP") : 0;
   const sfFrigoG = sumSection(day, "SF_FRIGO_EMP");
   const sfTransitG = sumSection(day, "SF_TRANSIT_EMP");
   const sfChambreG = sumSection(day, "SF_CHAMBRE_EMP");
+  const sfEmpPortionG = hasNewEmp ? sfEmpCombined : sfFrigoG + sfTransitG;
   return {
     entreeEmpG: sumSection(day, "ENTREE_EMP"),
     entreeSpG: sumSection(day, "ENTREE_SP"),
     sfFrigoG,
     sfTransitG,
     sfChambreG,
-    sfEmpG: sfFrigoG + sfTransitG + sfChambreG,
+    sfEmpG: sfEmpPortionG + sfChambreG,
     sfSpG: sumSection(day, "SF_SP"),
     ventesEmpG: sumSection(day, "VENTE_EMP"),
     ventesSpG: sumSection(day, "VENTE_SP"),
@@ -253,12 +258,14 @@ export function lastFinalBefore(
 /** Stock initial dérivé du stock final de la veille (report automatique). */
 export function initialFromFinal(prev: DayData | undefined): DayData | undefined {
   if (!hasFinalStock(prev)) return undefined;
-  const t = computeTotals(prev as DayData);
+  const day = prev as DayData;
+  const t = computeTotals(day);
+  const hasNewEmp = "SF_EMP" in day;
   const siSp: Record<string, number> = {};
-  const prevSfSp = (prev as DayData)["SF_SP"] ?? {};
+  const prevSfSp = day["SF_SP"] ?? {};
   for (const it of SECTION_ITEMS.SF_SP) siSp[it.name] = num(prevSfSp[it.name]);
   return {
-    SI_EMP: { TOTAL: t.sfFrigoG + t.sfTransitG },
+    SI_EMP: { TOTAL: hasNewEmp ? num(day.SF_EMP?.TOTAL ?? 0) : t.sfFrigoG + t.sfTransitG },
     SI_CHAMBRE_EMP: { TOTAL: t.sfChambreG },
     SI_SP: siSp,
   };
@@ -269,6 +276,32 @@ export interface EcartLine {
   section: string;
   item: string;
   qty: number;
+}
+
+/** Migration temporaire : les anciennes saisies par parfum des stocks finaux
+ *  Emporter sont regroupées en un seul total (SF_EMP / SF_CHAMBRE_EMP). */
+export function migrateFinalStock(day: DayData): DayData {
+  const out: DayData = { ...day };
+  const hasNewEmp = "SF_EMP" in out;
+  if (!hasNewEmp) {
+    const frigo = out.SF_FRIGO_EMP ?? {};
+    const transit = out.SF_TRANSIT_EMP ?? {};
+    let total = 0;
+    for (const it of PARFUMS) {
+      total += num(frigo[it.name]) * it.gram + num(transit[it.name]) * it.gram;
+    }
+    if (total > 0) out.SF_EMP = { TOTAL: total };
+  }
+  const hasNewChambre = (out.SF_CHAMBRE_EMP?.TOTAL ?? 0) > 0;
+  if (!hasNewChambre) {
+    const chambre = out.SF_CHAMBRE_EMP ?? {};
+    let total = 0;
+    for (const it of PARFUMS) {
+      total += num(chambre[it.name]) * it.gram;
+    }
+    if (total > 0) out.SF_CHAMBRE_EMP = { TOTAL: total };
+  }
+  return out;
 }
 
 export async function fetchEcartLines(start: string, end: string): Promise<Map<string, DayData>> {
@@ -286,7 +319,11 @@ export async function fetchEcartLines(start: string, end: string): Promise<Map<s
     d[r.section] = { ...(d[r.section] ?? {}), [r.item]: num(r.qty) };
     days.set(r.entry_date, d);
   }
-  return days;
+  const migrated = new Map<string, DayData>();
+  for (const [k, v] of days) {
+    migrated.set(k, migrateFinalStock(v));
+  }
+  return migrated;
 }
 
 export async function saveEcartDay(date: string, day: DayData, sections: Section[]): Promise<void> {
