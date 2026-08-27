@@ -119,7 +119,7 @@ export const VENTES_SP: Item[] = [
 ];
 
 /** Sections saisies en grammes directement (pesée), pas en quantité. */
-export const GRAM_SECTIONS: Section[] = ["ENTREE_SP", "SF_EMP", "SF_CHAMBRE_EMP", "SF_FRIGO_EMP", "SF_SP", "SI_EMP", "SI_CHAMBRE_EMP", "SI_SP"];
+export const GRAM_SECTIONS: Section[] = ["ENTREE_SP", "SF_EMP", "SF_FRIGO_EMP", "SF_SP", "SI_EMP", "SI_SP"];
 
 export const SECTION_ITEMS: Record<Section, Item[]> = {
   VENTE_EMP: VENTES_EMP,
