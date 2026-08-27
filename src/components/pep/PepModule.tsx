@@ -192,10 +192,8 @@ function AgendaView({
   const step = view === "day" ? 1 : view === "week" ? 7 : 30;
   const inRange = new Set(range);
 
-  // Les tâches en retard ne sont rappelées que le lendemain de leur échéance,
-  // elles ne sont plus répétées les jours suivants.
-  const lateLimit = addDays(today, -1);
-  const lateRows = rows.filter((r) => r.status === "late" && r.occ.due_date >= lateLimit);
+  // Les tâches en retard ne sont JAMAIS reportées : elles restent visibles
+  // uniquement sur leur jour d'échéance.
   const visible = rows.filter((r) => inRange.has(r.occ.due_date));
 
   const [completing, setCompleting] = useState<Row | null>(null);
@@ -272,16 +270,6 @@ function AgendaView({
         </button>
       </div>
 
-      {view === "day" && anchor === today && applyFilters(lateRows).length > 0 && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-          <p className="text-sm font-semibold text-red-700 mb-2">🔴 {applyFilters(lateRows).length} tâche(s) PEP en retard</p>
-          <div className="space-y-2">
-            {applyFilters(lateRows).map((r) => (
-              <TaskCard key={r.occ.id} row={r} onComplete={() => setCompleting(r)} onPostpone={() => setPostponing(r)} onChanged={onChanged} posts={posts} />
-            ))}
-          </div>
-        </div>
-      )}
 
       {range.map((d) => {
         const dayRows = applyFilters(visible.filter((r) => r.occ.due_date === d));
