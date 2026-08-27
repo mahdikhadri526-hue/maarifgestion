@@ -28,7 +28,7 @@ const VIEW_SECTIONS: Record<Exclude<View, "ecarts">, Section[]> = {
   ventes: ["VENTE_EMP", "VENTE_SP"],
   entrees: ["ENTREE_EMP"],
   final: ["SF_FRIGO_EMP", "SF_CHAMBRE_EMP", "SF_SP"],
-  initial: ["SI_EMP", "SI_SP"],
+  initial: ["SI_EMP", "SI_CHAMBRE_EMP", "SI_SP"],
 };
 
 export function EcartModule() {
@@ -328,12 +328,22 @@ export function EcartModule() {
               que si aucun stock final n'a été saisi la veille.
             </div>
           )}
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-3">
             {sectionTable({
               section: "SI_EMP",
               title: "Stock initial Emporter",
-              subtitle: carried ? "Reporté automatiquement du stock final de la veille." : "Total en grammes.",
+              subtitle: carried
+                ? "Reporté automatiquement (frigo + transit) du stock final de la veille."
+                : "Total en grammes (frigo + transit).",
               override: carried?.SI_EMP,
+            })}
+            {sectionTable({
+              section: "SI_CHAMBRE_EMP",
+              title: "Stock initial Chambre",
+              subtitle: carried
+                ? "Reporté automatiquement du stock final chambre de la veille."
+                : "Total en grammes.",
+              override: carried?.SI_CHAMBRE_EMP,
             })}
             {sectionTable({
               section: "SI_SP",

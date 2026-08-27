@@ -16,6 +16,7 @@ export type Section =
   | "SF_CHAMBRE_EMP"
   | "SF_SP"
   | "SI_EMP"
+  | "SI_CHAMBRE_EMP"
   | "SI_SP";
 
 export interface Item {
@@ -117,7 +118,7 @@ export const VENTES_SP: Item[] = [
 ];
 
 /** Sections saisies en grammes directement (pesée), pas en quantité. */
-export const GRAM_SECTIONS: Section[] = ["ENTREE_SP", "SF_FRIGO_EMP", "SF_SP", "SI_EMP", "SI_SP"];
+export const GRAM_SECTIONS: Section[] = ["ENTREE_SP", "SF_FRIGO_EMP", "SF_SP", "SI_EMP", "SI_CHAMBRE_EMP", "SI_SP"];
 
 export const SECTION_ITEMS: Record<Section, Item[]> = {
   VENTE_EMP: VENTES_EMP,
@@ -129,6 +130,7 @@ export const SECTION_ITEMS: Record<Section, Item[]> = {
   SF_CHAMBRE_EMP: PARFUMS,
   SF_SP: PARFUMS,
   SI_EMP: [{ name: "TOTAL", gram: 1 }],
+  SI_CHAMBRE_EMP: [{ name: "TOTAL", gram: 1 }],
   SI_SP: PARFUMS,
 };
 
@@ -207,7 +209,7 @@ export function hasFinalStock(day: DayData | undefined): boolean {
 export function computeDay(date: string, day: DayData, prev: DayData | undefined): DayResult {
   const t = computeTotals(day);
   const prevTotals = prev ? computeTotals(prev) : null;
-  const siEmpG = prevTotals && hasFinalStock(prev) ? prevTotals.sfEmpG : sumSection(day, "SI_EMP");
+  const siEmpG = prevTotals && hasFinalStock(prev) ? prevTotals.sfEmpG : sumSection(day, "SI_EMP") + sumSection(day, "SI_CHAMBRE_EMP");
   const siSpG = prevTotals && hasFinalStock(prev) ? prevTotals.sfSpG : sumSection(day, "SI_SP");
 
   const siTotalG = siEmpG + siSpG;
@@ -255,7 +257,11 @@ export function initialFromFinal(prev: DayData | undefined): DayData | undefined
   const siSp: Record<string, number> = {};
   const prevSfSp = (prev as DayData)["SF_SP"] ?? {};
   for (const it of SECTION_ITEMS.SF_SP) siSp[it.name] = num(prevSfSp[it.name]);
-  return { SI_EMP: { TOTAL: t.sfEmpG }, SI_SP: siSp };
+  return {
+    SI_EMP: { TOTAL: t.sfFrigoG + t.sfTransitG },
+    SI_CHAMBRE_EMP: { TOTAL: t.sfChambreG },
+    SI_SP: siSp,
+  };
 }
 
 export interface EcartLine {
