@@ -231,37 +231,41 @@ function rawDueDates(task: PepTask, from: string, to: string): string[] {
 
   if (task.frequency === "daily") return datesBetween(start, to);
 
+  // Chaque lundi / mardi / … : jour fixe, aucun lissage.
+  const fixedDay = WEEKDAY_FREQUENCIES[task.frequency];
+  if (fixedDay !== undefined) {
+    for (const iso of datesBetween(start, to)) {
+      if (parseISO(iso).getDay() === fixedDay) out.push(iso);
+    }
+    return out;
+  }
+
   if (task.frequency === "weekly" || task.frequency === "twice_week") {
-    const dayA = 1 + (h % 5); // lundi..vendredi
-    const dayB = ((dayA + 2) % 5) + 1; // espacé d'au moins 2 jours ouvrés
+    // Ancrage sur le jour de démarrage de la tâche (prévisible pour l'équipe).
+    const dayA = parseISO(task.start_date).getDay();
+    const dayB = (dayA + 3) % 7;
     const wanted = task.frequency === "weekly" ? [dayA] : [dayA, dayB];
-    for (const iso of datesBetween(mondayOf(start), to)) {
-      if (iso < start) continue;
+    for (const iso of datesBetween(start, to)) {
       if (wanted.includes(parseISO(iso).getDay())) out.push(iso);
     }
     return out;
   }
 
   if (task.frequency === "biweekly") {
-    // Tous les 15 jours : ancrage déterministe sur la quinzaine.
-    let cur = addDays(task.start_date, (h % 14));
+    // Tous les 15 jours à partir de la date de démarrage.
+    let cur = task.start_date;
     let g = 0;
     while (cur < start && g++ < 400) cur = addDays(cur, 14);
     while (cur <= to && g++ < 400) {
-      if (cur >= task.start_date) out.push(cur);
+      out.push(cur);
       cur = addDays(cur, 14);
     }
     return out;
   }
 
-
-
   const period = PERIOD_MONTHS[task.frequency] ?? 1;
-  // Répartition dans la période : décalage de mois + jour du mois déterministes.
-  const monthOffset = h % period;
-  const dayOfMonth = 3 + ((h >> 3) % 22); // entre le 3 et le 24
-  let anchor = addMonths(task.start_date, monthOffset);
-  anchor = `${anchor.slice(0, 7)}-${String(dayOfMonth).padStart(2, "0")}`;
+  // Première échéance = date de démarrage, puis toutes les N périodes.
+  let anchor = task.start_date;
   let guard = 0;
   while (anchor < from && guard++ < 400) anchor = addMonths(anchor, period);
   while (anchor <= to && guard++ < 400) {
@@ -270,6 +274,7 @@ function rawDueDates(task: PepTask, from: string, to: string): string[] {
   }
   return out;
 }
+
 
 /**
  * Décale une date vers le prochain jour ouvrable disponible en évitant
