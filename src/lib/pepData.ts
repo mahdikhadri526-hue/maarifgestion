@@ -352,7 +352,8 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
 
   if (!toInsert.length) return;
   for (let i = 0; i < toInsert.length; i += 200) {
-    await supabase.from("pep_occurrences" as any).insert(toInsert.slice(i, i + 200) as any);
+    const { error } = await supabase.from("pep_occurrences" as any).insert(toInsert.slice(i, i + 200) as any);
+    if (error) throw error;
   }
 }
 
@@ -429,6 +430,7 @@ export async function saveTask(task: Partial<PepTask> & { name: string; frequenc
     notes: task.notes ?? null,
   };
   if (task.id) {
+    const existingTask = (await getPepTasks()).find((row) => row.id === task.id);
     const { error } = await supabase.from("pep_tasks" as any).update(payload).eq("id", task.id);
     if (error) throw error;
     if (!active) {
@@ -440,6 +442,20 @@ export async function saveTask(task: Partial<PepTask> & { name: string; frequenc
         .gte("due_date", todayISO())
         .in("status", ["todo", "in_progress", "postponed"]);
     } else {
+      const scheduleChanged =
+        existingTask &&
+        (existingTask.frequency !== task.frequency ||
+          existingTask.start_date !== payload.start_date ||
+          existingTask.weekend_allowed !== payload.weekend_allowed);
+      if (scheduleChanged) {
+        const { error: cleanupError } = await supabase
+          .from("pep_occurrences" as any)
+          .delete()
+          .eq("task_id", task.id)
+          .gte("due_date", todayISO())
+          .in("status", ["todo", "in_progress", "postponed"]);
+        if (cleanupError) throw cleanupError;
+      }
       await ensurePlanning();
     }
   } else {
