@@ -9,6 +9,13 @@ export type PepFrequency =
   | "daily"
   | "twice_week"
   | "weekly"
+  | "weekly_mon"
+  | "weekly_tue"
+  | "weekly_wed"
+  | "weekly_thu"
+  | "weekly_fri"
+  | "weekly_sat"
+  | "weekly_sun"
   | "biweekly"
   | "monthly"
   | "bimonthly"
@@ -17,10 +24,28 @@ export type PepFrequency =
   | "annual"
   | "five_years";
 
+/** Fréquences « chaque <jour> » → index JS du jour (0 = dimanche). */
+export const WEEKDAY_FREQUENCIES: Partial<Record<PepFrequency, number>> = {
+  weekly_mon: 1,
+  weekly_tue: 2,
+  weekly_wed: 3,
+  weekly_thu: 4,
+  weekly_fri: 5,
+  weekly_sat: 6,
+  weekly_sun: 0,
+};
+
 export const PEP_FREQUENCIES: { key: PepFrequency; label: string }[] = [
   { key: "daily", label: "Quotidienne" },
   { key: "twice_week", label: "2 fois par semaine" },
   { key: "weekly", label: "Hebdomadaire" },
+  { key: "weekly_mon", label: "Chaque lundi" },
+  { key: "weekly_tue", label: "Chaque mardi" },
+  { key: "weekly_wed", label: "Chaque mercredi" },
+  { key: "weekly_thu", label: "Chaque jeudi" },
+  { key: "weekly_fri", label: "Chaque vendredi" },
+  { key: "weekly_sat", label: "Chaque samedi" },
+  { key: "weekly_sun", label: "Chaque dimanche" },
   { key: "biweekly", label: "Tous les 15 jours" },
   { key: "monthly", label: "Mensuelle" },
   { key: "bimonthly", label: "Tous les 2 mois" },
@@ -29,6 +54,7 @@ export const PEP_FREQUENCIES: { key: PepFrequency; label: string }[] = [
   { key: "annual", label: "Annuelle" },
   { key: "five_years", label: "Tous les 5 ans" },
 ];
+
 
 
 export const FREQ_LABEL: Record<string, string> = Object.fromEntries(
@@ -199,43 +225,47 @@ const PERIOD_MONTHS: Partial<Record<PepFrequency, number>> = {
 
 /** Dates « théoriques » d'une tâche entre deux bornes, avant lissage. */
 function rawDueDates(task: PepTask, from: string, to: string): string[] {
-  const h = hash(task.id);
+  // (planification déterministe basée sur la date de démarrage)
   const out: string[] = [];
   const start = task.start_date > from ? task.start_date : from;
 
   if (task.frequency === "daily") return datesBetween(start, to);
 
+  // Chaque lundi / mardi / … : jour fixe, aucun lissage.
+  const fixedDay = WEEKDAY_FREQUENCIES[task.frequency];
+  if (fixedDay !== undefined) {
+    for (const iso of datesBetween(start, to)) {
+      if (parseISO(iso).getDay() === fixedDay) out.push(iso);
+    }
+    return out;
+  }
+
   if (task.frequency === "weekly" || task.frequency === "twice_week") {
-    const dayA = 1 + (h % 5); // lundi..vendredi
-    const dayB = ((dayA + 2) % 5) + 1; // espacé d'au moins 2 jours ouvrés
+    // Ancrage sur le jour de démarrage de la tâche (prévisible pour l'équipe).
+    const dayA = parseISO(task.start_date).getDay();
+    const dayB = (dayA + 3) % 7;
     const wanted = task.frequency === "weekly" ? [dayA] : [dayA, dayB];
-    for (const iso of datesBetween(mondayOf(start), to)) {
-      if (iso < start) continue;
+    for (const iso of datesBetween(start, to)) {
       if (wanted.includes(parseISO(iso).getDay())) out.push(iso);
     }
     return out;
   }
 
   if (task.frequency === "biweekly") {
-    // Tous les 15 jours : ancrage déterministe sur la quinzaine.
-    let cur = addDays(task.start_date, (h % 14));
+    // Tous les 15 jours à partir de la date de démarrage.
+    let cur = task.start_date;
     let g = 0;
     while (cur < start && g++ < 400) cur = addDays(cur, 14);
     while (cur <= to && g++ < 400) {
-      if (cur >= task.start_date) out.push(cur);
+      out.push(cur);
       cur = addDays(cur, 14);
     }
     return out;
   }
 
-
-
   const period = PERIOD_MONTHS[task.frequency] ?? 1;
-  // Répartition dans la période : décalage de mois + jour du mois déterministes.
-  const monthOffset = h % period;
-  const dayOfMonth = 3 + ((h >> 3) % 22); // entre le 3 et le 24
-  let anchor = addMonths(task.start_date, monthOffset);
-  anchor = `${anchor.slice(0, 7)}-${String(dayOfMonth).padStart(2, "0")}`;
+  // Première échéance = date de démarrage, puis toutes les N périodes.
+  let anchor = task.start_date;
   let guard = 0;
   while (anchor < from && guard++ < 400) anchor = addMonths(anchor, period);
   while (anchor <= to && guard++ < 400) {
@@ -244,6 +274,7 @@ function rawDueDates(task: PepTask, from: string, to: string): string[] {
   }
   return out;
 }
+
 
 /**
  * Décale une date vers le prochain jour ouvrable disponible en évitant
@@ -301,18 +332,19 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
   existing.forEach((o) => load.set(o.due_date, (load.get(o.due_date) ?? 0) + 1));
 
   const toInsert: any[] = [];
-  // Les quotidiennes d'abord (elles ne bougent jamais), puis les autres lissées.
-  const ordered = [...active].sort((a, b) => (a.frequency === "daily" ? -1 : 1) - (b.frequency === "daily" ? -1 : 1));
+  // Dates fixes (quotidiennes + « chaque <jour> ») : jamais déplacées.
+  const isFixed = (f: string) => f === "daily" || WEEKDAY_FREQUENCIES[f as PepFrequency] !== undefined;
+  const ordered = [...active].sort((a, b) => (isFixed(a.frequency) ? -1 : 1) - (isFixed(b.frequency) ? -1 : 1));
 
   for (const task of ordered) {
     for (const raw of rawDueDates(task, today, to)) {
       const key = `${task.id}|${raw}`;
       if (known.has(key)) continue;
       known.add(key);
-      const due =
-        task.frequency === "daily"
-          ? raw
-          : balancedDate(raw, holidays, load, task.weekend_allowed);
+      const due = isFixed(task.frequency)
+        ? raw
+        : balancedDate(raw, holidays, load, task.weekend_allowed);
+
       load.set(due, (load.get(due) ?? 0) + 1);
       toInsert.push({ task_id: task.id, due_date: due, original_due_date: raw, status: "todo" });
     }
