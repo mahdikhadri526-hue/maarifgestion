@@ -129,10 +129,14 @@ export function EcartModule() {
     const gramInput = GRAM_SECTIONS.includes(section);
     const locked = !!override;
     const map = override ?? day[section] ?? {};
-    const total = items.reduce((a, it) => {
-      const q = Number(map[it.name] ?? 0);
-      return a + (gramInput ? q : q * it.gram);
-    }, 0);
+    const { totalQty, totalG } = items.reduce(
+      (a, it) => {
+        const q = Number(map[it.name] ?? 0);
+        const g = gramInput ? q : q * it.gram;
+        return { totalQty: a.totalQty + q, totalG: a.totalG + g };
+      },
+      { totalQty: 0, totalG: 0 },
+    );
     return (
       <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
         <div className="px-3 py-2 border-b bg-muted/50">
@@ -175,10 +179,12 @@ export function EcartModule() {
                 );
               })}
               <tr className="border-t bg-muted/40 font-semibold">
-                <td className="px-2 py-2" colSpan={gramInput ? 1 : 3}>
-                  TOTAL (G)
-                </td>
-                <td className="px-2 py-2 text-right tabular-nums">{fmtG(total)}</td>
+                <td className="px-2 py-2">TOTAL</td>
+                {!gramInput && <td className="px-2 py-2" />}
+                <td className="px-2 py-2 text-right tabular-nums">{fmtG(totalQty)}</td>
+                {!gramInput && (
+                  <td className="px-2 py-2 text-right tabular-nums">{fmtG(totalG)} g</td>
+                )}
               </tr>
             </tbody>
           </table>
