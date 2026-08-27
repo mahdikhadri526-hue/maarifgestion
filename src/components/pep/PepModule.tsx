@@ -270,16 +270,6 @@ function AgendaView({
         </button>
       </div>
 
-      {view === "day" && anchor === today && applyFilters(lateRows).length > 0 && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-          <p className="text-sm font-semibold text-red-700 mb-2">🔴 {applyFilters(lateRows).length} tâche(s) PEP en retard</p>
-          <div className="space-y-2">
-            {applyFilters(lateRows).map((r) => (
-              <TaskCard key={r.occ.id} row={r} onComplete={() => setCompleting(r)} onPostpone={() => setPostponing(r)} onChanged={onChanged} posts={posts} />
-            ))}
-          </div>
-        </div>
-      )}
 
       {range.map((d) => {
         const dayRows = applyFilters(visible.filter((r) => r.occ.due_date === d));
