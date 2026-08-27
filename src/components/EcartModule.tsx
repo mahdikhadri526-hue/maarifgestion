@@ -376,6 +376,8 @@ export function EcartModule() {
               <Stat label="Entrées Salle (g)" value={result.entreeSpG} />
               <Stat label="Stock final Emporter (g)" value={result.sfEmpG} />
               <Stat label="Stock final Salle (g)" value={result.sfSpG} />
+              <Stat label="Ventes Emporter (g)" value={result.ventesEmpG} />
+              <Stat label="Ventes Surplace (g)" value={result.ventesSpG} />
             </div>
           )}
 
