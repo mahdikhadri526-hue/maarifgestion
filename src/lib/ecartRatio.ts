@@ -16,6 +16,7 @@ export type Section =
   | "SF_CHAMBRE_EMP"
   | "SF_SP"
   | "SI_EMP"
+  | "SI_CHAMBRE_EMP"
   | "SI_SP";
 
 export interface Item {
@@ -117,7 +118,7 @@ export const VENTES_SP: Item[] = [
 ];
 
 /** Sections saisies en grammes directement (pesée), pas en quantité. */
-export const GRAM_SECTIONS: Section[] = ["ENTREE_SP", "SF_FRIGO_EMP", "SF_SP", "SI_EMP", "SI_SP"];
+export const GRAM_SECTIONS: Section[] = ["ENTREE_SP", "SF_FRIGO_EMP", "SF_SP", "SI_EMP", "SI_CHAMBRE_EMP", "SI_SP"];
 
 export const SECTION_ITEMS: Record<Section, Item[]> = {
   VENTE_EMP: VENTES_EMP,
@@ -129,6 +130,7 @@ export const SECTION_ITEMS: Record<Section, Item[]> = {
   SF_CHAMBRE_EMP: PARFUMS,
   SF_SP: PARFUMS,
   SI_EMP: [{ name: "TOTAL", gram: 1 }],
+  SI_CHAMBRE_EMP: [{ name: "TOTAL", gram: 1 }],
   SI_SP: PARFUMS,
 };
 
