@@ -67,7 +67,13 @@ export function PepModule({ initialView = "day" }: { initialView?: View }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      await ensurePlanning();
+      // Une erreur de génération ne doit pas empêcher la lecture des tâches
+      // déjà enregistrées et donc bloquer tout l'Agenda PEP.
+      try {
+        await ensurePlanning();
+      } catch (planningError) {
+        console.warn("Planification PEP temporairement indisponible", planningError);
+      }
       const [t, h, o, p] = await Promise.all([
         getPepTasks(),
         getPepHolidays(),

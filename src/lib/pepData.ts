@@ -353,7 +353,10 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
   if (!toInsert.length) return;
   for (let i = 0; i < toInsert.length; i += 200) {
     const { error } = await supabase.from("pep_occurrences" as any).insert(toInsert.slice(i, i + 200) as any);
-    if (error) throw error;
+    // Le résumé d'accueil et l'agenda peuvent lancer la planification en même
+    // temps. Dans ce cas, l'autre requête a déjà créé les mêmes occurrences :
+    // la contrainte unique remplit son rôle et ne doit pas bloquer l'affichage.
+    if (error && error.code !== "23505") throw error;
   }
 }
 
