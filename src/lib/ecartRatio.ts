@@ -126,13 +126,13 @@ export const SECTION_ITEMS: Record<Section, Item[]> = {
   VENTE_SP: VENTES_SP,
   ENTREE_EMP: PARFUMS,
   ENTREE_SP: PARFUMS,
-  SF_EMP: [{ name: "TOTAL", gram: 1 }],
+  SF_EMP: PARFUMS,
   SF_FRIGO_EMP: PARFUMS,
   SF_TRANSIT_EMP: PARFUMS,
-  SF_CHAMBRE_EMP: [{ name: "TOTAL", gram: 1 }],
+  SF_CHAMBRE_EMP: PARFUMS,
   SF_SP: PARFUMS,
-  SI_EMP: [{ name: "TOTAL", gram: 1 }],
-  SI_CHAMBRE_EMP: [{ name: "TOTAL", gram: 1 }],
+  SI_EMP: PARFUMS,
+  SI_CHAMBRE_EMP: PARFUMS,
   SI_SP: PARFUMS,
 };
 
@@ -259,15 +259,16 @@ export function lastFinalBefore(
 export function initialFromFinal(prev: DayData | undefined): DayData | undefined {
   if (!hasFinalStock(prev)) return undefined;
   const day = prev as DayData;
-  const t = computeTotals(day);
-  const hasNewEmp = "SF_EMP" in day;
-  const siSp: Record<string, number> = {};
-  const prevSfSp = day["SF_SP"] ?? {};
-  for (const it of SECTION_ITEMS.SF_SP) siSp[it.name] = num(prevSfSp[it.name]);
+  const copy = (section: Section): Record<string, number> => {
+    const src = day[section] ?? {};
+    const out: Record<string, number> = {};
+    for (const it of SECTION_ITEMS[section]) out[it.name] = num(src[it.name]);
+    return out;
+  };
   return {
-    SI_EMP: { TOTAL: hasNewEmp ? num(day.SF_EMP?.TOTAL ?? 0) : t.sfFrigoG + t.sfTransitG },
-    SI_CHAMBRE_EMP: { TOTAL: t.sfChambreG },
-    SI_SP: siSp,
+    SI_EMP: copy("SF_EMP"),
+    SI_CHAMBRE_EMP: copy("SF_CHAMBRE_EMP"),
+    SI_SP: copy("SF_SP"),
   };
 }
 
@@ -282,24 +283,23 @@ export interface EcartLine {
  *  Emporter sont regroupées en un seul total (SF_EMP / SF_CHAMBRE_EMP). */
 export function migrateFinalStock(day: DayData): DayData {
   const out: DayData = { ...day };
-  const hasNewEmp = "SF_EMP" in out;
-  if (!hasNewEmp) {
+  if (!("SF_EMP" in out)) {
     const frigo = out.SF_FRIGO_EMP ?? {};
     const transit = out.SF_TRANSIT_EMP ?? {};
+    const conv: Record<string, number> = {};
     let total = 0;
     for (const it of PARFUMS) {
-      total += num(frigo[it.name]) * it.gram + num(transit[it.name]) * it.gram;
+      const g = (num(frigo[it.name]) + num(transit[it.name])) * it.gram;
+      conv[it.name] = g;
+      total += g;
     }
-    if (total > 0) out.SF_EMP = { TOTAL: total };
+    if (total > 0) out.SF_EMP = conv;
+  } else if (typeof out.SF_EMP?.TOTAL === "number" && Object.keys(out.SF_EMP).length === 1) {
+    // ancienne saisie « TOTAL » : conservée sur le premier parfum pour ne rien perdre
+    out.SF_EMP = { [PARFUMS[0].name]: num(out.SF_EMP.TOTAL) };
   }
-  const hasNewChambre = (out.SF_CHAMBRE_EMP?.TOTAL ?? 0) > 0;
-  if (!hasNewChambre) {
-    const chambre = out.SF_CHAMBRE_EMP ?? {};
-    let total = 0;
-    for (const it of PARFUMS) {
-      total += num(chambre[it.name]) * it.gram;
-    }
-    if (total > 0) out.SF_CHAMBRE_EMP = { TOTAL: total };
+  if (out.SF_CHAMBRE_EMP && typeof out.SF_CHAMBRE_EMP.TOTAL === "number" && Object.keys(out.SF_CHAMBRE_EMP).length === 1) {
+    out.SF_CHAMBRE_EMP = { [PARFUMS[0].name]: num(out.SF_CHAMBRE_EMP.TOTAL) };
   }
   return out;
 }
