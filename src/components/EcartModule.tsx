@@ -144,7 +144,7 @@ export function EcartModule() {
             <thead className="bg-muted/30">
               <tr>
                 <th className="px-2 py-1.5 text-left">Article</th>
-                {!gramInput && <th className="px-2 py-1.5 text-right">Grammage (g)</th>}
+                <th className="px-2 py-1.5 text-right">Grammage (g)</th>
                 <th className="px-2 py-1.5 text-right">{gramInput ? "Grammes" : "Quantité"}</th>
                 {!gramInput && <th className="px-2 py-1.5 text-right">Total (g)</th>}
               </tr>
@@ -155,9 +155,7 @@ export function EcartModule() {
                 return (
                   <tr key={it.name} className="border-t">
                     <td className="px-2 py-1 whitespace-nowrap font-medium">{it.name}</td>
-                    {!gramInput && (
-                      <td className="px-2 py-1 text-right tabular-nums text-muted-foreground">{fmtG(it.gram)}</td>
-                    )}
+                    <td className="px-2 py-1 text-right tabular-nums text-muted-foreground">{fmtG(it.gram)}</td>
                     <td className="px-1 py-1 text-right">
                       <input
                         type="number"
