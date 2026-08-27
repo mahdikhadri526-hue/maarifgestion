@@ -494,7 +494,9 @@ export interface TodaySummary {
 
 export async function getTodaySummary(): Promise<TodaySummary> {
   const today = todayISO();
-  const occ = await getOccurrences(addDays(today, -120), today);
+  // Un retard n'est rappelé que le lendemain de l'échéance (pas les jours suivants).
+  const lateLimit = addDays(today, -1);
+  const occ = await getOccurrences(lateLimit, today);
   let todo = 0,
     late = 0,
     done = 0;
