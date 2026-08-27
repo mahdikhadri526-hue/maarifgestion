@@ -225,7 +225,7 @@ const PERIOD_MONTHS: Partial<Record<PepFrequency, number>> = {
 
 /** Dates « théoriques » d'une tâche entre deux bornes, avant lissage. */
 function rawDueDates(task: PepTask, from: string, to: string): string[] {
-  const h = hash(task.id);
+  // (planification déterministe basée sur la date de démarrage)
   const out: string[] = [];
   const start = task.start_date > from ? task.start_date : from;
 
