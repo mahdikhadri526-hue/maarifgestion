@@ -11,6 +11,7 @@ export type Section =
   | "VENTE_SP"
   | "ENTREE_EMP"
   | "ENTREE_SP"
+  | "SF_EMP"
   | "SF_FRIGO_EMP"
   | "SF_TRANSIT_EMP"
   | "SF_CHAMBRE_EMP"
@@ -118,16 +119,17 @@ export const VENTES_SP: Item[] = [
 ];
 
 /** Sections saisies en grammes directement (pesée), pas en quantité. */
-export const GRAM_SECTIONS: Section[] = ["ENTREE_SP", "SF_FRIGO_EMP", "SF_SP", "SI_EMP", "SI_CHAMBRE_EMP", "SI_SP"];
+export const GRAM_SECTIONS: Section[] = ["ENTREE_SP", "SF_EMP", "SF_CHAMBRE_EMP", "SF_FRIGO_EMP", "SF_SP", "SI_EMP", "SI_CHAMBRE_EMP", "SI_SP"];
 
 export const SECTION_ITEMS: Record<Section, Item[]> = {
   VENTE_EMP: VENTES_EMP,
   VENTE_SP: VENTES_SP,
   ENTREE_EMP: PARFUMS,
   ENTREE_SP: PARFUMS,
+  SF_EMP: [{ name: "TOTAL", gram: 1 }],
   SF_FRIGO_EMP: PARFUMS,
   SF_TRANSIT_EMP: PARFUMS,
-  SF_CHAMBRE_EMP: PARFUMS,
+  SF_CHAMBRE_EMP: [{ name: "TOTAL", gram: 1 }],
   SF_SP: PARFUMS,
   SI_EMP: [{ name: "TOTAL", gram: 1 }],
   SI_CHAMBRE_EMP: [{ name: "TOTAL", gram: 1 }],
@@ -176,16 +178,19 @@ function sumSection(day: DayData, section: Section): number {
 }
 
 export function computeTotals(day: DayData): DayTotals {
+  const hasNewEmp = "SF_EMP" in (day ?? {});
+  const sfEmpCombined = hasNewEmp ? sumSection(day, "SF_EMP") : 0;
   const sfFrigoG = sumSection(day, "SF_FRIGO_EMP");
   const sfTransitG = sumSection(day, "SF_TRANSIT_EMP");
   const sfChambreG = sumSection(day, "SF_CHAMBRE_EMP");
+  const sfEmpPortionG = hasNewEmp ? sfEmpCombined : sfFrigoG + sfTransitG;
   return {
     entreeEmpG: sumSection(day, "ENTREE_EMP"),
     entreeSpG: sumSection(day, "ENTREE_SP"),
     sfFrigoG,
     sfTransitG,
     sfChambreG,
-    sfEmpG: sfFrigoG + sfTransitG + sfChambreG,
+    sfEmpG: sfEmpPortionG + sfChambreG,
     sfSpG: sumSection(day, "SF_SP"),
     ventesEmpG: sumSection(day, "VENTE_EMP"),
     ventesSpG: sumSection(day, "VENTE_SP"),
