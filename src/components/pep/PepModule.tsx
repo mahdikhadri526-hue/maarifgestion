@@ -438,39 +438,9 @@ function AgendaView({
                     </tr>,
                     expanded && (
                       <tr key={`${r.occ.id}-d`} className="border-t bg-muted/20">
-                        <td colSpan={6} className="px-3 py-2">
+                        <td colSpan={7} className="px-3 py-2">
                           <div className="space-y-1.5 text-[11px]">
                             {r.occ.comment && <p>💬 {r.occ.comment}</p>}
-                            {r.occ.photo_url && (
-                              <div className="flex items-end gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setPhotoUrl(r.occ.photo_url!)}
-                                  className="block"
-                                  title="Voir le justificatif"
-                                >
-                                  <img src={r.occ.photo_url} alt="Justificatif" className="h-16 w-16 rounded border object-cover" />
-                                  <span className="text-[11px] text-primary underline">Voir le justificatif</span>
-                                </button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-destructive h-7 px-2"
-                                  onClick={async () => {
-                                    if (!confirm("Supprimer cette photo ?")) return;
-                                    try {
-                                      await removeOccurrencePhoto(r.occ.id);
-                                      toast({ title: "Photo supprimée" });
-                                      await onChanged();
-                                    } catch (e: any) {
-                                      toast({ title: "Erreur", description: e?.message, variant: "destructive" });
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer
-                                </Button>
-                              </div>
-                            )}
                             {history.map((h) => (
                               <p key={h.id} className="text-purple-700">
                                 Reportée du {fmtFR(h.from_date)} au {fmtFR(h.to_date)} — {h.reason || "sans motif"} ({h.postponed_by_name ?? "—"})
@@ -487,6 +457,7 @@ function AgendaView({
                         </td>
                       </tr>
                     ),
+
                   ];
                 })}
               </tbody>
