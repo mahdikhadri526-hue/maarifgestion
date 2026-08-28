@@ -369,6 +369,39 @@ function AgendaView({
                           {STATUS_META[r.status].label}
                         </span>
                       </td>
+                      <td className="px-3 py-2 whitespace-nowrap align-middle">
+                        {r.occ.photo_url ? (
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setPhotoUrl(r.occ.photo_url!)}
+                              className="block"
+                              title="Voir le justificatif"
+                            >
+                              <img src={r.occ.photo_url} alt="Justificatif" className="h-10 w-10 rounded border object-cover" />
+                            </button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive h-7 px-1.5"
+                              onClick={async () => {
+                                if (!confirm("Supprimer cette photo ?")) return;
+                                try {
+                                  await removeOccurrencePhoto(r.occ.id);
+                                  toast({ title: "Photo supprimée" });
+                                  await onChanged();
+                                } catch (e: any) {
+                                  toast({ title: "Erreur", description: e?.message, variant: "destructive" });
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1 flex-wrap">
                           {!done && r.occ.status !== "missed" && (
@@ -401,6 +434,7 @@ function AgendaView({
                           )}
                         </div>
                       </td>
+
                     </tr>,
                     expanded && (
                       <tr key={`${r.occ.id}-d`} className="border-t bg-muted/20">
