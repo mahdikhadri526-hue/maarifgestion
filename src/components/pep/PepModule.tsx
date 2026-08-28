@@ -342,109 +342,113 @@ function AgendaView({
                     !!r.occ.comment ||
                     !!r.occ.photo_url ||
                     history.length > 0;
-                  return (
-                    <>
-                      <tr key={r.occ.id} className="border-t align-top hover:bg-accent/40">
-                        <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{fmtFR(r.occ.due_date)}</td>
-                        <td className="px-3 py-2">
-                          <div className="font-medium text-sm">{r.task?.name ?? "Tâche supprimée"}</div>
-                          <div className="text-[11px] text-muted-foreground sm:hidden">
-                            {FREQ_LABEL[r.task?.frequency ?? ""] ?? "—"}
-                            {r.task?.equipment ? ` · ${r.task.equipment}` : ""}
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 hidden sm:table-cell text-muted-foreground">
+                  return [
+                    <tr key={r.occ.id} className="border-t align-top hover:bg-accent/40">
+                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{fmtFR(r.occ.due_date)}</td>
+                      <td className="px-3 py-2">
+                        <div className="font-medium text-sm">{r.task?.name ?? "Tâche supprimée"}</div>
+                        <div className="text-[11px] text-muted-foreground sm:hidden">
                           {FREQ_LABEL[r.task?.frequency ?? ""] ?? "—"}
-                        </td>
-                        <td className="px-3 py-2 hidden md:table-cell text-muted-foreground">
-                          {r.task?.responsable ?? "—"}
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_META[r.status].badge}`}>
-                            <span className={`h-1.5 w-1.5 rounded-full ${STATUS_META[r.status].dot}`} />
-                            {STATUS_META[r.status].label}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1 flex-wrap">
-                            {!done && r.occ.status !== "missed" && (
-                              <>
-                                <Button size="sm" onClick={() => setCompleting(r)} className="h-7 text-[11px] px-2">
-                                  <CheckCircle2 className="h-3 w-3 mr-1" />Valider
-                                </Button>
-                                <Button size="sm" variant="outline" onClick={() => setPostponing(r)} className="h-7 text-[11px] px-2">
-                                  <Clock className="h-3 w-3 mr-1" />Reporter
-                                </Button>
-                                {r.occ.status !== "in_progress" && (
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={async () => {
-                                      await setOccurrenceStatus(r.occ.id, "in_progress");
-                                      await onChanged();
-                                    }}
-                                    className="h-7 text-[11px] px-2"
-                                  >
-                                    En cours
-                                  </Button>
-                                )}
-                              </>
-                            )}
-                            {hasDetails && (
-                              <Button size="sm" variant="ghost" onClick={() => toggleExpand(r.occ.id)} className="h-7 text-[11px] px-2">
-                                {expanded ? "Moins" : "Détails"}
+                          {r.task?.equipment ? ` · ${r.task.equipment}` : ""}
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 hidden sm:table-cell text-muted-foreground">
+                        {FREQ_LABEL[r.task?.frequency ?? ""] ?? "—"}
+                      </td>
+                      <td className="px-3 py-2 hidden md:table-cell text-muted-foreground">
+                        {r.task?.responsable ?? "—"}
+                      </td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_META[r.status].badge}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${STATUS_META[r.status].dot}`} />
+                          {STATUS_META[r.status].label}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1 flex-wrap">
+                          {!done && r.occ.status !== "missed" && (
+                            <>
+                              <Button size="sm" onClick={() => setCompleting(r)} className="h-7 text-[11px] px-2">
+                                <CheckCircle2 className="h-3 w-3 mr-1" />Valider
                               </Button>
+                              <Button size="sm" variant="outline" onClick={() => setPostponing(r)} className="h-7 text-[11px] px-2">
+                                <Clock className="h-3 w-3 mr-1" />Reporter
+                              </Button>
+                              {r.occ.status !== "in_progress" && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={async () => {
+                                    await setOccurrenceStatus(r.occ.id, "in_progress");
+                                    await onChanged();
+                                  }}
+                                  className="h-7 text-[11px] px-2"
+                                >
+                                  En cours
+                                </Button>
+                              )}
+                            </>
+                          )}
+                          {hasDetails && (
+                            <Button size="sm" variant="ghost" onClick={() => toggleExpand(r.occ.id)} className="h-7 text-[11px] px-2">
+                              {expanded ? "Moins" : "Détails"}
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>,
+                    expanded && (
+                      <tr key={`${r.occ.id}-d`} className="border-t bg-muted/20">
+                        <td colSpan={6} className="px-3 py-2">
+                          <div className="space-y-1.5 text-[11px]">
+                            {r.occ.comment && <p>💬 {r.occ.comment}</p>}
+                            {r.occ.photo_url && (
+                              <div className="flex items-end gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => setPhotoUrl(r.occ.photo_url!)}
+                                  className="block"
+                                  title="Voir le justificatif"
+                                >
+                                  <img src={r.occ.photo_url} alt="Justificatif" className="h-16 w-16 rounded border object-cover" />
+                                  <span className="text-[11px] text-primary underline">Voir le justificatif</span>
+                                </button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-destructive h-7 px-2"
+                                  onClick={async () => {
+                                    if (!confirm("Supprimer cette photo ?")) return;
+                                    try {
+                                      await removeOccurrencePhoto(r.occ.id);
+                                      toast({ title: "Photo supprimée" });
+                                      await onChanged();
+                                    } catch (e: any) {
+                                      toast({ title: "Erreur", description: e?.message, variant: "destructive" });
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer
+                                </Button>
+                              </div>
+                            )}
+                            {history.map((h) => (
+                              <p key={h.id} className="text-purple-700">
+                                Reportée du {fmtFR(h.from_date)} au {fmtFR(h.to_date)} — {h.reason || "sans motif"} ({h.postponed_by_name ?? "—"})
+                              </p>
+                            ))}
+                            {done && r.occ.completed_at && (
+                              <p className="text-green-700">
+                                Réalisée le {fmtFR(r.occ.completed_at.slice(0, 10))} à{" "}
+                                {new Date(r.occ.completed_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+                                {r.occ.completed_by_name ? ` par ${r.occ.completed_by_name}` : ""}
+                              </p>
                             )}
                           </div>
                         </td>
                       </tr>
-                      {expanded && (
-                        <tr className="border-t bg-muted/20">
-                          <td colSpan={6} className="px-3 py-2">
-                            <div className="space-y-1.5 text-[11px]">
-                              {r.occ.comment && <p>💬 {r.occ.comment}</p>}
-                              {r.occ.photo_url && (
-                                <div className="flex items-end gap-2">
-                                  <button type="button" onClick={() => {}} className="block" title="Justificatif">
-                                    <img src={r.occ.photo_url} alt="Justificatif" className="h-16 w-16 rounded border object-cover" />
-                                  </button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="text-destructive h-7 px-2"
-                                    onClick={async () => {
-                                      if (!confirm("Supprimer cette photo ?")) return;
-                                      try {
-                                        await removeOccurrencePhoto(r.occ.id);
-                                        toast({ title: "Photo supprimée" });
-                                        await onChanged();
-                                      } catch (e: any) {
-                                        toast({ title: "Erreur", description: e?.message, variant: "destructive" });
-                                      }
-                                    }}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer
-                                  </Button>
-                                </div>
-                              )}
-                              {history.map((h) => (
-                                <p key={h.id} className="text-purple-700">
-                                  Reportée du {fmtFR(h.from_date)} au {fmtFR(h.to_date)} — {h.reason || "sans motif"} ({h.postponed_by_name ?? "—"})
-                                </p>
-                              ))}
-                              {done && r.occ.completed_at && (
-                                <p className="text-green-700">
-                                  Réalisée le {fmtFR(r.occ.completed_at.slice(0, 10))} à{" "}
-                                  {new Date(r.occ.completed_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                                  {r.occ.completed_by_name ? ` par ${r.occ.completed_by_name}` : ""}
-                                </p>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </>
-                  );
+                    ),
+                  ];
                 })}
               </tbody>
             ))}
