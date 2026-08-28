@@ -307,7 +307,9 @@ function AgendaView({
                 <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">Fréquence</th>
                 <th className="px-3 py-2 text-left font-medium hidden md:table-cell">Responsable</th>
                 <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Statut</th>
+                <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Photo</th>
                 <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Actions</th>
+
               </tr>
             </thead>
             {groups.length === 0 && (
