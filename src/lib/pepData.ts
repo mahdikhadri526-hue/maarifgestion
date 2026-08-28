@@ -4,6 +4,7 @@
 // ============================================================================
 import { supabase } from "@/lib/db";
 import { supabase as rawSupabase } from "@/integrations/supabase/client";
+import { requireCurrentPdvId } from "@/lib/pdvStore";
 
 export type PepFrequency =
   | "daily"
@@ -351,12 +352,16 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
   }
 
   if (!toInsert.length) return;
+  const pdvId = requireCurrentPdvId();
   for (let i = 0; i < toInsert.length; i += 200) {
-    const { error } = await supabase.from("pep_occurrences" as any).insert(toInsert.slice(i, i + 200) as any);
-    // Le résumé d'accueil et l'agenda peuvent lancer la planification en même
-    // temps. Dans ce cas, l'autre requête a déjà créé les mêmes occurrences :
-    // la contrainte unique remplit son rôle et ne doit pas bloquer l'affichage.
-    if (error && error.code !== "23505") throw error;
+    const rows = toInsert.slice(i, i + 200).map((row) => ({ ...row, pdv_id: pdvId }));
+    // Le résumé d'accueil et l'agenda peuvent planifier simultanément.
+    // ignoreDuplicates conserve les occurrences déjà créées sans annuler
+    // tout le lot, afin que les nouvelles tâches du même lot soient insérées.
+    const { error } = await rawSupabase
+      .from("pep_occurrences")
+      .upsert(rows, { onConflict: "task_id,original_due_date", ignoreDuplicates: true });
+    if (error) throw error;
   }
 }
 
