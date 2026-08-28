@@ -325,7 +325,7 @@ function AgendaView({
             {groups.map(([date, list]) => (
               <tbody key={date}>
                 <tr className="bg-muted/40">
-                  <td colSpan={6} className="px-3 py-1.5">
+                  <td colSpan={7} className="px-3 py-1.5">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="font-semibold text-foreground">{dayLabelFR(date)}</span>
                       {date === today && <span className="text-[10px] text-primary">(aujourd'hui)</span>}
@@ -337,6 +337,7 @@ function AgendaView({
                     </div>
                   </td>
                 </tr>
+
                 {list.map((r) => {
                   const done = r.status === "done";
                   const expanded = expandedIds.has(r.occ.id);
