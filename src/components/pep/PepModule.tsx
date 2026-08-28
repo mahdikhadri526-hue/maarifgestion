@@ -203,6 +203,7 @@ function AgendaView({
   const [completing, setCompleting] = useState<Row | null>(null);
   const [postponing, setPostponing] = useState<Row | null>(null);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   const [freqFilter, setFreqFilter] = useState<string>("all");
   const [hideDone, setHideDone] = useState(false);
