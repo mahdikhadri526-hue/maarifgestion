@@ -374,36 +374,20 @@ export function EcartModule() {
             ))}
           </div>
 
-          {mode === "jour" && (
-            <div className="bg-card border rounded-xl p-4 shadow-sm text-sm grid gap-x-8 gap-y-1 sm:grid-cols-2">
-              <Stat label="Stock initial Emporter (g)" value={result.siEmpG} />
-              <Stat label="Stock initial Salle (g)" value={result.siSpG} />
-              <Stat label="Entrées Emporter (g)" value={result.entreeEmpG} />
-              <Stat label="Entrées Salle (g)" value={result.entreeSpG} />
-              <Stat label="Stock final Emporter (g)" value={result.sfEmpG} />
-              <Stat label="Stock final Chambre (g)" value={result.sfChambreG} />
-              <Stat label="Stock final Salle (g)" value={result.sfSpG} />
-              <Stat label="Ventes Emporter (g)" value={result.ventesEmpG} />
-              <Stat label="Ventes Surplace (g)" value={result.ventesSpG} />
-            </div>
-          )}
-
           <div className="bg-card border rounded-xl shadow-sm overflow-x-auto">
-            <table className="w-full text-xs sm:text-sm border-collapse min-w-[600px]">
+            <table className="w-full text-xs sm:text-sm border-collapse min-w-[400px]">
               <thead className="bg-muted/60">
                 <tr>
                   <th className="sticky left-0 z-10 bg-muted/60 px-2 py-2 text-left">Date</th>
-                  <th className="px-2 py-2 text-right">Ventes Emp. (g)</th>
-                  <th className="px-2 py-2 text-right">Ventes Srp. (g)</th>
-                  <th className="px-2 py-2 text-right">Ventes total (g)</th>
                   <th className="px-2 py-2 text-right">Consommation (g)</th>
+                  <th className="px-2 py-2 text-right">Ventes (g)</th>
                   <th className="px-2 py-2 text-right">Écart (g)</th>
                 </tr>
               </thead>
               <tbody>
                 {shown.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
+                    <td colSpan={4} className="px-3 py-8 text-center text-muted-foreground">
                       Aucune saisie sur la période.
                     </td>
                   </tr>
@@ -411,20 +395,16 @@ export function EcartModule() {
                 {shown.map((r) => (
                   <tr key={r.date} className="border-t">
                     <td className="sticky left-0 z-10 bg-card px-2 py-1 whitespace-nowrap">{formatDateFR(r.date)}</td>
-                    <td className="px-2 py-1 text-right tabular-nums">{fmtG(r.ventesEmpG)}</td>
-                    <td className="px-2 py-1 text-right tabular-nums">{fmtG(r.ventesSpG)}</td>
-                    <td className="px-2 py-1 text-right tabular-nums font-semibold">{fmtG(r.ventesTotalG)}</td>
                     <td className="px-2 py-1 text-right tabular-nums">{fmtG(r.consoTotalG)}</td>
+                    <td className="px-2 py-1 text-right tabular-nums">{fmtG(r.ventesTotalG)}</td>
                     <td className={`px-2 py-1 text-right tabular-nums font-bold ${r.ecartTotalG < 0 ? "text-destructive" : ""}`}>{fmtG(r.ecartTotalG)}</td>
                   </tr>
                 ))}
                 {shown.length > 0 && (
                   <tr className="border-t bg-muted/40 font-semibold">
                     <td className="sticky left-0 z-10 bg-muted/40 px-2 py-2">Total</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesEmpG)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesSpG)}</td>
-                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesTotalG)}</td>
                     <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.consoTotalG)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ventesTotalG)}</td>
                     <td className="px-2 py-2 text-right tabular-nums">{fmtG(sum.ecartTotalG)}</td>
                   </tr>
                 )}
