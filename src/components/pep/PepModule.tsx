@@ -463,6 +463,14 @@ function AgendaView({
       {postponing && (
         <PostponeDialog row={postponing} holidays={holidays} userName={userName} onClose={() => setPostponing(null)} onDone={onChanged} />
       )}
+      {photoUrl && (
+        <Dialog open onOpenChange={(o) => !o && setPhotoUrl(null)}>
+          <DialogContent className="max-w-[95vw] sm:max-w-lg">
+            <DialogHeader><DialogTitle>Photo justificative</DialogTitle></DialogHeader>
+            <img src={photoUrl} alt="Justificatif" className="w-full rounded border object-contain max-h-[70vh]" />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
