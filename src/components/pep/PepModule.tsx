@@ -345,8 +345,8 @@ function AgendaView({
                   const hasDetails =
                     done ||
                     !!r.occ.comment ||
-                    !!r.occ.photo_url ||
                     history.length > 0;
+
                   return [
                     <tr key={r.occ.id} className="border-t align-top hover:bg-accent/40">
                       <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{fmtFR(r.occ.due_date)}</td>
