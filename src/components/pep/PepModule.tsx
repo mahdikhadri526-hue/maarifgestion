@@ -315,10 +315,11 @@ function AgendaView({
             {groups.length === 0 && (
               <tbody>
                 <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">
+                  <td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">
                     Aucune tâche planifiée sur cette période.
                   </td>
                 </tr>
+
               </tbody>
             )}
             {groups.map(([date, list]) => (
