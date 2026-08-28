@@ -198,52 +198,39 @@ function AgendaView({
   const step = view === "day" ? 1 : view === "week" ? 7 : 30;
   const inRange = new Set(range);
 
+  // Les tâches en retard ne sont JAMAIS reportées : elles restent visibles
+  // uniquement sur leur jour d'échéance.
   const visible = rows.filter((r) => inRange.has(r.occ.due_date));
 
   const [completing, setCompleting] = useState<Row | null>(null);
   const [postponing, setPostponing] = useState<Row | null>(null);
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+
+  // Compteurs de synthèse sur la plage affichée.
+  const counts = useMemo(() => {
+    const c = { total: visible.length, todo: 0, done: 0, late: 0 };
+    visible.forEach((r) => {
+      if (r.status === "done") c.done++;
+      else if (r.status === "late") c.late++;
+      else c.todo++;
+    });
+    return c;
+  }, [visible]);
 
   const [freqFilter, setFreqFilter] = useState<string>("all");
   const [hideDone, setHideDone] = useState(false);
 
-  const filtered = useMemo(
-    () =>
-      visible.filter(
+  const applyFilters = useCallback(
+    (list: Row[]) =>
+      list.filter(
         (r) =>
           (freqFilter === "all" || r.task?.frequency === freqFilter) &&
           (!hideDone || r.status !== "done"),
       ),
-    [visible, freqFilter, hideDone],
+    [freqFilter, hideDone],
   );
 
-  const counts = useMemo(() => {
-    const total = filtered.length;
-    const done = filtered.filter((r) => r.status === "done").length;
-    return { total, todo: total - done, done };
-  }, [filtered]);
-
-  const groups = useMemo(() => {
-    const map = new Map<string, Row[]>();
-    for (const r of filtered) {
-      if (!map.has(r.occ.due_date)) map.set(r.occ.due_date, []);
-      map.get(r.occ.due_date)!.push(r);
-    }
-    return [...map.entries()].sort((a, b) => a[0].localeCompare(b[0]));
-  }, [filtered]);
-
-  const toggleExpand = (id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
-
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div className="flex items-center gap-2 flex-wrap">
         <div className="flex rounded-lg border overflow-hidden">
           {(["day", "week", "month"] as View[]).map((v) => (
@@ -262,200 +249,78 @@ function AgendaView({
         <Button size="sm" variant="ghost" onClick={() => setAnchor(today)}>Aujourd'hui</Button>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <div className="rounded-lg border p-2 text-center bg-orange-50 border-orange-200 text-orange-700">
-          <div className="text-lg font-bold leading-none">{counts.todo}</div>
-          <div className="text-[10px] mt-1">À faire</div>
-        </div>
-        <div className="rounded-lg border p-2 text-center bg-green-50 border-green-200 text-green-700">
-          <div className="text-lg font-bold leading-none">{counts.done}</div>
-          <div className="text-[10px] mt-1">Réalisées</div>
-        </div>
-        <div className="rounded-lg border p-2 text-center bg-muted/40">
-          <div className="text-lg font-bold leading-none">{counts.total}</div>
-          <div className="text-[10px] mt-1">Total</div>
-        </div>
+      {/* Synthèse de la période */}
+      <div className="grid grid-cols-4 gap-2">
+        <Kpi label="Total" value={counts.total} className="bg-muted/40" />
+        <Kpi label="À faire" value={counts.todo} className="bg-orange-50 border-orange-200 text-orange-700" />
+        <Kpi label="En retard" value={counts.late} className="bg-red-50 border-red-200 text-red-700" />
+        <Kpi label="Réalisées" value={counts.done} className="bg-green-50 border-green-200 text-green-700" />
       </div>
 
+      {/* Filtres de lecture */}
       <div className="flex items-center gap-2 flex-wrap">
-        <select
-          className="h-9 rounded-md border bg-background px-2 text-xs"
-          value={freqFilter}
-          onChange={(e) => setFreqFilter(e.target.value)}
-        >
-          <option value="all">Toutes fréquences</option>
+        <div className="flex gap-1 flex-wrap">
+          <FreqChip active={freqFilter === "all"} onClick={() => setFreqFilter("all")}>Toutes</FreqChip>
           {PEP_FREQUENCIES.filter((f) => rows.some((r) => r.task?.frequency === f.key)).map((f) => (
-            <option key={f.key} value={f.key}>{f.label}</option>
+            <FreqChip key={f.key} active={freqFilter === f.key} onClick={() => setFreqFilter(f.key)}>
+              {f.label}
+            </FreqChip>
           ))}
-        </select>
+        </div>
         <button
           type="button"
           onClick={() => setHideDone((v) => !v)}
-          className={`text-xs px-3 py-2 rounded-md border ${hideDone ? "bg-primary text-primary-foreground" : "bg-background"}`}
+          className={`ml-auto text-[11px] px-2 py-1 rounded-full border ${hideDone ? "bg-primary text-primary-foreground" : "bg-background"}`}
         >
-          {hideDone ? "Afficher réalisées" : "Masquer réalisées"}
+          Masquer les réalisées
         </button>
       </div>
 
-      <div className="rounded-lg border bg-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-muted">
-              <tr>
-                <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Jour</th>
-                <th className="px-3 py-2 text-left font-medium">Tâche</th>
-                <th className="px-3 py-2 text-left font-medium hidden sm:table-cell">Fréquence</th>
-                <th className="px-3 py-2 text-left font-medium hidden md:table-cell">Responsable</th>
-                <th className="px-3 py-2 text-left font-medium whitespace-nowrap">Statut</th>
-                <th className="px-3 py-2 text-right font-medium whitespace-nowrap">Actions</th>
-              </tr>
-            </thead>
-            {groups.length === 0 && (
-              <tbody>
-                <tr>
-                  <td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">
-                    Aucune tâche planifiée sur cette période.
-                  </td>
-                </tr>
-              </tbody>
-            )}
-            {groups.map(([date, list]) => (
-              <tbody key={date}>
-                <tr className="bg-muted/40">
-                  <td colSpan={6} className="px-3 py-1.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold text-foreground">{dayLabelFR(date)}</span>
-                      {date === today && <span className="text-[10px] text-primary">(aujourd'hui)</span>}
-                      {isWeekend(date) && <span className="text-[10px] text-muted-foreground">week-end</span>}
-                      {holidays.has(date) && <span className="text-[10px] text-purple-600">jour férié</span>}
-                      <span className="ml-auto text-[10px] text-muted-foreground">
-                        {list.filter((r) => r.status === "done").length}/{list.length} réalisée(s)
+
+      {range.map((d) => {
+        const dayRows = applyFilters(visible.filter((r) => r.occ.due_date === d));
+        if (view !== "day" && dayRows.length === 0) return null;
+        const groups = groupByFrequency(dayRows);
+        const doneCount = dayRows.filter((r) => r.status === "done").length;
+        return (
+          <div key={d} className="rounded-lg border bg-card overflow-hidden">
+            <div className="flex items-center justify-between gap-2 flex-wrap px-3 py-2 bg-muted/50 border-b">
+              <h3 className="text-sm font-semibold">
+                {dayLabelFR(d)}
+                {d === today && <span className="ml-2 text-xs text-primary">(aujourd'hui)</span>}
+                {isWeekend(d) && <span className="ml-2 text-xs text-muted-foreground">week-end</span>}
+                {holidays.has(d) && <span className="ml-2 text-xs text-purple-600">jour férié</span>}
+              </h3>
+              <span className="text-xs text-muted-foreground">
+                {doneCount}/{dayRows.length} réalisée(s)
+              </span>
+            </div>
+            {dayRows.length === 0 ? (
+              <p className="text-xs text-muted-foreground p-3">Aucune tâche PEP planifiée.</p>
+            ) : (
+              <div className="divide-y">
+                {groups.map(([freq, list]) => (
+                  <div key={freq} className="p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        {FREQ_LABEL[freq] ?? "Autre"}
                       </span>
+                      <span className="text-[11px] text-muted-foreground">({list.length})</span>
+                      <span className="flex-1 h-px bg-border" />
                     </div>
-                  </td>
-                </tr>
-                {list.map((r) => {
-                  const done = r.status === "done";
-                  const expanded = expandedIds.has(r.occ.id);
-                  const history = posts.filter((p) => p.occurrence_id === r.occ.id);
-                  const hasDetails =
-                    done ||
-                    !!r.occ.comment ||
-                    !!r.occ.photo_url ||
-                    history.length > 0;
-                  return [
-                    <tr key={r.occ.id} className="border-t align-top hover:bg-accent/40">
-                      <td className="px-3 py-2 whitespace-nowrap text-muted-foreground">{fmtFR(r.occ.due_date)}</td>
-                      <td className="px-3 py-2">
-                        <div className="font-medium text-sm">{r.task?.name ?? "Tâche supprimée"}</div>
-                        <div className="text-[11px] text-muted-foreground sm:hidden">
-                          {FREQ_LABEL[r.task?.frequency ?? ""] ?? "—"}
-                          {r.task?.equipment ? ` · ${r.task.equipment}` : ""}
-                        </div>
-                      </td>
-                      <td className="px-3 py-2 hidden sm:table-cell text-muted-foreground">
-                        {FREQ_LABEL[r.task?.frequency ?? ""] ?? "—"}
-                      </td>
-                      <td className="px-3 py-2 hidden md:table-cell text-muted-foreground">
-                        {r.task?.responsable ?? "—"}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${STATUS_META[r.status].badge}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${STATUS_META[r.status].dot}`} />
-                          {STATUS_META[r.status].label}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-right whitespace-nowrap">
-                        <div className="flex items-center justify-end gap-1 flex-wrap">
-                          {!done && r.occ.status !== "missed" && (
-                            <>
-                              <Button size="sm" onClick={() => setCompleting(r)} className="h-7 text-[11px] px-2">
-                                <CheckCircle2 className="h-3 w-3 mr-1" />Valider
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={() => setPostponing(r)} className="h-7 text-[11px] px-2">
-                                <Clock className="h-3 w-3 mr-1" />Reporter
-                              </Button>
-                              {r.occ.status !== "in_progress" && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={async () => {
-                                    await setOccurrenceStatus(r.occ.id, "in_progress");
-                                    await onChanged();
-                                  }}
-                                  className="h-7 text-[11px] px-2"
-                                >
-                                  En cours
-                                </Button>
-                              )}
-                            </>
-                          )}
-                          {hasDetails && (
-                            <Button size="sm" variant="ghost" onClick={() => toggleExpand(r.occ.id)} className="h-7 text-[11px] px-2">
-                              {expanded ? "Moins" : "Détails"}
-                            </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>,
-                    expanded && (
-                      <tr key={`${r.occ.id}-d`} className="border-t bg-muted/20">
-                        <td colSpan={6} className="px-3 py-2">
-                          <div className="space-y-1.5 text-[11px]">
-                            {r.occ.comment && <p>💬 {r.occ.comment}</p>}
-                            {r.occ.photo_url && (
-                              <div className="flex items-end gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() => setPhotoUrl(r.occ.photo_url!)}
-                                  className="block"
-                                  title="Voir le justificatif"
-                                >
-                                  <img src={r.occ.photo_url} alt="Justificatif" className="h-16 w-16 rounded border object-cover" />
-                                  <span className="text-[11px] text-primary underline">Voir le justificatif</span>
-                                </button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-destructive h-7 px-2"
-                                  onClick={async () => {
-                                    if (!confirm("Supprimer cette photo ?")) return;
-                                    try {
-                                      await removeOccurrencePhoto(r.occ.id);
-                                      toast({ title: "Photo supprimée" });
-                                      await onChanged();
-                                    } catch (e: any) {
-                                      toast({ title: "Erreur", description: e?.message, variant: "destructive" });
-                                    }
-                                  }}
-                                >
-                                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer
-                                </Button>
-                              </div>
-                            )}
-                            {history.map((h) => (
-                              <p key={h.id} className="text-purple-700">
-                                Reportée du {fmtFR(h.from_date)} au {fmtFR(h.to_date)} — {h.reason || "sans motif"} ({h.postponed_by_name ?? "—"})
-                              </p>
-                            ))}
-                            {done && r.occ.completed_at && (
-                              <p className="text-green-700">
-                                Réalisée le {fmtFR(r.occ.completed_at.slice(0, 10))} à{" "}
-                                {new Date(r.occ.completed_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
-                                {r.occ.completed_by_name ? ` par ${r.occ.completed_by_name}` : ""}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ),
-                  ];
-                })}
-              </tbody>
-            ))}
-          </table>
-        </div>
-      </div>
+                    <div className="space-y-2">
+                      {list.map((r) => (
+                        <TaskCard key={r.occ.id} row={r} onComplete={() => setCompleting(r)} onPostpone={() => setPostponing(r)} onChanged={onChanged} posts={posts} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
 
       {completing && (
         <CompleteDialog row={completing} userName={userName} onClose={() => setCompleting(null)} onDone={onChanged} />
@@ -463,24 +328,169 @@ function AgendaView({
       {postponing && (
         <PostponeDialog row={postponing} holidays={holidays} userName={userName} onClose={() => setPostponing(null)} onDone={onChanged} />
       )}
-      {photoUrl && (
-        <Dialog open onOpenChange={(o) => !o && setPhotoUrl(null)}>
-          <DialogContent className="max-w-[95vw] sm:max-w-lg">
-            <DialogHeader><DialogTitle>Photo justificative</DialogTitle></DialogHeader>
-            <img src={photoUrl} alt="Justificatif" className="w-full rounded border object-contain max-h-[70vh]" />
-          </DialogContent>
-        </Dialog>
-      )}
     </div>
+  );
+}
+
+function Kpi({ label, value, className = "" }: { label: string; value: number; className?: string }) {
+  return (
+    <div className={`rounded-lg border p-2 text-center ${className}`}>
+      <div className="text-lg font-bold leading-none">{value}</div>
+      <div className="text-[10px] text-muted-foreground mt-1">{label}</div>
+    </div>
+  );
+}
+
+function FreqChip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-[11px] px-2 py-1 rounded-full border ${active ? "bg-primary text-primary-foreground border-primary" : "bg-background"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+const FREQ_ORDER = PEP_FREQUENCIES.map((f) => f.key as string);
+
+/** Regroupe les tâches d'une journée par fréquence (quotidien d'abord). */
+function groupByFrequency(list: Row[]): [string, Row[]][] {
+  const map = new Map<string, Row[]>();
+  for (const r of list) {
+    const key = r.task?.frequency ?? "autre";
+    if (!map.has(key)) map.set(key, []);
+    map.get(key)!.push(r);
+  }
+  return [...map.entries()].sort(
+    (a, b) => (FREQ_ORDER.indexOf(a[0]) + 1 || 99) - (FREQ_ORDER.indexOf(b[0]) + 1 || 99),
   );
 }
 
 const WEEKDAYS_FR = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
 
+/** « Lundi 26.08.2026 » */
 function dayLabelFR(iso: string) {
   return `${WEEKDAYS_FR[parseISO(iso).getDay()]} ${fmtFR(iso)}`;
 }
 
+
+
+function TaskCard({
+  row,
+  onComplete,
+  onPostpone,
+  onChanged,
+  posts,
+}: {
+  row: Row;
+  onComplete: () => void;
+  onPostpone: () => void;
+  onChanged: () => Promise<void> | void;
+  posts: PepPostponement[];
+}) {
+  const { occ, task, status } = row;
+  const meta = STATUS_META[status];
+  const history = posts.filter((p) => p.occurrence_id === occ.id);
+  const done = status === "done";
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+
+
+  return (
+    <div className="rounded-lg border bg-background p-3">
+      <div className="flex items-start gap-2 flex-wrap">
+        <span className={`mt-1.5 h-2.5 w-2.5 rounded-full flex-shrink-0 ${meta.dot}`} />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium">{task?.name ?? "Tâche supprimée"}</p>
+          <p className="text-xs text-muted-foreground">
+            {task?.equipment ? `${task.equipment} · ` : ""}
+            {FREQ_LABEL[task?.frequency ?? ""] ?? "—"} · Prévue le {fmtFR(occ.due_date)}
+            {task?.responsable ? ` · ${task.responsable}` : ""}
+          </p>
+          {occ.comment && <p className="text-xs mt-1">💬 {occ.comment}</p>}
+          {occ.photo_url && (
+            <div className="mt-1 flex items-end gap-2">
+              <button
+                type="button"
+                onClick={() => setPhotoPreview(occ.photo_url!)}
+                className="block"
+                title="Voir le justificatif"
+              >
+                <img src={occ.photo_url} alt="Justificatif" className="h-16 w-16 rounded border object-cover" />
+                <span className="text-[11px] text-primary underline">Voir le justificatif</span>
+              </button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive h-7 px-2"
+                onClick={async () => {
+                  if (!confirm("Supprimer cette photo ?")) return;
+                  try {
+                    await removeOccurrencePhoto(occ.id);
+                    toast({ title: "Photo supprimée" });
+                    await onChanged();
+                  } catch (e: any) {
+                    toast({ title: "Erreur", description: e?.message, variant: "destructive" });
+                  }
+                }}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer
+              </Button>
+            </div>
+          )}
+
+          {history.map((h) => (
+            <p key={h.id} className="text-[11px] text-purple-700 mt-1">
+              Reportée du {fmtFR(h.from_date)} au {fmtFR(h.to_date)} — {h.reason || "sans motif"} ({h.postponed_by_name ?? "—"})
+            </p>
+          ))}
+          {done && occ.completed_at && (
+            <p className="text-[11px] text-green-700 mt-1">
+              Réalisée le {fmtFR(occ.completed_at.slice(0, 10))} à {new Date(occ.completed_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
+              {occ.completed_by_name ? ` par ${occ.completed_by_name}` : ""}
+            </p>
+          )}
+        </div>
+        <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${meta.badge}`}>{meta.label}</span>
+      </div>
+
+      {!done && occ.status !== "missed" && (
+        <div className="flex gap-2 mt-2 flex-wrap">
+          <Button size="sm" onClick={onComplete}>
+            <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Marquer comme réalisée
+          </Button>
+          <Button size="sm" variant="outline" onClick={onPostpone}>
+            <Clock className="h-3.5 w-3.5 mr-1" /> Reporter
+          </Button>
+          {occ.status !== "in_progress" && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={async () => {
+                await setOccurrenceStatus(occ.id, "in_progress");
+                await onChanged();
+              }}
+            >
+              En cours
+            </Button>
+          )}
+        </div>
+      )}
+
+      {photoPreview && (
+        <Dialog open onOpenChange={(o) => !o && setPhotoPreview(null)}>
+          <DialogContent className="max-w-[95vw] sm:max-w-lg">
+            <DialogHeader><DialogTitle>Photo justificative</DialogTitle></DialogHeader>
+            <img src={photoPreview} alt="Justificatif" className="w-full rounded border object-contain max-h-[70vh]" />
+          </DialogContent>
+        </Dialog>
+      )}
+    </div>
+
+  );
+}
 
 function CompleteDialog({
   row,
