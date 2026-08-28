@@ -374,19 +374,6 @@ export function EcartModule() {
             ))}
           </div>
 
-          {mode === "jour" && (
-            <div className="bg-card border rounded-xl p-4 shadow-sm text-sm grid gap-x-8 gap-y-1 sm:grid-cols-2">
-              <Stat label="Stock initial Emporter (g)" value={result.siEmpG} />
-              <Stat label="Stock initial Salle (g)" value={result.siSpG} />
-              <Stat label="Entrées Emporter (g)" value={result.entreeEmpG} />
-              <Stat label="Entrées Salle (g)" value={result.entreeSpG} />
-              <Stat label="Stock final Emporter (g)" value={result.sfEmpG} />
-              <Stat label="Stock final Chambre (g)" value={result.sfChambreG} />
-              <Stat label="Stock final Salle (g)" value={result.sfSpG} />
-              <Stat label="Ventes Emporter (g)" value={result.ventesEmpG} />
-              <Stat label="Ventes Surplace (g)" value={result.ventesSpG} />
-            </div>
-          )}
 
           <div className="bg-card border rounded-xl shadow-sm overflow-x-auto">
             <table className="w-full text-xs sm:text-sm border-collapse min-w-[600px]">
