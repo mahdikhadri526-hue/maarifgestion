@@ -374,7 +374,6 @@ export function EcartModule() {
             ))}
           </div>
 
-
           <div className="bg-card border rounded-xl shadow-sm overflow-x-auto">
             <table className="w-full text-xs sm:text-sm border-collapse min-w-[400px]">
               <thead className="bg-muted/60">
