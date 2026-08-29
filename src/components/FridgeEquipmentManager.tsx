@@ -86,9 +86,34 @@ export function FridgeEquipmentManager({
   }
 
   async function removeEquipment(row: CustomEquipmentRow) {
-    if (!confirm(`Supprimer le matériel « ${row.name} » (${row.code}) ?`)) return;
+    const isTombstone = row.active === false;
+    const msg = isTombstone
+      ? `Restaurer le matériel d'origine « ${row.name} » (${row.code}) ?`
+      : `Supprimer le matériel « ${row.name} » (${row.code}) ?`;
+    if (!confirm(msg)) return;
     setBusy(true);
     const { error } = await supabase.from("fridge_equipments" as any).delete().eq("id", row.id);
+    setBusy(false);
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: isTombstone ? "Matériel restauré" : "Matériel supprimé" });
+    onChanged();
+  }
+
+  /** Masque un matériel d'origine : on insère une ligne inactive avec le même code. */
+  async function removeBuiltin(eq: { code: string; name: string; type: string; zone: FridgeZone }) {
+    if (!confirm(`Supprimer le matériel d'origine « ${eq.name} » (${eq.code}) ?`)) return;
+    setBusy(true);
+    const { error } = await supabase.from("fridge_equipments" as any).insert({
+      code: eq.code,
+      name: eq.name,
+      type: eq.type,
+      zone: eq.zone,
+      sort_order: -1,
+      active: false,
+    } as any);
     setBusy(false);
     if (error) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
@@ -148,12 +173,30 @@ export function FridgeEquipmentManager({
           </div>
         )}
 
+        {canDelete && (
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Matériels d'origine</div>
+            <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+              {EQUIPMENTS.filter((e) => !custom.some((c) => c.code === e.code && !c.active)).map((eq) => (
+                <div key={eq.code} className="flex items-center gap-2 rounded-md border border-border p-2">
+                  <Badge variant="outline">{eq.code}</Badge>
+                  <span className="flex-1 text-sm truncate">{eq.name}</span>
+                  <span className="text-xs text-muted-foreground">{eq.zone}</span>
+                  <Button size="sm" variant="destructive" disabled={busy} onClick={() => removeBuiltin(eq)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-2">
           <div className="text-sm font-medium">Matériels ajoutés</div>
-          {custom.length === 0 && (
+          {custom.filter((c) => c.active).length === 0 && (
             <p className="text-sm text-muted-foreground">Aucun matériel ajouté. Les matériels d'origine restent inchangés.</p>
           )}
-          {custom.map((row) => {
+          {custom.filter((c) => c.active).map((row) => {
             const patch = edits[row.id] ?? { name: row.name, type: row.type };
             const dirty = patch.name !== row.name || patch.type !== row.type;
             return (
@@ -191,6 +234,24 @@ export function FridgeEquipmentManager({
             );
           })}
         </div>
+
+        {custom.some((c) => !c.active) && (
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Matériels d'origine supprimés</div>
+            {custom.filter((c) => !c.active).map((row) => (
+              <div key={row.id} className="flex items-center gap-2 rounded-md border border-dashed border-border p-2">
+                <Badge variant="outline">{row.code}</Badge>
+                <span className="flex-1 text-sm truncate text-muted-foreground">{row.name}</span>
+                <span className="text-xs text-muted-foreground">{row.zone}</span>
+                {canDelete && (
+                  <Button size="sm" variant="outline" disabled={busy} onClick={() => removeEquipment(row)}>
+                    Restaurer
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
