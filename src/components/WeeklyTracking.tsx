@@ -1620,6 +1620,12 @@ export function WeeklyTracking() {
             Mouvement tartes
           </TabsTrigger>
           <TabsTrigger
+            value="nettoyant"
+            className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-violet-700 data-[state=inactive]:hover:bg-violet-100 transition-all"
+          >
+            Mouvement produits nettoyants
+          </TabsTrigger>
+          <TabsTrigger
             value="materiel"
             className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-emerald-700 data-[state=inactive]:hover:bg-emerald-100 transition-all"
           >
@@ -1804,7 +1810,7 @@ export function WeeklyTracking() {
           <WeeklyTransfers ficheKey="Crème fraîche" weekStart={weekStart} articles={["Crème fraîche (mousse fouettée)"]} />
         </TabsContent>
 
-        {(["glace", "tarte"] as const).map((t) => (
+        {(["glace", "tarte", "nettoyant"] as const).map((t) => (
         <TabsContent key={t} value={t} className="mt-4 space-y-3 min-w-0">
           {/* FILTERS BAR */}
           {showControls && (
@@ -1878,7 +1884,7 @@ export function WeeklyTracking() {
                 </SelectContent>
               </Select>
               <PhotoScanEntry
-                articles={t === "glace" ? GLACE_ARTICLES : TARTE_ARTICLES}
+                articles={tabArticles(t)}
                 onConfirm={handleScanResults}
                 buttonLabel="📷 Scanner entrée"
               />
@@ -2127,9 +2133,9 @@ export function WeeklyTracking() {
             <strong>Lot existant</strong> cumule le SI du lundi et les entrées, puis déduit les sorties en FIFO.
           </div>
           <WeeklyTransfers
-            ficheKey={t === "glace" ? "Mouvement glaces" : "Mouvement tartes"}
+            ficheKey={t === "glace" ? "Mouvement glaces" : t === "nettoyant" ? "Mouvement produits nettoyants" : "Mouvement tartes"}
             weekStart={weekStart}
-            articles={t === "glace" ? GLACE_ARTICLES : TARTE_ARTICLES}
+            articles={tabArticles(t)}
           />
         </TabsContent>
         ))}
