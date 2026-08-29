@@ -1600,7 +1600,7 @@ export function WeeklyTracking() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-        <TabsList className="bg-muted/60 p-1.5 gap-1.5 rounded-xl">
+        <TabsList className="bg-muted/60 p-1.5 gap-1.5 rounded-xl flex-wrap h-auto justify-start">
           <TabsTrigger
             value="creme"
             className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-amber-700 data-[state=inactive]:hover:bg-amber-100 transition-all"
