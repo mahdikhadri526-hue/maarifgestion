@@ -34,6 +34,8 @@ const TARTE_ARTICLES = [
   "Bigarreaux", "Cake Chocolat", "Cake.citron", "Pain Savoi", "Brownies.G", "Brownies.Top",
   "Amandes.Top", "Noix.Top", "Tulipes", "Cornet", "Gaufrette",
   "Orange fruits", "Citron fruits", "POMME fruits", "POIRE fruits", "Ananas fruits", "Kiwi fruits",
+];
+const NETTOYANT_ARTICLES = [
   "Rc 20", "Chlorane", "Solnet", "Flexi", "Mitard A", "Renovac", "Clean plack",
   "Handonet", "Rince Matic", "Wach Matic", "Handobac",
 ];
@@ -43,7 +45,7 @@ const GLACE_ARTICLES = [
   "Banane", "Citron menthe", "Orange cannelle", "Réglisse",
   "Crème fraîche (mousse fouettée)",
 ];
-const ARTICLES = [...TARTE_ARTICLES, ...GLACE_ARTICLES];
+const ARTICLES = [...TARTE_ARTICLES, ...GLACE_ARTICLES, ...NETTOYANT_ARTICLES];
 
 function getMonday(d: Date) {
   const date = new Date(d);
