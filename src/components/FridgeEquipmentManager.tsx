@@ -234,6 +234,24 @@ export function FridgeEquipmentManager({
             );
           })}
         </div>
+
+        {custom.some((c) => !c.active) && (
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Matériels d'origine supprimés</div>
+            {custom.filter((c) => !c.active).map((row) => (
+              <div key={row.id} className="flex items-center gap-2 rounded-md border border-dashed border-border p-2">
+                <Badge variant="outline">{row.code}</Badge>
+                <span className="flex-1 text-sm truncate text-muted-foreground">{row.name}</span>
+                <span className="text-xs text-muted-foreground">{row.zone}</span>
+                {canDelete && (
+                  <Button size="sm" variant="outline" disabled={busy} onClick={() => removeEquipment(row)}>
+                    Restaurer
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
