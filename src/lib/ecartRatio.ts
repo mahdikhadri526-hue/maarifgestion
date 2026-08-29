@@ -208,7 +208,7 @@ export function hasFinalStock(day: DayData | undefined): boolean {
  * Calcul d'une journée, formule globale demandée :
  *  Consommation = Total stocks initiaux (Emporter + Salle) + Entrées (Emporter + Salle) − Total stocks finaux (Emporter + Salle)
  *  Ventes = Total des ventes (Surplace + Emporter)
- *  Écart = Consommation − Ventes
+ *  Écart = Ventes − Consommation
  * Le stock initial d'un jour est le stock final de la veille (sinon la saisie manuelle de départ).
  */
 export function computeDay(date: string, day: DayData, prev: DayData | undefined): DayResult {
@@ -223,7 +223,7 @@ export function computeDay(date: string, day: DayData, prev: DayData | undefined
 
   const consoTotalG = siTotalG + entreeTotalG - sfTotalG;
   const ventesTotalG = t.ventesEmpG + t.ventesSpG;
-  const ecartTotalG = consoTotalG - ventesTotalG;
+  const ecartTotalG = ventesTotalG - consoTotalG;
 
   return {
     date,
