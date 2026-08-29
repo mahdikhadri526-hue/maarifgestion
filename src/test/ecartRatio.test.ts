@@ -51,7 +51,7 @@ describe("Calcul des écarts — formule globale", () => {
     // Ventes = 5×60 = 300
     expect(r.ventesTotalG).toBe(300);
 
-    // Écart = 4025 - 300 = 3725
-    expect(r.ecartTotalG).toBe(3725);
+    // Écart = 300 - 4025 = -3725
+    expect(r.ecartTotalG).toBe(-3725);
   });
 });
