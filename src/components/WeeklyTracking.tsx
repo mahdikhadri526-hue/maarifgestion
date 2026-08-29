@@ -34,6 +34,8 @@ const TARTE_ARTICLES = [
   "Bigarreaux", "Cake Chocolat", "Cake.citron", "Pain Savoi", "Brownies.G", "Brownies.Top",
   "Amandes.Top", "Noix.Top", "Tulipes", "Cornet", "Gaufrette",
   "Orange fruits", "Citron fruits", "POMME fruits", "POIRE fruits", "Ananas fruits", "Kiwi fruits",
+];
+const NETTOYANT_ARTICLES = [
   "Rc 20", "Chlorane", "Solnet", "Flexi", "Mitard A", "Renovac", "Clean plack",
   "Handonet", "Rince Matic", "Wach Matic", "Handobac",
 ];
@@ -43,7 +45,7 @@ const GLACE_ARTICLES = [
   "Banane", "Citron menthe", "Orange cannelle", "Réglisse",
   "Crème fraîche (mousse fouettée)",
 ];
-const ARTICLES = [...TARTE_ARTICLES, ...GLACE_ARTICLES];
+const ARTICLES = [...TARTE_ARTICLES, ...GLACE_ARTICLES, ...NETTOYANT_ARTICLES];
 
 function getMonday(d: Date) {
   const date = new Date(d);
@@ -310,7 +312,7 @@ function LotExistantCell({
 
 export function WeeklyTracking() {
   const [weekStart, setWeekStart] = useState<string>(fmt(getMonday(new Date())));
-  const [tab, setTab] = useState<"creme" | "glace" | "tarte" | "materiel">("creme");
+  const [tab, setTab] = useState<"creme" | "glace" | "tarte" | "nettoyant" | "materiel">("creme");
   const [rows, setRows] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
   // Toutes les entrées "Crème fraîche (mousse fouettée)" du mouvement glaces,
@@ -367,14 +369,14 @@ export function WeeklyTracking() {
   const isRestrictedUser = (user?.email ?? "").toLowerCase() === restrictedEmail;
   const ficheRef = useRef<HTMLDivElement>(null);
   const handlePrintFiche = () => {
-    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : "mouvement-tartes";
+    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : tab === "nettoyant" ? "produits-nettoyants" : "mouvement-tartes";
     printStructuredPdf(buildWeeklyPdf(label)).catch((err: any) => {
       toast.error("Erreur impression", { description: err?.message ?? String(err) });
       if (ficheRef.current) printElement(ficheRef.current);
     });
   };
   const handleDownloadFiche = async () => {
-    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : "mouvement-tartes";
+    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : tab === "nettoyant" ? "produits-nettoyants" : "mouvement-tartes";
     toast.info("Génération du PDF...");
     try {
       await downloadStructuredPdf(buildWeeklyPdf(label));
@@ -396,7 +398,9 @@ export function WeeklyTracking() {
   };
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
-  const activeArticles = tab === "glace" ? GLACE_ARTICLES : tab === "tarte" ? TARTE_ARTICLES : ARTICLES;
+  const activeArticles = tab === "glace" ? GLACE_ARTICLES : tab === "tarte" ? TARTE_ARTICLES : tab === "nettoyant" ? NETTOYANT_ARTICLES : ARTICLES;
+  const tabArticles = (t: string) => (t === "glace" ? GLACE_ARTICLES : t === "nettoyant" ? NETTOYANT_ARTICLES : TARTE_ARTICLES);
+  const tabLabel = tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : tab === "nettoyant" ? "Mouvement produits nettoyants" : "Mouvement tartes";
 
   // Compute the list of week-starts to load (covers period filter)
   const weeksToLoad = useMemo(() => {
@@ -1362,7 +1366,7 @@ export function WeeklyTracking() {
     const periodText = filterFrom || filterTo
       ? `Période du ${filterFrom ? formatDateFR(filterFrom) : formatDateFR(weekStart)} au ${filterTo ? formatDateFR(filterTo) : addDays(weekStart, 6)}`
       : `Semaine du ${formatDateFR(weekStart)} au ${addDays(weekStart, 6)}`;
-    const title = `Suivi hebdomadaire — ${tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : "Mouvement tartes"}`;
+    const title = `Suivi hebdomadaire — ${tabLabel}`;
     const sections: PdfTableSection[] = [];
 
     if (tab === "creme") {
@@ -1401,7 +1405,7 @@ export function WeeklyTracking() {
       });
     } else {
       sections.push({
-        title: `Tableau restructuré pour impression — ${tab === "glace" ? "glaces" : "tartes"}`,
+        title: `Tableau restructuré pour impression — ${tab === "glace" ? "glaces" : tab === "nettoyant" ? "produits nettoyants" : "tartes"}`,
         columns: [
           { header: "Article", dataKey: "article", width: 48 },
           { header: "Jour", dataKey: "jour", width: 18, halign: "center" },
@@ -1616,6 +1620,12 @@ export function WeeklyTracking() {
             Mouvement tartes
           </TabsTrigger>
           <TabsTrigger
+            value="nettoyant"
+            className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-violet-700 data-[state=inactive]:hover:bg-violet-100 transition-all"
+          >
+            Mouvement produits nettoyants
+          </TabsTrigger>
+          <TabsTrigger
             value="materiel"
             className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-emerald-700 data-[state=inactive]:hover:bg-emerald-100 transition-all"
           >
@@ -1625,7 +1635,7 @@ export function WeeklyTracking() {
         <div ref={ficheRef} className="bg-background p-2 rounded-md">
           <div className="hidden print:block mb-2 px-2">
             <h2 className="text-base font-semibold">
-              Suivi hebdomadaire — {tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : "Mouvement tartes"}
+              Suivi hebdomadaire — {tabLabel}
             </h2>
             <p className="text-xs text-muted-foreground">
               Semaine du {formatDateFR(weekStart)} → {addDays(weekStart, 6)}
@@ -1800,7 +1810,7 @@ export function WeeklyTracking() {
           <WeeklyTransfers ficheKey="Crème fraîche" weekStart={weekStart} articles={["Crème fraîche (mousse fouettée)"]} />
         </TabsContent>
 
-        {(["glace", "tarte"] as const).map((t) => (
+        {(["glace", "tarte", "nettoyant"] as const).map((t) => (
         <TabsContent key={t} value={t} className="mt-4 space-y-3 min-w-0">
           {/* FILTERS BAR */}
           {showControls && (
@@ -1874,7 +1884,7 @@ export function WeeklyTracking() {
                 </SelectContent>
               </Select>
               <PhotoScanEntry
-                articles={t === "glace" ? GLACE_ARTICLES : TARTE_ARTICLES}
+                articles={tabArticles(t)}
                 onConfirm={handleScanResults}
                 buttonLabel="📷 Scanner entrée"
               />
@@ -2123,9 +2133,9 @@ export function WeeklyTracking() {
             <strong>Lot existant</strong> cumule le SI du lundi et les entrées, puis déduit les sorties en FIFO.
           </div>
           <WeeklyTransfers
-            ficheKey={t === "glace" ? "Mouvement glaces" : "Mouvement tartes"}
+            ficheKey={t === "glace" ? "Mouvement glaces" : t === "nettoyant" ? "Mouvement produits nettoyants" : "Mouvement tartes"}
             weekStart={weekStart}
-            articles={t === "glace" ? GLACE_ARTICLES : TARTE_ARTICLES}
+            articles={tabArticles(t)}
           />
         </TabsContent>
         ))}
