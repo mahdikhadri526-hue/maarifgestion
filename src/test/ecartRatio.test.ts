@@ -30,13 +30,13 @@ describe("Calcul des écarts — formule globale", () => {
 
   it("reprend le stock final de la veille comme stock initial", () => {
     const prev: DayData = {
-      SF_EMP: { TOTAL: 1000 },
+      SF_EMP: { Nougat: 1000 },
       SF_SP: { Nougat: 200 },
     };
     const day: DayData = {
       ENTREE_EMP: { Nougat: 1 },
       ENTREE_SP: { Nougat: 0 },
-      SF_EMP: { TOTAL: 800 },
+      SF_EMP: { Nougat: 800 },
       SF_SP: { Nougat: 100 },
       VENTE_EMP: { "CORNET 1B EMP": 5 },
       VENTE_SP: {},
