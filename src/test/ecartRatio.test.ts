@@ -9,7 +9,7 @@ describe("Calcul des écarts — formule globale", () => {
       ENTREE_EMP: { Nougat: 1 },
       ENTREE_SP: { Nougat: 3550 },
       SF_EMP: { Nougat: 2000 },
-      SF_CHAMBRE_EMP: { Nougat: 3725 },
+      SF_CHAMBRE_EMP: { Nougat: 1 },
       SF_SP: { Nougat: 300 },
       VENTE_EMP: { "CORNET 1B EMP": 10 },
       VENTE_SP: { "0,5 L": 2 },
