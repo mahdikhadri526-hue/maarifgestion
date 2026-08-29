@@ -49,12 +49,13 @@ export async function fetchCustomEquipments(): Promise<CustomEquipmentRow[]> {
   }));
 }
 
-/** Liste complète : matériels d'origine + matériels ajoutés par l'admin. */
+/** Liste complète : matériels d'origine (sauf ceux masqués) + matériels ajoutés par l'admin. */
 export function mergeEquipments(custom: CustomEquipmentRow[]): FridgeEquipment[] {
   const extras = custom.filter((c) => c.active);
+  const hiddenCodes = new Set(custom.filter((c) => !c.active).map((c) => c.code));
   const list: FridgeEquipment[] = [];
   ZONES.forEach((z) => {
-    EQUIPMENTS.filter((e) => e.zone === z).forEach((e) => list.push(e));
+    EQUIPMENTS.filter((e) => e.zone === z && !hiddenCodes.has(e.code)).forEach((e) => list.push(e));
     extras.filter((e) => e.zone === z).forEach((e) => list.push({ code: e.code, name: e.name, type: e.type, zone: e.zone }));
   });
   return list;
