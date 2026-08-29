@@ -4,12 +4,12 @@ import { computeDay, type DayData } from "@/lib/ecartRatio";
 describe("Calcul des écarts — formule globale", () => {
   it("calcule consommation, ventes et écart sur une journée", () => {
     const day: DayData = {
-      SI_EMP: { TOTAL: 1000 },
+      SI_EMP: { Nougat: 1000 },
       SI_SP: { Nougat: 500 },
       ENTREE_EMP: { Nougat: 1 },
       ENTREE_SP: { Nougat: 3550 },
-      SF_EMP: { TOTAL: 2000 },
-      SF_CHAMBRE_EMP: { TOTAL: 3725 },
+      SF_EMP: { Nougat: 2000 },
+      SF_CHAMBRE_EMP: { Nougat: 3725 },
       SF_SP: { Nougat: 300 },
       VENTE_EMP: { "CORNET 1B EMP": 10 },
       VENTE_SP: { "0,5 L": 2 },
