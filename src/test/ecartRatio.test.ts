@@ -24,8 +24,8 @@ describe("Calcul des écarts — formule globale", () => {
     // = 1500 + 7275 - 6025 = 2750
     expect(r.consoTotalG).toBe(2750);
 
-    // Écart = Consommation − Ventes = 2750 − 1600 = 1150
-    expect(r.ecartTotalG).toBe(1150);
+    // Écart = Ventes − Consommation = 1600 − 2750 = -1150
+    expect(r.ecartTotalG).toBe(-1150);
   });
 
   it("reprend le stock final de la veille comme stock initial", () => {
