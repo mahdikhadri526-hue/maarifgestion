@@ -173,12 +173,30 @@ export function FridgeEquipmentManager({
           </div>
         )}
 
+        {canDelete && (
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Matériels d'origine</div>
+            <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
+              {EQUIPMENTS.filter((e) => !custom.some((c) => c.code === e.code && !c.active)).map((eq) => (
+                <div key={eq.code} className="flex items-center gap-2 rounded-md border border-border p-2">
+                  <Badge variant="outline">{eq.code}</Badge>
+                  <span className="flex-1 text-sm truncate">{eq.name}</span>
+                  <span className="text-xs text-muted-foreground">{eq.zone}</span>
+                  <Button size="sm" variant="destructive" disabled={busy} onClick={() => removeBuiltin(eq)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-2">
           <div className="text-sm font-medium">Matériels ajoutés</div>
-          {custom.length === 0 && (
+          {custom.filter((c) => c.active).length === 0 && (
             <p className="text-sm text-muted-foreground">Aucun matériel ajouté. Les matériels d'origine restent inchangés.</p>
           )}
-          {custom.map((row) => {
+          {custom.filter((c) => c.active).map((row) => {
             const patch = edits[row.id] ?? { name: row.name, type: row.type };
             const dirty = patch.name !== row.name || patch.type !== row.type;
             return (
