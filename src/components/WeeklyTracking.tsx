@@ -369,14 +369,14 @@ export function WeeklyTracking() {
   const isRestrictedUser = (user?.email ?? "").toLowerCase() === restrictedEmail;
   const ficheRef = useRef<HTMLDivElement>(null);
   const handlePrintFiche = () => {
-    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : "mouvement-tartes";
+    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : tab === "nettoyant" ? "produits-nettoyants" : "mouvement-tartes";
     printStructuredPdf(buildWeeklyPdf(label)).catch((err: any) => {
       toast.error("Erreur impression", { description: err?.message ?? String(err) });
       if (ficheRef.current) printElement(ficheRef.current);
     });
   };
   const handleDownloadFiche = async () => {
-    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : "mouvement-tartes";
+    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : tab === "nettoyant" ? "produits-nettoyants" : "mouvement-tartes";
     toast.info("Génération du PDF...");
     try {
       await downloadStructuredPdf(buildWeeklyPdf(label));
@@ -1366,7 +1366,7 @@ export function WeeklyTracking() {
     const periodText = filterFrom || filterTo
       ? `Période du ${filterFrom ? formatDateFR(filterFrom) : formatDateFR(weekStart)} au ${filterTo ? formatDateFR(filterTo) : addDays(weekStart, 6)}`
       : `Semaine du ${formatDateFR(weekStart)} au ${addDays(weekStart, 6)}`;
-    const title = `Suivi hebdomadaire — ${tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : "Mouvement tartes"}`;
+    const title = `Suivi hebdomadaire — ${tabLabel}`;
     const sections: PdfTableSection[] = [];
 
     if (tab === "creme") {
@@ -1405,7 +1405,7 @@ export function WeeklyTracking() {
       });
     } else {
       sections.push({
-        title: `Tableau restructuré pour impression — ${tab === "glace" ? "glaces" : "tartes"}`,
+        title: `Tableau restructuré pour impression — ${tab === "glace" ? "glaces" : tab === "nettoyant" ? "produits nettoyants" : "tartes"}`,
         columns: [
           { header: "Article", dataKey: "article", width: 48 },
           { header: "Jour", dataKey: "jour", width: 18, halign: "center" },
@@ -1629,7 +1629,7 @@ export function WeeklyTracking() {
         <div ref={ficheRef} className="bg-background p-2 rounded-md">
           <div className="hidden print:block mb-2 px-2">
             <h2 className="text-base font-semibold">
-              Suivi hebdomadaire — {tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : "Mouvement tartes"}
+              Suivi hebdomadaire — {tabLabel}
             </h2>
             <p className="text-xs text-muted-foreground">
               Semaine du {formatDateFR(weekStart)} → {addDays(weekStart, 6)}
