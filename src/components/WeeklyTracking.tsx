@@ -312,7 +312,7 @@ function LotExistantCell({
 
 export function WeeklyTracking() {
   const [weekStart, setWeekStart] = useState<string>(fmt(getMonday(new Date())));
-  const [tab, setTab] = useState<"creme" | "glace" | "tarte" | "materiel">("creme");
+  const [tab, setTab] = useState<"creme" | "glace" | "tarte" | "nettoyant" | "materiel">("creme");
   const [rows, setRows] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
   // Toutes les entrées "Crème fraîche (mousse fouettée)" du mouvement glaces,
@@ -398,7 +398,9 @@ export function WeeklyTracking() {
   };
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
-  const activeArticles = tab === "glace" ? GLACE_ARTICLES : tab === "tarte" ? TARTE_ARTICLES : ARTICLES;
+  const activeArticles = tab === "glace" ? GLACE_ARTICLES : tab === "tarte" ? TARTE_ARTICLES : tab === "nettoyant" ? NETTOYANT_ARTICLES : ARTICLES;
+  const tabArticles = (t: string) => (t === "glace" ? GLACE_ARTICLES : t === "nettoyant" ? NETTOYANT_ARTICLES : TARTE_ARTICLES);
+  const tabLabel = tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : tab === "nettoyant" ? "Mouvement produits nettoyants" : "Mouvement tartes";
 
   // Compute the list of week-starts to load (covers period filter)
   const weeksToLoad = useMemo(() => {
