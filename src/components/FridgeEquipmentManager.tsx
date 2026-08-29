@@ -86,9 +86,34 @@ export function FridgeEquipmentManager({
   }
 
   async function removeEquipment(row: CustomEquipmentRow) {
-    if (!confirm(`Supprimer le matériel « ${row.name} » (${row.code}) ?`)) return;
+    const isTombstone = row.active === false;
+    const msg = isTombstone
+      ? `Restaurer le matériel d'origine « ${row.name} » (${row.code}) ?`
+      : `Supprimer le matériel « ${row.name} » (${row.code}) ?`;
+    if (!confirm(msg)) return;
     setBusy(true);
     const { error } = await supabase.from("fridge_equipments" as any).delete().eq("id", row.id);
+    setBusy(false);
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+      return;
+    }
+    toast({ title: isTombstone ? "Matériel restauré" : "Matériel supprimé" });
+    onChanged();
+  }
+
+  /** Masque un matériel d'origine : on insère une ligne inactive avec le même code. */
+  async function removeBuiltin(eq: { code: string; name: string; type: string; zone: FridgeZone }) {
+    if (!confirm(`Supprimer le matériel d'origine « ${eq.name} » (${eq.code}) ?`)) return;
+    setBusy(true);
+    const { error } = await supabase.from("fridge_equipments" as any).insert({
+      code: eq.code,
+      name: eq.name,
+      type: eq.type,
+      zone: eq.zone,
+      sort_order: -1,
+      active: false,
+    } as any);
     setBusy(false);
     if (error) {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
