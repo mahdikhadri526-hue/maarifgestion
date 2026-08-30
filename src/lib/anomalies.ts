@@ -139,7 +139,16 @@ function slotRange(slots: string[]) {
   return `${slots[0]} → ${slots[slots.length - 1]}`;
 }
 
+export interface AnalysisResult {
+  rows: Anomaly[];
+  postponedCount: number;
+}
+
 export async function detectAnomalies(pdvId: string, start: string, end: string): Promise<Anomaly[]> {
+  return (await analyzePdv(pdvId, start, end)).rows;
+}
+
+export async function analyzePdv(pdvId: string, start: string, end: string): Promise<AnalysisResult> {
   const now = new Date();
   const days = datesInRange(start, end);
   const weekStarts = Array.from(new Set(days.map(mondayOf).concat(mondayOf(addDaysISO(end, 1)))));
