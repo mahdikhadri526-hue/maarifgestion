@@ -22,6 +22,7 @@ import {
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { useStockLevels } from "@/hooks/useStockData";
 import { fetchAllRows } from "@/lib/supabasePaginate";
+import { cached } from "@/lib/requestCache";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
