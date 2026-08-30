@@ -339,9 +339,10 @@ export function getProducts(category?: Category): Product[] {
   const applied = applyCatalog([...ali, ...emb]);
   const aliF = applied.filter((p) => p.category === "alimentaire").sort(sortByName);
   const embF = applied.filter((p) => p.category === "emballage").sort(sortByName);
-  if (category === "alimentaire") return aliF;
-  if (category === "emballage") return embF;
-  return [...aliF, ...embF];
+  const result =
+    category === "alimentaire" ? aliF : category === "emballage" ? embF : [...aliF, ...embF];
+  PRODUCTS_CACHE.set(cacheKey, result);
+  return result;
 }
 
 // Détecte l'unité naturelle d'un produit selon son nom (huile→Litre, sucre→Kg, etc.)
