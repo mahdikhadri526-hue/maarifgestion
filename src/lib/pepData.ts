@@ -367,11 +367,33 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
 
 // ------------------------------- actions ------------------------------------
 
+/** Les photos sont stockées dans `photo_url` : chaîne simple (1 photo) ou JSON (plusieurs). */
+export function parsePhotos(value: string | null | undefined): string[] {
+  if (!value) return [];
+  const raw = value.trim();
+  if (raw.startsWith("[")) {
+    try {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) return arr.filter((v) => typeof v === "string" && v);
+    } catch {
+      /* valeur héritée non JSON */
+    }
+  }
+  return [raw];
+}
+
+export function serializePhotos(urls: string[]): string | null {
+  const list = urls.filter(Boolean);
+  if (!list.length) return null;
+  return list.length === 1 ? list[0] : JSON.stringify(list);
+}
+
 export async function completeOccurrence(
   occ: PepOccurrence,
-  opts: { comment?: string; photoUrl?: string | null; userName?: string | null },
+  opts: { comment?: string; photoUrl?: string | null; photoUrls?: string[]; userName?: string | null },
 ) {
   const { data: auth } = await rawSupabase.auth.getUser();
+  const photos = opts.photoUrls ?? (opts.photoUrl ? [opts.photoUrl] : []);
   const { error } = await supabase
     .from("pep_occurrences" as any)
     .update({
@@ -380,9 +402,18 @@ export async function completeOccurrence(
       completed_by: auth?.user?.id ?? null,
       completed_by_name: opts.userName ?? auth?.user?.email ?? null,
       comment: opts.comment ?? null,
-      photo_url: opts.photoUrl ?? null,
+      photo_url: serializePhotos(photos),
     } as any)
     .eq("id", occ.id);
+  if (error) throw error;
+}
+
+/** Remplace la liste des photos d'une occurrence (tableau vide = suppression). */
+export async function setOccurrencePhotos(id: string, urls: string[]) {
+  const { error } = await supabase
+    .from("pep_occurrences" as any)
+    .update({ photo_url: serializePhotos(urls) } as any)
+    .eq("id", id);
   if (error) throw error;
 }
 
@@ -390,6 +421,7 @@ export async function removeOccurrencePhoto(id: string) {
   const { error } = await supabase.from("pep_occurrences" as any).update({ photo_url: null } as any).eq("id", id);
   if (error) throw error;
 }
+
 
 export async function setOccurrenceStatus(id: string, status: PepStatus) {
   const { error } = await supabase.from("pep_occurrences" as any).update({ status } as any).eq("id", id);
