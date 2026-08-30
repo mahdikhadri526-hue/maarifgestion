@@ -248,8 +248,19 @@ function rawDueDates(task: PepTask, from: string, to: string): string[] {
   if (task.frequency === "weekly" || task.frequency === "twice_week") {
     // Jour de la semaine réparti par tâche (stable dans le temps).
     const dayA = (parseISO(task.start_date).getDay() + (phase % 7)) % 7;
-    const dayB = (dayA + 3) % 7;
-    const wanted = task.frequency === "weekly" ? [dayA] : [dayA, dayB];
+    // Sans week-end, utiliser des couples ouvrés explicitement espacés évite
+    // qu'un samedi/dimanche reporté au lundi se retrouve collé au mardi.
+    const workdayPairs = [
+      [1, 4],
+      [2, 5],
+      [1, 3],
+      [2, 4],
+      [3, 5],
+    ];
+    const pair = task.weekend_allowed
+      ? [dayA, (dayA + 3) % 7]
+      : workdayPairs[phase % workdayPairs.length];
+    const wanted = task.frequency === "weekly" ? [dayA] : pair;
     for (const iso of datesBetween(start, to)) {
       if (wanted.includes(parseISO(iso).getDay())) out.push(iso);
     }
@@ -325,21 +336,31 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
   const today = todayISO();
   const from = addDays(today, -30);
   const to = addDays(today, horizonDays);
+  const readTo = addDays(to, 30);
 
   const [tasks, holidayRows, existing] = await Promise.all([
     getPepTasks(),
     getPepHolidays(),
-    getOccurrences(from, to),
+    // Le lissage peut repousser une échéance au-delà de l'horizon théorique.
+    getOccurrences(from, readTo),
   ]);
   const active = tasks.filter((t) => t.active);
   if (!active.length) return;
 
   const holidays = new Set(holidayRows.map((h) => h.holiday_date));
-  const known = new Set(existing.map((o) => `${o.task_id}|${o.original_due_date}`));
+  const activeIds = new Set(active.map((t) => t.id));
+  const existingByKey = new Map(existing.map((o) => [`${o.task_id}|${o.original_due_date}`, o]));
+  const desiredKeys = new Set<string>();
   const load = new Map<string, number>();
-  existing.forEach((o) => load.set(o.due_date, (load.get(o.due_date) ?? 0) + 1));
+  // Les occurrences déjà traitées ou déplacées manuellement restent prioritaires.
+  // Les « todo » sont recalculées afin que les anciens algorithmes ne faussent
+  // plus la répartition actuelle.
+  existing
+    .filter((o) => o.status !== "todo")
+    .forEach((o) => load.set(o.due_date, (load.get(o.due_date) ?? 0) + 1));
 
   const toInsert: any[] = [];
+  const toUpdate: { id: string; due_date: string }[] = [];
   // Dates fixes (quotidiennes + « chaque <jour> ») : jamais déplacées.
   const isFixed = (f: string) => f === "daily" || WEEKDAY_FREQUENCIES[f as PepFrequency] !== undefined;
   const ordered = [...active].sort((a, b) => (isFixed(a.frequency) ? -1 : 1) - (isFixed(b.frequency) ? -1 : 1));
@@ -347,15 +368,44 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
   for (const task of ordered) {
     for (const raw of rawDueDates(task, today, to)) {
       const key = `${task.id}|${raw}`;
-      if (known.has(key)) continue;
-      known.add(key);
+      desiredKeys.add(key);
       const due = isFixed(task.frequency)
         ? raw
         : balancedDate(raw, holidays, load, task.weekend_allowed);
 
       load.set(due, (load.get(due) ?? 0) + 1);
-      toInsert.push({ task_id: task.id, due_date: due, original_due_date: raw, status: "todo" });
+      const stored = existingByKey.get(key);
+      if (!stored) {
+        toInsert.push({ task_id: task.id, due_date: due, original_due_date: raw, status: "todo" });
+      } else if (stored.status === "todo" && stored.due_date !== due) {
+        toUpdate.push({ id: stored.id, due_date: due });
+      }
     }
+  }
+
+  // Supprime uniquement les anciennes échéances futures non commencées qui ne
+  // correspondent plus à la fréquence actuelle. L'historique reste intact.
+  const obsoleteIds = existing
+    .filter(
+      (o) =>
+        o.status === "todo" &&
+        o.due_date >= today &&
+        (!activeIds.has(o.task_id) || !desiredKeys.has(`${o.task_id}|${o.original_due_date}`)),
+    )
+    .map((o) => o.id);
+
+  for (let i = 0; i < obsoleteIds.length; i += 200) {
+    const { error } = await rawSupabase.from("pep_occurrences").delete().in("id", obsoleteIds.slice(i, i + 200));
+    if (error) throw error;
+  }
+
+  for (let i = 0; i < toUpdate.length; i += 50) {
+    const batch = toUpdate.slice(i, i + 50);
+    const results = await Promise.all(
+      batch.map((row) => rawSupabase.from("pep_occurrences").update({ due_date: row.due_date }).eq("id", row.id)),
+    );
+    const failed = results.find((result) => result.error);
+    if (failed?.error) throw failed.error;
   }
 
   if (!toInsert.length) return;
