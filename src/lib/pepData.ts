@@ -248,8 +248,19 @@ function rawDueDates(task: PepTask, from: string, to: string): string[] {
   if (task.frequency === "weekly" || task.frequency === "twice_week") {
     // Jour de la semaine réparti par tâche (stable dans le temps).
     const dayA = (parseISO(task.start_date).getDay() + (phase % 7)) % 7;
-    const dayB = (dayA + 3) % 7;
-    const wanted = task.frequency === "weekly" ? [dayA] : [dayA, dayB];
+    // Sans week-end, utiliser des couples ouvrés explicitement espacés évite
+    // qu'un samedi/dimanche reporté au lundi se retrouve collé au mardi.
+    const workdayPairs = [
+      [1, 4],
+      [2, 5],
+      [1, 3],
+      [2, 4],
+      [3, 5],
+    ];
+    const pair = task.weekend_allowed
+      ? [dayA, (dayA + 3) % 7]
+      : workdayPairs[phase % workdayPairs.length];
+    const wanted = task.frequency === "weekly" ? [dayA] : pair;
     for (const iso of datesBetween(start, to)) {
       if (wanted.includes(parseISO(iso).getDay())) out.push(iso);
     }
