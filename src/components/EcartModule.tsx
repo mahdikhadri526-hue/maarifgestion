@@ -124,15 +124,17 @@ export function EcartModule() {
     title,
     subtitle,
     override,
+    autoLocked,
   }: {
     section: Section;
     title: string;
     subtitle: string;
     override?: Record<string, number>;
+    autoLocked?: boolean;
   }) => {
     const items = SECTION_ITEMS[section];
     const gramInput = GRAM_SECTIONS.includes(section);
-    const locked = !!override;
+    const locked = !!override || !!autoLocked;
     const map = override ?? day[section] ?? {};
     const { totalQty, totalG } = items.reduce(
       (a, it) => {
@@ -310,13 +312,23 @@ export function EcartModule() {
         </div>
       ) : view === "entrees" ? (
         <div className="grid gap-4 lg:grid-cols-2">
-          {sectionTable({ section: "ENTREE_EMP", title: "Entrées Emporter (stuffs)", subtitle: "Saisir le nombre de stuffs par parfum — grammage déjà enregistré." })}
+          {sectionTable({
+            section: "ENTREE_EMP",
+            title: "Entrées Emporter (stuffs)",
+            subtitle: "Reprises automatiquement des entrées du Suivi hebdomadaire « Mouvement glaces ».",
+            autoLocked: true,
+          })}
         </div>
       ) : view === "final" ? (
         <div className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-3">
             {sectionTable({ section: "SF_EMP", title: "Stock final Emporter", subtitle: "Grammes par parfum (frigo + transit)." })}
-            {sectionTable({ section: "SF_CHAMBRE_EMP", title: "Stock final Chambre", subtitle: "Grammes par parfum." })}
+            {sectionTable({
+              section: "SF_CHAMBRE_EMP",
+              title: "Stock final Chambre",
+              subtitle: "Repris automatiquement du stock initial du lendemain (Suivi hebdo « Mouvement glaces »).",
+              autoLocked: true,
+            })}
             {sectionTable({ section: "SF_SP", title: "Stock final Salle / Surplace", subtitle: "Grammes par parfum." })}
           </div>
           <div className="bg-card border rounded-xl p-4 shadow-sm text-sm">
