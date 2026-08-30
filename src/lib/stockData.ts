@@ -274,7 +274,16 @@ let PRODUCT_CATALOG: ProductCatalogRow[] = [];
 /** Remplace le catalogue personnalisé en mémoire (chargé depuis la base). */
 export function setProductCatalog(rows: ProductCatalogRow[]): void {
   PRODUCT_CATALOG = rows;
+  PRODUCTS_CACHE.clear();
 }
+
+/**
+ * Cache mémoire des listes de produits : `getProducts()` reconstruit sinon
+ * tout le catalogue (parsing + fusion + tri localeCompare) à chaque appel,
+ * ce qui était appelé des centaines de fois par rendu (stock restant, commande).
+ * Le cache est vidé dès que le catalogue personnalisé change.
+ */
+const PRODUCTS_CACHE = new Map<string, Product[]>();
 
 export function getProductCatalog(): ProductCatalogRow[] {
   return PRODUCT_CATALOG;
@@ -314,6 +323,9 @@ function applyCatalog(base: Product[]): Product[] {
 }
 
 export function getProducts(category?: Category): Product[] {
+  const cacheKey = category ?? "all";
+  const hit = PRODUCTS_CACHE.get(cacheKey);
+  if (hit) return hit;
   const ali = ALIMENTAIRE_PRODUCTS.map((raw, i) => {
     const { name, conditionnement } = parseProduct(raw);
     return { id: `ali-${i}`, name, conditionnement, category: "alimentaire" as Category, initialStock: 0 };
@@ -327,9 +339,10 @@ export function getProducts(category?: Category): Product[] {
   const applied = applyCatalog([...ali, ...emb]);
   const aliF = applied.filter((p) => p.category === "alimentaire").sort(sortByName);
   const embF = applied.filter((p) => p.category === "emballage").sort(sortByName);
-  if (category === "alimentaire") return aliF;
-  if (category === "emballage") return embF;
-  return [...aliF, ...embF];
+  const result =
+    category === "alimentaire" ? aliF : category === "emballage" ? embF : [...aliF, ...embF];
+  PRODUCTS_CACHE.set(cacheKey, result);
+  return result;
 }
 
 // Détecte l'unité naturelle d'un produit selon son nom (huile→Litre, sucre→Kg, etc.)
