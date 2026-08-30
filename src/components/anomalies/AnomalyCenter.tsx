@@ -38,7 +38,7 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
   }
 
   const pdvName = pdvs.find((p) => p.id === pdvId)?.name ?? "";
-  const reset = () => setRows(null);
+  const reset = () => { setRows(null); setScore(null); };
 
   const run = async () => {
     if (!pdvId) {
@@ -70,7 +70,9 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
     }
     setLoading(true);
     try {
-      setRows(await detectAnomalies(pdvId, start, end));
+      const result = await analyzePdv(pdvId, start, end);
+      setRows(result.rows);
+      setScore(computeScore(result.rows, result.postponedCount));
     } catch (e: any) {
       toast.error(e?.message ?? "Erreur lors de l'analyse");
     } finally {
