@@ -1,4 +1,4 @@
-import { useState, useEffect, useDeferredValue } from "react";
+import { useState, useEffect, useDeferredValue, useMemo } from "react";
 import {
   Category,
   UnitType,
@@ -22,6 +22,7 @@ import {
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { useStockLevels } from "@/hooks/useStockData";
 import { fetchAllRows } from "@/lib/supabasePaginate";
+import { cached } from "@/lib/requestCache";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
@@ -574,12 +575,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const { data: levels, loading, refresh } = useStockLevels();
   const NESPRESSO_IDS = ["ali-29", "ali-30", "ali-31", "ali-32"];
   const NESPRESSO_AGG_ID = "__nespresso_agg__";
-  const baseLevels = isWeeklyCat
-    ? []
-    : (levels || []).filter((l) => !stockCategory || l.category === stockCategory);
-  const nespressoSources = baseLevels.filter((l) => NESPRESSO_IDS.includes(l.productId));
+  // Toute la construction des lignes (filtre catégorie, agrégats, recherche)
+  // est mémoïsée : taper dans la recherche ou changer de filtre ne relance
+  // plus les boucles d'agrégation, seulement le rendu nécessaire.
+  const withAgg = useMemo(() => {
+    const baseLevels = isWeeklyCat
+      ? []
+      : (levels || []).filter((l) => !stockCategory || l.category === stockCategory);
+    const nespressoSources = baseLevels.filter((l) => NESPRESSO_IDS.includes(l.productId));
 
-  let withAgg = baseLevels;
+    let rows = baseLevels;
   if ((category === "all" || category === "alimentaire") && nespressoSources.length > 0) {
     const agg = {
       productId: NESPRESSO_AGG_ID,
@@ -592,14 +597,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       totalSorties: roundStockQuantity(nespressoSources.reduce((s, l) => s + l.totalSorties, 0)),
       stockRestant: roundStockQuantity(nespressoSources.reduce((s, l) => s + l.stockRestant, 0)),
     };
-    withAgg = [...baseLevels, agg];
+    rows = [...baseLevels, agg];
   }
   if (category === "all" || category === "alimentaire") {
     const nutellaSources = baseLevels.filter(
       (l) => l.productId === NUTELLA_ALI_ID || l.productId === NESTLE_CARAMEL_ALI_ID,
     );
     if (nutellaSources.length > 0) {
-      withAgg = [...withAgg, {
+      rows = [...rows, {
         productId: NUTELLA_NESTLE_AGG_ID,
         productName: "Nutella/Nestlé caramel",
         conditionnement: "",
@@ -613,7 +618,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
     const tchabaSources = baseLevels.filter((l) => /tchaba/i.test(l.productName));
     if (tchabaSources.length > 0) {
-      withAgg = [...withAgg, {
+      rows = [...rows, {
         productId: THE_AROMATISE_AGG_ID,
         productName: "Thé aromatisé (Tchaba)",
         conditionnement: "",
@@ -627,7 +632,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
   }
   if (variant === "stock" && category === "all" && macaronAgg) {
-    withAgg = [...withAgg, {
+    rows = [...rows, {
       productId: MACARON_AGG_ID,
       productName: "MACARON (tous parfums)",
       conditionnement: "",
@@ -640,7 +645,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }];
   }
   if (variant === "stock" && category === "all") {
-    const extras: typeof withAgg = [];
+    const extras: typeof rows = [];
     if (siropWeekly) {
       const aliSrc = baseLevels.find((l) => l.productId === SIROP_CHOCOLAT_ALI_ID);
       const aliPart = mode === "all"
@@ -689,14 +694,19 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         stockRestant: amandesAgg.stockRestant,
       });
     }
-    if (extras.length) withAgg = [...withAgg, ...extras];
+    if (extras.length) rows = [...rows, ...extras];
   }
-  const normalizeText = (s: string) =>
-    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-  const searchQuery = normalizeText(deferredSearch);
-  const filtered = searchQuery
-    ? withAgg.filter((l) => normalizeText(l.productName).includes(searchQuery))
-    : withAgg;
+    return rows;
+  }, [levels, isWeeklyCat, stockCategory, category, variant, macaronAgg, siropWeekly, chantillyAgg, amandesAgg, periodTotals, mode]);
+
+  const filtered = useMemo(() => {
+    const searchQuery = deferredSearch
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    return searchQuery
+      ? withAgg.filter((l) =>
+          l.productName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().includes(searchQuery))
+      : withAgg;
+  }, [withAgg, deferredSearch]);
 
 
   // Load weekly_tracking data for Tarte/Glace categories
@@ -711,15 +721,20 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       try {
         const list = category === "tarte" ? TARTE_ARTICLES : GLACE_ARTICLES;
         const wr = weekRangeFilter(mode, day, month, start, end);
-        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() => {
-          let q = supabase
-            .from("weekly_tracking")
-            .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
-            .eq("fiche_type", "Mouvement glaces & tartes")
-            .in("article", list as unknown as string[]);
-          if (wr.from) q = q.gte("week_start", wr.from);
-          return q;
-        });
+        const data = await cached(
+          `st_weekly_orders_${category}_${wr.from ?? "all"}`,
+          ["weekly_tracking"],
+          () =>
+            fetchAllRows<WeeklyTrackingOrderRecord>(() => {
+              let q = supabase
+                .from("weekly_tracking")
+                .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
+                .eq("fiche_type", "Mouvement glaces & tartes")
+                .in("article", list as unknown as string[]);
+              if (wr.from) q = q.gte("week_start", wr.from);
+              return q;
+            }),
+        );
         if (cancelled) return;
         const isInSelectedPeriod = (date: string) => {
           if (mode === "day") return day ? date === day : true;
@@ -762,15 +777,20 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           AMANDES_WEEKLY_ARTICLE,
         ];
         const wr = weekRangeFilter(mode, day, month, start, end);
-        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() => {
-          let q = supabase
-            .from("weekly_tracking")
-            .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
-            .eq("fiche_type", "Mouvement glaces & tartes")
-            .in("article", [...MACARON_ARTICLES, ...extraArticles] as unknown as string[]);
-          if (wr.from) q = q.gte("week_start", wr.from);
-          return q;
-        });
+        const data = await cached(
+          `st_weekly_aggs_${wr.from ?? "all"}`,
+          ["weekly_tracking"],
+          () =>
+            fetchAllRows<WeeklyTrackingOrderRecord>(() => {
+              let q = supabase
+                .from("weekly_tracking")
+                .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
+                .eq("fiche_type", "Mouvement glaces & tartes")
+                .in("article", [...MACARON_ARTICLES, ...extraArticles] as unknown as string[]);
+              if (wr.from) q = q.gte("week_start", wr.from);
+              return q;
+            }),
+        );
         if (cancelled) return;
         const isInSelectedPeriod = (date: string) => {
           if (mode === "day") return day ? date === day : true;
