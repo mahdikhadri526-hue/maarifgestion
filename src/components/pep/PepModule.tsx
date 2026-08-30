@@ -34,6 +34,9 @@ import {
   saveTask,
   setOccurrenceStatus,
   removeOccurrencePhoto,
+  parsePhotos,
+  setOccurrencePhotos,
+
   todayISO,
   toISO,
   parseISO,
