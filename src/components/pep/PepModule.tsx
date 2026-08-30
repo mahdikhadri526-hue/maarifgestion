@@ -34,6 +34,9 @@ import {
   saveTask,
   setOccurrenceStatus,
   removeOccurrencePhoto,
+  parsePhotos,
+  setOccurrencePhotos,
+
   todayISO,
   toISO,
   parseISO,
@@ -410,36 +413,37 @@ function TaskCard({
             {task?.responsable ? ` · ${task.responsable}` : ""}
           </p>
           {occ.comment && <p className="text-xs mt-1">💬 {occ.comment}</p>}
-          {occ.photo_url && (
-            <div className="mt-1 flex items-end gap-2">
-              <button
-                type="button"
-                onClick={() => setPhotoPreview(occ.photo_url!)}
-                className="block"
-                title="Voir le justificatif"
-              >
-                <img src={occ.photo_url} alt="Justificatif" className="h-16 w-16 rounded border object-cover" />
-                <span className="text-[11px] text-primary underline">Voir le justificatif</span>
-              </button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-destructive h-7 px-2"
-                onClick={async () => {
-                  if (!confirm("Supprimer cette photo ?")) return;
-                  try {
-                    await removeOccurrencePhoto(occ.id);
-                    toast({ title: "Photo supprimée" });
-                    await onChanged();
-                  } catch (e: any) {
-                    toast({ title: "Erreur", description: e?.message, variant: "destructive" });
-                  }
-                }}
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer
-              </Button>
+          {parsePhotos(occ.photo_url).length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-3">
+              {parsePhotos(occ.photo_url).map((url, i) => (
+                <div key={i} className="flex flex-col items-start">
+                  <button type="button" onClick={() => setPhotoPreview(url)} className="block" title="Voir le justificatif">
+                    <img src={url} alt={`Justificatif ${i + 1}`} className="h-16 w-16 rounded border object-cover" />
+                    <span className="text-[11px] text-primary underline">Photo {i + 1}</span>
+                  </button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive h-6 px-1 text-[11px]"
+                    onClick={async () => {
+                      if (!confirm("Supprimer cette photo ?")) return;
+                      try {
+                        const rest = parsePhotos(occ.photo_url).filter((_, idx) => idx !== i);
+                        await setOccurrencePhotos(occ.id, rest);
+                        toast({ title: "Photo supprimée" });
+                        await onChanged();
+                      } catch (e: any) {
+                        toast({ title: "Erreur", description: e?.message, variant: "destructive" });
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" /> Supprimer
+                  </Button>
+                </div>
+              ))}
             </div>
           )}
+
 
           {history.map((h) => (
             <p key={h.id} className="text-[11px] text-purple-700 mt-1">
@@ -504,7 +508,7 @@ function CompleteDialog({
   onDone: () => Promise<void> | void;
 }) {
   const [comment, setComment] = useState("");
-  const [photo, setPhoto] = useState<string | null>(null);
+  const [photos, setPhotos] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
 
   return (
@@ -522,31 +526,46 @@ function CompleteDialog({
           {row.task?.frequency !== "daily" && (
           <div>
             <Label className="text-xs">
-              Photo / justificatif {!row.task?.requires_photo ? "(facultatif)" : <span className="text-destructive">*</span>}
+              Photos / justificatifs {!row.task?.requires_photo ? "(facultatif)" : <span className="text-destructive">*</span>}
             </Label>
             <Input
               type="file"
               accept="image/*"
               capture="environment"
+              multiple
               onChange={async (e) => {
-                const f = e.target.files?.[0];
-                if (!f) return;
+                const files = Array.from(e.target.files ?? []);
+                if (!files.length) return;
                 try {
-                  setPhoto(await fileToCompressedDataUrl(f));
+                  const added = await Promise.all(files.map((f) => fileToCompressedDataUrl(f)));
+                  setPhotos((prev) => [...prev, ...added]);
                 } catch (err: any) {
                   toast({ title: "Photo non prise en compte", description: err?.message, variant: "destructive" });
                 }
+                e.target.value = "";
               }}
             />
-            {photo && (
-              <div className="mt-2 flex items-end gap-2">
-                <img src={photo} alt="Justificatif" className="h-24 rounded border object-cover" />
-                <Button size="sm" variant="ghost" className="text-destructive h-7 px-2" onClick={() => setPhoto(null)}>
-                  <Trash2 className="h-3.5 w-3.5 mr-1" /> Retirer
-                </Button>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Vous pouvez ajouter plusieurs photos (reprenez le bouton après chaque prise).
+            </p>
+            {photos.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-3">
+                {photos.map((p, i) => (
+                  <div key={i} className="flex flex-col items-start">
+                    <img src={p} alt={`Justificatif ${i + 1}`} className="h-24 w-24 rounded border object-cover" />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive h-6 px-1 text-[11px]"
+                      onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" /> Retirer
+                    </Button>
+                  </div>
+                ))}
               </div>
             )}
-            {row.task?.requires_photo && !photo && (
+            {row.task?.requires_photo && !photos.length && (
               <p className="text-[11px] text-destructive mt-1">Une photo est obligatoire pour cette tâche.</p>
             )}
           </div>
@@ -556,12 +575,13 @@ function CompleteDialog({
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Annuler</Button>
           <Button
-            disabled={busy || (row.task?.frequency !== "daily" && !!row.task?.requires_photo && !photo)}
+            disabled={busy || (row.task?.frequency !== "daily" && !!row.task?.requires_photo && !photos.length)}
 
             onClick={async () => {
               setBusy(true);
               try {
-                await completeOccurrence(row.occ, { comment, photoUrl: photo, userName });
+                await completeOccurrence(row.occ, { comment, photoUrls: photos, userName });
+
                 toast({ title: "Tâche réalisée" });
                 onClose();
                 await onDone();
