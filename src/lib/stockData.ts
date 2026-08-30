@@ -274,7 +274,16 @@ let PRODUCT_CATALOG: ProductCatalogRow[] = [];
 /** Remplace le catalogue personnalisé en mémoire (chargé depuis la base). */
 export function setProductCatalog(rows: ProductCatalogRow[]): void {
   PRODUCT_CATALOG = rows;
+  PRODUCTS_CACHE.clear();
 }
+
+/**
+ * Cache mémoire des listes de produits : `getProducts()` reconstruit sinon
+ * tout le catalogue (parsing + fusion + tri localeCompare) à chaque appel,
+ * ce qui était appelé des centaines de fois par rendu (stock restant, commande).
+ * Le cache est vidé dès que le catalogue personnalisé change.
+ */
+const PRODUCTS_CACHE = new Map<string, Product[]>();
 
 export function getProductCatalog(): ProductCatalogRow[] {
   return PRODUCT_CATALOG;
