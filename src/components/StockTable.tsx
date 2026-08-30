@@ -696,12 +696,17 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
     if (extras.length) rows = [...rows, ...extras];
   }
-  const normalizeText = (s: string) =>
-    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-  const searchQuery = normalizeText(deferredSearch);
-  const filtered = searchQuery
-    ? withAgg.filter((l) => normalizeText(l.productName).includes(searchQuery))
-    : withAgg;
+    return rows;
+  }, [levels, isWeeklyCat, stockCategory, category, variant, macaronAgg, siropWeekly, chantillyAgg, amandesAgg, periodTotals, mode]);
+
+  const filtered = useMemo(() => {
+    const searchQuery = deferredSearch
+      .normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+    return searchQuery
+      ? withAgg.filter((l) =>
+          l.productName.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim().includes(searchQuery))
+      : withAgg;
+  }, [withAgg, deferredSearch]);
 
 
   // Load weekly_tracking data for Tarte/Glace categories
