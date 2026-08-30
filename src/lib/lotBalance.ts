@@ -107,7 +107,14 @@ async function computeLotBalances(productId?: string): Promise<Map<string, numbe
     }
   });
 
+  // Réconciliation avec la table « Stock restant » :
+  // le total des quantités restantes des lots d'un produit doit correspondre
+  // exactement à la quantité affichée dans le stock restant
+  // (stock initial + entrées - sorties, régularisations incluses).
+  await reconcileWithStockLevels(lotsByProduct, remainingByLot);
+
   const changedLots = lots.filter((lot) => (remainingByLot.get(lot.id) ?? 0) !== lot.remaining_quantity);
+
 
   if (changedLots.length > 0) {
     await Promise.all(
