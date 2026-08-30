@@ -447,6 +447,21 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
           product: "Tarte",
           details: `Stock initial du ${nextDate.split("-").reverse().join(".")} manquant`,
         });
+      // SI lendemain — Produits nettoyants
+      const nextClean = (weekly as any[]).some(
+        (r) =>
+          r.fiche_type === "Mouvement produits nettoyants" &&
+          r.week_start === mondayOf(nextDate) &&
+          r.day_of_week === dayName(nextDate) &&
+          r.stock_initial !== null,
+      );
+      if (!nextClean)
+        push({
+          severity: "urgent", date, time: "—",
+          label: "Stock initial du lendemain non renseigné",
+          product: "Produits nettoyants",
+          details: `Stock initial du ${nextDate.split("-").reverse().join(".")} manquant`,
+        });
     }
   }
 
