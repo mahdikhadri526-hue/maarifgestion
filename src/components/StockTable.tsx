@@ -597,14 +597,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       totalSorties: roundStockQuantity(nespressoSources.reduce((s, l) => s + l.totalSorties, 0)),
       stockRestant: roundStockQuantity(nespressoSources.reduce((s, l) => s + l.stockRestant, 0)),
     };
-    withAgg = [...baseLevels, agg];
+    rows = [...baseLevels, agg];
   }
   if (category === "all" || category === "alimentaire") {
     const nutellaSources = baseLevels.filter(
       (l) => l.productId === NUTELLA_ALI_ID || l.productId === NESTLE_CARAMEL_ALI_ID,
     );
     if (nutellaSources.length > 0) {
-      withAgg = [...withAgg, {
+      rows = [...rows, {
         productId: NUTELLA_NESTLE_AGG_ID,
         productName: "Nutella/Nestlé caramel",
         conditionnement: "",
@@ -618,7 +618,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
     const tchabaSources = baseLevels.filter((l) => /tchaba/i.test(l.productName));
     if (tchabaSources.length > 0) {
-      withAgg = [...withAgg, {
+      rows = [...rows, {
         productId: THE_AROMATISE_AGG_ID,
         productName: "Thé aromatisé (Tchaba)",
         conditionnement: "",
@@ -632,7 +632,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
   }
   if (variant === "stock" && category === "all" && macaronAgg) {
-    withAgg = [...withAgg, {
+    rows = [...rows, {
       productId: MACARON_AGG_ID,
       productName: "MACARON (tous parfums)",
       conditionnement: "",
@@ -645,7 +645,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }];
   }
   if (variant === "stock" && category === "all") {
-    const extras: typeof withAgg = [];
+    const extras: typeof rows = [];
     if (siropWeekly) {
       const aliSrc = baseLevels.find((l) => l.productId === SIROP_CHOCOLAT_ALI_ID);
       const aliPart = mode === "all"
@@ -694,7 +694,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         stockRestant: amandesAgg.stockRestant,
       });
     }
-    if (extras.length) withAgg = [...withAgg, ...extras];
+    if (extras.length) rows = [...rows, ...extras];
   }
   const normalizeText = (s: string) =>
     s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
