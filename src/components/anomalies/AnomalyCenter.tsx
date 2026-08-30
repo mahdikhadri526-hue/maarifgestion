@@ -178,6 +178,47 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
         </div>
       </div>
 
+      {rows && score && (
+        <div className="bg-card border rounded-xl p-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-baseline gap-2">
+              <span className="text-sm text-muted-foreground">Note du PDV</span>
+              <span
+                className={`text-3xl font-bold ${
+                  score.score >= 8 ? "text-green-600" : score.score >= 5 ? "text-amber-500" : "text-destructive"
+                }`}
+              >
+                {score.score.toFixed(1).replace(".", ",")}
+              </span>
+              <span className="text-lg text-muted-foreground">/10</span>
+            </div>
+            <div className="flex-1 min-w-[180px] h-2.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  score.score >= 8 ? "bg-green-500" : score.score >= 5 ? "bg-amber-500" : "bg-destructive"
+                }`}
+                style={{ width: `${(score.score / 10) * 100}%` }}
+              />
+            </div>
+          </div>
+          <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
+            {score.lines.map((l) => (
+              <div
+                key={l.label}
+                className="flex items-center justify-between gap-2 text-xs rounded-lg border px-2.5 py-1.5"
+              >
+                <span className="text-muted-foreground">
+                  {l.label} <span className="font-medium text-foreground">({l.count})</span>
+                </span>
+                <span className={`font-semibold ${l.penalty > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                  {l.penalty > 0 ? `−${l.penalty.toFixed(1).replace(".", ",")}` : "0"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {rows && (
         <div className="grid grid-cols-3 gap-3">
           <button
