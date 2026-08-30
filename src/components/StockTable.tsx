@@ -768,15 +768,20 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           AMANDES_WEEKLY_ARTICLE,
         ];
         const wr = weekRangeFilter(mode, day, month, start, end);
-        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() => {
-          let q = supabase
-            .from("weekly_tracking")
-            .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
-            .eq("fiche_type", "Mouvement glaces & tartes")
-            .in("article", [...MACARON_ARTICLES, ...extraArticles] as unknown as string[]);
-          if (wr.from) q = q.gte("week_start", wr.from);
-          return q;
-        });
+        const data = await cached(
+          `st_weekly_aggs_${wr.from ?? "all"}`,
+          ["weekly_tracking"],
+          () =>
+            fetchAllRows<WeeklyTrackingOrderRecord>(() => {
+              let q = supabase
+                .from("weekly_tracking")
+                .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
+                .eq("fiche_type", "Mouvement glaces & tartes")
+                .in("article", [...MACARON_ARTICLES, ...extraArticles] as unknown as string[]);
+              if (wr.from) q = q.gte("week_start", wr.from);
+              return q;
+            }),
+        );
         if (cancelled) return;
         const isInSelectedPeriod = (date: string) => {
           if (mode === "day") return day ? date === day : true;
