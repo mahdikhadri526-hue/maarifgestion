@@ -701,10 +701,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   const filtered = useMemo(() => {
     const searchQuery = deferredSearch
-      .normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
     return searchQuery
       ? withAgg.filter((l) =>
-          l.productName.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim().includes(searchQuery))
+          l.productName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().includes(searchQuery))
       : withAgg;
   }, [withAgg, deferredSearch]);
 
