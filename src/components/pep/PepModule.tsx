@@ -410,36 +410,37 @@ function TaskCard({
             {task?.responsable ? ` · ${task.responsable}` : ""}
           </p>
           {occ.comment && <p className="text-xs mt-1">💬 {occ.comment}</p>}
-          {occ.photo_url && (
-            <div className="mt-1 flex items-end gap-2">
-              <button
-                type="button"
-                onClick={() => setPhotoPreview(occ.photo_url!)}
-                className="block"
-                title="Voir le justificatif"
-              >
-                <img src={occ.photo_url} alt="Justificatif" className="h-16 w-16 rounded border object-cover" />
-                <span className="text-[11px] text-primary underline">Voir le justificatif</span>
-              </button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-destructive h-7 px-2"
-                onClick={async () => {
-                  if (!confirm("Supprimer cette photo ?")) return;
-                  try {
-                    await removeOccurrencePhoto(occ.id);
-                    toast({ title: "Photo supprimée" });
-                    await onChanged();
-                  } catch (e: any) {
-                    toast({ title: "Erreur", description: e?.message, variant: "destructive" });
-                  }
-                }}
-              >
-                <Trash2 className="h-3.5 w-3.5 mr-1" /> Supprimer
-              </Button>
+          {parsePhotos(occ.photo_url).length > 0 && (
+            <div className="mt-1 flex flex-wrap gap-3">
+              {parsePhotos(occ.photo_url).map((url, i) => (
+                <div key={i} className="flex flex-col items-start">
+                  <button type="button" onClick={() => setPhotoPreview(url)} className="block" title="Voir le justificatif">
+                    <img src={url} alt={`Justificatif ${i + 1}`} className="h-16 w-16 rounded border object-cover" />
+                    <span className="text-[11px] text-primary underline">Photo {i + 1}</span>
+                  </button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive h-6 px-1 text-[11px]"
+                    onClick={async () => {
+                      if (!confirm("Supprimer cette photo ?")) return;
+                      try {
+                        const rest = parsePhotos(occ.photo_url).filter((_, idx) => idx !== i);
+                        await setOccurrencePhotos(occ.id, rest);
+                        toast({ title: "Photo supprimée" });
+                        await onChanged();
+                      } catch (e: any) {
+                        toast({ title: "Erreur", description: e?.message, variant: "destructive" });
+                      }
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3 mr-1" /> Supprimer
+                  </Button>
+                </div>
+              ))}
             </div>
           )}
+
 
           {history.map((h) => (
             <p key={h.id} className="text-[11px] text-purple-700 mt-1">
