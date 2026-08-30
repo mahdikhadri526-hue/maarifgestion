@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { detectAnomalies, toISO, type Anomaly } from "@/lib/anomalies";
+import { analyzePdv, computeScore, toISO, type Anomaly, type PdvScore } from "@/lib/anomalies";
 import { formatDateFR } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -21,6 +21,7 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
   const [from, setFrom] = useState(toISO(new Date()));
   const [to, setTo] = useState(toISO(new Date()));
   const [rows, setRows] = useState<Anomaly[] | null>(null);
+  const [score, setScore] = useState<PdvScore | null>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [sevFilter, setSevFilter] = useState<"all" | "urgent" | "attention">("all");
