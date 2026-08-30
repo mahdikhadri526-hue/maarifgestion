@@ -107,7 +107,14 @@ async function computeLotBalances(productId?: string): Promise<Map<string, numbe
     }
   });
 
+  // Réconciliation avec la table « Stock restant » :
+  // le total des quantités restantes des lots d'un produit doit correspondre
+  // exactement à la quantité affichée dans le stock restant
+  // (stock initial + entrées - sorties, régularisations incluses).
+  await reconcileWithStockLevels(lotsByProduct, remainingByLot);
+
   const changedLots = lots.filter((lot) => (remainingByLot.get(lot.id) ?? 0) !== lot.remaining_quantity);
+
 
   if (changedLots.length > 0) {
     await Promise.all(
@@ -122,4 +129,45 @@ async function computeLotBalances(productId?: string): Promise<Map<string, numbe
   }
 
   return remainingByLot;
+}
+/**
+ * Aligne le total restant des lots de chaque produit sur la quantité affichée
+ * dans la table « Stock restant » (stock initial + entrées − sorties nettes).
+ * La répartition reste FIFO : les lots les plus anciens sont consommés d'abord,
+ * les plus récents conservent le stock disponible.
+ */
+async function reconcileWithStockLevels(
+  lotsByProduct: Map<string, LotRow[]>,
+  remainingByLot: Map<string, number>,
+) {
+  if (lotsByProduct.size === 0) return;
+
+  try {
+    const { getInitialStocks, getMovementAggregates } = await import("./stockData");
+    const [initialStocks, aggregates] = await Promise.all([getInitialStocks(), getMovementAggregates()]);
+
+    for (const [productId, productLots] of lotsByProduct) {
+      const agg = aggregates.get(productId);
+      const initial = initialStocks[productId] || 0;
+      const entrees = agg?.entrees ?? 0;
+      const sorties = (agg?.sorties ?? 0) - (agg?.regularisationsNet ?? 0);
+      const stockRestant = initial + entrees - sorties;
+
+      const totalLots = productLots.reduce((sum, lot) => sum + (lot.quantity || 0), 0);
+      // On ne peut pas attribuer plus que ce que les lots contiennent,
+      // ni moins de zéro.
+      let target = Math.max(0, Math.min(stockRestant, totalLots));
+
+      // Répartition du restant sur les lots les plus récents (FIFO à la sortie).
+      const ordered = [...productLots].sort(compareLots).reverse();
+      for (const lot of ordered) {
+        const keep = Math.min(lot.quantity || 0, target);
+        remainingByLot.set(lot.id, keep);
+        target -= keep;
+      }
+    }
+  } catch (err) {
+    // En cas d'échec de récupération des agrégats, on conserve le calcul FIFO.
+    console.error("reconcileWithStockLevels", err);
+  }
 }
