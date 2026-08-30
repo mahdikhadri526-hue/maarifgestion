@@ -584,7 +584,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       : (levels || []).filter((l) => !stockCategory || l.category === stockCategory);
     const nespressoSources = baseLevels.filter((l) => NESPRESSO_IDS.includes(l.productId));
 
-  let withAgg = baseLevels;
+    let rows = baseLevels;
   if ((category === "all" || category === "alimentaire") && nespressoSources.length > 0) {
     const agg = {
       productId: NESPRESSO_AGG_ID,
