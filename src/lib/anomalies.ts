@@ -523,8 +523,16 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
   }
 
   // 9 — Tâches PEP non réalisées (échéance dépassée, ni réalisée ni reportée)
+  let postponedCount = 0;
   try {
     const todayISO = toISO(now);
+    const { count: pc } = await supabase
+      .from("pep_postponements" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("pdv_id", pdvId)
+      .gte("to_date", start)
+      .lte("to_date", end);
+    postponedCount = pc ?? 0;
     const { data: pepOcc } = await supabase
       .from("pep_occurrences" as any)
       .select("id, due_date, status, task_id, pep_tasks(name, equipment, frequency, responsable)")
