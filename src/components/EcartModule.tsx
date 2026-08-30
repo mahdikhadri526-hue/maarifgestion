@@ -6,9 +6,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   GRAM_SECTIONS,
   SECTION_ITEMS,
+  applyGlaceAuto,
   computeDay,
   eachDate,
   fetchEcartLines,
+  fetchGlaceAuto,
   fmtG,
   hasFinalStock,
   initialFromFinal,
@@ -59,9 +61,12 @@ export function EcartModule() {
     setLoading(true);
     try {
       const days = await fetchEcartLines(shiftDate(range.start, -60), range.end);
-      setHistory(days);
-      setDay(days.get(date) ?? {});
-      setPrev(lastFinalBefore(days, date));
+      // Entrées + stock final chambre repris automatiquement du Suivi hebdo glace
+      const auto = await fetchGlaceAuto(range.start, range.end);
+      const merged = applyGlaceAuto(days, auto);
+      setHistory(merged);
+      setDay(merged.get(date) ?? {});
+      setPrev(lastFinalBefore(merged, date));
     } catch (err) {
       toast.error((err as Error).message);
     } finally {
