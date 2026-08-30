@@ -326,6 +326,104 @@ export async function fetchEcartLines(start: string, end: string): Promise<Map<s
   return migrated;
 }
 
+// ===== Alimentation automatique depuis le Suivi hebdo « Mouvement glaces » =====
+const GLACE_FICHE = "Mouvement glaces & tartes";
+const WEEKLY_DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
+/** Correspondance nom d'article du suivi hebdo -> parfum du calcul des écarts. */
+const WEEKLY_TO_PARFUM: Record<string, string> = {
+  Banane: "BANANE CARAMILISE",
+  "Citron menthe": "CITRON MENTHE",
+  "Orange cannelle": "ORANGE CANELLE",
+  Réglisse: "REGLISSE",
+};
+const PARFUM_NAMES = new Set(PARFUMS.map((p) => p.name));
+
+function weekRef(date: string): { weekStart: string } {
+  const d = new Date(`${date}T12:00:00`);
+  const offset = (d.getDay() + 6) % 7; // 0 = lundi
+  d.setDate(d.getDate() - offset);
+  return { weekStart: d.toISOString().slice(0, 10) };
+}
+
+export interface GlaceAutoDay {
+  entrees: Record<string, number>; // parfum -> quantité de stuffs entrée ce jour
+  sfChambre: Record<string, number>; // parfum -> stock final chambre = SI hebdo du lendemain
+}
+
+/**
+ * Lit le Suivi hebdo « Mouvement glaces » et renvoie, pour chaque date de
+ * [start..end] : les entrées du jour et le stock final chambre
+ * (stock initial hebdo saisi le lendemain).
+ */
+export async function fetchGlaceAuto(start: string, end: string): Promise<Map<string, GlaceAutoDay>> {
+  const pdvId = requireCurrentPdvId();
+  const wkFrom = weekRef(start).weekStart;
+  const wkTo = weekRef(shiftDate(end, 1)).weekStart;
+  const { data, error } = await supabase
+    .from("weekly_tracking")
+    .select("week_start, day_of_week, article, entrees, stock_initial")
+    .eq("pdv_id", pdvId)
+    .eq("fiche_type", GLACE_FICHE)
+    .gte("week_start", wkFrom)
+    .lte("week_start", wkTo);
+  if (error) throw error;
+
+  const entreeByDate = new Map<string, Record<string, number>>();
+  const siByDate = new Map<string, Record<string, number>>();
+  for (const r of (data ?? []) as {
+    week_start: string;
+    day_of_week: string;
+    article: string | null;
+    entrees: number | null;
+    stock_initial: number | null;
+  }[]) {
+    if (!r.article) continue;
+    const parfum = WEEKLY_TO_PARFUM[r.article] ?? r.article;
+    if (!PARFUM_NAMES.has(parfum)) continue;
+    const idx = WEEKLY_DAYS.indexOf(r.day_of_week as (typeof WEEKLY_DAYS)[number]);
+    if (idx < 0) continue;
+    const d = new Date(`${r.week_start}T12:00:00`);
+    d.setDate(d.getDate() + idx);
+    const date = d.toISOString().slice(0, 10);
+    const e = num(r.entrees);
+    if (e !== 0) {
+      const m = entreeByDate.get(date) ?? {};
+      m[parfum] = (m[parfum] ?? 0) + e;
+      entreeByDate.set(date, m);
+    }
+    const si = num(r.stock_initial);
+    if (si !== 0) {
+      const m = siByDate.get(date) ?? {};
+      m[parfum] = (m[parfum] ?? 0) + si;
+      siByDate.set(date, m);
+    }
+  }
+
+  const out = new Map<string, GlaceAutoDay>();
+  for (const date of eachDate(start, end)) {
+    out.set(date, {
+      entrees: entreeByDate.get(date) ?? {},
+      sfChambre: siByDate.get(shiftDate(date, 1)) ?? {},
+    });
+  }
+  return out;
+}
+
+/** Injecte les valeurs automatiques (prioritaires) dans les journées chargées. */
+export function applyGlaceAuto(
+  history: Map<string, DayData>,
+  auto: Map<string, GlaceAutoDay>,
+): Map<string, DayData> {
+  const out = new Map<string, DayData>(history);
+  for (const [date, a] of auto) {
+    const d: DayData = { ...(out.get(date) ?? {}) };
+    if (Object.keys(a.entrees).length > 0) d.ENTREE_EMP = { ...a.entrees };
+    if (Object.keys(a.sfChambre).length > 0) d.SF_CHAMBRE_EMP = { ...a.sfChambre };
+    out.set(date, d);
+  }
+  return out;
+}
+
 export async function saveEcartDay(date: string, day: DayData, sections: Section[]): Promise<void> {
   const pdv_id = requireCurrentPdvId();
   const rows: { pdv_id: string; entry_date: string; section: string; item: string; qty: number }[] = [];
