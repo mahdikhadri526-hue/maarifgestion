@@ -323,6 +323,9 @@ function applyCatalog(base: Product[]): Product[] {
 }
 
 export function getProducts(category?: Category): Product[] {
+  const cacheKey = category ?? "all";
+  const hit = PRODUCTS_CACHE.get(cacheKey);
+  if (hit) return hit;
   const ali = ALIMENTAIRE_PRODUCTS.map((raw, i) => {
     const { name, conditionnement } = parseProduct(raw);
     return { id: `ali-${i}`, name, conditionnement, category: "alimentaire" as Category, initialStock: 0 };
