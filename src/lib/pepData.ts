@@ -241,9 +241,13 @@ function rawDueDates(task: PepTask, from: string, to: string): string[] {
     return out;
   }
 
+  // Décalage déterministe propre à chaque tâche : évite que toutes les tâches
+  // créées le même jour tombent sur les mêmes dates (planification en grappe).
+  const phase = hash(task.id || task.name);
+
   if (task.frequency === "weekly" || task.frequency === "twice_week") {
-    // Ancrage sur le jour de démarrage de la tâche (prévisible pour l'équipe).
-    const dayA = parseISO(task.start_date).getDay();
+    // Jour de la semaine réparti par tâche (stable dans le temps).
+    const dayA = (parseISO(task.start_date).getDay() + (phase % 7)) % 7;
     const dayB = (dayA + 3) % 7;
     const wanted = task.frequency === "weekly" ? [dayA] : [dayA, dayB];
     for (const iso of datesBetween(start, to)) {
@@ -253,8 +257,8 @@ function rawDueDates(task: PepTask, from: string, to: string): string[] {
   }
 
   if (task.frequency === "biweekly") {
-    // Tous les 15 jours à partir de la date de démarrage.
-    let cur = task.start_date;
+    // Tous les 15 jours, avec un décalage initial réparti sur la quinzaine.
+    let cur = addDays(task.start_date, phase % 14);
     let g = 0;
     while (cur < start && g++ < 400) cur = addDays(cur, 14);
     while (cur <= to && g++ < 400) {
@@ -265,8 +269,10 @@ function rawDueDates(task: PepTask, from: string, to: string): string[] {
   }
 
   const period = PERIOD_MONTHS[task.frequency] ?? 1;
-  // Première échéance = date de démarrage, puis toutes les N périodes.
-  let anchor = task.start_date;
+  // Première échéance décalée dans la période pour étaler les tâches longues.
+  const spread = period >= 3 ? phase % (period * 28) : phase % (period * 20);
+  const base = addDays(task.start_date, spread);
+  let anchor = base;
   let guard = 0;
   while (anchor < from && guard++ < 400) anchor = addMonths(anchor, period);
   while (anchor <= to && guard++ < 400) {
@@ -275,6 +281,7 @@ function rawDueDates(task: PepTask, from: string, to: string): string[] {
   }
   return out;
 }
+
 
 
 /**
