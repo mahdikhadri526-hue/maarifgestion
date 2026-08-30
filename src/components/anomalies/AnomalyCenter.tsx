@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/AuthContext";
-import { detectAnomalies, toISO, type Anomaly } from "@/lib/anomalies";
+import { analyzePdv, computeScore, toISO, type Anomaly, type PdvScore } from "@/lib/anomalies";
 import { formatDateFR } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -21,6 +21,7 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
   const [from, setFrom] = useState(toISO(new Date()));
   const [to, setTo] = useState(toISO(new Date()));
   const [rows, setRows] = useState<Anomaly[] | null>(null);
+  const [score, setScore] = useState<PdvScore | null>(null);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [sevFilter, setSevFilter] = useState<"all" | "urgent" | "attention">("all");
@@ -37,7 +38,7 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
   }
 
   const pdvName = pdvs.find((p) => p.id === pdvId)?.name ?? "";
-  const reset = () => setRows(null);
+  const reset = () => { setRows(null); setScore(null); };
 
   const run = async () => {
     if (!pdvId) {
@@ -69,7 +70,9 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
     }
     setLoading(true);
     try {
-      setRows(await detectAnomalies(pdvId, start, end));
+      const result = await analyzePdv(pdvId, start, end);
+      setRows(result.rows);
+      setScore(computeScore(result.rows, result.postponedCount));
     } catch (e: any) {
       toast.error(e?.message ?? "Erreur lors de l'analyse");
     } finally {
@@ -174,6 +177,47 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
           )}
         </div>
       </div>
+
+      {rows && score && (
+        <div className="bg-card border rounded-xl p-4 space-y-3">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-baseline gap-2">
+              <span className="text-sm text-muted-foreground">Note du PDV</span>
+              <span
+                className={`text-3xl font-bold ${
+                  score.score >= 8 ? "text-green-600" : score.score >= 5 ? "text-amber-500" : "text-destructive"
+                }`}
+              >
+                {score.score.toFixed(1).replace(".", ",")}
+              </span>
+              <span className="text-lg text-muted-foreground">/10</span>
+            </div>
+            <div className="flex-1 min-w-[180px] h-2.5 rounded-full bg-muted overflow-hidden">
+              <div
+                className={`h-full rounded-full transition-all ${
+                  score.score >= 8 ? "bg-green-500" : score.score >= 5 ? "bg-amber-500" : "bg-destructive"
+                }`}
+                style={{ width: `${(score.score / 10) * 100}%` }}
+              />
+            </div>
+          </div>
+          <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
+            {score.lines.map((l) => (
+              <div
+                key={l.label}
+                className="flex items-center justify-between gap-2 text-xs rounded-lg border px-2.5 py-1.5"
+              >
+                <span className="text-muted-foreground">
+                  {l.label} <span className="font-medium text-foreground">({l.count})</span>
+                </span>
+                <span className={`font-semibold ${l.penalty > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                  {l.penalty > 0 ? `−${l.penalty.toFixed(1).replace(".", ",")}` : "0"}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {rows && (
         <div className="grid grid-cols-3 gap-3">

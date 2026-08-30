@@ -16,6 +16,17 @@ export interface Anomaly {
   details?: string | null;
 }
 
+export interface ScoreLine {
+  label: string;
+  count: number;
+  penalty: number; // points retirés (valeur positive)
+}
+
+export interface PdvScore {
+  score: number; // note sur 10
+  lines: ScoreLine[];
+}
+
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
 const TEMP_SLOTS: { slot: string; hour: number }[] = [
@@ -128,7 +139,16 @@ function slotRange(slots: string[]) {
   return `${slots[0]} → ${slots[slots.length - 1]}`;
 }
 
+export interface AnalysisResult {
+  rows: Anomaly[];
+  postponedCount: number;
+}
+
 export async function detectAnomalies(pdvId: string, start: string, end: string): Promise<Anomaly[]> {
+  return (await analyzePdv(pdvId, start, end)).rows;
+}
+
+export async function analyzePdv(pdvId: string, start: string, end: string): Promise<AnalysisResult> {
   const now = new Date();
   const days = datesInRange(start, end);
   const weekStarts = Array.from(new Set(days.map(mondayOf).concat(mondayOf(addDaysISO(end, 1)))));
@@ -436,6 +456,21 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
           product: "Tarte",
           details: `Stock initial du ${nextDate.split("-").reverse().join(".")} manquant`,
         });
+      // SI lendemain — Produits nettoyants
+      const nextClean = (weekly as any[]).some(
+        (r) =>
+          r.fiche_type === "Mouvement produits nettoyants" &&
+          r.week_start === mondayOf(nextDate) &&
+          r.day_of_week === dayName(nextDate) &&
+          r.stock_initial !== null,
+      );
+      if (!nextClean)
+        push({
+          severity: "urgent", date, time: "—",
+          label: "Stock initial du lendemain non renseigné",
+          product: "Produits nettoyants",
+          details: `Stock initial du ${nextDate.split("-").reverse().join(".")} manquant`,
+        });
     }
   }
 
@@ -497,8 +532,16 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
   }
 
   // 9 — Tâches PEP non réalisées (échéance dépassée, ni réalisée ni reportée)
+  let postponedCount = 0;
   try {
     const todayISO = toISO(now);
+    const { count: pc } = await supabase
+      .from("pep_postponements" as any)
+      .select("id", { count: "exact", head: true })
+      .eq("pdv_id", pdvId)
+      .gte("to_date", start)
+      .lte("to_date", end);
+    postponedCount = pc ?? 0;
     const { data: pepOcc } = await supabase
       .from("pep_occurrences" as any)
       .select("id, due_date, status, task_id, pep_tasks(name, equipment, frequency, responsable)")
@@ -530,10 +573,64 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
   }
 
   const sevRank = (s: Severity) => (s === "urgent" ? 0 : 1);
-  return out.sort(
+  const rows = out.sort(
     (a, b) =>
       b.date.localeCompare(a.date) ||
       sevRank(a.severity) - sevRank(b.severity) ||
       a.label.localeCompare(b.label),
   );
+  return { rows, postponedCount };
+}
+
+/** Note automatique /10 d'un PDV à partir des anomalies détectées. */
+export function computeScore(rows: Anomaly[], postponedCount: number): PdvScore {
+  const countLabel = (label: string, product?: string) =>
+    rows.filter((r) => r.label === label && (product === undefined || r.product === product)).length;
+
+  const lines: ScoreLine[] = [];
+  const add = (label: string, count: number, penalty: number) => {
+    if (count > 0 || penalty > 0) lines.push({ label, count, penalty });
+  };
+
+  const cTempMissing = countLabel("Température non saisie");
+  add("Température non saisie", cTempMissing, cTempMissing * 0.5);
+
+  const cTempLate = countLabel("Retard de saisie de la température");
+  add("Retards température (≥30 min)", cTempLate, Math.floor(cTempLate / 10) * 0.5);
+
+  const cStuffMissing = countLabel("Contrôle cassure/fissure des bacs de glace non effectué");
+  add("Cassure/fissure non contrôlée", cStuffMissing, cStuffMissing * 0.5);
+
+  const cStuffLate = countLabel("Retard de saisie du contrôle des STUFFS de glace");
+  add("Retards cassure/fissure (≥30 min)", cStuffLate, Math.floor(cStuffLate / 10) * 0.5);
+
+  const cPepMissed = countLabel("Tâche PEP non réalisée");
+  add("Tâche PEP non effectuée", cPepMissed, cPepMissed * 0.5);
+
+  add("Tâches PEP reportées", postponedCount, Math.floor(postponedCount / 10) * 0.5);
+
+  const cRupture = countLabel("Produits en rupture");
+  add("Produit en rupture", cRupture, 0);
+
+  const cNeg = countLabel("Sortie négative");
+  add("Sorties négatives", cNeg, Math.floor(cNeg / 10) * 0.5);
+
+  const cChantilly = countLabel("Suivi de la crème chantilly non rempli");
+  add("Suivi chantilly non rempli", cChantilly, cChantilly * 0.5);
+
+  const cSiTarte = countLabel("Stock initial du lendemain non renseigné", "Tarte");
+  add("SI lendemain Tarte non saisi", cSiTarte, cSiTarte * 0.5);
+
+  const cSiGlace = countLabel("Stock initial du lendemain non renseigné", "Glace");
+  add("SI lendemain Glace non saisi", cSiGlace, cSiGlace * 0.5);
+
+  const cSiClean = countLabel("Stock initial du lendemain non renseigné", "Produits nettoyants");
+  add("SI lendemain produits nettoyants non saisi", cSiClean, cSiClean * 0.5);
+
+  const cVisa = countLabel("Visa du manager non effectué");
+  add("Visas Manager non effectués", cVisa, Math.floor(cVisa / 5) * 0.5);
+
+  const totalPenalty = lines.reduce((s, l) => s + l.penalty, 0);
+  const score = Math.max(0, Math.round((10 - totalPenalty) * 10) / 10);
+  return { score, lines };
 }
