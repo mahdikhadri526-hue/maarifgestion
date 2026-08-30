@@ -16,6 +16,17 @@ export interface Anomaly {
   details?: string | null;
 }
 
+export interface ScoreLine {
+  label: string;
+  count: number;
+  penalty: number; // points retirés (valeur positive)
+}
+
+export interface PdvScore {
+  score: number; // note sur 10
+  lines: ScoreLine[];
+}
+
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
 const TEMP_SLOTS: { slot: string; hour: number }[] = [
