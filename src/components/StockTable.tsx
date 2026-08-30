@@ -575,10 +575,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const { data: levels, loading, refresh } = useStockLevels();
   const NESPRESSO_IDS = ["ali-29", "ali-30", "ali-31", "ali-32"];
   const NESPRESSO_AGG_ID = "__nespresso_agg__";
-  const baseLevels = isWeeklyCat
-    ? []
-    : (levels || []).filter((l) => !stockCategory || l.category === stockCategory);
-  const nespressoSources = baseLevels.filter((l) => NESPRESSO_IDS.includes(l.productId));
+  // Toute la construction des lignes (filtre catégorie, agrégats, recherche)
+  // est mémoïsée : taper dans la recherche ou changer de filtre ne relance
+  // plus les boucles d'agrégation, seulement le rendu nécessaire.
+  const withAgg = useMemo(() => {
+    const baseLevels = isWeeklyCat
+      ? []
+      : (levels || []).filter((l) => !stockCategory || l.category === stockCategory);
+    const nespressoSources = baseLevels.filter((l) => NESPRESSO_IDS.includes(l.productId));
 
   let withAgg = baseLevels;
   if ((category === "all" || category === "alimentaire") && nespressoSources.length > 0) {
