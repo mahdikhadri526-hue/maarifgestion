@@ -162,12 +162,16 @@ export function PendingAutocontrolAlerts({ onOpen }: { onOpen?: () => void }) {
   );
 }
 
+const RUPTURE_EXCLUDED = ["fraise", "fruit ananas", "ananas", "glace", "topping"];
+const isExcludedFromRupture = (name: string) =>
+  RUPTURE_EXCLUDED.some((k) => name.toLowerCase().includes(k));
+
 export function StockOutAlerts() {
   const { data: levels, loading } = useStockLevels();
   const { state: placed, mark, unmark } = useOrderPlaced();
   const { isAdmin } = useAuth();
   if (loading || !levels) return null;
-  const outOfStock = levels.filter((l) => l.stockRestant <= 0);
+  const outOfStock = levels.filter((l) => l.stockRestant <= 0 && !isExcludedFromRupture(l.productName));
   if (outOfStock.length === 0) return null;
 
   return (
