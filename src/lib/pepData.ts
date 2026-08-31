@@ -83,6 +83,8 @@ export interface PepTask {
   category: string | null;
   weekend_allowed: boolean;
   requires_photo: boolean;
+  /** Photos obligatoires AVANT et APRÈS l'intervention. */
+  requires_photo_before_after: boolean;
   active: boolean;
   start_date: string;
   next_due_date: string | null;
@@ -99,7 +101,10 @@ export interface PepOccurrence {
   completed_at: string | null;
   completed_by_name: string | null;
   comment: string | null;
+  /** Photos « après » (ou photos justificatives simples). */
   photo_url: string | null;
+  /** Photos « avant » l'intervention. */
+  photo_before_url: string | null;
 }
 
 export interface PepHoliday {
@@ -447,29 +452,35 @@ export function serializePhotos(urls: string[]): string | null {
 
 export async function completeOccurrence(
   occ: PepOccurrence,
-  opts: { comment?: string; photoUrl?: string | null; photoUrls?: string[]; userName?: string | null },
+  opts: {
+    comment?: string;
+    photoUrl?: string | null;
+    photoUrls?: string[];
+    photoBeforeUrls?: string[];
+    userName?: string | null;
+  },
 ) {
   const { data: auth } = await rawSupabase.auth.getUser();
   const photos = opts.photoUrls ?? (opts.photoUrl ? [opts.photoUrl] : []);
-  const { error } = await supabase
-    .from("pep_occurrences" as any)
-    .update({
-      status: "done",
-      completed_at: new Date().toISOString(),
-      completed_by: auth?.user?.id ?? null,
-      completed_by_name: opts.userName ?? auth?.user?.email ?? null,
-      comment: opts.comment ?? null,
-      photo_url: serializePhotos(photos),
-    } as any)
-    .eq("id", occ.id);
+  const payload: any = {
+    status: "done",
+    completed_at: new Date().toISOString(),
+    completed_by: auth?.user?.id ?? null,
+    completed_by_name: opts.userName ?? auth?.user?.email ?? null,
+    comment: opts.comment ?? null,
+    photo_url: serializePhotos(photos),
+  };
+  if (opts.photoBeforeUrls) payload.photo_before_url = serializePhotos(opts.photoBeforeUrls);
+  const { error } = await supabase.from("pep_occurrences" as any).update(payload).eq("id", occ.id);
   if (error) throw error;
 }
 
 /** Remplace la liste des photos d'une occurrence (tableau vide = suppression). */
-export async function setOccurrencePhotos(id: string, urls: string[]) {
+export async function setOccurrencePhotos(id: string, urls: string[], kind: "after" | "before" = "after") {
+  const column = kind === "before" ? "photo_before_url" : "photo_url";
   const { error } = await supabase
     .from("pep_occurrences" as any)
-    .update({ photo_url: serializePhotos(urls) } as any)
+    .update({ [column]: serializePhotos(urls) } as any)
     .eq("id", id);
   if (error) throw error;
 }

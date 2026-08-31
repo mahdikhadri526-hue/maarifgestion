@@ -942,6 +942,7 @@ export type Database = {
           id: string
           original_due_date: string
           pdv_id: string
+          photo_before_url: string | null
           photo_url: string | null
           status: string
           task_id: string
@@ -957,6 +958,7 @@ export type Database = {
           id?: string
           original_due_date: string
           pdv_id: string
+          photo_before_url?: string | null
           photo_url?: string | null
           status?: string
           task_id: string
@@ -972,6 +974,7 @@ export type Database = {
           id?: string
           original_due_date?: string
           pdv_id?: string
+          photo_before_url?: string | null
           photo_url?: string | null
           status?: string
           task_id?: string
@@ -1068,6 +1071,7 @@ export type Database = {
           notes: string | null
           pdv_id: string
           requires_photo: boolean
+          requires_photo_before_after: boolean
           responsable: string | null
           start_date: string
           updated_at: string
@@ -1085,6 +1089,7 @@ export type Database = {
           notes?: string | null
           pdv_id: string
           requires_photo?: boolean
+          requires_photo_before_after?: boolean
           responsable?: string | null
           start_date?: string
           updated_at?: string
@@ -1102,6 +1107,7 @@ export type Database = {
           notes?: string | null
           pdv_id?: string
           requires_photo?: boolean
+          requires_photo_before_after?: boolean
           responsable?: string | null
           start_date?: string
           updated_at?: string
