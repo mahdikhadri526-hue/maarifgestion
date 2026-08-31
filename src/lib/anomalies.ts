@@ -648,55 +648,29 @@ export async function analyzePdv(pdvId: string, start: string, end: string): Pro
   return { rows, postponedCount };
 }
 
+/** Anomalies correspondant à une règle du barème. */
+export function rowsForRule(rows: Anomaly[], rule: ScoreRule): Anomaly[] {
+  if (!rule.anomalyLabel) return [];
+  return rows.filter(
+    (r) => r.label === rule.anomalyLabel && (rule.product === undefined || r.product === rule.product)
+  );
+}
+
 /** Note automatique /10 d'un PDV à partir des anomalies détectées. */
-export function computeScore(rows: Anomaly[], postponedCount: number): PdvScore {
-  const countLabel = (label: string, product?: string) =>
-    rows.filter((r) => r.label === label && (product === undefined || r.product === product)).length;
-
-  const lines: ScoreLine[] = [];
-  const add = (label: string, count: number, penalty: number) => {
-    if (count > 0 || penalty > 0) lines.push({ label, count, penalty });
-  };
-
-  const cTempMissing = countLabel("Température non saisie");
-  add("Température non saisie", cTempMissing, cTempMissing * 0.5);
-
-  const cTempLate = countLabel("Retard de saisie de la température");
-  add("Retards température (≥30 min)", cTempLate, Math.floor(cTempLate / 10) * 0.5);
-
-  const cStuffMissing = countLabel("Contrôle cassure/fissure des bacs de glace non effectué");
-  add("Cassure/fissure non contrôlée", cStuffMissing, cStuffMissing * 0.5);
-
-  const cStuffLate = countLabel("Retard de saisie du contrôle des STUFFS de glace");
-  add("Retards cassure/fissure (≥30 min)", cStuffLate, Math.floor(cStuffLate / 10) * 0.5);
-
-  const cPepMissed = countLabel("Tâche PEP non réalisée");
-  add("Tâche PEP non effectuée", cPepMissed, cPepMissed * 0.5);
-
-  add("Tâches PEP reportées", postponedCount, Math.floor(postponedCount / 10) * 0.5);
-
-  const cRupture = countLabel("Produits en rupture");
-  add("Produit en rupture", cRupture, 0);
-
-  const cNeg = countLabel("Sortie négative");
-  add("Sorties négatives", cNeg, Math.floor(cNeg / 10) * 0.5);
-
-  const cChantilly = countLabel("Suivi de la crème chantilly non rempli");
-  add("Suivi chantilly non rempli", cChantilly, cChantilly * 0.5);
-
-  const cSiTarte = countLabel("Stock initial du lendemain non renseigné", "Tarte");
-  add("SI lendemain Tarte non saisi", cSiTarte, cSiTarte * 0.5);
-
-  const cSiGlace = countLabel("Stock initial du lendemain non renseigné", "Glace");
-  add("SI lendemain Glace non saisi", cSiGlace, cSiGlace * 0.5);
-
-  const cSiClean = countLabel("Stock initial du lendemain non renseigné", "Produits nettoyants");
-  add("SI lendemain produits nettoyants non saisi", cSiClean, cSiClean * 0.5);
-
-  const cVisa = countLabel("Visa du manager non effectué");
-  add("Visas Manager non effectués", cVisa, Math.floor(cVisa / 5) * 0.5);
+export function computeScore(
+  rows: Anomaly[],
+  postponedCount: number,
+  rules: ScoreRule[] = loadScoreRules()
+): PdvScore {
+  const lines: ScoreLine[] = rules.map((rule) => {
+    const count = rule.anomalyLabel ? rowsForRule(rows, rule).length : postponedCount;
+    const per = Math.max(1, rule.per);
+    const penalty = Math.floor(count / per) * rule.points;
+    return { id: rule.id, label: rule.label, count, penalty, per, points: rule.points };
+  });
 
   const totalPenalty = lines.reduce((s, l) => s + l.penalty, 0);
   const score = Math.max(0, Math.round((10 - totalPenalty) * 10) / 10);
   return { score, lines };
 }
+
