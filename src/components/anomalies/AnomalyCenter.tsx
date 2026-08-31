@@ -1,12 +1,24 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, ArrowLeft, Loader2, Search } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Loader2, Search, Settings2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { analyzePdv, computeScore, toISO, type Anomaly, type PdvScore } from "@/lib/anomalies";
+import {
+  analyzePdv,
+  computeScore,
+  loadScoreRules,
+  saveScoreRules,
+  DEFAULT_SCORE_RULES,
+  rowsForRule,
+  toISO,
+  type Anomaly,
+  type PdvScore,
+  type ScoreRule,
+} from "@/lib/anomalies";
 import { formatDateFR } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -25,6 +37,12 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [sevFilter, setSevFilter] = useState<"all" | "urgent" | "attention">("all");
+  const [rules, setRules] = useState<ScoreRule[]>(() => loadScoreRules());
+  const [draftRules, setDraftRules] = useState<ScoreRule[]>(rules);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [ruleFilter, setRuleFilter] = useState<string | null>(null);
+  const [postponed, setPostponed] = useState(0);
+
 
   if (!isAdmin && !isRegionalAdmin) {
     return (
@@ -38,7 +56,23 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
   }
 
   const pdvName = pdvs.find((p) => p.id === pdvId)?.name ?? "";
-  const reset = () => { setRows(null); setScore(null); };
+  const reset = () => { setRows(null); setScore(null); setRuleFilter(null); };
+
+  const applyRules = () => {
+    const cleaned = draftRules.map((r) => ({
+      ...r,
+      per: Math.max(1, Math.round(Number(r.per) || 1)),
+      points: Math.max(0, Number(r.points) || 0),
+    }));
+    setRules(cleaned);
+    saveScoreRules(cleaned);
+    if (rows) setScore(computeScore(rows, postponed, cleaned));
+    setRulesOpen(false);
+    toast.success("Barème enregistré");
+  };
+
+  const resetRules = () => setDraftRules(DEFAULT_SCORE_RULES.map((r) => ({ ...r })));
+
 
   const run = async () => {
     if (!pdvId) {
@@ -72,7 +106,10 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
     try {
       const result = await analyzePdv(pdvId, start, end);
       setRows(result.rows);
-      setScore(computeScore(result.rows, result.postponedCount));
+      setPostponed(result.postponedCount);
+      setRuleFilter(null);
+      setScore(computeScore(result.rows, result.postponedCount, rules));
+
     } catch (e: any) {
       toast.error(e?.message ?? "Erreur lors de l'analyse");
     } finally {
@@ -86,10 +123,13 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
     return { urgent, attention, total: urgent + attention };
   }, [rows]);
 
+  const activeRule = ruleFilter ? rules.find((r) => r.id === ruleFilter) ?? null : null;
+
   const filtered = useMemo(() => {
     if (!rows) return [];
+    const base = activeRule ? rowsForRule(rows, activeRule) : rows;
     const q = search.trim().toLowerCase();
-    return rows.filter((r) => {
+    return base.filter((r) => {
       if (sevFilter !== "all" && r.severity !== sevFilter) return false;
       if (!q) return true;
       return (
@@ -98,7 +138,8 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
         (r.details ?? "").toLowerCase().includes(q)
       );
     });
-  }, [rows, search, sevFilter]);
+  }, [rows, search, sevFilter, activeRule]);
+
 
   return (
     <div className="space-y-4">
@@ -167,6 +208,12 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
             {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
             Analyser
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => { setDraftRules(rules.map((r) => ({ ...r }))); setRulesOpen(true); }}
+          >
+            <Settings2 className="h-4 w-4 mr-2" /> Barème de notation
+          </Button>
           {rows && (
             <Input
               placeholder="Rechercher…"
@@ -201,23 +248,103 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
               />
             </div>
           </div>
+          {ruleFilter && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">
+                Filtre actif : {rules.find((r) => r.id === ruleFilter)?.label}
+              </span>
+              <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => setRuleFilter(null)}>
+                Tout afficher
+              </Button>
+            </div>
+          )}
           <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
             {score.lines.map((l) => (
               <div
-                key={l.label}
-                className="flex items-center justify-between gap-2 text-xs rounded-lg border px-2.5 py-1.5"
+                key={l.id}
+                className={`flex items-center justify-between gap-2 text-xs rounded-lg border px-2.5 py-1.5 ${
+                  ruleFilter === l.id ? "ring-2 ring-primary" : ""
+                }`}
               >
-                <span className="text-muted-foreground">
+                <span className="text-muted-foreground truncate">
                   {l.label} <span className="font-medium text-foreground">({l.count})</span>
+                  <span className="block text-[10px] opacity-70">
+                    −{l.points.toFixed(1).replace(".", ",")} / {l.per} anomalie{l.per > 1 ? "s" : ""}
+                  </span>
                 </span>
-                <span className={`font-semibold ${l.penalty > 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                  {l.penalty > 0 ? `−${l.penalty.toFixed(1).replace(".", ",")}` : "0"}
-                </span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className={`font-semibold ${l.penalty > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                    {l.penalty > 0 ? `−${l.penalty.toFixed(1).replace(".", ",")}` : "0"}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    title="Voir les anomalies"
+                    disabled={l.id === "pep_postponed" || l.count === 0}
+                    onClick={() => setRuleFilter(ruleFilter === l.id ? null : l.id)}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      <Dialog open={rulesOpen} onOpenChange={setRulesOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Barème de notation</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Pour chaque type d'anomalie : nombre de points retirés par tranche d'anomalies.
+          </p>
+          <div className="space-y-2">
+            {draftRules.map((r, i) => (
+              <div key={r.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2 border rounded-lg px-2.5 py-1.5">
+                <span className="text-sm">{r.label}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground">−</span>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    className="h-8 w-20"
+                    value={r.points}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setDraftRules((prev) => prev.map((x, j) => (j === i ? { ...x, points: Number(v) } : x)));
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground">pt</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground">par</span>
+                  <Input
+                    type="number"
+                    step="1"
+                    min="1"
+                    className="h-8 w-20"
+                    value={r.per}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setDraftRules((prev) => prev.map((x, j) => (j === i ? { ...x, per: Number(v) } : x)));
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground">anomalie(s)</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={resetRules}>Valeurs par défaut</Button>
+            <Button onClick={applyRules}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {rows && (
         <div className="grid grid-cols-3 gap-3">

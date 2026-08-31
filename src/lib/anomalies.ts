@@ -17,15 +17,70 @@ export interface Anomaly {
 }
 
 export interface ScoreLine {
+  id: string;
   label: string;
   count: number;
   penalty: number; // points retirés (valeur positive)
+  per: number;     // pénalité appliquée par tranche de "per" anomalies
+  points: number;  // points retirés par tranche
 }
 
 export interface PdvScore {
   score: number; // note sur 10
   lines: ScoreLine[];
 }
+
+/** Barème configurable : chaque règle retire `points` par tranche de `per` anomalies. */
+export interface ScoreRule {
+  id: string;
+  label: string;
+  anomalyLabel: string | null; // null = source externe (reports PEP)
+  product?: string;
+  per: number;
+  points: number;
+}
+
+export const DEFAULT_SCORE_RULES: ScoreRule[] = [
+  { id: "temp_missing", label: "Température non saisie", anomalyLabel: "Température non saisie", per: 1, points: 0.5 },
+  { id: "temp_late", label: "Retards température (≥30 min)", anomalyLabel: "Retard de saisie de la température", per: 10, points: 0.5 },
+  { id: "stuff_missing", label: "Cassure/fissure non contrôlée", anomalyLabel: "Contrôle cassure/fissure des bacs de glace non effectué", per: 1, points: 0.5 },
+  { id: "stuff_late", label: "Retards cassure/fissure (≥30 min)", anomalyLabel: "Retard de saisie du contrôle des STUFFS de glace", per: 10, points: 0.5 },
+  { id: "pep_missed", label: "Tâche PEP non effectuée", anomalyLabel: "Tâche PEP non réalisée", per: 1, points: 0.5 },
+  { id: "pep_postponed", label: "Tâches PEP reportées", anomalyLabel: null, per: 10, points: 0.5 },
+  { id: "rupture", label: "Produit en rupture", anomalyLabel: "Produits en rupture", per: 1, points: 0 },
+  { id: "negative", label: "Sorties négatives", anomalyLabel: "Sortie négative", per: 10, points: 0.5 },
+  { id: "chantilly", label: "Suivi chantilly non rempli", anomalyLabel: "Suivi de la crème chantilly non rempli", per: 1, points: 0.5 },
+  { id: "si_tarte", label: "SI lendemain Tarte non saisi", anomalyLabel: "Stock initial du lendemain non renseigné", product: "Tarte", per: 1, points: 0.5 },
+  { id: "si_glace", label: "SI lendemain Glace non saisi", anomalyLabel: "Stock initial du lendemain non renseigné", product: "Glace", per: 1, points: 0.5 },
+  { id: "si_clean", label: "SI lendemain produits nettoyants non saisi", anomalyLabel: "Stock initial du lendemain non renseigné", product: "Produits nettoyants", per: 1, points: 0.5 },
+  { id: "visa", label: "Visas Manager non effectués", anomalyLabel: "Visa du manager non effectué", per: 5, points: 0.5 },
+];
+
+const RULES_KEY = "anomaly_score_rules_v1";
+
+export function loadScoreRules(): ScoreRule[] {
+  try {
+    const raw = localStorage.getItem(RULES_KEY);
+    if (!raw) return DEFAULT_SCORE_RULES;
+    const saved = JSON.parse(raw) as Partial<ScoreRule>[];
+    return DEFAULT_SCORE_RULES.map((d) => {
+      const s = saved.find((x) => x.id === d.id);
+      if (!s) return d;
+      return {
+        ...d,
+        per: Math.max(1, Number(s.per) || d.per),
+        points: Math.max(0, Number(s.points) ?? d.points),
+      };
+    });
+  } catch {
+    return DEFAULT_SCORE_RULES;
+  }
+}
+
+export function saveScoreRules(rules: ScoreRule[]) {
+  localStorage.setItem(RULES_KEY, JSON.stringify(rules.map((r) => ({ id: r.id, per: r.per, points: r.points }))));
+}
+
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
@@ -593,55 +648,29 @@ export async function analyzePdv(pdvId: string, start: string, end: string): Pro
   return { rows, postponedCount };
 }
 
+/** Anomalies correspondant à une règle du barème. */
+export function rowsForRule(rows: Anomaly[], rule: ScoreRule): Anomaly[] {
+  if (!rule.anomalyLabel) return [];
+  return rows.filter(
+    (r) => r.label === rule.anomalyLabel && (rule.product === undefined || r.product === rule.product)
+  );
+}
+
 /** Note automatique /10 d'un PDV à partir des anomalies détectées. */
-export function computeScore(rows: Anomaly[], postponedCount: number): PdvScore {
-  const countLabel = (label: string, product?: string) =>
-    rows.filter((r) => r.label === label && (product === undefined || r.product === product)).length;
-
-  const lines: ScoreLine[] = [];
-  const add = (label: string, count: number, penalty: number) => {
-    if (count > 0 || penalty > 0) lines.push({ label, count, penalty });
-  };
-
-  const cTempMissing = countLabel("Température non saisie");
-  add("Température non saisie", cTempMissing, cTempMissing * 0.5);
-
-  const cTempLate = countLabel("Retard de saisie de la température");
-  add("Retards température (≥30 min)", cTempLate, Math.floor(cTempLate / 10) * 0.5);
-
-  const cStuffMissing = countLabel("Contrôle cassure/fissure des bacs de glace non effectué");
-  add("Cassure/fissure non contrôlée", cStuffMissing, cStuffMissing * 0.5);
-
-  const cStuffLate = countLabel("Retard de saisie du contrôle des STUFFS de glace");
-  add("Retards cassure/fissure (≥30 min)", cStuffLate, Math.floor(cStuffLate / 10) * 0.5);
-
-  const cPepMissed = countLabel("Tâche PEP non réalisée");
-  add("Tâche PEP non effectuée", cPepMissed, cPepMissed * 0.5);
-
-  add("Tâches PEP reportées", postponedCount, Math.floor(postponedCount / 10) * 0.5);
-
-  const cRupture = countLabel("Produits en rupture");
-  add("Produit en rupture", cRupture, 0);
-
-  const cNeg = countLabel("Sortie négative");
-  add("Sorties négatives", cNeg, Math.floor(cNeg / 10) * 0.5);
-
-  const cChantilly = countLabel("Suivi de la crème chantilly non rempli");
-  add("Suivi chantilly non rempli", cChantilly, cChantilly * 0.5);
-
-  const cSiTarte = countLabel("Stock initial du lendemain non renseigné", "Tarte");
-  add("SI lendemain Tarte non saisi", cSiTarte, cSiTarte * 0.5);
-
-  const cSiGlace = countLabel("Stock initial du lendemain non renseigné", "Glace");
-  add("SI lendemain Glace non saisi", cSiGlace, cSiGlace * 0.5);
-
-  const cSiClean = countLabel("Stock initial du lendemain non renseigné", "Produits nettoyants");
-  add("SI lendemain produits nettoyants non saisi", cSiClean, cSiClean * 0.5);
-
-  const cVisa = countLabel("Visa du manager non effectué");
-  add("Visas Manager non effectués", cVisa, Math.floor(cVisa / 5) * 0.5);
+export function computeScore(
+  rows: Anomaly[],
+  postponedCount: number,
+  rules: ScoreRule[] = loadScoreRules()
+): PdvScore {
+  const lines: ScoreLine[] = rules.map((rule) => {
+    const count = rule.anomalyLabel ? rowsForRule(rows, rule).length : postponedCount;
+    const per = Math.max(1, rule.per);
+    const penalty = Math.floor(count / per) * rule.points;
+    return { id: rule.id, label: rule.label, count, penalty, per, points: rule.points };
+  });
 
   const totalPenalty = lines.reduce((s, l) => s + l.penalty, 0);
   const score = Math.max(0, Math.round((10 - totalPenalty) * 10) / 10);
   return { score, lines };
 }
+
