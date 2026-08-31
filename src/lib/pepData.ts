@@ -101,7 +101,10 @@ export interface PepOccurrence {
   completed_at: string | null;
   completed_by_name: string | null;
   comment: string | null;
+  /** Photos « après » (ou photos justificatives simples). */
   photo_url: string | null;
+  /** Photos « avant » l'intervention. */
+  photo_before_url: string | null;
 }
 
 export interface PepHoliday {
