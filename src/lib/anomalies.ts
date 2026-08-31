@@ -268,8 +268,8 @@ export async function analyzePdv(pdvId: string, start: string, end: string): Pro
         details: `${missingStuff.length} contrôle(s) manquant(s) sur ${STUFF_SLOTS.length} : ${missingStuff.join(", ")}`,
       });
 
-    // 5 bis — Retard de saisie des contrôles STUFFS (plus de 2 h après le créneau)
-    const lateStuff: { slot: string; at: string; zones: string[] }[] = [];
+    // 5 bis — Retard de saisie des contrôles STUFFS (une ligne par saisie)
+    const lateStuff: { slot: string; at: string; atTime: number; label: string }[] = [];
     for (const s of STUFF_SLOTS) {
       const hour = s === "00h00" ? 24 : Number(s.slice(0, 2));
       const rows = (stuffBySlot.get(`${date}|${s}`) ?? []).filter(
@@ -277,23 +277,32 @@ export async function analyzePdv(pdvId: string, start: string, end: string): Pro
       );
       if (rows.length === 0) continue;
       const limit = hourAt(date, hour, LATE_TOLERANCE_MIN).getTime();
-      const lateRows = rows.filter((r) => (entryTime(r) as number) > limit);
-      if (lateRows.length === 0) continue;
-      const first = Math.min(...lateRows.map((r) => entryTime(r) as number));
-      const zones = Array.from(new Set(lateRows.map((r) => r.zone).filter(Boolean))) as string[];
-      lateStuff.push({ slot: s, at: hhmm(new Date(first).toISOString()), zones });
-    }
-    if (lateStuff.length)
-      push({
-        severity: "attention",
-        date,
-        time: slotRange(lateStuff.map((l) => l.slot)),
-        label: "Retard de saisie du contrôle des STUFFS de glace",
-        product: "Bacs de glace",
-        details: lateStuff
-          .map((l) => `${l.slot} saisi à ${l.at}${l.zones.length ? ` — ${l.zones.join(", ")}` : ""}`)
-          .join(" · "),
+      rows.forEach((r) => {
+        const t = entryTime(r) as number;
+        if (t <= limit) return;
+        const zone = r.zone ? String(r.zone) : "";
+        const parfum = filled(r.parfum) ? String(r.parfum) : "Bac de glace";
+        lateStuff.push({
+          slot: s,
+          at: hhmm(new Date(t).toISOString()),
+          atTime: t,
+          label: zone ? `${zone} : ${parfum}` : parfum,
+        });
       });
+    }
+    lateStuff
+      .sort((a, b) => a.atTime - b.atTime)
+      .forEach((l) => {
+        push({
+          severity: "attention",
+          date,
+          time: l.at,
+          label: "Retard de saisie du contrôle des STUFFS de glace",
+          product: l.label,
+          details: `${l.at} au lieu de ${l.slot}`,
+        });
+      });
+
 
     // 9 — Visas manager (regroupés par module)
     const tempDay = (temps as any[]).filter(
