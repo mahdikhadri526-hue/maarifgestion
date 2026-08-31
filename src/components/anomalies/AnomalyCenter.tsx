@@ -1,12 +1,24 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, ArrowLeft, Loader2, Search } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Loader2, Search, Settings2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { analyzePdv, computeScore, toISO, type Anomaly, type PdvScore } from "@/lib/anomalies";
+import {
+  analyzePdv,
+  computeScore,
+  loadScoreRules,
+  saveScoreRules,
+  DEFAULT_SCORE_RULES,
+  rowsForRule,
+  toISO,
+  type Anomaly,
+  type PdvScore,
+  type ScoreRule,
+} from "@/lib/anomalies";
 import { formatDateFR } from "@/lib/utils";
 import { toast } from "sonner";
 
@@ -25,6 +37,12 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [sevFilter, setSevFilter] = useState<"all" | "urgent" | "attention">("all");
+  const [rules, setRules] = useState<ScoreRule[]>(() => loadScoreRules());
+  const [draftRules, setDraftRules] = useState<ScoreRule[]>(rules);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [ruleFilter, setRuleFilter] = useState<string | null>(null);
+  const [postponed, setPostponed] = useState(0);
+
 
   if (!isAdmin && !isRegionalAdmin) {
     return (
