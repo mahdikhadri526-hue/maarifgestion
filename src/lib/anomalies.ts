@@ -17,15 +17,70 @@ export interface Anomaly {
 }
 
 export interface ScoreLine {
+  id: string;
   label: string;
   count: number;
   penalty: number; // points retirés (valeur positive)
+  per: number;     // pénalité appliquée par tranche de "per" anomalies
+  points: number;  // points retirés par tranche
 }
 
 export interface PdvScore {
   score: number; // note sur 10
   lines: ScoreLine[];
 }
+
+/** Barème configurable : chaque règle retire `points` par tranche de `per` anomalies. */
+export interface ScoreRule {
+  id: string;
+  label: string;
+  anomalyLabel: string | null; // null = source externe (reports PEP)
+  product?: string;
+  per: number;
+  points: number;
+}
+
+export const DEFAULT_SCORE_RULES: ScoreRule[] = [
+  { id: "temp_missing", label: "Température non saisie", anomalyLabel: "Température non saisie", per: 1, points: 0.5 },
+  { id: "temp_late", label: "Retards température (≥30 min)", anomalyLabel: "Retard de saisie de la température", per: 10, points: 0.5 },
+  { id: "stuff_missing", label: "Cassure/fissure non contrôlée", anomalyLabel: "Contrôle cassure/fissure des bacs de glace non effectué", per: 1, points: 0.5 },
+  { id: "stuff_late", label: "Retards cassure/fissure (≥30 min)", anomalyLabel: "Retard de saisie du contrôle des STUFFS de glace", per: 10, points: 0.5 },
+  { id: "pep_missed", label: "Tâche PEP non effectuée", anomalyLabel: "Tâche PEP non réalisée", per: 1, points: 0.5 },
+  { id: "pep_postponed", label: "Tâches PEP reportées", anomalyLabel: null, per: 10, points: 0.5 },
+  { id: "rupture", label: "Produit en rupture", anomalyLabel: "Produits en rupture", per: 1, points: 0 },
+  { id: "negative", label: "Sorties négatives", anomalyLabel: "Sortie négative", per: 10, points: 0.5 },
+  { id: "chantilly", label: "Suivi chantilly non rempli", anomalyLabel: "Suivi de la crème chantilly non rempli", per: 1, points: 0.5 },
+  { id: "si_tarte", label: "SI lendemain Tarte non saisi", anomalyLabel: "Stock initial du lendemain non renseigné", product: "Tarte", per: 1, points: 0.5 },
+  { id: "si_glace", label: "SI lendemain Glace non saisi", anomalyLabel: "Stock initial du lendemain non renseigné", product: "Glace", per: 1, points: 0.5 },
+  { id: "si_clean", label: "SI lendemain produits nettoyants non saisi", anomalyLabel: "Stock initial du lendemain non renseigné", product: "Produits nettoyants", per: 1, points: 0.5 },
+  { id: "visa", label: "Visas Manager non effectués", anomalyLabel: "Visa du manager non effectué", per: 5, points: 0.5 },
+];
+
+const RULES_KEY = "anomaly_score_rules_v1";
+
+export function loadScoreRules(): ScoreRule[] {
+  try {
+    const raw = localStorage.getItem(RULES_KEY);
+    if (!raw) return DEFAULT_SCORE_RULES;
+    const saved = JSON.parse(raw) as Partial<ScoreRule>[];
+    return DEFAULT_SCORE_RULES.map((d) => {
+      const s = saved.find((x) => x.id === d.id);
+      if (!s) return d;
+      return {
+        ...d,
+        per: Math.max(1, Number(s.per) || d.per),
+        points: Math.max(0, Number(s.points) ?? d.points),
+      };
+    });
+  } catch {
+    return DEFAULT_SCORE_RULES;
+  }
+}
+
+export function saveScoreRules(rules: ScoreRule[]) {
+  localStorage.setItem(RULES_KEY, JSON.stringify(rules.map((r) => ({ id: r.id, per: r.per, points: r.points }))));
+}
+
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
