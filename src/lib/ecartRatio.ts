@@ -246,13 +246,24 @@ export function lastFinalBefore(
   date: string,
   lookback = 60,
 ): DayData | undefined {
+  const merged: DayData = {};
+  const finalSections: Section[] = ["SF_EMP", "SF_FRIGO_EMP", "SF_TRANSIT_EMP", "SF_CHAMBRE_EMP", "SF_SP"];
   let cur = shiftDate(date, -1);
   for (let i = 0; i < lookback; i++) {
     const d = history.get(cur);
-    if (hasFinalStock(d)) return d;
+    if (d) {
+      for (const section of finalSections) {
+        // Une journée peut contenir uniquement le stock Chambre automatique.
+        // Chaque partie du stock final doit donc être reprise depuis sa dernière
+        // journée réellement renseignée, sans effacer les autres parties.
+        if (!(section in merged) && section in d) merged[section] = { ...d[section] };
+      }
+      const hasEmp = "SF_EMP" in merged || "SF_FRIGO_EMP" in merged || "SF_TRANSIT_EMP" in merged;
+      if (hasEmp && "SF_CHAMBRE_EMP" in merged && "SF_SP" in merged) return merged;
+    }
     cur = shiftDate(cur, -1);
   }
-  return undefined;
+  return hasFinalStock(merged) ? merged : undefined;
 }
 
 /** Stock initial dérivé du stock final de la veille (report automatique). */
@@ -386,13 +397,13 @@ export async function fetchGlaceAuto(start: string, end: string): Promise<Map<st
     d.setDate(d.getDate() + idx);
     const date = d.toISOString().slice(0, 10);
     const e = num(r.entrees);
-    if (e !== 0) {
+    if (r.entrees !== null) {
       const m = entreeByDate.get(date) ?? {};
       m[parfum] = (m[parfum] ?? 0) + e;
       entreeByDate.set(date, m);
     }
     const si = num(r.stock_initial);
-    if (si !== 0) {
+    if (r.stock_initial !== null) {
       const m = siByDate.get(date) ?? {};
       m[parfum] = (m[parfum] ?? 0) + si;
       siByDate.set(date, m);
@@ -417,8 +428,11 @@ export function applyGlaceAuto(
   const out = new Map<string, DayData>(history);
   for (const [date, a] of auto) {
     const d: DayData = { ...(out.get(date) ?? {}) };
-    if (Object.keys(a.entrees).length > 0) d.ENTREE_EMP = { ...a.entrees };
-    if (Object.keys(a.sfChambre).length > 0) d.SF_CHAMBRE_EMP = { ...a.sfChambre };
+    // Les produits qui n'existent pas dans le suivi hebdomadaire (ou dans une
+    // ancienne semaine) conservent leur valeur enregistrée dans Calcul écarts.
+    // Les valeurs automatiques présentes, y compris 0, restent prioritaires.
+    if (Object.keys(a.entrees).length > 0) d.ENTREE_EMP = { ...(d.ENTREE_EMP ?? {}), ...a.entrees };
+    if (Object.keys(a.sfChambre).length > 0) d.SF_CHAMBRE_EMP = { ...(d.SF_CHAMBRE_EMP ?? {}), ...a.sfChambre };
     out.set(date, d);
   }
   return out;

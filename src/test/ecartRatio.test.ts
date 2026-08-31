@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeDay, type DayData } from "@/lib/ecartRatio";
+import { applyGlaceAuto, computeDay, lastFinalBefore, type DayData } from "@/lib/ecartRatio";
 
 describe("Calcul des écarts — formule globale", () => {
   it("calcule consommation, ventes et écart sur une journée", () => {
@@ -53,5 +53,29 @@ describe("Calcul des écarts — formule globale", () => {
 
     // Écart = 300 - 4025 = -3725
     expect(r.ecartTotalG).toBe(-3725);
+  });
+
+  it("compose le report quand la veille contient seulement le stock chambre automatique", () => {
+    const history = new Map<string, DayData>([
+      ["2026-08-29", { SF_EMP: { Nougat: 1200 }, SF_SP: { Nougat: 300 } }],
+      ["2026-08-30", { SF_CHAMBRE_EMP: { Nougat: 4 } }],
+    ]);
+
+    const prev = lastFinalBefore(history, "2026-08-31");
+    expect(prev?.SF_EMP.Nougat).toBe(1200);
+    expect(prev?.SF_SP.Nougat).toBe(300);
+    expect(prev?.SF_CHAMBRE_EMP.Nougat).toBe(4);
+  });
+
+  it("conserve les produits absents de l'automatisation et applique les zéros explicites", () => {
+    const history = new Map<string, DayData>([
+      ["2026-08-30", { SF_CHAMBRE_EMP: { Framboise: 2, Nougat: 8 } }],
+    ]);
+    const auto = new Map([
+      ["2026-08-30", { entrees: {}, sfChambre: { Nougat: 0 } }],
+    ]);
+
+    const merged = applyGlaceAuto(history, auto);
+    expect(merged.get("2026-08-30")?.SF_CHAMBRE_EMP).toEqual({ Framboise: 2, Nougat: 0 });
   });
 });
