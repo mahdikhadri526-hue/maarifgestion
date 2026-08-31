@@ -60,10 +60,14 @@ export function EcartModule() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const days = await fetchEcartLines(shiftDate(range.start, -60), range.end);
+      const from = shiftDate(range.start, -60);
+      const days = await fetchEcartLines(from, range.end);
       // Entrées + stock final chambre repris automatiquement du Suivi hebdo glace
-      const auto = await fetchGlaceAuto(range.start, range.end);
+      // (sur toute la fenêtre d'historique, sinon le report du stock final de la
+      //  veille vers le stock initial du jour perd la partie « chambre »).
+      const auto = await fetchGlaceAuto(from, range.end);
       const merged = applyGlaceAuto(days, auto);
+
       setHistory(merged);
       setDay(merged.get(date) ?? {});
       setPrev(lastFinalBefore(merged, date));
