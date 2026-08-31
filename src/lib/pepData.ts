@@ -83,6 +83,8 @@ export interface PepTask {
   category: string | null;
   weekend_allowed: boolean;
   requires_photo: boolean;
+  /** Photos obligatoires AVANT et APRÈS l'intervention. */
+  requires_photo_before_after: boolean;
   active: boolean;
   start_date: string;
   next_due_date: string | null;
