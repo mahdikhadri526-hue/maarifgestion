@@ -56,7 +56,23 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
   }
 
   const pdvName = pdvs.find((p) => p.id === pdvId)?.name ?? "";
-  const reset = () => { setRows(null); setScore(null); };
+  const reset = () => { setRows(null); setScore(null); setRuleFilter(null); };
+
+  const applyRules = () => {
+    const cleaned = draftRules.map((r) => ({
+      ...r,
+      per: Math.max(1, Math.round(Number(r.per) || 1)),
+      points: Math.max(0, Number(r.points) || 0),
+    }));
+    setRules(cleaned);
+    saveScoreRules(cleaned);
+    if (rows) setScore(computeScore(rows, postponed, cleaned));
+    setRulesOpen(false);
+    toast.success("Barème enregistré");
+  };
+
+  const resetRules = () => setDraftRules(DEFAULT_SCORE_RULES.map((r) => ({ ...r })));
+
 
   const run = async () => {
     if (!pdvId) {
