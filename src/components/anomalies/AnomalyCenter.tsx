@@ -208,6 +208,12 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
             {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Search className="h-4 w-4 mr-2" />}
             Analyser
           </Button>
+          <Button
+            variant="outline"
+            onClick={() => { setDraftRules(rules.map((r) => ({ ...r }))); setRulesOpen(true); }}
+          >
+            <Settings2 className="h-4 w-4 mr-2" /> Barème de notation
+          </Button>
           {rows && (
             <Input
               placeholder="Rechercher…"
@@ -242,23 +248,103 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
               />
             </div>
           </div>
+          {ruleFilter && (
+            <div className="flex items-center gap-2 text-xs">
+              <span className="text-muted-foreground">
+                Filtre actif : {rules.find((r) => r.id === ruleFilter)?.label}
+              </span>
+              <Button size="sm" variant="ghost" className="h-6 px-2" onClick={() => setRuleFilter(null)}>
+                Tout afficher
+              </Button>
+            </div>
+          )}
           <div className="grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
             {score.lines.map((l) => (
               <div
-                key={l.label}
-                className="flex items-center justify-between gap-2 text-xs rounded-lg border px-2.5 py-1.5"
+                key={l.id}
+                className={`flex items-center justify-between gap-2 text-xs rounded-lg border px-2.5 py-1.5 ${
+                  ruleFilter === l.id ? "ring-2 ring-primary" : ""
+                }`}
               >
-                <span className="text-muted-foreground">
+                <span className="text-muted-foreground truncate">
                   {l.label} <span className="font-medium text-foreground">({l.count})</span>
+                  <span className="block text-[10px] opacity-70">
+                    −{l.points.toFixed(1).replace(".", ",")} / {l.per} anomalie{l.per > 1 ? "s" : ""}
+                  </span>
                 </span>
-                <span className={`font-semibold ${l.penalty > 0 ? "text-destructive" : "text-muted-foreground"}`}>
-                  {l.penalty > 0 ? `−${l.penalty.toFixed(1).replace(".", ",")}` : "0"}
-                </span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className={`font-semibold ${l.penalty > 0 ? "text-destructive" : "text-muted-foreground"}`}>
+                    {l.penalty > 0 ? `−${l.penalty.toFixed(1).replace(".", ",")}` : "0"}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    title="Voir les anomalies"
+                    disabled={l.id === "pep_postponed" || l.count === 0}
+                    onClick={() => setRuleFilter(ruleFilter === l.id ? null : l.id)}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
         </div>
       )}
+
+      <Dialog open={rulesOpen} onOpenChange={setRulesOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Barème de notation</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-muted-foreground">
+            Pour chaque type d'anomalie : nombre de points retirés par tranche d'anomalies.
+          </p>
+          <div className="space-y-2">
+            {draftRules.map((r, i) => (
+              <div key={r.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2 border rounded-lg px-2.5 py-1.5">
+                <span className="text-sm">{r.label}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground">−</span>
+                  <Input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    className="h-8 w-20"
+                    value={r.points}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setDraftRules((prev) => prev.map((x, j) => (j === i ? { ...x, points: Number(v) } : x)));
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground">pt</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground">par</span>
+                  <Input
+                    type="number"
+                    step="1"
+                    min="1"
+                    className="h-8 w-20"
+                    value={r.per}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      setDraftRules((prev) => prev.map((x, j) => (j === i ? { ...x, per: Number(v) } : x)));
+                    }}
+                  />
+                  <span className="text-xs text-muted-foreground">anomalie(s)</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={resetRules}>Valeurs par défaut</Button>
+            <Button onClick={applyRules}>Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
 
       {rows && (
         <div className="grid grid-cols-3 gap-3">
