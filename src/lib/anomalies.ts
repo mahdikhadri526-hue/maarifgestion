@@ -201,7 +201,7 @@ export async function analyzePdv(pdvId: string, start: string, end: string): Pro
   for (const date of days) {
     // 1/2 — Températures (regroupées par jour)
     const missingTemp: string[] = [];
-    const lateTemp: { slot: string; at: string; count: number; items: string[] }[] = [];
+    const lateRowsAll: { slot: string; at: string; zone: string; equip: string; atTime: number }[] = [];
     for (const { slot, hour } of TEMP_SLOTS) {
       if (!slotPassed(date, hour, now)) continue;
       const rows = (tempBySlot.get(`${date}|${slot}`) ?? []).filter(
@@ -212,18 +212,17 @@ export async function analyzePdv(pdvId: string, start: string, end: string): Pro
       } else {
         const limit = hourAt(date, hour, LATE_TOLERANCE_MIN).getTime();
         // Un relevé est en retard dès qu'UN matériel est saisi après la limite.
-        const lateRows = rows.filter((r) => entryTime(r) !== null && (entryTime(r) as number) > limit);
-        if (lateRows.length) {
-          const last = Math.max(...lateRows.map((r) => entryTime(r) as number));
-          const items = Array.from(
-            new Set(
-              lateRows
-                .map((r) => (r.zone ? `${r.zone} — ${r.equipment_name ?? "?"}` : r.equipment_name))
-                .filter(Boolean),
-            ),
-          ) as string[];
-          lateTemp.push({ slot: `${slot}00`, at: hhmm(new Date(last).toISOString()), count: lateRows.length, items });
-        }
+        rows.forEach((r) => {
+          const t = entryTime(r);
+          if (t === null || t <= limit) return;
+          lateRowsAll.push({
+            slot: `${slot}00`,
+            at: hhmm(new Date(t).toISOString()),
+            zone: r.zone ?? "",
+            equip: r.equipment_name ?? "?",
+            atTime: t,
+          });
+        });
       }
     }
     if (missingTemp.length)
@@ -235,17 +234,20 @@ export async function analyzePdv(pdvId: string, start: string, end: string): Pro
         product: "Frigos / Congélateurs",
         details: `${missingTemp.length} créneau(x) manquant(s) : ${missingTemp.join(", ")}`,
       });
-    if (lateTemp.length)
-      push({
-        severity: "attention",
-        date,
-        time: slotRange(lateTemp.map((l) => l.slot)),
-        label: "Retard de saisie de la température",
-        product: "Frigos / Congélateurs",
-        details: lateTemp
-          .map((l) => `${l.slot} : ${l.count} relevé(s) en retard (dernier ${l.at})${l.items.length ? ` — ${l.items.join(" · ")}` : ""}`)
-          .join(" · "),
+    // Une ligne distincte par matériel en retard : Zone + matériel + heure saisie + heure prévue
+    lateRowsAll
+      .sort((a, b) => a.atTime - b.atTime)
+      .forEach((l) => {
+        push({
+          severity: "attention",
+          date,
+          time: l.at,
+          label: "Retard de saisie de la température",
+          product: l.zone ? `${l.zone} : ${l.equip}` : l.equip,
+          details: `${l.at} au lieu de ${l.slot}`,
+        });
       });
+
 
     // 5 — Contrôle cassures/fissures des bacs de glace (regroupé)
     const missingStuff = STUFF_SLOTS.filter((s) => {
