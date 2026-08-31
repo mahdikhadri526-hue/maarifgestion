@@ -106,7 +106,10 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
     try {
       const result = await analyzePdv(pdvId, start, end);
       setRows(result.rows);
-      setScore(computeScore(result.rows, result.postponedCount));
+      setPostponed(result.postponedCount);
+      setRuleFilter(null);
+      setScore(computeScore(result.rows, result.postponedCount, rules));
+
     } catch (e: any) {
       toast.error(e?.message ?? "Erreur lors de l'analyse");
     } finally {
