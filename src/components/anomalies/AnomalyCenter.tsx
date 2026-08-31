@@ -123,10 +123,13 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
     return { urgent, attention, total: urgent + attention };
   }, [rows]);
 
+  const activeRule = ruleFilter ? rules.find((r) => r.id === ruleFilter) ?? null : null;
+
   const filtered = useMemo(() => {
     if (!rows) return [];
+    const base = activeRule ? rowsForRule(rows, activeRule) : rows;
     const q = search.trim().toLowerCase();
-    return rows.filter((r) => {
+    return base.filter((r) => {
       if (sevFilter !== "all" && r.severity !== sevFilter) return false;
       if (!q) return true;
       return (
@@ -135,7 +138,8 @@ export function AnomalyCenter({ onBack }: { onBack: () => void }) {
         (r.details ?? "").toLowerCase().includes(q)
       );
     });
-  }, [rows, search, sevFilter]);
+  }, [rows, search, sevFilter, activeRule]);
+
 
   return (
     <div className="space-y-4">
