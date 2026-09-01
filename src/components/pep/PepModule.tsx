@@ -577,63 +577,40 @@ function CompleteDialog({
             <Textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3} />
           </div>
           {row.task?.frequency !== "daily" && (
-          <div>
-            <Label className="text-xs">
-              Photos / justificatifs {!row.task?.requires_photo ? "(facultatif)" : <span className="text-destructive">*</span>}
-            </Label>
-            <Input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              multiple
-              onChange={async (e) => {
-                const files = Array.from(e.target.files ?? []);
-                if (!files.length) return;
-                try {
-                  const added = await Promise.all(files.map((f) => fileToCompressedDataUrl(f)));
-                  setPhotos((prev) => [...prev, ...added]);
-                } catch (err: any) {
-                  toast({ title: "Photo non prise en compte", description: err?.message, variant: "destructive" });
-                }
-                e.target.value = "";
-              }}
-            />
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Vous pouvez ajouter plusieurs photos (reprenez le bouton après chaque prise).
-            </p>
-            {photos.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-3">
-                {photos.map((p, i) => (
-                  <div key={i} className="flex flex-col items-start">
-                    <img src={p} alt={`Justificatif ${i + 1}`} className="h-24 w-24 rounded border object-cover" />
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive h-6 px-1 text-[11px]"
-                      onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" /> Retirer
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-            {row.task?.requires_photo && !photos.length && (
-              <p className="text-[11px] text-destructive mt-1">Une photo est obligatoire pour cette tâche.</p>
-            )}
-          </div>
+            <div className="space-y-3">
+              {beforeAfter && photoField("Photos AVANT intervention", photosBefore, setPhotosBefore, true)}
+              {photoField(
+                beforeAfter ? "Photos APRÈS intervention" : "Photos / justificatifs",
+                photos,
+                setPhotos,
+                beforeAfter || !!row.task?.requires_photo,
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                Vous pouvez ajouter plusieurs photos (reprenez le bouton après chaque prise).
+              </p>
+            </div>
           )}
 
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Annuler</Button>
           <Button
-            disabled={busy || (row.task?.frequency !== "daily" && !!row.task?.requires_photo && !photos.length)}
+            disabled={
+              busy ||
+              missingBeforeAfter ||
+              (row.task?.frequency !== "daily" && !!row.task?.requires_photo && !photos.length)
+            }
 
             onClick={async () => {
               setBusy(true);
               try {
-                await completeOccurrence(row.occ, { comment, photoUrls: photos, userName });
+                await completeOccurrence(row.occ, {
+                  comment,
+                  photoUrls: photos,
+                  photoBeforeUrls: beforeAfter ? photosBefore : undefined,
+                  userName,
+                });
+
 
                 toast({ title: "Tâche réalisée" });
                 onClose();
