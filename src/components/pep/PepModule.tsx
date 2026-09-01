@@ -398,6 +398,7 @@ function TaskCard({
   const history = posts.filter((p) => p.occurrence_id === occ.id);
   const done = status === "done";
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const hasBeforeAfter = !!task?.requires_photo_before_after;
 
 
 
