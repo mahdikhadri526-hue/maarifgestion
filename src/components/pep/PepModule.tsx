@@ -517,12 +517,14 @@ function CompleteDialog({
   onClose: () => void;
   onDone: () => Promise<void> | void;
 }) {
-  const [comment, setComment] = useState("");
-  const [photos, setPhotos] = useState<string[]>([]);
-  const [photosBefore, setPhotosBefore] = useState<string[]>([]);
+  const [comment, setComment] = useState(row.occ.comment ?? "");
+  const [photos, setPhotos] = useState<string[]>(parsePhotos(row.occ.photo_url));
+  const [photosBefore, setPhotosBefore] = useState<string[]>(parsePhotos(row.occ.photo_before_url));
   const [busy, setBusy] = useState(false);
+  const [savingBefore, setSavingBefore] = useState(false);
   const beforeAfter = !!row.task?.requires_photo_before_after && row.task?.frequency !== "daily";
   const missingBeforeAfter = beforeAfter && (!photosBefore.length || !photos.length);
+
 
   const photoField = (
     label: string,
