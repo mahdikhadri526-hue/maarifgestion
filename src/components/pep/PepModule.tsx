@@ -36,6 +36,7 @@ import {
   removeOccurrencePhoto,
   parsePhotos,
   setOccurrencePhotos,
+  setOccurrenceComment,
 
   todayISO,
   toISO,
@@ -578,11 +579,11 @@ function CompleteDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
-        <DialogHeader>
+      <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="p-4 pb-2">
           <DialogTitle>Marquer comme réalisée</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3">
+        <div className="space-y-3 overflow-y-auto px-4 flex-1 min-h-0">
           <p className="text-sm">{row.task?.name}</p>
           <div>
             <Label className="text-xs">Commentaire</Label>
@@ -633,7 +634,7 @@ function CompleteDialog({
           )}
 
         </div>
-        <DialogFooter>
+        <DialogFooter className="p-4 pt-2 border-t bg-background sticky bottom-0">
           <Button variant="outline" onClick={onClose}>Annuler</Button>
 
           <Button
