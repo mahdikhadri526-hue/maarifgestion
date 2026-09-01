@@ -523,7 +523,9 @@ export async function postponeOccurrence(
 export async function saveTask(task: Partial<PepTask> & { name: string; frequency: PepFrequency }) {
   const active = task.active ?? true;
   // Les tâches quotidiennes ne demandent jamais de photo justificative.
-  const requiresPhoto = task.frequency === "daily" ? false : !!task.requires_photo;
+  const beforeAfter = task.frequency === "daily" ? false : !!task.requires_photo_before_after;
+  // Photo avant/après implique une photo attendue.
+  const requiresPhoto = task.frequency === "daily" ? false : !!task.requires_photo || beforeAfter;
   const payload: any = {
     name: task.name,
     equipment: task.equipment ?? null,
@@ -532,6 +534,7 @@ export async function saveTask(task: Partial<PepTask> & { name: string; frequenc
     category: task.category ?? null,
     weekend_allowed: !!task.weekend_allowed,
     requires_photo: requiresPhoto,
+    requires_photo_before_after: beforeAfter,
     active,
     start_date: task.start_date ?? todayISO(),
     next_due_date: task.next_due_date ?? null,
@@ -599,6 +602,7 @@ export async function importPepCatalog(): Promise<{ added: number; skipped: numb
     category: "PEP",
     weekend_allowed: false,
     requires_photo: false,
+    requires_photo_before_after: false,
     active: true,
     start_date: start,
     next_due_date: null,

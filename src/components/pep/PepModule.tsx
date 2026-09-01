@@ -398,6 +398,7 @@ function TaskCard({
   const history = posts.filter((p) => p.occurrence_id === occ.id);
   const done = status === "done";
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const hasBeforeAfter = !!task?.requires_photo_before_after;
 
 
 
@@ -413,36 +414,45 @@ function TaskCard({
             {task?.responsable ? ` · ${task.responsable}` : ""}
           </p>
           {occ.comment && <p className="text-xs mt-1">💬 {occ.comment}</p>}
-          {parsePhotos(occ.photo_url).length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-3">
-              {parsePhotos(occ.photo_url).map((url, i) => (
-                <div key={i} className="flex flex-col items-start">
-                  <button type="button" onClick={() => setPhotoPreview(url)} className="block" title="Voir le justificatif">
-                    <img src={url} alt={`Justificatif ${i + 1}`} className="h-16 w-16 rounded border object-cover" />
-                    <span className="text-[11px] text-primary underline">Photo {i + 1}</span>
-                  </button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="text-destructive h-6 px-1 text-[11px]"
-                    onClick={async () => {
-                      if (!confirm("Supprimer cette photo ?")) return;
-                      try {
-                        const rest = parsePhotos(occ.photo_url).filter((_, idx) => idx !== i);
-                        await setOccurrencePhotos(occ.id, rest);
-                        toast({ title: "Photo supprimée" });
-                        await onChanged();
-                      } catch (e: any) {
-                        toast({ title: "Erreur", description: e?.message, variant: "destructive" });
-                      }
-                    }}
-                  >
-                    <Trash2 className="h-3 w-3 mr-1" /> Supprimer
-                  </Button>
+          {([
+            { kind: "before" as const, label: "AVANT", value: occ.photo_before_url },
+            { kind: "after" as const, label: hasBeforeAfter ? "APRÈS" : "Photo", value: occ.photo_url },
+          ]).map(({ kind, label, value }) =>
+            parsePhotos(value).length > 0 ? (
+              <div key={kind} className="mt-1">
+                <p className="text-[11px] font-medium text-muted-foreground">{label}</p>
+                <div className="flex flex-wrap gap-3">
+                  {parsePhotos(value).map((url, i) => (
+                    <div key={i} className="flex flex-col items-start">
+                      <button type="button" onClick={() => setPhotoPreview(url)} className="block" title="Voir le justificatif">
+                        <img src={url} alt={`${label} ${i + 1}`} className="h-16 w-16 rounded border object-cover" />
+                        <span className="text-[11px] text-primary underline">{label} {i + 1}</span>
+                      </button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-destructive h-6 px-1 text-[11px]"
+                        onClick={async () => {
+                          if (!confirm("Supprimer cette photo ?")) return;
+                          try {
+                            const rest = parsePhotos(value).filter((_, idx) => idx !== i);
+                            await setOccurrencePhotos(occ.id, rest, kind);
+                            toast({ title: "Photo supprimée" });
+                            await onChanged();
+                          } catch (e: any) {
+                            toast({ title: "Erreur", description: e?.message, variant: "destructive" });
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" /> Supprimer
+                      </Button>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              </div>
+            ) : null,
           )}
+
 
 
           {history.map((h) => (
@@ -509,7 +519,60 @@ function CompleteDialog({
 }) {
   const [comment, setComment] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
+  const [photosBefore, setPhotosBefore] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const beforeAfter = !!row.task?.requires_photo_before_after && row.task?.frequency !== "daily";
+  const missingBeforeAfter = beforeAfter && (!photosBefore.length || !photos.length);
+
+  const photoField = (
+    label: string,
+    list: string[],
+    setList: React.Dispatch<React.SetStateAction<string[]>>,
+    required: boolean,
+  ) => (
+    <div>
+      <Label className="text-xs">
+        {label} {required ? <span className="text-destructive">*</span> : "(facultatif)"}
+      </Label>
+      <Input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        multiple
+        onChange={async (e) => {
+          const files = Array.from(e.target.files ?? []);
+          if (!files.length) return;
+          try {
+            const added = await Promise.all(files.map((f) => fileToCompressedDataUrl(f)));
+            setList((prev) => [...prev, ...added]);
+          } catch (err: any) {
+            toast({ title: "Photo non prise en compte", description: err?.message, variant: "destructive" });
+          }
+          e.target.value = "";
+        }}
+      />
+      {list.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-3">
+          {list.map((p, i) => (
+            <div key={i} className="flex flex-col items-start">
+              <img src={p} alt={`${label} ${i + 1}`} className="h-24 w-24 rounded border object-cover" />
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive h-6 px-1 text-[11px]"
+                onClick={() => setList((prev) => prev.filter((_, idx) => idx !== i))}
+              >
+                <Trash2 className="h-3 w-3 mr-1" /> Retirer
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+      {required && !list.length && (
+        <p className="text-[11px] text-destructive mt-1">Cette photo est obligatoire.</p>
+      )}
+    </div>
+  );
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -524,63 +587,40 @@ function CompleteDialog({
             <Textarea value={comment} onChange={(e) => setComment(e.target.value)} rows={3} />
           </div>
           {row.task?.frequency !== "daily" && (
-          <div>
-            <Label className="text-xs">
-              Photos / justificatifs {!row.task?.requires_photo ? "(facultatif)" : <span className="text-destructive">*</span>}
-            </Label>
-            <Input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              multiple
-              onChange={async (e) => {
-                const files = Array.from(e.target.files ?? []);
-                if (!files.length) return;
-                try {
-                  const added = await Promise.all(files.map((f) => fileToCompressedDataUrl(f)));
-                  setPhotos((prev) => [...prev, ...added]);
-                } catch (err: any) {
-                  toast({ title: "Photo non prise en compte", description: err?.message, variant: "destructive" });
-                }
-                e.target.value = "";
-              }}
-            />
-            <p className="text-[11px] text-muted-foreground mt-1">
-              Vous pouvez ajouter plusieurs photos (reprenez le bouton après chaque prise).
-            </p>
-            {photos.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-3">
-                {photos.map((p, i) => (
-                  <div key={i} className="flex flex-col items-start">
-                    <img src={p} alt={`Justificatif ${i + 1}`} className="h-24 w-24 rounded border object-cover" />
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive h-6 px-1 text-[11px]"
-                      onClick={() => setPhotos((prev) => prev.filter((_, idx) => idx !== i))}
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" /> Retirer
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-            {row.task?.requires_photo && !photos.length && (
-              <p className="text-[11px] text-destructive mt-1">Une photo est obligatoire pour cette tâche.</p>
-            )}
-          </div>
+            <div className="space-y-3">
+              {beforeAfter && photoField("Photos AVANT intervention", photosBefore, setPhotosBefore, true)}
+              {photoField(
+                beforeAfter ? "Photos APRÈS intervention" : "Photos / justificatifs",
+                photos,
+                setPhotos,
+                beforeAfter || !!row.task?.requires_photo,
+              )}
+              <p className="text-[11px] text-muted-foreground">
+                Vous pouvez ajouter plusieurs photos (reprenez le bouton après chaque prise).
+              </p>
+            </div>
           )}
 
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Annuler</Button>
           <Button
-            disabled={busy || (row.task?.frequency !== "daily" && !!row.task?.requires_photo && !photos.length)}
+            disabled={
+              busy ||
+              missingBeforeAfter ||
+              (row.task?.frequency !== "daily" && !!row.task?.requires_photo && !photos.length)
+            }
 
             onClick={async () => {
               setBusy(true);
               try {
-                await completeOccurrence(row.occ, { comment, photoUrls: photos, userName });
+                await completeOccurrence(row.occ, {
+                  comment,
+                  photoUrls: photos,
+                  photoBeforeUrls: beforeAfter ? photosBefore : undefined,
+                  userName,
+                });
+
 
                 toast({ title: "Tâche réalisée" });
                 onClose();
@@ -839,6 +879,7 @@ const EMPTY: Partial<PepTask> = {
   responsable: "",
   weekend_allowed: false,
   requires_photo: false,
+  requires_photo_before_after: false,
   active: true,
   start_date: todayISO(),
 };
@@ -942,7 +983,12 @@ function TasksAdmin({ tasks, onChanged }: { tasks: PepTask[]; onChanged: () => P
               <div><Label className="text-xs">Date de début</Label><Input type="date" value={editing.start_date ?? todayISO()} onChange={(e) => setEditing({ ...editing, start_date: e.target.value })} /></div>
               {([
                 { key: "weekend_allowed", label: "Peut être planifiée le week-end" },
-                ...(editing.frequency === "daily" ? [] : [{ key: "requires_photo" as const, label: "Photo / justificatif attendu" }]),
+                ...(editing.frequency === "daily"
+                  ? []
+                  : [
+                      { key: "requires_photo" as const, label: "Photo / justificatif attendu" },
+                      { key: "requires_photo_before_after" as const, label: "Photos AVANT et APRÈS obligatoires" },
+                    ]),
                 { key: "active", label: "Tâche active" },
               ] as const).map(({ key, label }) => {
                 const value = key === "active" ? editing.active !== false : !!(editing as any)[key];
