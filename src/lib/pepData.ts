@@ -485,6 +485,16 @@ export async function setOccurrencePhotos(id: string, urls: string[], kind: "aft
   if (error) throw error;
 }
 
+/** Enregistre le commentaire d'une occurrence sans la clôturer. */
+export async function setOccurrenceComment(id: string, comment: string) {
+  const { error } = await supabase
+    .from("pep_occurrences" as any)
+    .update({ comment: comment || null } as any)
+    .eq("id", id);
+  if (error) throw error;
+}
+
+
 export async function removeOccurrencePhoto(id: string) {
   const { error } = await supabase.from("pep_occurrences" as any).update({ photo_url: null } as any).eq("id", id);
   if (error) throw error;
