@@ -659,7 +659,7 @@ function CompleteDialog({
           )}
 
         </div>
-        <DialogFooter className="p-4 pt-2 border-t bg-background sticky bottom-0">
+        <DialogFooter className="p-4 pt-3 mt-2 border-t flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={onClose}>Annuler</Button>
 
           <Button
