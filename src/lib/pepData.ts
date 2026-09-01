@@ -534,6 +534,7 @@ export async function saveTask(task: Partial<PepTask> & { name: string; frequenc
     category: task.category ?? null,
     weekend_allowed: !!task.weekend_allowed,
     requires_photo: requiresPhoto,
+    requires_photo_before_after: beforeAfter,
     active,
     start_date: task.start_date ?? todayISO(),
     next_due_date: task.next_due_date ?? null,
