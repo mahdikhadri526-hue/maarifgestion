@@ -591,6 +591,35 @@ function CompleteDialog({
           {row.task?.frequency !== "daily" && (
             <div className="space-y-3">
               {beforeAfter && photoField("Photos AVANT intervention", photosBefore, setPhotosBefore, true)}
+              {beforeAfter && (
+                <div className="rounded-md border bg-muted/40 p-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    disabled={savingBefore || !photosBefore.length}
+                    onClick={async () => {
+                      setSavingBefore(true);
+                      try {
+                        await setOccurrencePhotos(row.occ.id, photosBefore, "before");
+                        if (comment) await setOccurrenceComment(row.occ.id, comment);
+                        if (row.occ.status !== "in_progress") await setOccurrenceStatus(row.occ.id, "in_progress");
+                        toast({ title: "Photos AVANT enregistrées", description: "Vous pourrez revenir plus tard pour ajouter les photos APRÈS et valider." });
+                        onClose();
+                        await onDone();
+                      } catch (e: any) {
+                        toast({ title: "Erreur", description: e?.message, variant: "destructive" });
+                      } finally {
+                        setSavingBefore(false);
+                      }
+                    }}
+                  >
+                    Enregistrer les photos AVANT et continuer plus tard
+                  </Button>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    La tâche passe « En cours ». Rouvrez « Marquer comme réalisée » pour ajouter les photos APRÈS et valider.
+                  </p>
+                </div>
+              )}
               {photoField(
                 beforeAfter ? "Photos APRÈS intervention" : "Photos / justificatifs",
                 photos,
@@ -606,6 +635,7 @@ function CompleteDialog({
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Annuler</Button>
+
           <Button
             disabled={
               busy ||
