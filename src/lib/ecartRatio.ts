@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/db";
 import { requireCurrentPdvId } from "@/lib/pdvStore";
+import { fetchAllRows } from "@/lib/supabasePaginate";
 
 /**
  * Module « Calcul des écarts » — reproduction fidèle du fichier RATIO MAARIF.
@@ -317,13 +318,19 @@ export function migrateFinalStock(day: DayData): DayData {
 
 export async function fetchEcartLines(start: string, end: string): Promise<Map<string, DayData>> {
   const pdvId = requireCurrentPdvId();
-  const { data, error } = await supabase
-    .from("ecart_lines")
-    .select("entry_date, section, item, qty")
-    .eq("pdv_id", pdvId)
-    .gte("entry_date", start)
-    .lte("entry_date", end);
-  if (error) throw error;
+  // Pagination obligatoire : 60 jours × ~135 lignes dépassent la limite de 1000 lignes
+  // par requête, ce qui tronquait silencieusement les journées les plus récentes.
+  const data = await fetchAllRows<EcartLine>(() =>
+    supabase
+      .from("ecart_lines")
+      .select("entry_date, section, item, qty")
+      .eq("pdv_id", pdvId)
+      .gte("entry_date", start)
+      .lte("entry_date", end)
+      .order("entry_date", { ascending: true })
+      .order("section", { ascending: true })
+      .order("item", { ascending: true }),
+  );
   const days = new Map<string, DayData>();
   for (const r of (data ?? []) as EcartLine[]) {
     const d = days.get(r.entry_date) ?? {};
@@ -370,24 +377,32 @@ export async function fetchGlaceAuto(start: string, end: string): Promise<Map<st
   const pdvId = requireCurrentPdvId();
   const wkFrom = weekRef(start).weekStart;
   const wkTo = weekRef(shiftDate(end, 1)).weekStart;
-  const { data, error } = await supabase
-    .from("weekly_tracking")
-    .select("week_start, day_of_week, article, entrees, stock_initial")
-    .eq("pdv_id", pdvId)
-    .eq("fiche_type", GLACE_FICHE)
-    .gte("week_start", wkFrom)
-    .lte("week_start", wkTo);
-  if (error) throw error;
-
-  const entreeByDate = new Map<string, Record<string, number>>();
-  const siByDate = new Map<string, Record<string, number>>();
-  for (const r of (data ?? []) as {
+  type WeeklyRow = {
     week_start: string;
     day_of_week: string;
     article: string | null;
     entrees: number | null;
     stock_initial: number | null;
-  }[]) {
+  };
+  // Filtre serveur sur les parfums + pagination : la fiche glace contient plus de
+  // 1000 lignes par semaine, la limite par défaut tronquait les semaines récentes.
+  const articles = Array.from(new Set([...PARFUM_NAMES, ...Object.keys(WEEKLY_TO_PARFUM)]));
+  const data = await fetchAllRows<WeeklyRow>(() =>
+    supabase
+      .from("weekly_tracking")
+      .select("week_start, day_of_week, article, entrees, stock_initial")
+      .eq("pdv_id", pdvId)
+      .eq("fiche_type", GLACE_FICHE)
+      .in("article", articles)
+      .gte("week_start", wkFrom)
+      .lte("week_start", wkTo)
+      .order("week_start", { ascending: true })
+      .order("id", { ascending: true }),
+  );
+
+  const entreeByDate = new Map<string, Record<string, number>>();
+  const siByDate = new Map<string, Record<string, number>>();
+  for (const r of data) {
     if (!r.article) continue;
     const parfum = WEEKLY_TO_PARFUM[r.article] ?? r.article;
     if (!PARFUM_NAMES.has(parfum)) continue;
