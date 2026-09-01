@@ -602,6 +602,7 @@ export async function importPepCatalog(): Promise<{ added: number; skipped: numb
     category: "PEP",
     weekend_allowed: false,
     requires_photo: false,
+    requires_photo_before_after: false,
     active: true,
     start_date: start,
     next_due_date: null,
