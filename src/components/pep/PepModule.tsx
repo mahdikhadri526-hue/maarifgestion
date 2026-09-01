@@ -923,14 +923,14 @@ function TasksAdmin({ tasks, onChanged }: { tasks: PepTask[]; onChanged: () => P
         <table className="w-full text-xs">
           <thead className="bg-muted">
             <tr>
-              {["Tâche", "Matériel", "Fréquence", "Responsable", "Début", "Week-end", "Active", ""].map((h) => (
+              {["Tâche", "Matériel", "Fréquence", "Responsable", "Début", "Photos", "Week-end", "Active", ""].map((h) => (
                 <th key={h} className="px-2 py-2 text-left whitespace-nowrap font-medium">{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {tasks.length === 0 && (
-              <tr><td colSpan={8} className="px-2 py-6 text-center text-muted-foreground">Aucune tâche PEP. Créez la première.</td></tr>
+              <tr><td colSpan={9} className="px-2 py-6 text-center text-muted-foreground">Aucune tâche PEP. Créez la première.</td></tr>
             )}
             {tasks.map((t) => (
               <tr key={t.id} className="border-t">
@@ -939,8 +939,12 @@ function TasksAdmin({ tasks, onChanged }: { tasks: PepTask[]; onChanged: () => P
                 <td className="px-2 py-1.5">{FREQ_LABEL[t.frequency]}</td>
                 <td className="px-2 py-1.5">{t.responsable ?? "—"}</td>
                 <td className="px-2 py-1.5 whitespace-nowrap">{fmtFR(t.start_date)}</td>
+                <td className="px-2 py-1.5 whitespace-nowrap">
+                  {t.requires_photo_before_after ? "Avant + Après" : t.requires_photo ? "Oui" : "—"}
+                </td>
                 <td className="px-2 py-1.5">{t.weekend_allowed ? "Oui" : "Non"}</td>
                 <td className="px-2 py-1.5">{t.active ? "Oui" : "Non"}</td>
+
                 <td className="px-2 py-1.5 whitespace-nowrap">
                   <Button size="sm" variant="ghost" onClick={() => setEditing(t)}>Modifier</Button>
                   <Button
