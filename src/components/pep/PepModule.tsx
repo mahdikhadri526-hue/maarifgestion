@@ -494,6 +494,30 @@ function TaskCard({
         </div>
       )}
 
+      {done && (
+        <div className="flex gap-2 mt-2 flex-wrap">
+          <Button size="sm" variant="outline" onClick={onComplete}>
+            <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Modifier la validation
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={async () => {
+              if (!confirm("Repasser cette tâche en « À faire » ?")) return;
+              try {
+                await setOccurrenceStatus(occ.id, "todo");
+                toast({ title: "Statut modifié", description: "La tâche est de nouveau à faire." });
+                await onChanged();
+              } catch (e: any) {
+                toast({ title: "Erreur", description: e?.message, variant: "destructive" });
+              }
+            }}
+          >
+            <Clock className="h-3.5 w-3.5 mr-1" /> Rouvrir (à faire)
+          </Button>
+        </div>
+      )}
+
       {photoPreview && (
         <Dialog open onOpenChange={(o) => !o && setPhotoPreview(null)}>
           <DialogContent className="max-w-[95vw] sm:max-w-lg">
