@@ -839,6 +839,7 @@ const EMPTY: Partial<PepTask> = {
   responsable: "",
   weekend_allowed: false,
   requires_photo: false,
+  requires_photo_before_after: false,
   active: true,
   start_date: todayISO(),
 };
