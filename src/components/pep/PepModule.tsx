@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { CalendarDays, CheckCircle2, Clock, ListChecks, Plus, Settings2, Trash2, BarChart3, History } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock, ListChecks, Plus, Settings2, Trash2, BarChart3, History, Wrench } from "lucide-react";
+import { ReportIssueDialog } from "@/components/tech/ReportIssueDialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,6 +66,7 @@ export function PepModule({ initialView = "day" }: { initialView?: View }) {
   const [occurrences, setOccurrences] = useState<PepOccurrence[]>([]);
   const [posts, setPosts] = useState<PepPostponement[]>([]);
   const [loading, setLoading] = useState(true);
+  const [reportOpen, setReportOpen] = useState(false);
 
   const today = todayISO();
 
@@ -116,10 +118,16 @@ export function PepModule({ initialView = "day" }: { initialView?: View }) {
           <h2 className="text-lg font-semibold">Agenda PEP</h2>
         </div>
         {pdv && <span className="text-xs text-muted-foreground">PDV : {pdv.name}</span>}
-        <Button size="sm" variant="outline" className="ml-auto" onClick={() => void load()} disabled={loading}>
-          {loading ? "Chargement…" : "Actualiser"}
-        </Button>
+        <div className="ml-auto flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setReportOpen(true)}>
+            <Wrench className="h-4 w-4 mr-1" />Signaler un problème matériel
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => void load()} disabled={loading}>
+            {loading ? "Chargement…" : "Actualiser"}
+          </Button>
+        </div>
       </div>
+      <ReportIssueDialog open={reportOpen} onClose={() => setReportOpen(false)} />
 
       <Tabs defaultValue="agenda">
         <TabsList className="flex-wrap h-auto">
@@ -399,6 +407,7 @@ function TaskCard({
   const history = posts.filter((p) => p.occurrence_id === occ.id);
   const done = status === "done";
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [reportIssue, setReportIssue] = useState(false);
   const hasBeforeAfter = !!task?.requires_photo_before_after;
 
 
@@ -517,6 +526,17 @@ function TaskCard({
           </Button>
         </div>
       )}
+
+      <div className="mt-2">
+        <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => setReportIssue(true)}>
+          <Wrench className="h-3.5 w-3.5 mr-1" /> Signaler un problème matériel
+        </Button>
+      </div>
+      <ReportIssueDialog
+        open={reportIssue}
+        onClose={() => setReportIssue(false)}
+        defaults={{ equipment: task?.equipment ?? task?.name ?? "", source_task_id: task?.id ?? null, source_occurrence_id: occ.id }}
+      />
 
       {photoPreview && (
         <Dialog open onOpenChange={(o) => !o && setPhotoPreview(null)}>

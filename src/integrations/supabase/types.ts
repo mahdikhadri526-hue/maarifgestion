@@ -1532,6 +1532,100 @@ export type Database = {
         }
         Relationships: []
       }
+      tech_issues: {
+        Row: {
+          assigned_to: string | null
+          closed_at: string | null
+          created_at: string
+          deadline: string | null
+          equipment: string
+          id: string
+          location: string | null
+          pdv_id: string
+          photo_url: string | null
+          priority: string
+          problem: string
+          repaired_at: string | null
+          reported_at: string
+          reported_by: string
+          reported_by_user: string | null
+          source_occurrence_id: string | null
+          source_task_id: string | null
+          status: string
+          taken_at: string | null
+          tech_notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          closed_at?: string | null
+          created_at?: string
+          deadline?: string | null
+          equipment: string
+          id?: string
+          location?: string | null
+          pdv_id: string
+          photo_url?: string | null
+          priority?: string
+          problem: string
+          repaired_at?: string | null
+          reported_at?: string
+          reported_by: string
+          reported_by_user?: string | null
+          source_occurrence_id?: string | null
+          source_task_id?: string | null
+          status?: string
+          taken_at?: string | null
+          tech_notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          closed_at?: string | null
+          created_at?: string
+          deadline?: string | null
+          equipment?: string
+          id?: string
+          location?: string | null
+          pdv_id?: string
+          photo_url?: string | null
+          priority?: string
+          problem?: string
+          repaired_at?: string | null
+          reported_at?: string
+          reported_by?: string
+          reported_by_user?: string | null
+          source_occurrence_id?: string | null
+          source_task_id?: string | null
+          status?: string
+          taken_at?: string | null
+          tech_notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tech_issues_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tech_issues_source_occurrence_id_fkey"
+            columns: ["source_occurrence_id"]
+            isOneToOne: false
+            referencedRelation: "pep_occurrences"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tech_issues_source_task_id_fkey"
+            columns: ["source_task_id"]
+            isOneToOne: false
+            referencedRelation: "pep_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_pdvs: {
         Row: {
           created_at: string

@@ -66,6 +66,8 @@ export const ALL_PERMISSIONS = [
   { key: "edit_ecarts", label: "Saisir / modifier le calcul des écarts" },
   { key: "view_pep", label: "Voir l'agenda PEP" },
   { key: "manage_pep", label: "Gestion Agenda PEP (tâches, fréquences, jours fériés)" },
+  { key: "view_tech", label: "Voir le Suivi Technique" },
+  { key: "manage_tech", label: "Suivi Technique — responsable technique (prise en charge, statuts, deadline)" },
 ] as const;
 
 export type PermissionKey = (typeof ALL_PERMISSIONS)[number]["key"];
