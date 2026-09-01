@@ -1532,8 +1532,57 @@ export type Database = {
         }
         Relationships: []
       }
+      tech_issue_events: {
+        Row: {
+          actor_name: string | null
+          actor_user: string | null
+          created_at: string
+          details: Json | null
+          event_type: string
+          id: string
+          issue_id: string
+          pdv_id: string
+        }
+        Insert: {
+          actor_name?: string | null
+          actor_user?: string | null
+          created_at?: string
+          details?: Json | null
+          event_type: string
+          id?: string
+          issue_id: string
+          pdv_id: string
+        }
+        Update: {
+          actor_name?: string | null
+          actor_user?: string | null
+          created_at?: string
+          details?: Json | null
+          event_type?: string
+          id?: string
+          issue_id?: string
+          pdv_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tech_issue_events_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "tech_issues"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tech_issue_events_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tech_issues: {
         Row: {
+          action_done: string | null
           assigned_to: string | null
           closed_at: string | null
           created_at: string
@@ -1541,10 +1590,14 @@ export type Database = {
           equipment: string
           id: string
           location: string | null
+          manager_comment: string | null
+          manager_validated_at: string | null
+          manager_validated_by: string | null
           pdv_id: string
           photo_url: string | null
           priority: string
           problem: string
+          repair_photo_url: string | null
           repaired_at: string | null
           reported_at: string
           reported_by: string
@@ -1553,10 +1606,14 @@ export type Database = {
           source_task_id: string | null
           status: string
           taken_at: string | null
+          tech_comment: string | null
           tech_notes: string | null
+          tech_validated_at: string | null
+          tech_validated_by: string | null
           updated_at: string
         }
         Insert: {
+          action_done?: string | null
           assigned_to?: string | null
           closed_at?: string | null
           created_at?: string
@@ -1564,10 +1621,14 @@ export type Database = {
           equipment: string
           id?: string
           location?: string | null
+          manager_comment?: string | null
+          manager_validated_at?: string | null
+          manager_validated_by?: string | null
           pdv_id: string
           photo_url?: string | null
           priority?: string
           problem: string
+          repair_photo_url?: string | null
           repaired_at?: string | null
           reported_at?: string
           reported_by: string
@@ -1576,10 +1637,14 @@ export type Database = {
           source_task_id?: string | null
           status?: string
           taken_at?: string | null
+          tech_comment?: string | null
           tech_notes?: string | null
+          tech_validated_at?: string | null
+          tech_validated_by?: string | null
           updated_at?: string
         }
         Update: {
+          action_done?: string | null
           assigned_to?: string | null
           closed_at?: string | null
           created_at?: string
@@ -1587,10 +1652,14 @@ export type Database = {
           equipment?: string
           id?: string
           location?: string | null
+          manager_comment?: string | null
+          manager_validated_at?: string | null
+          manager_validated_by?: string | null
           pdv_id?: string
           photo_url?: string | null
           priority?: string
           problem?: string
+          repair_photo_url?: string | null
           repaired_at?: string | null
           reported_at?: string
           reported_by?: string
@@ -1599,7 +1668,10 @@ export type Database = {
           source_task_id?: string | null
           status?: string
           taken_at?: string | null
+          tech_comment?: string | null
           tech_notes?: string | null
+          tech_validated_at?: string | null
+          tech_validated_by?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1906,6 +1978,15 @@ export type Database = {
           stock_initial: number
           stock_restant: number
         }[]
+      }
+      tech_manager_validate: {
+        Args: {
+          _comment?: string
+          _issue_id: string
+          _manager_name: string
+          _ok?: boolean
+        }
+        Returns: undefined
       }
       verify_pdv_code: {
         Args: { _code: string; _pdv_id: string }
