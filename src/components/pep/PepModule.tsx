@@ -603,11 +603,12 @@ function CompleteDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90vh] flex flex-col p-0">
+      <DialogContent className="max-w-[95vw] sm:max-w-lg max-h-[90dvh] overflow-y-auto p-0">
         <DialogHeader className="p-4 pb-2">
           <DialogTitle>Marquer comme réalisée</DialogTitle>
         </DialogHeader>
-        <div className="space-y-3 overflow-y-auto px-4 flex-1 min-h-0">
+        <div className="space-y-3 px-4">
+
           <p className="text-sm">{row.task?.name}</p>
           <div>
             <Label className="text-xs">Commentaire</Label>
@@ -658,7 +659,7 @@ function CompleteDialog({
           )}
 
         </div>
-        <DialogFooter className="p-4 pt-2 border-t bg-background sticky bottom-0">
+        <DialogFooter className="p-4 pt-3 mt-2 border-t flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={onClose}>Annuler</Button>
 
           <Button
