@@ -17,16 +17,17 @@ const GlaceStuffControl = lazy(() => import("@/components/GlaceStuffControl").th
 const InventoryModule = lazy(() => import("@/components/inventory/InventoryModule").then((m) => ({ default: m.InventoryModule })));
 const EcartModule = lazy(() => import("@/components/EcartModule").then((m) => ({ default: m.EcartModule })));
 const PepModule = lazy(() => import("@/components/pep/PepModule").then((m) => ({ default: m.PepModule })));
+const TechModule = lazy(() => import("@/components/tech/TechModule").then((m) => ({ default: m.TechModule })));
 const UserManagement = lazy(() => import("@/components/auth/UserManagement").then((m) => ({ default: m.UserManagement })));
 const AnomalyCenter = lazy(() => import("@/components/anomalies/AnomalyCenter").then((m) => ({ default: m.AnomalyCenter })));
-import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck, Snowflake, Scale, CalendarClock } from "lucide-react";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck, Snowflake, Scale, CalendarClock, Wrench } from "lucide-react";
 import { PepTodayCard } from "@/components/pep/PepTodayCard";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
 
-type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "pep";
+type Tab = "dashboard" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "pep" | "tech";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -58,6 +59,7 @@ const Index = () => {
     { id: "nettoyage" as Tab, label: "Nettoyage", icon: Sparkles, perm: "view_cleaning" },
     { id: "ecarts" as Tab, label: "Calcul des écarts", icon: Scale, perm: "view_ecarts" },
     { id: "pep" as Tab, label: "Agenda PEP", icon: CalendarClock, perm: "view_pep" },
+    { id: "tech" as Tab, label: "Suivi Technique", icon: Wrench, perm: "view_tech" },
   ];
   const tabs = allTabs.filter((t) => can(t.perm));
 
@@ -229,6 +231,7 @@ const Index = () => {
             {tab === "inventaire" && <InventoryModule />}
             {tab === "ecarts" && <EcartModule />}
             {tab === "pep" && <PepModule />}
+            {tab === "tech" && <TechModule />}
           </Suspense>
         )}
       </main>
