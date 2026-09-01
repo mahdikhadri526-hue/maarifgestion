@@ -407,6 +407,7 @@ function TaskCard({
   const history = posts.filter((p) => p.occurrence_id === occ.id);
   const done = status === "done";
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [reportIssue, setReportIssue] = useState(false);
   const hasBeforeAfter = !!task?.requires_photo_before_after;
 
 
@@ -525,6 +526,17 @@ function TaskCard({
           </Button>
         </div>
       )}
+
+      <div className="mt-2">
+        <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => setReportIssue(true)}>
+          <Wrench className="h-3.5 w-3.5 mr-1" /> Signaler un problème matériel
+        </Button>
+      </div>
+      <ReportIssueDialog
+        open={reportIssue}
+        onClose={() => setReportIssue(false)}
+        defaults={{ equipment: task?.equipment ?? task?.name ?? "", source_task_id: task?.id ?? null, source_occurrence_id: occ.id }}
+      />
 
       {photoPreview && (
         <Dialog open onOpenChange={(o) => !o && setPhotoPreview(null)}>
