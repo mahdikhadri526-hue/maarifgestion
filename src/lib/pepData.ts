@@ -523,7 +523,9 @@ export async function postponeOccurrence(
 export async function saveTask(task: Partial<PepTask> & { name: string; frequency: PepFrequency }) {
   const active = task.active ?? true;
   // Les tâches quotidiennes ne demandent jamais de photo justificative.
-  const requiresPhoto = task.frequency === "daily" ? false : !!task.requires_photo;
+  const beforeAfter = task.frequency === "daily" ? false : !!task.requires_photo_before_after;
+  // Photo avant/après implique une photo attendue.
+  const requiresPhoto = task.frequency === "daily" ? false : !!task.requires_photo || beforeAfter;
   const payload: any = {
     name: task.name,
     equipment: task.equipment ?? null,
