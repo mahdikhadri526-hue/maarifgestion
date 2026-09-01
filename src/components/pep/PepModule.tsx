@@ -509,7 +509,60 @@ function CompleteDialog({
 }) {
   const [comment, setComment] = useState("");
   const [photos, setPhotos] = useState<string[]>([]);
+  const [photosBefore, setPhotosBefore] = useState<string[]>([]);
   const [busy, setBusy] = useState(false);
+  const beforeAfter = !!row.task?.requires_photo_before_after && row.task?.frequency !== "daily";
+  const missingBeforeAfter = beforeAfter && (!photosBefore.length || !photos.length);
+
+  const photoField = (
+    label: string,
+    list: string[],
+    setList: React.Dispatch<React.SetStateAction<string[]>>,
+    required: boolean,
+  ) => (
+    <div>
+      <Label className="text-xs">
+        {label} {required ? <span className="text-destructive">*</span> : "(facultatif)"}
+      </Label>
+      <Input
+        type="file"
+        accept="image/*"
+        capture="environment"
+        multiple
+        onChange={async (e) => {
+          const files = Array.from(e.target.files ?? []);
+          if (!files.length) return;
+          try {
+            const added = await Promise.all(files.map((f) => fileToCompressedDataUrl(f)));
+            setList((prev) => [...prev, ...added]);
+          } catch (err: any) {
+            toast({ title: "Photo non prise en compte", description: err?.message, variant: "destructive" });
+          }
+          e.target.value = "";
+        }}
+      />
+      {list.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-3">
+          {list.map((p, i) => (
+            <div key={i} className="flex flex-col items-start">
+              <img src={p} alt={`${label} ${i + 1}`} className="h-24 w-24 rounded border object-cover" />
+              <Button
+                size="sm"
+                variant="ghost"
+                className="text-destructive h-6 px-1 text-[11px]"
+                onClick={() => setList((prev) => prev.filter((_, idx) => idx !== i))}
+              >
+                <Trash2 className="h-3 w-3 mr-1" /> Retirer
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+      {required && !list.length && (
+        <p className="text-[11px] text-destructive mt-1">Cette photo est obligatoire.</p>
+      )}
+    </div>
+  );
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
