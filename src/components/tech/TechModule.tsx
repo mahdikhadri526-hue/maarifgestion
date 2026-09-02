@@ -47,9 +47,8 @@ type View = "dossiers" | "controle" | "historique";
 export function TechModule() {
   const { can, pdv } = useAuth();
   const canManage = can("manage_tech");
-  // La vérification finale est réservée au manager (Agenda PEP), pas au
-  // responsable technique.
-  const canManagerValidate = can("manage_pep") || can("view_pep");
+  // La vérification finale du manager se fait uniquement depuis l'Agenda PEP
+  // (tableau « Avancement des réparations »), jamais depuis cette table.
   const [issues, setIssues] = useState<TechIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("dossiers");
@@ -57,7 +56,6 @@ export function TechModule() {
   const [reportOpen, setReportOpen] = useState(false);
   const [editing, setEditing] = useState<TechIssue | null>(null);
   const [repairing, setRepairing] = useState<TechIssue | null>(null);
-  const [validating, setValidating] = useState<TechIssue | null>(null);
   const [historyOf, setHistoryOf] = useState<TechIssue | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const today = todayISO();
@@ -272,7 +270,7 @@ export function TechModule() {
                   <div className="flex flex-col gap-1">
                     {canManage && i.status === "a_traiter" && <Button size="sm" onClick={() => setEditing({ ...i, status: "en_cours" })}>Prendre en charge</Button>}
                     {canManage && i.status === "en_cours" && <Button size="sm" onClick={() => setRepairing(i)}>Valider la réparation</Button>}
-                    {canManagerValidate && i.status === "repare" && !i.manager_validated_at && <Button size="sm" onClick={() => setValidating(i)}>Vérification manager</Button>}
+                    
                     {canManage && <Button size="sm" variant="outline" onClick={() => setEditing(i)}>Suivi</Button>}
                     <Button size="sm" variant="ghost" onClick={() => setHistoryOf(i)}><History className="h-4 w-4 mr-1" />Historique</Button>
                     {canManage && (
@@ -293,7 +291,7 @@ export function TechModule() {
 
       {editing && <FollowUpDialog issue={editing} onClose={() => setEditing(null)} onSaved={load} />}
       {repairing && <RepairDialog issue={repairing} onClose={() => setRepairing(null)} onSaved={load} />}
-      {validating && <ManagerValidateDialog issue={validating} onClose={() => setValidating(null)} onSaved={load} />}
+      
       {historyOf && <HistoryDialog issue={historyOf} onClose={() => setHistoryOf(null)} />}
 
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
