@@ -293,7 +293,7 @@ export function TechModule() {
 
       {editing && <FollowUpDialog issue={editing} onClose={() => setEditing(null)} onSaved={load} />}
       {repairing && <RepairDialog issue={repairing} onClose={() => setRepairing(null)} onSaved={load} />}
-      {validating && <ManagerValidateDialog issue={validating} onClose={() => setValidating(null)} onSaved={load} />}
+      
       {historyOf && <HistoryDialog issue={historyOf} onClose={() => setHistoryOf(null)} />}
 
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
