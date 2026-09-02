@@ -67,6 +67,7 @@ export function PepModule({ initialView = "day" }: { initialView?: View }) {
   const [posts, setPosts] = useState<PepPostponement[]>([]);
   const [loading, setLoading] = useState(true);
   const [reportOpen, setReportOpen] = useState(false);
+  const [techRefresh, setTechRefresh] = useState(0);
 
   const today = todayISO();
 
