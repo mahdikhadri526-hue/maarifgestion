@@ -453,7 +453,7 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
   );
 }
 
-function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
+export function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
   const managers = useManagers();
   const [manager, setManager] = useState("");
   const [comment, setComment] = useState("");
