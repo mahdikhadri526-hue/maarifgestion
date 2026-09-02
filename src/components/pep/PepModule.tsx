@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarDays, CheckCircle2, Clock, ListChecks, Plus, Settings2, Trash2, BarChart3, History, Wrench } from "lucide-react";
 import { ReportIssueDialog } from "@/components/tech/ReportIssueDialog";
+import { PepRepairStatus } from "@/components/tech/PepRepairStatus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,6 +68,7 @@ export function PepModule({ initialView = "day" }: { initialView?: View }) {
   const [posts, setPosts] = useState<PepPostponement[]>([]);
   const [loading, setLoading] = useState(true);
   const [reportOpen, setReportOpen] = useState(false);
+  const [techRefresh, setTechRefresh] = useState(0);
 
   const today = todayISO();
 
@@ -127,7 +129,9 @@ export function PepModule({ initialView = "day" }: { initialView?: View }) {
           </Button>
         </div>
       </div>
-      <ReportIssueDialog open={reportOpen} onClose={() => setReportOpen(false)} />
+      <ReportIssueDialog open={reportOpen} onClose={() => setReportOpen(false)} onReported={() => setTechRefresh((k) => k + 1)} />
+
+      <PepRepairStatus refreshKey={techRefresh} />
 
       <Tabs defaultValue="agenda">
         <TabsList className="flex-wrap h-auto">

@@ -47,7 +47,9 @@ type View = "dossiers" | "controle" | "historique";
 export function TechModule() {
   const { can, pdv } = useAuth();
   const canManage = can("manage_tech");
-  const canManagerValidate = canManage || can("view_pep") || can("manage_pep");
+  // La vérification finale est réservée au manager (Agenda PEP), pas au
+  // responsable technique.
+  const canManagerValidate = can("manage_pep") || can("view_pep");
   const [issues, setIssues] = useState<TechIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("dossiers");
@@ -451,7 +453,7 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
   );
 }
 
-function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
+export function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
   const managers = useManagers();
   const [manager, setManager] = useState("");
   const [comment, setComment] = useState("");
