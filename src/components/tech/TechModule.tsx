@@ -47,9 +47,8 @@ type View = "dossiers" | "controle" | "historique";
 export function TechModule() {
   const { can, pdv } = useAuth();
   const canManage = can("manage_tech");
-  // La vérification finale est réservée au manager (Agenda PEP), pas au
-  // responsable technique.
-  const canManagerValidate = can("manage_pep") || can("view_pep");
+  // La vérification finale du manager se fait uniquement depuis l'Agenda PEP
+  // (tableau « Avancement des réparations »), jamais depuis cette table.
   const [issues, setIssues] = useState<TechIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("dossiers");
@@ -57,7 +56,6 @@ export function TechModule() {
   const [reportOpen, setReportOpen] = useState(false);
   const [editing, setEditing] = useState<TechIssue | null>(null);
   const [repairing, setRepairing] = useState<TechIssue | null>(null);
-  const [validating, setValidating] = useState<TechIssue | null>(null);
   const [historyOf, setHistoryOf] = useState<TechIssue | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const today = todayISO();
