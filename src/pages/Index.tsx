@@ -153,6 +153,9 @@ const Index = () => {
             {/* Agenda PEP — uniquement les tâches du jour */}
             {can("view_pep") && <PepTodayCard onOpen={() => setTab("pep")} />}
 
+            {/* Suivi Technique — signalements, retards, refus manager */}
+            {can("view_tech") && <TechAlertsCard onOpen={() => setTab("tech")} />}
+
             {/* Stock Alerts */}
             <StockOutAlerts />
 
