@@ -60,7 +60,7 @@ export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
   const prio = (k: string) => TECH_PRIORITIES.find((p) => p.key === k);
 
   return (
-    <div className="bg-card rounded-xl border border-destructive/40 shadow-sm p-4 mt-4 animate-pulse-slow">
+    <div className="bg-card rounded-xl border border-destructive/40 shadow-sm p-4 mt-4 ring-1 ring-destructive/20">
       <div className="flex items-center justify-between gap-2 flex-wrap mb-3">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
           <Wrench className="h-4 w-4" /> Suivi Technique – Notifications
