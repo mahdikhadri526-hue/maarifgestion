@@ -272,7 +272,7 @@ export function TechModule() {
                   <div className="flex flex-col gap-1">
                     {canManage && i.status === "a_traiter" && <Button size="sm" onClick={() => setEditing({ ...i, status: "en_cours" })}>Prendre en charge</Button>}
                     {canManage && i.status === "en_cours" && <Button size="sm" onClick={() => setRepairing(i)}>Valider la réparation</Button>}
-                    {canManagerValidate && i.status === "repare" && !i.manager_validated_at && <Button size="sm" onClick={() => setValidating(i)}>Vérification manager</Button>}
+                    
                     {canManage && <Button size="sm" variant="outline" onClick={() => setEditing(i)}>Suivi</Button>}
                     <Button size="sm" variant="ghost" onClick={() => setHistoryOf(i)}><History className="h-4 w-4 mr-1" />Historique</Button>
                     {canManage && (
