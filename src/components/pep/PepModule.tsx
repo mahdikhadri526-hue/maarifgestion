@@ -127,7 +127,9 @@ export function PepModule({ initialView = "day" }: { initialView?: View }) {
           </Button>
         </div>
       </div>
-      <ReportIssueDialog open={reportOpen} onClose={() => setReportOpen(false)} />
+      <ReportIssueDialog open={reportOpen} onClose={() => setReportOpen(false)} onReported={() => setTechRefresh((k) => k + 1)} />
+
+      <PepRepairStatus refreshKey={techRefresh} />
 
       <Tabs defaultValue="agenda">
         <TabsList className="flex-wrap h-auto">
