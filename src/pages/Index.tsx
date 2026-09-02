@@ -22,6 +22,7 @@ const UserManagement = lazy(() => import("@/components/auth/UserManagement").the
 const AnomalyCenter = lazy(() => import("@/components/anomalies/AnomalyCenter").then((m) => ({ default: m.AnomalyCenter })));
 import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck, Snowflake, Scale, CalendarClock, Wrench } from "lucide-react";
 import { PepTodayCard } from "@/components/pep/PepTodayCard";
+import { TechAlertsCard } from "@/components/tech/TechAlertsCard";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
