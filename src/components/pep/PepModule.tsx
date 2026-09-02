@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarDays, CheckCircle2, Clock, ListChecks, Plus, Settings2, Trash2, BarChart3, History, Wrench } from "lucide-react";
 import { ReportIssueDialog } from "@/components/tech/ReportIssueDialog";
+import { PepRepairStatus } from "@/components/tech/PepRepairStatus";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
