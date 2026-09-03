@@ -558,6 +558,12 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
           </DialogHeader>
           {editing && (
             <div className="space-y-4">
+              {(userPdvs[editing.user_id]?.length ?? 0) > 0 && roles[editing.user_id] !== "regional_admin" && (
+                <p className="text-xs text-muted-foreground rounded-md border bg-muted/40 px-3 py-2">
+                  Ces permissions individuelles s'ajoutent à celles du point de vente rattaché (onglet « Points de vente »).
+                  L'utilisateur doit se reconnecter ou actualiser pour voir le changement.
+                </p>
+              )}
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
