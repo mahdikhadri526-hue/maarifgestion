@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarDays, CheckCircle2, Clock, ListChecks, Plus, Settings2, Trash2, BarChart3, History, Wrench } from "lucide-react";
 import { ReportIssueDialog } from "@/components/tech/ReportIssueDialog";
 import { PepRepairStatus } from "@/components/tech/PepRepairStatus";
+import { TECH_ENABLED } from "@/lib/techFeature";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -121,17 +122,22 @@ export function PepModule({ initialView = "day" }: { initialView?: View }) {
         </div>
         {pdv && <span className="text-xs text-muted-foreground">PDV : {pdv.name}</span>}
         <div className="ml-auto flex gap-2">
-          <Button size="sm" variant="outline" onClick={() => setReportOpen(true)}>
-            <Wrench className="h-4 w-4 mr-1" />Signaler un problème matériel
-          </Button>
+          {TECH_ENABLED && (
+            <Button size="sm" variant="outline" onClick={() => setReportOpen(true)}>
+              <Wrench className="h-4 w-4 mr-1" />Signaler un problème matériel
+            </Button>
+          )}
           <Button size="sm" variant="outline" onClick={() => void load()} disabled={loading}>
             {loading ? "Chargement…" : "Actualiser"}
           </Button>
         </div>
       </div>
-      <ReportIssueDialog open={reportOpen} onClose={() => setReportOpen(false)} onReported={() => setTechRefresh((k) => k + 1)} />
-
-      <PepRepairStatus refreshKey={techRefresh} />
+      {TECH_ENABLED && (
+        <>
+          <ReportIssueDialog open={reportOpen} onClose={() => setReportOpen(false)} onReported={() => setTechRefresh((k) => k + 1)} />
+          <PepRepairStatus refreshKey={techRefresh} />
+        </>
+      )}
 
       <Tabs defaultValue="agenda">
         <TabsList className="flex-wrap h-auto">
@@ -531,16 +537,20 @@ function TaskCard({
         </div>
       )}
 
-      <div className="mt-2">
-        <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => setReportIssue(true)}>
-          <Wrench className="h-3.5 w-3.5 mr-1" /> Signaler un problème matériel
-        </Button>
-      </div>
-      <ReportIssueDialog
-        open={reportIssue}
-        onClose={() => setReportIssue(false)}
-        defaults={{ equipment: task?.equipment ?? task?.name ?? "", source_task_id: task?.id ?? null, source_occurrence_id: occ.id }}
-      />
+      {TECH_ENABLED && (
+        <>
+          <div className="mt-2">
+            <Button size="sm" variant="ghost" className="text-muted-foreground" onClick={() => setReportIssue(true)}>
+              <Wrench className="h-3.5 w-3.5 mr-1" /> Signaler un problème matériel
+            </Button>
+          </div>
+          <ReportIssueDialog
+            open={reportIssue}
+            onClose={() => setReportIssue(false)}
+            defaults={{ equipment: task?.equipment ?? task?.name ?? "", source_task_id: task?.id ?? null, source_occurrence_id: occ.id }}
+          />
+        </>
+      )}
 
       {photoPreview && (
         <Dialog open onOpenChange={(o) => !o && setPhotoPreview(null)}>
