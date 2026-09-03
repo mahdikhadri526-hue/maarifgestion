@@ -549,7 +549,7 @@ function HistoryDialog({ issue, onClose }: { issue: TechIssue; onClose: () => vo
   const [events, setEvents] = useState<TechEvent[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    getTechEvents(issue.id).then(setEvents).catch((e: any) => toast({ title: "Erreur", description: e?.message, variant: "destructive" })).finally(() => setLoading(false));
+    getTechEvents(issue.id, true).then(setEvents).catch((e: any) => toast({ title: "Erreur", description: e?.message, variant: "destructive" })).finally(() => setLoading(false));
   }, [issue.id]);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -561,12 +561,13 @@ function HistoryDialog({ issue, onClose }: { issue: TechIssue; onClose: () => vo
   );
 }
 
-function GlobalHistory({ issues }: { issues: TechIssue[] }) {
+function GlobalHistory({ issues, allPdvs = false }: { issues: TechIssue[]; allPdvs?: boolean }) {
   const [events, setEvents] = useState<TechEvent[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    getTechEvents().then(setEvents).catch((e: any) => toast({ title: "Erreur", description: e?.message, variant: "destructive" })).finally(() => setLoading(false));
-  }, [issues.length]);
+    const ids = new Set(issues.map((i) => i.id));
+    getTechEvents(undefined, allPdvs).then((ev) => setEvents(allPdvs ? ev.filter((e) => ids.has(e.issue_id)) : ev)).catch((e: any) => toast({ title: "Erreur", description: e?.message, variant: "destructive" })).finally(() => setLoading(false));
+  }, [issues, allPdvs]);
   if (loading) return <p className="text-sm text-muted-foreground">Chargement…</p>;
   return (
     <div className="rounded-lg border bg-card p-3">
