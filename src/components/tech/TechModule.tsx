@@ -45,14 +45,18 @@ const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 
 type View = "dossiers" | "controle" | "historique";
 
 export function TechModule() {
-  const { can, pdv } = useAuth();
+  const { can, pdv, isAdmin } = useAuth();
   const canManage = can("manage_tech");
+  // Responsable technique (permission manage_tech) : vue centralisée de tous
+  // les PDV. L'admin principal garde la vue du PDV sélectionné.
+  const central = canManage && !isAdmin;
   // La vérification finale du manager se fait uniquement depuis l'Agenda PEP
   // (tableau « Avancement des réparations »), jamais depuis cette table.
   const [issues, setIssues] = useState<TechIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("dossiers");
   const [filter, setFilter] = useState<TechStatus | "open" | "all">("open");
+  const [pdvFilter, setPdvFilter] = useState<string>("all");
   const [reportOpen, setReportOpen] = useState(false);
   const [editing, setEditing] = useState<TechIssue | null>(null);
   const [repairing, setRepairing] = useState<TechIssue | null>(null);
@@ -63,20 +67,31 @@ export function TechModule() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setIssues(await getTechIssues());
+      setIssues(await getTechIssues(central));
     } catch (e: any) {
       toast({ title: "Erreur Suivi Technique", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [central]);
 
   useEffect(() => { void load(); }, [load]);
 
-  const recurring = useMemo(() => recurringEquipments(issues), [issues]);
+  const pdvOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const i of issues) m.set(i.pdv_id, i.pdv_name ?? i.pdv_code ?? "PDV");
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [issues]);
+
+  const scoped = useMemo(
+    () => (central && pdvFilter !== "all" ? issues.filter((i) => i.pdv_id === pdvFilter) : issues),
+    [issues, central, pdvFilter],
+  );
+
+  const recurring = useMemo(() => recurringEquipments(scoped), [scoped]);
 
   const visible = useMemo(() => {
-    const list = issues.filter((i) =>
+    const list = scoped.filter((i) =>
       filter === "all" ? true : filter === "open" ? i.status === "a_traiter" || i.status === "en_cours" : i.status === filter,
     );
     return [...list].sort((a, b) => {
@@ -86,7 +101,7 @@ export function TechModule() {
       if (pa !== pb) return pa - pb;
       return b.reported_at.localeCompare(a.reported_at);
     });
-  }, [issues, filter]);
+  }, [scoped, filter]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { a_traiter: 0, en_cours: 0, repare: 0, cloture: 0, overdue: 0, soon: 0, awaiting: 0 };
