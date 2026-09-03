@@ -357,12 +357,10 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
   const existingByKey = new Map(existing.map((o) => [`${o.task_id}|${o.original_due_date}`, o]));
   const desiredKeys = new Set<string>();
   const load = new Map<string, number>();
-  // Les occurrences déjà traitées ou déplacées manuellement restent prioritaires.
-  // Les « todo » sont recalculées afin que les anciens algorithmes ne faussent
-  // plus la répartition actuelle.
-  existing
-    .filter((o) => o.status !== "todo")
-    .forEach((o) => load.set(o.due_date, (load.get(o.due_date) ?? 0) + 1));
+  // Une fois planifiée, une occurrence garde sa date : toutes les occurrences
+  // existantes (y compris « à faire ») comptent dans la charge et ne sont
+  // jamais recalculées. Seules les nouvelles échéances sont lissées.
+  existing.forEach((o) => load.set(o.due_date, (load.get(o.due_date) ?? 0) + 1));
 
   const toInsert: any[] = [];
   const toUpdate: { id: string; due_date: string }[] = [];
@@ -374,17 +372,13 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
     for (const raw of rawDueDates(task, today, to)) {
       const key = `${task.id}|${raw}`;
       desiredKeys.add(key);
+      const stored = existingByKey.get(key);
+      if (stored) continue; // planification figée
       const due = isFixed(task.frequency)
         ? raw
         : balancedDate(raw, holidays, load, task.weekend_allowed);
-
       load.set(due, (load.get(due) ?? 0) + 1);
-      const stored = existingByKey.get(key);
-      if (!stored) {
-        toInsert.push({ task_id: task.id, due_date: due, original_due_date: raw, status: "todo" });
-      } else if (stored.status === "todo" && stored.due_date !== due) {
-        toUpdate.push({ id: stored.id, due_date: due });
-      }
+      toInsert.push({ task_id: task.id, due_date: due, original_due_date: raw, status: "todo" });
     }
   }
 
