@@ -63,6 +63,9 @@ export interface TechIssue {
   manager_validated_by: string | null;
   manager_validated_at: string | null;
   manager_comment: string | null;
+  /** Renseignés par getTechIssues (jointure pdvs). */
+  pdv_name?: string | null;
+  pdv_code?: string | null;
 }
 
 export type TechEventType =
@@ -155,7 +158,7 @@ export async function updateTechIssue(
   if (patch.status === "en_cours") p.taken_at = now;
   if (patch.status === "repare") p.repaired_at = now;
   if (patch.status === "cloture") p.closed_at = now;
-  const { error } = await table().update(p).eq("id", id);
+  const { error } = await rawTable().update(p).eq("id", id);
   if (error) throw error;
 }
 
@@ -165,7 +168,7 @@ export async function validateRepair(
   input: { validated_by: string; action_done: string; tech_comment?: string | null; repairPhotoUrls?: string[]; repaired_at?: string | null },
 ): Promise<void> {
   const now = new Date().toISOString();
-  const { error } = await table()
+  const { error } = await rawTable()
     .update({
       status: "repare",
       action_done: input.action_done.trim(),
@@ -191,7 +194,7 @@ export async function managerValidate(id: string, managerName: string, ok: boole
 }
 
 export async function deleteTechIssue(id: string): Promise<void> {
-  const { error } = await table().delete().eq("id", id);
+  const { error } = await rawTable().delete().eq("id", id);
   if (error) throw error;
 }
 
