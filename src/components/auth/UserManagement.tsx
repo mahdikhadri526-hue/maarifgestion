@@ -178,14 +178,19 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   };
 
   const togglePerm = async (userId: string, key: string, current: boolean) => {
-    if (current) {
-      await supabase.from("user_permissions").delete().eq("user_id", userId).eq("permission_key", key);
-    } else {
-      await supabase.from("user_permissions").upsert(
-        { user_id: userId, permission_key: key, allowed: true },
-        { onConflict: "user_id,permission_key" },
-      );
-    }
+    // Mise à jour optimiste pour un retour visuel immédiat
+    setPerms((prev) => {
+      const next = new Set(prev[userId] ?? []);
+      if (current) next.delete(key); else next.add(key);
+      return { ...prev, [userId]: next };
+    });
+    const { error } = current
+      ? await supabase.from("user_permissions").delete().eq("user_id", userId).eq("permission_key", key)
+      : await supabase.from("user_permissions").upsert(
+          { user_id: userId, permission_key: key, allowed: true },
+          { onConflict: "user_id,permission_key" },
+        );
+    if (error) toast.error("Erreur : " + error.message);
     load();
   };
 
