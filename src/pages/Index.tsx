@@ -23,6 +23,7 @@ const AnomalyCenter = lazy(() => import("@/components/anomalies/AnomalyCenter").
 import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck, Snowflake, Scale, CalendarClock, Wrench } from "lucide-react";
 import { PepTodayCard } from "@/components/pep/PepTodayCard";
 import { TechAlertsCard } from "@/components/tech/TechAlertsCard";
+import { TECH_ENABLED } from "@/lib/techFeature";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
@@ -62,7 +63,7 @@ const Index = () => {
     { id: "pep" as Tab, label: "Agenda PEP", icon: CalendarClock, perm: "view_pep" },
     { id: "tech" as Tab, label: "Suivi Technique", icon: Wrench, perm: "view_tech" },
   ];
-  const tabs = allTabs.filter((t) => can(t.perm));
+  const tabs = allTabs.filter((t) => can(t.perm) && (t.id !== "tech" || TECH_ENABLED));
 
   // Ensure current tab is allowed
   if (tabs.length > 0 && !tabs.some((t) => t.id === tab)) {
@@ -155,7 +156,7 @@ const Index = () => {
             {can("view_pep") && <PepTodayCard onOpen={() => setTab("pep")} />}
 
             {/* Suivi Technique — signalements, retards, refus manager */}
-            {can("view_tech") && <TechAlertsCard onOpen={() => setTab("tech")} />}
+            {TECH_ENABLED && can("view_tech") && <TechAlertsCard onOpen={() => setTab("tech")} />}
 
             {/* Stock Alerts */}
             <StockOutAlerts />
@@ -235,7 +236,7 @@ const Index = () => {
             {tab === "inventaire" && <InventoryModule />}
             {tab === "ecarts" && <EcartModule />}
             {tab === "pep" && <PepModule />}
-            {tab === "tech" && <TechModule />}
+            {TECH_ENABLED && tab === "tech" && <TechModule />}
           </Suspense>
         )}
       </main>
