@@ -1914,6 +1914,10 @@ export type Database = {
         Args: { _pdv_id: string; _user_id: string }
         Returns: boolean
       }
+      can_access_tech: {
+        Args: { _pdv_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_manage_inventory: { Args: { _user_id: string }; Returns: boolean }
       can_manage_pdv_permission: {
         Args: { _pdv_id: string; _permission_key: string; _user_id: string }
