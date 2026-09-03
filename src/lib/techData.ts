@@ -81,19 +81,34 @@ export interface TechEvent {
 }
 
 const table = () => supabase.from("tech_issues" as any) as any;
+// Client brut (sans filtre PDV) : mises à jour par id et vue centralisée du
+// responsable technique. La sécurité reste garantie côté base (RLS).
+const rawTable = () => rawSupabase.from("tech_issues" as any) as any;
 
-export async function getTechIssues(): Promise<TechIssue[]> {
-  const { data, error } = await table().select("*").order("reported_at", { ascending: false });
+/**
+ * Liste des signalements.
+ * - `allPdvs = false` : uniquement le PDV courant (managers).
+ * - `allPdvs = true`  : tous les points de vente (responsable technique
+ *   centralisé, ex. gestion-technique@oliveri.com) ; le nom du PDV est joint.
+ */
+export async function getTechIssues(allPdvs = false): Promise<TechIssue[]> {
+  let q = rawTable().select("*, pdvs(name, code)").order("reported_at", { ascending: false });
+  if (!allPdvs) q = q.eq("pdv_id", requireCurrentPdvId());
+  const { data, error } = await q;
   if (error) throw error;
-  return (data ?? []) as TechIssue[];
+  return ((data ?? []) as any[]).map(({ pdvs, ...rest }) => ({
+    ...rest,
+    pdv_name: pdvs?.name ?? null,
+    pdv_code: pdvs?.code ?? null,
+  })) as TechIssue[];
 }
 
-export async function getTechEvents(issueId?: string): Promise<TechEvent[]> {
+export async function getTechEvents(issueId?: string, allPdvs = false): Promise<TechEvent[]> {
   let q = (rawSupabase.from("tech_issue_events" as any) as any)
     .select("*")
-    .eq("pdv_id", requireCurrentPdvId())
     .order("created_at", { ascending: false })
     .limit(500);
+  if (!allPdvs) q = q.eq("pdv_id", requireCurrentPdvId());
   if (issueId) q = q.eq("issue_id", issueId);
   const { data, error } = await q;
   if (error) throw error;
