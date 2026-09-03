@@ -40,6 +40,8 @@ const PERMISSION_GROUPS: { title: string; keys: string[] }[] = [
   { title: "Inventaire", keys: ["view_inventory", "manage_inventory"] },
   { title: "Calcul des écarts", keys: ["view_ecarts", "edit_ecarts"] },
   { title: "Recettes", keys: ["view_recipes", "edit_recipes"] },
+  { title: "Agenda PEP", keys: ["view_pep", "manage_pep"] },
+  { title: "Suivi Technique", keys: ["view_tech", "manage_tech"] },
   { title: "Administration", keys: ["manage_roster"] },
 ];
 
