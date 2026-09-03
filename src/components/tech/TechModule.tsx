@@ -45,14 +45,18 @@ const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 
 type View = "dossiers" | "controle" | "historique";
 
 export function TechModule() {
-  const { can, pdv } = useAuth();
+  const { can, pdv, isAdmin } = useAuth();
   const canManage = can("manage_tech");
+  // Responsable technique (permission manage_tech) : vue centralisée de tous
+  // les PDV. L'admin principal garde la vue du PDV sélectionné.
+  const central = canManage && !isAdmin;
   // La vérification finale du manager se fait uniquement depuis l'Agenda PEP
   // (tableau « Avancement des réparations »), jamais depuis cette table.
   const [issues, setIssues] = useState<TechIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("dossiers");
   const [filter, setFilter] = useState<TechStatus | "open" | "all">("open");
+  const [pdvFilter, setPdvFilter] = useState<string>("all");
   const [reportOpen, setReportOpen] = useState(false);
   const [editing, setEditing] = useState<TechIssue | null>(null);
   const [repairing, setRepairing] = useState<TechIssue | null>(null);
@@ -63,20 +67,31 @@ export function TechModule() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setIssues(await getTechIssues());
+      setIssues(await getTechIssues(central));
     } catch (e: any) {
       toast({ title: "Erreur Suivi Technique", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [central]);
 
   useEffect(() => { void load(); }, [load]);
 
-  const recurring = useMemo(() => recurringEquipments(issues), [issues]);
+  const pdvOptions = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const i of issues) m.set(i.pdv_id, i.pdv_name ?? i.pdv_code ?? "PDV");
+    return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
+  }, [issues]);
+
+  const scoped = useMemo(
+    () => (central && pdvFilter !== "all" ? issues.filter((i) => i.pdv_id === pdvFilter) : issues),
+    [issues, central, pdvFilter],
+  );
+
+  const recurring = useMemo(() => recurringEquipments(scoped), [scoped]);
 
   const visible = useMemo(() => {
-    const list = issues.filter((i) =>
+    const list = scoped.filter((i) =>
       filter === "all" ? true : filter === "open" ? i.status === "a_traiter" || i.status === "en_cours" : i.status === filter,
     );
     return [...list].sort((a, b) => {
@@ -86,25 +101,25 @@ export function TechModule() {
       if (pa !== pb) return pa - pb;
       return b.reported_at.localeCompare(a.reported_at);
     });
-  }, [issues, filter]);
+  }, [scoped, filter]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { a_traiter: 0, en_cours: 0, repare: 0, cloture: 0, overdue: 0, soon: 0, awaiting: 0 };
-    for (const i of issues) {
+    for (const i of scoped) {
       c[i.status]++;
       if (isOverdue(i, today)) c.overdue++;
       if (isDeadlineSoon(i, today)) c.soon++;
       if (awaitingManager(i)) c.awaiting++;
     }
     return c;
-  }, [issues, today]);
+  }, [scoped, today]);
 
   const alerts = useMemo(() => {
-    const overdue = issues.filter((i) => isOverdue(i, today));
-    const soon = issues.filter((i) => isDeadlineSoon(i, today));
-    const awaiting = issues.filter(awaitingManager);
+    const overdue = scoped.filter((i) => isOverdue(i, today));
+    const soon = scoped.filter((i) => isDeadlineSoon(i, today));
+    const awaiting = scoped.filter(awaitingManager);
     return { overdue, soon, awaiting };
-  }, [issues, today]);
+  }, [scoped, today]);
 
   return (
     <div className="space-y-4">
@@ -113,7 +128,17 @@ export function TechModule() {
           <Wrench className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Suivi Technique</h2>
         </div>
-        {pdv && <span className="text-xs text-muted-foreground">PDV : {pdv.name}</span>}
+        {central ? (
+          <>
+            <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">Tous les PDV</span>
+            <select value={pdvFilter} onChange={(e) => setPdvFilter(e.target.value)} className="h-8 rounded-md border bg-background px-2 text-xs">
+              <option value="all">Tous les points de vente</option>
+              {pdvOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}
+            </select>
+          </>
+        ) : (
+          pdv && <span className="text-xs text-muted-foreground">PDV : {pdv.name}</span>
+        )}
         <div className="ml-auto flex gap-2">
           <Button size="sm" variant="outline" onClick={() => void load()} disabled={loading}>{loading ? "Chargement…" : "Actualiser"}</Button>
           <Button size="sm" onClick={() => setReportOpen(true)}><Plus className="h-4 w-4 mr-1" />Signaler</Button>
@@ -128,7 +153,7 @@ export function TechModule() {
               <div className="flex items-center gap-2 font-semibold text-destructive"><AlertTriangle className="h-4 w-4" />Retard : {alerts.overdue.length} intervention(s) au-delà de la deadline</div>
               <ul className="mt-1 text-xs space-y-0.5">
                 {alerts.overdue.map((i) => (
-                  <li key={i.id}>• <b>{i.equipment}</b> — deadline {fmtFR(i.deadline!)} ({Math.abs(daysToDeadline(i, today)!)} j de retard) · Responsable : {i.assigned_to || "non désigné"}</li>
+                  <li key={i.id}>• {central && i.pdv_name && <span className="font-medium">[{i.pdv_name}] </span>}<b>{i.equipment}</b> — deadline {fmtFR(i.deadline!)} ({Math.abs(daysToDeadline(i, today)!)} j de retard) · Responsable : {i.assigned_to || "non désigné"}</li>
                 ))}
               </ul>
             </div>
@@ -139,7 +164,7 @@ export function TechModule() {
               <ul className="mt-1 text-xs space-y-0.5">
                 {alerts.soon.map((i) => {
                   const d = daysToDeadline(i, today)!;
-                  return <li key={i.id}>• <b>{i.equipment}</b> — {d === 0 ? "aujourd'hui" : `dans ${d} j`} ({fmtFR(i.deadline!)}) · {i.assigned_to || "non désigné"}</li>;
+                  return <li key={i.id}>• {central && i.pdv_name && <span className="font-medium">[{i.pdv_name}] </span>}<b>{i.equipment}</b> — {d === 0 ? "aujourd'hui" : `dans ${d} j`} ({fmtFR(i.deadline!)}) · {i.assigned_to || "non désigné"}</li>;
                 })}
               </ul>
             </div>
@@ -148,7 +173,7 @@ export function TechModule() {
             <div className="rounded-lg border border-primary bg-primary/10 p-3 text-sm">
               <div className="flex items-center gap-2 font-semibold"><CheckCircle2 className="h-4 w-4 text-primary" />{alerts.awaiting.length} réparation(s) en attente de la vérification du manager</div>
               <ul className="mt-1 text-xs space-y-0.5">
-                {alerts.awaiting.map((i) => <li key={i.id}>• <b>{i.equipment}</b> — réparé le {fmtDateTimeFR(i.tech_validated_at)} par {i.tech_validated_by}</li>)}
+                {alerts.awaiting.map((i) => <li key={i.id}>• {central && i.pdv_name && <span className="font-medium">[{i.pdv_name}] </span>}<b>{i.equipment}</b> — réparé le {fmtDateTimeFR(i.tech_validated_at)} par {i.tech_validated_by}</li>)}
               </ul>
             </div>
           )}
@@ -190,8 +215,8 @@ export function TechModule() {
         </div>
       )}
 
-      {view === "controle" && <ControlView issues={issues} today={today} />}
-      {view === "historique" && <GlobalHistory issues={issues} />}
+      {view === "controle" && <ControlView issues={scoped} today={today} />}
+      {view === "historique" && <GlobalHistory issues={scoped} allPdvs={central} />}
 
       {view === "dossiers" && (visible.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-8">Aucun signalement.</p>
@@ -210,6 +235,7 @@ export function TechModule() {
                   <span className={`mt-1.5 h-2.5 w-2.5 rounded-full flex-shrink-0 ${st.dot}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
+                      {central && i.pdv_name && <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-primary text-primary-foreground">{i.pdv_name}</span>}
                       <p className="text-sm font-semibold">{i.equipment}</p>
                       <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${prio.className}`}>{prio.label}</span>
                       <span className="px-2 py-0.5 rounded-full text-[11px] border">{st.label}</span>
@@ -523,7 +549,7 @@ function HistoryDialog({ issue, onClose }: { issue: TechIssue; onClose: () => vo
   const [events, setEvents] = useState<TechEvent[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    getTechEvents(issue.id).then(setEvents).catch((e: any) => toast({ title: "Erreur", description: e?.message, variant: "destructive" })).finally(() => setLoading(false));
+    getTechEvents(issue.id, true).then(setEvents).catch((e: any) => toast({ title: "Erreur", description: e?.message, variant: "destructive" })).finally(() => setLoading(false));
   }, [issue.id]);
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -535,12 +561,13 @@ function HistoryDialog({ issue, onClose }: { issue: TechIssue; onClose: () => vo
   );
 }
 
-function GlobalHistory({ issues }: { issues: TechIssue[] }) {
+function GlobalHistory({ issues, allPdvs = false }: { issues: TechIssue[]; allPdvs?: boolean }) {
   const [events, setEvents] = useState<TechEvent[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    getTechEvents().then(setEvents).catch((e: any) => toast({ title: "Erreur", description: e?.message, variant: "destructive" })).finally(() => setLoading(false));
-  }, [issues.length]);
+    const ids = new Set(issues.map((i) => i.id));
+    getTechEvents(undefined, allPdvs).then((ev) => setEvents(allPdvs ? ev.filter((e) => ids.has(e.issue_id)) : ev)).catch((e: any) => toast({ title: "Erreur", description: e?.message, variant: "destructive" })).finally(() => setLoading(false));
+  }, [issues, allPdvs]);
   if (loading) return <p className="text-sm text-muted-foreground">Chargement…</p>;
   return (
     <div className="rounded-lg border bg-card p-3">
