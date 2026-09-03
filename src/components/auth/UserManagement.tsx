@@ -40,6 +40,8 @@ const PERMISSION_GROUPS: { title: string; keys: string[] }[] = [
   { title: "Inventaire", keys: ["view_inventory", "manage_inventory"] },
   { title: "Calcul des écarts", keys: ["view_ecarts", "edit_ecarts"] },
   { title: "Recettes", keys: ["view_recipes", "edit_recipes"] },
+  { title: "Agenda PEP", keys: ["view_pep", "manage_pep"] },
+  { title: "Suivi Technique", keys: ["view_tech", "manage_tech"] },
   { title: "Administration", keys: ["manage_roster"] },
 ];
 
@@ -176,14 +178,19 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   };
 
   const togglePerm = async (userId: string, key: string, current: boolean) => {
-    if (current) {
-      await supabase.from("user_permissions").delete().eq("user_id", userId).eq("permission_key", key);
-    } else {
-      await supabase.from("user_permissions").upsert(
-        { user_id: userId, permission_key: key, allowed: true },
-        { onConflict: "user_id,permission_key" },
-      );
-    }
+    // Mise à jour optimiste pour un retour visuel immédiat
+    setPerms((prev) => {
+      const next = new Set(prev[userId] ?? []);
+      if (current) next.delete(key); else next.add(key);
+      return { ...prev, [userId]: next };
+    });
+    const { error } = current
+      ? await supabase.from("user_permissions").delete().eq("user_id", userId).eq("permission_key", key)
+      : await supabase.from("user_permissions").upsert(
+          { user_id: userId, permission_key: key, allowed: true },
+          { onConflict: "user_id,permission_key" },
+        );
+    if (error) toast.error("Erreur : " + error.message);
     load();
   };
 
@@ -243,14 +250,13 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   };
 
   const setGroupPerms = async (userId: string, keys: string[], enable: boolean) => {
-    if (enable) {
-      await supabase.from("user_permissions").upsert(
-        keys.map((k) => ({ user_id: userId, permission_key: k, allowed: true })),
-        { onConflict: "user_id,permission_key" },
-      );
-    } else {
-      await supabase.from("user_permissions").delete().eq("user_id", userId).in("permission_key", keys);
-    }
+    const { error } = enable
+      ? await supabase.from("user_permissions").upsert(
+          keys.map((k) => ({ user_id: userId, permission_key: k, allowed: true })),
+          { onConflict: "user_id,permission_key" },
+        )
+      : await supabase.from("user_permissions").delete().eq("user_id", userId).in("permission_key", keys);
+    if (error) toast.error("Erreur : " + error.message);
     load();
   };
 
@@ -552,6 +558,12 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
           </DialogHeader>
           {editing && (
             <div className="space-y-4">
+              {(userPdvs[editing.user_id]?.length ?? 0) > 0 && roles[editing.user_id] !== "regional_admin" && (
+                <p className="text-xs text-muted-foreground rounded-md border bg-muted/40 px-3 py-2">
+                  Ces permissions individuelles s'ajoutent à celles du point de vente rattaché (onglet « Points de vente »).
+                  L'utilisateur doit se reconnecter ou actualiser pour voir le changement.
+                </p>
+              )}
               <div className="relative">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input

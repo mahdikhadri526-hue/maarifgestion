@@ -259,15 +259,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (key: string) => {
       if (!user) return false;
       if (isAdmin) return true;
-      // Compte protégé : conserve ses permissions personnelles
-      if ((user.email ?? "").toLowerCase() === "gestionmaarif1@gmail.com") {
-        return permissions.has(key) || (pdvPermissions?.has(key) ?? false);
-      }
       if (isRegionalAdmin) return permissions.has(key);
-      if (assignedPdvIds.length > 0) return pdvPermissions?.has(key) ?? false;
-      return permissions.has(key);
+      // Permissions individuelles (Gestion des utilisateurs) + permissions du
+      // point de vente rattaché : les deux s'appliquent.
+      return permissions.has(key) || (pdvPermissions?.has(key) ?? false);
     },
-    [user, isAdmin, isRegionalAdmin, assignedPdvIds, permissions, pdvPermissions],
+    [user, isAdmin, isRegionalAdmin, permissions, pdvPermissions],
   );
 
   const signOut = async () => {
