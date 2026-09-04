@@ -414,6 +414,7 @@ function TaskCard({
   posts: PepPostponement[];
 }) {
   const { occ, task, status } = row;
+  const TECH_ENABLED = isTechEnabled(useAuth().user?.email);
   const meta = STATUS_META[status];
   const history = posts.filter((p) => p.occurrence_id === occ.id);
   const done = status === "done";
