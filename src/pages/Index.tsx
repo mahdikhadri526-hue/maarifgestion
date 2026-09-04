@@ -23,6 +23,7 @@ const AnomalyCenter = lazy(() => import("@/components/anomalies/AnomalyCenter").
 import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck, Snowflake, Scale, CalendarClock, Wrench } from "lucide-react";
 import { PepTodayCard } from "@/components/pep/PepTodayCard";
 import { TechAlertsCard } from "@/components/tech/TechAlertsCard";
+import { ManagerVerifyAlert } from "@/components/tech/ManagerVerifyAlert";
 import { isTechEnabled } from "@/lib/techFeature";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
@@ -158,6 +159,7 @@ const Index = () => {
 
             {/* Suivi Technique — signalements, retards, refus manager */}
             {TECH_ENABLED && can("view_tech") && <TechAlertsCard onOpen={() => setTab("tech")} />}
+            {TECH_ENABLED && can("view_pep") && <ManagerVerifyAlert onOpen={() => setTab("pep")} />}
 
             {/* Stock Alerts */}
             <StockOutAlerts />
