@@ -23,7 +23,7 @@ const AnomalyCenter = lazy(() => import("@/components/anomalies/AnomalyCenter").
 import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck, Snowflake, Scale, CalendarClock, Wrench } from "lucide-react";
 import { PepTodayCard } from "@/components/pep/PepTodayCard";
 import { TechAlertsCard } from "@/components/tech/TechAlertsCard";
-import { TECH_ENABLED } from "@/lib/techFeature";
+import { isTechEnabled } from "@/lib/techFeature";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
@@ -42,7 +42,8 @@ const Index = () => {
   useEffect(() => {
     void loadProductCatalog().then(() => setRefreshKey((k) => k + 1));
   }, []);
-  const { can, isAdmin, isRegionalAdmin } = useAuth();
+  const { can, isAdmin, isRegionalAdmin, user } = useAuth();
+  const TECH_ENABLED = isTechEnabled(user?.email);
 
   const refresh = () => setRefreshKey((k) => k + 1);
 

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { CalendarDays, CheckCircle2, Clock, ListChecks, Plus, Settings2, Trash2, BarChart3, History, Wrench } from "lucide-react";
 import { ReportIssueDialog } from "@/components/tech/ReportIssueDialog";
 import { PepRepairStatus } from "@/components/tech/PepRepairStatus";
-import { TECH_ENABLED } from "@/lib/techFeature";
+import { isTechEnabled } from "@/lib/techFeature";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,6 +61,7 @@ interface Row {
 
 export function PepModule({ initialView = "day" }: { initialView?: View }) {
   const { can, pdv, user } = useAuth();
+  const TECH_ENABLED = isTechEnabled(user?.email);
   const canManage = can("manage_pep");
 
   const [tasks, setTasks] = useState<PepTask[]>([]);
@@ -413,6 +414,7 @@ function TaskCard({
   posts: PepPostponement[];
 }) {
   const { occ, task, status } = row;
+  const TECH_ENABLED = isTechEnabled(useAuth().user?.email);
   const meta = STATUS_META[status];
   const history = posts.filter((p) => p.occurrence_id === occ.id);
   const done = status === "done";
