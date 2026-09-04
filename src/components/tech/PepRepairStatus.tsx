@@ -5,7 +5,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   TECH_PRIORITIES,
-  TECH_STATUSES,
+  displayStatusMeta,
   TECH_STATUS_ORDER,
   TechIssue,
   awaitingManager,
@@ -117,7 +117,7 @@ export function PepRepairStatus({ refreshKey = 0 }: { refreshKey?: number }) {
           </thead>
           <tbody>
             {rows.map((i) => {
-              const st = TECH_STATUSES.find((s) => s.key === i.status);
+              const st = displayStatusMeta(i);
               const pr = TECH_PRIORITIES.find((p) => p.key === i.priority);
               const late = isOverdue(i, today);
               const wait = awaitingManager(i);

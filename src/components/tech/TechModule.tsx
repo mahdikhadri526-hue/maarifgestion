@@ -16,7 +16,11 @@ import {
   TECH_RECURRENT_THRESHOLD,
   TECH_RECURRENT_WINDOW_DAYS,
   TECH_STATUSES,
-  TECH_STATUS_ORDER,
+  TECH_DISPLAY_STATUSES,
+  TECH_DISPLAY_STATUS_ORDER,
+  displayStatus,
+  displayStatusMeta,
+  isManagerRefused,
   awaitingManager,
   daysToDeadline,
   deleteTechIssue,
@@ -37,6 +41,7 @@ import {
   type TechEvent,
   type TechIssue,
   type TechStatus,
+  type TechDisplayStatus,
 } from "@/lib/techData";
 import { ReportIssueDialog } from "./ReportIssueDialog";
 
@@ -55,7 +60,7 @@ export function TechModule() {
   const [issues, setIssues] = useState<TechIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("dossiers");
-  const [filter, setFilter] = useState<TechStatus | "open" | "all">("open");
+  const [filter, setFilter] = useState<TechDisplayStatus | "open" | "all">("open");
   const [pdvFilter, setPdvFilter] = useState<string>("all");
   const [reportOpen, setReportOpen] = useState(false);
   const [editing, setEditing] = useState<TechIssue | null>(null);
@@ -92,10 +97,10 @@ export function TechModule() {
 
   const visible = useMemo(() => {
     const list = scoped.filter((i) =>
-      filter === "all" ? true : filter === "open" ? i.status === "a_traiter" || i.status === "en_cours" : i.status === filter,
+      filter === "all" ? true : filter === "open" ? i.status === "a_traiter" || i.status === "en_cours" : displayStatus(i) === filter,
     );
     return [...list].sort((a, b) => {
-      const sa = TECH_STATUS_ORDER.indexOf(a.status), sb = TECH_STATUS_ORDER.indexOf(b.status);
+      const sa = TECH_DISPLAY_STATUS_ORDER.indexOf(displayStatus(a)), sb = TECH_DISPLAY_STATUS_ORDER.indexOf(displayStatus(b));
       if (sa !== sb) return sa - sb;
       const pa = PRIO_RANK[a.priority] ?? 9, pb = PRIO_RANK[b.priority] ?? 9;
       if (pa !== pb) return pa - pb;
@@ -104,9 +109,10 @@ export function TechModule() {
   }, [scoped, filter]);
 
   const counts = useMemo(() => {
-    const c: Record<string, number> = { a_traiter: 0, en_cours: 0, repare: 0, cloture: 0, overdue: 0, soon: 0, awaiting: 0 };
+    const c: Record<string, number> = { a_traiter: 0, en_cours: 0, repare: 0, attente_manager: 0, cloture: 0, overdue: 0, soon: 0, awaiting: 0, refused: 0 };
     for (const i of scoped) {
-      c[i.status]++;
+      c[displayStatus(i)]++;
+      if (isManagerRefused(i)) c.refused++;
       if (isOverdue(i, today)) c.overdue++;
       if (isDeadlineSoon(i, today)) c.soon++;
       if (awaitingManager(i)) c.awaiting++;
@@ -180,8 +186,8 @@ export function TechModule() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 sm:grid-cols-6 gap-2">
-        {TECH_STATUSES.map((s) => (
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+        {TECH_DISPLAY_STATUSES.map((s) => (
           <button key={s.key} onClick={() => { setView("dossiers"); setFilter(s.key); }} className={`rounded-lg border p-3 text-left bg-card hover:bg-accent transition ${view === "dossiers" && filter === s.key ? "ring-2 ring-primary" : ""}`}>
             <div className="flex items-center gap-2 text-xs text-muted-foreground"><span className={`h-2 w-2 rounded-full ${s.dot}`} />{s.label}</div>
             <div className="text-2xl font-bold">{counts[s.key]}</div>
@@ -224,7 +230,7 @@ export function TechModule() {
         <div className="space-y-2">
           {visible.map((i) => {
             const prio = TECH_PRIORITIES.find((p) => p.key === i.priority)!;
-            const st = TECH_STATUSES.find((s) => s.key === i.status)!;
+            const st = displayStatusMeta(i);
             const overdue = isOverdue(i, today);
             const soon = isDeadlineSoon(i, today);
             const dd = daysToDeadline(i, today);
@@ -242,7 +248,7 @@ export function TechModule() {
                       {overdue && <span className="px-2 py-0.5 rounded-full text-[11px] bg-destructive text-destructive-foreground">Deadline dépassée ({Math.abs(dd!)} j)</span>}
                       {soon && !overdue && <span className="px-2 py-0.5 rounded-full text-[11px] bg-amber-500 text-white">Deadline {dd === 0 ? "aujourd'hui" : `J-${dd}`}</span>}
                       {rec && <span className="px-2 py-0.5 rounded-full text-[11px] border border-amber-500 text-amber-700 flex items-center gap-1"><Repeat className="h-3 w-3" />Récurrent</span>}
-                      {awaitingManager(i) && <span className="px-2 py-0.5 rounded-full text-[11px] bg-primary text-primary-foreground">Attente validation manager</span>}
+                      {isManagerRefused(i) && <span className="px-2 py-0.5 rounded-full text-[11px] bg-destructive text-destructive-foreground animate-pulse">⛔ Refusé par le manager</span>}
                       {isTechLate(i) && <span className="px-2 py-0.5 rounded-full text-[11px] border border-destructive text-destructive">Réparé en retard</span>}
                     </div>
                     <p className="text-xs text-muted-foreground">
@@ -256,6 +262,13 @@ export function TechModule() {
                       {i.repaired_at && <span>Réparé : {fmtDateTimeFR(i.repaired_at)}</span>}
                       {i.closed_at && <span>Clôturé : {fmtDateTimeFR(i.closed_at)}</span>}
                     </div>
+                    {isManagerRefused(i) && (
+                      <div className="mt-2 rounded-md border border-destructive bg-destructive/10 p-2 text-xs text-destructive">
+                        <div className="font-semibold">⛔ Validation refusée par le manager — le matériel ne fonctionne pas correctement.</div>
+                        <div>Motif : {i.manager_comment}</div>
+                        <div className="text-muted-foreground">Le dossier est renvoyé « En cours » : une nouvelle réparation doit être validée.</div>
+                      </div>
+                    )}
                     {i.tech_notes && <p className="text-xs mt-1">🔧 {i.tech_notes}</p>}
                     {techPhotos(i).length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
@@ -287,9 +300,6 @@ export function TechModule() {
                         ) : i.tech_validated_at ? (
                           <div className="text-muted-foreground">En attente de la vérification du manager.</div>
                         ) : null}
-                        {!i.manager_validated_at && i.manager_comment && i.status === "en_cours" && (
-                          <div className="text-destructive">Refus manager : {i.manager_comment}</div>
-                        )}
                       </div>
                     )}
                   </div>
@@ -615,7 +625,7 @@ function ControlView({ issues, today }: { issues: TechIssue[]; today: string }) 
               const dd = daysToDeadline(i, today);
               const overdue = isOverdue(i, today);
               const late = isTechLate(i);
-              const st = TECH_STATUSES.find((s) => s.key === i.status)!;
+              const st = displayStatusMeta(i);
               let retard = "—";
               if (overdue) retard = `${Math.abs(dd!)} j (en cours)`;
               else if (late && i.deadline) retard = `${Math.round((new Date(i.tech_validated_at!.slice(0, 10) + "T00:00:00").getTime() - new Date(i.deadline + "T00:00:00").getTime()) / 86_400_000)} j`;
