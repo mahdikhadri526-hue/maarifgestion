@@ -82,6 +82,24 @@ export function PepRepairStatus({ refreshKey = 0 }: { refreshKey?: number }) {
           <Button size="sm" variant="ghost" onClick={() => void load()} disabled={loading}>Actualiser</Button>
         </div>
       </div>
+      {canValidate && awaiting > 0 && (
+        <div className="px-3 py-2 border-b bg-primary/5 space-y-2">
+          <div className="text-xs font-semibold text-primary">Vérification manager requise</div>
+          {issues.filter(awaitingManager).map((i) => (
+            <div key={"w" + i.id} className="flex items-center gap-2 flex-wrap text-xs">
+              <div className="flex-1 min-w-[160px]">
+                <span className="font-medium">{i.equipment}</span>
+                {i.location ? ` (${i.location})` : ""}
+                <div className="text-[10px] text-muted-foreground">
+                  Réparé par {i.tech_validated_by ?? "—"} le {fmtDateTimeFR(i.tech_validated_at)}
+                  {i.action_done ? ` · ${i.action_done}` : ""}
+                </div>
+              </div>
+              <Button size="sm" onClick={() => setValidating(i)}>Vérifier le matériel</Button>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="bg-muted/50">
