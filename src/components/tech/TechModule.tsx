@@ -41,6 +41,7 @@ import {
   type TechEvent,
   type TechIssue,
   type TechStatus,
+  type TechDisplayStatus,
 } from "@/lib/techData";
 import { ReportIssueDialog } from "./ReportIssueDialog";
 
@@ -59,7 +60,7 @@ export function TechModule() {
   const [issues, setIssues] = useState<TechIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("dossiers");
-  const [filter, setFilter] = useState<TechStatus | "open" | "all">("open");
+  const [filter, setFilter] = useState<TechDisplayStatus | "open" | "all">("open");
   const [pdvFilter, setPdvFilter] = useState<string>("all");
   const [reportOpen, setReportOpen] = useState(false);
   const [editing, setEditing] = useState<TechIssue | null>(null);
