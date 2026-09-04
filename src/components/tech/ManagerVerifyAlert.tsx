@@ -28,7 +28,7 @@ export function ManagerVerifyAlert({ onOpen }: { onOpen: () => void }) {
   if (awaiting.length === 0) return null;
 
   return (
-    <div className="bg-card rounded-xl border-2 border-primary shadow-sm p-4 mt-4 animate-pulse-border">
+    <div className="bg-card rounded-xl border-2 border-primary shadow-sm p-4 mt-4 ring-4 ring-primary/20">
       <div className="flex items-center justify-between gap-2 flex-wrap mb-2">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-primary flex items-center gap-2">
           <BellRing className="h-4 w-4 animate-pulse" />
