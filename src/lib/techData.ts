@@ -17,6 +17,10 @@ export const TECH_PRIORITIES: { key: TechPriority; label: string; className: str
   { key: "normale", label: "Normale", className: "bg-muted text-foreground" },
 ];
 
+/** Statut d'affichage : `attente_manager` est virtuel (réparé + validé par le
+ *  responsable technique, en attente de la vérification du manager). */
+export type TechDisplayStatus = TechStatus | "attente_manager";
+
 export const TECH_STATUSES: { key: TechStatus; label: string; dot: string }[] = [
   { key: "a_traiter", label: "À traiter", dot: "bg-destructive" },
   { key: "en_cours", label: "En cours", dot: "bg-amber-500" },
@@ -24,7 +28,31 @@ export const TECH_STATUSES: { key: TechStatus; label: string; dot: string }[] = 
   { key: "cloture", label: "Clôturé", dot: "bg-muted-foreground" },
 ];
 
+/** Statuts d'affichage (tableaux, compteurs, filtres) incluant l'étape virtuelle. */
+export const TECH_DISPLAY_STATUSES: { key: TechDisplayStatus; label: string; dot: string }[] = [
+  TECH_STATUSES[0],
+  TECH_STATUSES[1],
+  TECH_STATUSES[2],
+  { key: "attente_manager", label: "En attente validation manager", dot: "bg-primary" },
+  TECH_STATUSES[3],
+];
+
 export const TECH_STATUS_ORDER: TechStatus[] = ["a_traiter", "en_cours", "repare", "cloture"];
+export const TECH_DISPLAY_STATUS_ORDER: TechDisplayStatus[] = ["a_traiter", "en_cours", "repare", "attente_manager", "cloture"];
+
+export function displayStatus(issue: TechIssue): TechDisplayStatus {
+  return awaitingManager(issue) ? "attente_manager" : issue.status;
+}
+
+export function displayStatusMeta(issue: TechIssue) {
+  const k = displayStatus(issue);
+  return TECH_DISPLAY_STATUSES.find((s) => s.key === k)!;
+}
+
+/** Refus du manager (matériel non conforme) : dossier renvoyé « En cours ». */
+export function isManagerRefused(issue: TechIssue): boolean {
+  return issue.status === "en_cours" && !!issue.manager_comment && !issue.manager_validated_at && !issue.tech_validated_at;
+}
 
 /** Nombre de jours avant la deadline à partir duquel une alerte est affichée. */
 export const TECH_ALERT_DAYS_BEFORE = 2;
