@@ -17,7 +17,7 @@ import { useOperators, useManagers } from "@/lib/roster";
 import { useAuth } from "@/contexts/AuthContext";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 import { fetchAllRows } from "@/lib/supabasePaginate";
-import { cached } from "@/lib/requestCache";
+import { cached, invalidateTables } from "@/lib/requestCache";
 import { getCurrentPdvId } from "@/lib/pdvStore";
 
 // Colonnes réellement utilisées par la fiche (évite de rapatrier pdv_id etc.)
