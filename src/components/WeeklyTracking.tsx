@@ -449,38 +449,60 @@ export function WeeklyTracking() {
     return Array.from(set);
   }, [weekStart, filterFrom, filterTo]);
 
+  const [loadingRows, setLoadingRows] = useState(false);
   useEffect(() => {
+    let cancelled = false;
+    const key = weeklyCacheKey(ficheType);
+    const cachedRows = weeklyRowsCache.get(key);
+    // Affichage immédiat depuis le cache, puis rafraîchissement silencieux.
+    if (cachedRows) setRows(cachedRows);
+    else {
+      setRows([]);
+      setLoadingRows(true);
+    }
     (async () => {
       try {
-        const data = await fetchAllRows<any>(() =>
-          supabase
-            .from("weekly_tracking")
-            .select("*")
-            .eq("fiche_type", ficheType),
-        );
-        setRows(normalizeWeeklyRows(data || []));
+        const fresh = await loadWeeklyRows(ficheType);
+        weeklyRowsCache.set(key, fresh);
+        if (cancelled) return;
+        // On conserve les saisies non enregistrées faites pendant le chargement.
+        setRows((prev) => {
+          const dirty = prev.filter((r) => r.__dirty);
+          return dirty.length ? normalizeWeeklyRows([...fresh, ...dirty]) : fresh;
+        });
       } catch (error) {
-        toast.error("Erreur de chargement");
+        if (!cancelled && !cachedRows) toast.error("Erreur de chargement");
+      } finally {
+        if (!cancelled) setLoadingRows(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [ficheType]);
 
+  // Lots de crème fraîche côté mouvement glaces : utiles uniquement sur la
+  // fiche Crème fraîche ; chargés une fois par ouverture (plus à chaque
+  // changement de semaine) et mis en cache.
   useEffect(() => {
+    if (tab !== "creme") return;
+    let cancelled = false;
+    const key = weeklyCacheKey("Mouvement glaces & tartes", "creme");
+    const cachedRows = weeklyRowsCache.get(key);
+    if (cachedRows) setCremeGlaceRows(cachedRows);
     (async () => {
       try {
-        const data = await fetchAllRows<any>(() =>
-          supabase
-            .from("weekly_tracking")
-            .select("*")
-            .eq("fiche_type", "Mouvement glaces & tartes")
-            .eq("article", "Crème fraîche (mousse fouettée)"),
-        );
-        setCremeGlaceRows(normalizeWeeklyRows(data || []));
+        const fresh = await loadWeeklyRows("Mouvement glaces & tartes", "Crème fraîche (mousse fouettée)");
+        weeklyRowsCache.set(key, fresh);
+        if (!cancelled) setCremeGlaceRows(fresh);
       } catch {
         /* ignore */
       }
     })();
-  }, [weekStart, tab]);
+    return () => {
+      cancelled = true;
+    };
+  }, [tab]);
 
   const CREME_ARTICLE = "Crème fraîche (mousse fouettée)";
 
