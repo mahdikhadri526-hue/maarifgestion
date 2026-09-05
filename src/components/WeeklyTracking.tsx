@@ -17,6 +17,8 @@ import { useOperators, useManagers } from "@/lib/roster";
 import { useAuth } from "@/contexts/AuthContext";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 import { fetchAllRows } from "@/lib/supabasePaginate";
+import { getCurrentPdvId } from "@/lib/pdvStore";
+import { invalidateTables } from "@/lib/requestCache";
 import { MaterielTracking } from "./MaterielTracking";
 import { WeeklyTransfers } from "./WeeklyTransfers";
 
@@ -143,10 +145,33 @@ function normalizeWeeklyRows(input: Row[]) {
   );
 }
 
-async function runInBatches<T>(items: T[], worker: (item: T) => Promise<void>, batchSize = 25) {
-  for (let i = 0; i < items.length; i += batchSize) {
-    await Promise.all(items.slice(i, i + batchSize).map(worker));
-  }
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+// Cache mémoire des lignes du suivi hebdo par PDV + fiche : au retour sur
+// l'onglet, l'écran s'affiche instantanément avec les dernières données
+// connues pendant que la version fraîche se recharge en arrière-plan.
+const weeklyRowsCache = new Map<string, Row[]>();
+const weeklyCacheKey = (ficheType: string, extra = "") => `${getCurrentPdvId() ?? ""}|${ficheType}|${extra}`;
+
+const WEEKLY_COLUMNS =
+  "id, fiche_type, week_start, day_of_week, row_index, article, lot_number, couleur, odeur, texture, stock_initial, entrees, sorties, quantity, visa_operateur, visa_manager, created_at, updated_at";
+
+async function loadWeeklyRows(ficheType: string, article?: string): Promise<Row[]> {
+  const data = await fetchAllRows<any>(
+    () => {
+      let q = supabase.from("weekly_tracking").select(WEEKLY_COLUMNS).eq("fiche_type", ficheType);
+      if (article) q = q.eq("article", article);
+      return q;
+    },
+    // La fiche « Mouvement glaces & tartes » dépasse largement 1000 lignes :
+    // on demande plusieurs pages d'emblée pour réduire les allers-retours.
+    { eagerPages: article ? 1 : ficheType === "Mouvement glaces & tartes" ? 8 : 2 },
+  );
+  return normalizeWeeklyRows(data || []);
 }
 
 function ConformityToggle({
@@ -424,38 +449,60 @@ export function WeeklyTracking() {
     return Array.from(set);
   }, [weekStart, filterFrom, filterTo]);
 
+  const [loadingRows, setLoadingRows] = useState(false);
   useEffect(() => {
+    let cancelled = false;
+    const key = weeklyCacheKey(ficheType);
+    const cachedRows = weeklyRowsCache.get(key);
+    // Affichage immédiat depuis le cache, puis rafraîchissement silencieux.
+    if (cachedRows) setRows(cachedRows);
+    else {
+      setRows([]);
+      setLoadingRows(true);
+    }
     (async () => {
       try {
-        const data = await fetchAllRows<any>(() =>
-          supabase
-            .from("weekly_tracking")
-            .select("*")
-            .eq("fiche_type", ficheType),
-        );
-        setRows(normalizeWeeklyRows(data || []));
+        const fresh = await loadWeeklyRows(ficheType);
+        weeklyRowsCache.set(key, fresh);
+        if (cancelled) return;
+        // On conserve les saisies non enregistrées faites pendant le chargement.
+        setRows((prev) => {
+          const dirty = prev.filter((r) => r.__dirty);
+          return dirty.length ? normalizeWeeklyRows([...fresh, ...dirty]) : fresh;
+        });
       } catch (error) {
-        toast.error("Erreur de chargement");
+        if (!cancelled && !cachedRows) toast.error("Erreur de chargement");
+      } finally {
+        if (!cancelled) setLoadingRows(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [ficheType]);
 
+  // Lots de crème fraîche côté mouvement glaces : utiles uniquement sur la
+  // fiche Crème fraîche ; chargés une fois par ouverture (plus à chaque
+  // changement de semaine) et mis en cache.
   useEffect(() => {
+    if (tab !== "creme") return;
+    let cancelled = false;
+    const key = weeklyCacheKey("Mouvement glaces & tartes", "creme");
+    const cachedRows = weeklyRowsCache.get(key);
+    if (cachedRows) setCremeGlaceRows(cachedRows);
     (async () => {
       try {
-        const data = await fetchAllRows<any>(() =>
-          supabase
-            .from("weekly_tracking")
-            .select("*")
-            .eq("fiche_type", "Mouvement glaces & tartes")
-            .eq("article", "Crème fraîche (mousse fouettée)"),
-        );
-        setCremeGlaceRows(normalizeWeeklyRows(data || []));
+        const fresh = await loadWeeklyRows("Mouvement glaces & tartes", "Crème fraîche (mousse fouettée)");
+        weeklyRowsCache.set(key, fresh);
+        if (!cancelled) setCremeGlaceRows(fresh);
       } catch {
         /* ignore */
       }
     })();
-  }, [weekStart, tab]);
+    return () => {
+      cancelled = true;
+    };
+  }, [tab]);
 
   const CREME_ARTICLE = "Crème fraîche (mousse fouettée)";
 
@@ -1210,29 +1257,36 @@ export function WeeklyTracking() {
         const updates = payload.filter((item) => item.id);
         const inserts = payload.filter((item) => !item.id).map(toMutation);
 
-        await runInBatches(updates, async (item) => {
-          const updateItem = toMutation(item);
-          const { error } = await supabase.from("weekly_tracking").update(updateItem as never).eq("id", item.id);
-          if (error) throw error;
+        // Mises à jour groupées : une seule requête par lot de 500 lignes
+        // (au lieu d'une requête par cellule modifiée).
+        const updateMutations = updates.map((item) => ({ id: item.id, ...toMutation(item) }));
+        const updatePromises = chunk(updateMutations, 500).map((batch) =>
+          supabase.from("weekly_tracking").upsert(batch as never, { onConflict: "id" }).then(({ error }) => {
+            if (error) throw error;
+          }),
+        );
+        const insertPromise =
+          inserts.length > 0
+            ? supabase.from("weekly_tracking").insert(inserts as never).select(WEEKLY_COLUMNS)
+            : Promise.resolve({ data: [] as any[], error: null as any });
 
-          const idx = normalizedRows.findIndex((row) => row.id === item.id);
-          if (idx >= 0) normalizedRows[idx] = { ...normalizedRows[idx], ...updateItem, __dirty: false };
+        const [, insertRes] = await Promise.all([Promise.all(updatePromises), insertPromise]);
+
+        updateMutations.forEach((m) => {
+          const idx = normalizedRows.findIndex((row) => row.id === m.id);
+          if (idx >= 0) normalizedRows[idx] = { ...normalizedRows[idx], ...m, __dirty: false };
         });
-
-        if (inserts.length > 0) {
-          const { data, error } = await supabase
-            .from("weekly_tracking")
-            .insert(inserts as never)
-            .select();
-          if (error) throw error;
-          const saved = normalizeWeeklyRows(data || []);
-          saved.forEach((savedRow) => {
-            const idx = normalizedRows.findIndex((row) => rowKey(row) === rowKey(savedRow));
-            if (idx >= 0) normalizedRows[idx] = { ...savedRow, __dirty: false };
-          });
-        }
+        if (insertRes.error) throw insertRes.error;
+        const saved = normalizeWeeklyRows((insertRes.data || []) as Row[]);
+        saved.forEach((savedRow) => {
+          const idx = normalizedRows.findIndex((row) => rowKey(row) === rowKey(savedRow));
+          if (idx >= 0) normalizedRows[idx] = { ...savedRow, __dirty: false };
+        });
       }
-      setRows(normalizeWeeklyRows(normalizedRows));
+      const finalRows = normalizeWeeklyRows(normalizedRows);
+      weeklyRowsCache.set(weeklyCacheKey(ficheType), finalRows);
+      invalidateTables(["weekly_tracking"]);
+      setRows(finalRows);
       toast.success("Suivi hebdomadaire enregistré");
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de l'enregistrement");
@@ -1551,6 +1605,7 @@ export function WeeklyTracking() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
               <CalendarIcon className="h-3.5 w-3.5" />
               Semaine du {formatDateFR(weekStart)} → {addDays(weekStart, 6)}
+              {loadingRows && <span className="text-xs font-normal text-muted-foreground animate-pulse">· chargement…</span>}
             </div>
             <Button variant="outline" size="icon" className="rounded-full h-9 w-9" onClick={() => shiftWeek(1)}>
               <ChevronRight className="h-4 w-4" />
