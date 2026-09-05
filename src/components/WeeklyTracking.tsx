@@ -1781,11 +1781,11 @@ export function WeeklyTracking() {
                           </td>
                         )}
                         <td className="p-1">
-                          <Input
+                          <CommittedInput
                             type="number"
                             inputMode="numeric"
                             value={c.quantity ?? ""}
-                            onChange={(e) => updateCell(day, rowIdx, null, { quantity: e.target.value })}
+                            onCommit={(v) => updateCell(day, rowIdx, null, { quantity: v })}
                             className="h-8"
                             disabled={!editable}
                           />
