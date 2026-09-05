@@ -199,15 +199,27 @@ export async function getPepHolidays(): Promise<PepHoliday[]> {
   return (data ?? []) as unknown as PepHoliday[];
 }
 
-export async function getOccurrences(start: string, end: string): Promise<PepOccurrence[]> {
+// Colonnes hors photos : les photos (dataURL) pèsent plusieurs Mo et ne sont
+// nécessaires que dans l'agenda détaillé, pas pour le résumé ni la planification.
+const OCCURRENCE_LIGHT_COLUMNS =
+  "id,pdv_id,task_id,due_date,original_due_date,status,completed_at,completed_by,completed_by_name,comment,created_at,updated_at";
+
+export async function getOccurrences(
+  start: string,
+  end: string,
+  opts: { withPhotos?: boolean } = {},
+): Promise<PepOccurrence[]> {
+  const withPhotos = opts.withPhotos ?? true;
   const { data, error } = await supabase
     .from("pep_occurrences" as any)
-    .select("*")
+    .select(withPhotos ? "*" : OCCURRENCE_LIGHT_COLUMNS)
     .gte("due_date", start)
     .lte("due_date", end)
     .order("due_date");
   if (error) throw error;
-  return (data ?? []) as unknown as PepOccurrence[];
+  const rows = (data ?? []) as any[];
+  if (!withPhotos) rows.forEach((r) => { r.photo_url = null; r.photo_before_url = null; });
+  return rows as unknown as PepOccurrence[];
 }
 
 export async function getPostponements(occurrenceIds?: string[]): Promise<PepPostponement[]> {
