@@ -17,6 +17,18 @@ import { useOperators, useManagers } from "@/lib/roster";
 import { useAuth } from "@/contexts/AuthContext";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 import { fetchAllRows } from "@/lib/supabasePaginate";
+import { cached } from "@/lib/requestCache";
+import { getCurrentPdvId } from "@/lib/pdvStore";
+
+// Colonnes réellement utilisées par la fiche (évite de rapatrier pdv_id etc.)
+const WEEKLY_COLUMNS =
+  "id,fiche_type,week_start,day_of_week,row_index,article,lot_number,couleur,odeur,texture,stock_initial,entrees,sorties,quantity,visa_operateur,visa_manager,created_at,updated_at";
+// Semaines chargées en priorité avant la plus ancienne semaine affichée
+// (le report des lots au lundi a besoin des semaines précédentes).
+const WEEKLY_RECENT_WEEKS_BACK = 6;
+// L'historique ancien change très rarement : cache long (invalidé de toute
+// façon à la moindre écriture temps réel sur weekly_tracking).
+const WEEKLY_HISTORY_TTL = 10 * 60 * 1000;
 import { MaterielTracking } from "./MaterielTracking";
 import { WeeklyTransfers } from "./WeeklyTransfers";
 
