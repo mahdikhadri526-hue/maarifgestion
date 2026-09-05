@@ -17,18 +17,6 @@ import { useOperators, useManagers } from "@/lib/roster";
 import { useAuth } from "@/contexts/AuthContext";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 import { fetchAllRows } from "@/lib/supabasePaginate";
-import { cached, invalidateTables } from "@/lib/requestCache";
-import { getCurrentPdvId } from "@/lib/pdvStore";
-
-// Colonnes réellement utilisées par la fiche (évite de rapatrier pdv_id etc.)
-const WEEKLY_COLUMNS =
-  "id,fiche_type,week_start,day_of_week,row_index,article,lot_number,couleur,odeur,texture,stock_initial,entrees,sorties,quantity,visa_operateur,visa_manager,created_at,updated_at";
-// Semaines chargées en priorité avant la plus ancienne semaine affichée
-// (le report des lots au lundi a besoin des semaines précédentes).
-const WEEKLY_RECENT_WEEKS_BACK = 6;
-// L'historique ancien change très rarement : cache long (invalidé de toute
-// façon à la moindre écriture temps réel sur weekly_tracking).
-const WEEKLY_HISTORY_TTL = 10 * 60 * 1000;
 import { MaterielTracking } from "./MaterielTracking";
 import { WeeklyTransfers } from "./WeeklyTransfers";
 
@@ -436,94 +424,38 @@ export function WeeklyTracking() {
     return Array.from(set);
   }, [weekStart, filterFrom, filterTo]);
 
-  // Chargement en deux temps : la fenêtre récente (semaine affichée + quelques
-  // semaines avant, nécessaires au report des lots) s'affiche immédiatement ;
-  // l'historique plus ancien arrive ensuite en arrière-plan et reste en cache
-  // longtemps (il ne change quasiment jamais) pour que les changements
-  // d'onglet / de semaine soient instantanés.
-  const recentFrom = useMemo(() => {
-    const minWeek = [...weeksToLoad].sort()[0] ?? weekStart;
-    const d = parseISO(minWeek);
-    d.setDate(d.getDate() - 7 * WEEKLY_RECENT_WEEKS_BACK);
-    return fmt(d);
-  }, [weeksToLoad, weekStart]);
-
   useEffect(() => {
-    let cancelled = false;
-    const pdvKey = getCurrentPdvId() ?? "";
     (async () => {
       try {
-        const recent = await cached<Row[]>(
-          `weekly:${pdvKey}:${ficheType}:recent:${recentFrom}`,
-          ["weekly_tracking"],
-          () =>
-            fetchAllRows<any>(() =>
-              supabase
-                .from("weekly_tracking")
-                .select(WEEKLY_COLUMNS)
-                .eq("fiche_type", ficheType)
-                .gte("week_start", recentFrom),
-            ),
+        const data = await fetchAllRows<any>(() =>
+          supabase
+            .from("weekly_tracking")
+            .select("*")
+            .eq("fiche_type", ficheType),
         );
-        if (cancelled) return;
-        // Les saisies locales non enregistrées sont conservées (placées en
-        // dernier pour l'emporter en cas d'égalité).
-        setRows((prev) => normalizeWeeklyRows([...(recent || []), ...prev.filter((r) => r.__dirty)]));
-
-        const older = await cached<Row[]>(
-          `weekly:${pdvKey}:${ficheType}:older:${recentFrom}`,
-          ["weekly_tracking"],
-          () =>
-            fetchAllRows<any>(() =>
-              supabase
-                .from("weekly_tracking")
-                .select(WEEKLY_COLUMNS)
-                .eq("fiche_type", ficheType)
-                .lt("week_start", recentFrom),
-            ),
-          WEEKLY_HISTORY_TTL,
-        );
-        if (cancelled) return;
-        if (older && older.length > 0) {
-          setRows((prev) =>
-            normalizeWeeklyRows([
-              ...older,
-              ...prev.filter((r) => r.__dirty || String(r.week_start ?? "") >= recentFrom),
-            ]),
-          );
-        }
+        setRows(normalizeWeeklyRows(data || []));
       } catch (error) {
-        if (!cancelled) toast.error("Erreur de chargement");
+        toast.error("Erreur de chargement");
       }
     })();
-    return () => { cancelled = true; };
-  }, [ficheType, recentFrom]);
+  }, [ficheType]);
 
   useEffect(() => {
-    let cancelled = false;
     (async () => {
       try {
-        const pdvKey = getCurrentPdvId() ?? "";
-        const data = await cached<Row[]>(
-          `weekly:${pdvKey}:creme-glace`,
-          ["weekly_tracking"],
-          () =>
-            fetchAllRows<any>(() =>
-              supabase
-                .from("weekly_tracking")
-                .select(WEEKLY_COLUMNS)
-                .eq("fiche_type", "Mouvement glaces & tartes")
-                .eq("article", "Crème fraîche (mousse fouettée)"),
-            ),
-          WEEKLY_HISTORY_TTL,
+        const data = await fetchAllRows<any>(() =>
+          supabase
+            .from("weekly_tracking")
+            .select("*")
+            .eq("fiche_type", "Mouvement glaces & tartes")
+            .eq("article", "Crème fraîche (mousse fouettée)"),
         );
-        if (!cancelled) setCremeGlaceRows(normalizeWeeklyRows(data || []));
+        setCremeGlaceRows(normalizeWeeklyRows(data || []));
       } catch {
         /* ignore */
       }
     })();
-    return () => { cancelled = true; };
-  }, []);
+  }, [weekStart, tab]);
 
   const CREME_ARTICLE = "Crème fraîche (mousse fouettée)";
 
@@ -1301,7 +1233,6 @@ export function WeeklyTracking() {
         }
       }
       setRows(normalizeWeeklyRows(normalizedRows));
-      invalidateTables(["weekly_tracking"]);
       toast.success("Suivi hebdomadaire enregistré");
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de l'enregistrement");
@@ -1782,11 +1713,11 @@ export function WeeklyTracking() {
                           </td>
                         )}
                         <td className="p-1">
-                          <CommittedInput
+                          <Input
                             type="number"
                             inputMode="numeric"
                             value={c.quantity ?? ""}
-                            onCommit={(v) => updateCell(day, rowIdx, null, { quantity: v })}
+                            onChange={(e) => updateCell(day, rowIdx, null, { quantity: e.target.value })}
                             className="h-8"
                             disabled={!editable}
                           />
@@ -1808,9 +1739,9 @@ export function WeeklyTracking() {
                               );
                             }
                             return (
-                              <CommittedInput
+                              <Input
                                 value={c.lot_number ?? ""}
-                                onCommit={(v) => updateCell(day, rowIdx, null, { lot_number: v })}
+                                onChange={(e) => updateCell(day, rowIdx, null, { lot_number: e.target.value })}
                                 className="h-8 min-w-[240px]"
                                 placeholder={hasQty ? "Aucun lot dispo en mouvement glaces" : "Saisir la quantité…"}
                                 disabled={!hasQty || !editable}

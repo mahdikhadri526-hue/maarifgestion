@@ -199,27 +199,15 @@ export async function getPepHolidays(): Promise<PepHoliday[]> {
   return (data ?? []) as unknown as PepHoliday[];
 }
 
-// Colonnes hors photos : les photos (dataURL) pèsent plusieurs Mo et ne sont
-// nécessaires que dans l'agenda détaillé, pas pour le résumé ni la planification.
-const OCCURRENCE_LIGHT_COLUMNS =
-  "id,pdv_id,task_id,due_date,original_due_date,status,completed_at,completed_by,completed_by_name,comment,created_at,updated_at";
-
-export async function getOccurrences(
-  start: string,
-  end: string,
-  opts: { withPhotos?: boolean } = {},
-): Promise<PepOccurrence[]> {
-  const withPhotos = opts.withPhotos ?? true;
+export async function getOccurrences(start: string, end: string): Promise<PepOccurrence[]> {
   const { data, error } = await supabase
     .from("pep_occurrences" as any)
-    .select(withPhotos ? "*" : OCCURRENCE_LIGHT_COLUMNS)
+    .select("*")
     .gte("due_date", start)
     .lte("due_date", end)
     .order("due_date");
   if (error) throw error;
-  const rows = (data ?? []) as any[];
-  if (!withPhotos) rows.forEach((r) => { r.photo_url = null; r.photo_before_url = null; });
-  return rows as unknown as PepOccurrence[];
+  return (data ?? []) as unknown as PepOccurrence[];
 }
 
 export async function getPostponements(occurrenceIds?: string[]): Promise<PepPostponement[]> {
@@ -359,7 +347,7 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
     getPepTasks(),
     getPepHolidays(),
     // Le lissage peut repousser une échéance au-delà de l'horizon théorique.
-    getOccurrences(from, readTo, { withPhotos: false }),
+    getOccurrences(from, readTo),
   ]);
   const active = tasks.filter((t) => t.active);
   if (!active.length) return;
@@ -672,7 +660,7 @@ export async function getTodaySummary(): Promise<TodaySummary> {
   const today = todayISO();
   // Un retard n'est rappelé que le lendemain de l'échéance (pas les jours suivants).
   const lateLimit = addDays(today, -1);
-  const occ = await getOccurrences(lateLimit, today, { withPhotos: false });
+  const occ = await getOccurrences(lateLimit, today);
   let todo = 0,
     late = 0,
     done = 0;
