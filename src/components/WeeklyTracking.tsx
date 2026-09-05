@@ -143,10 +143,33 @@ function normalizeWeeklyRows(input: Row[]) {
   );
 }
 
-async function runInBatches<T>(items: T[], worker: (item: T) => Promise<void>, batchSize = 25) {
-  for (let i = 0; i < items.length; i += batchSize) {
-    await Promise.all(items.slice(i, i + batchSize).map(worker));
-  }
+function chunk<T>(items: T[], size: number): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += size) out.push(items.slice(i, i + size));
+  return out;
+}
+
+// Cache mémoire des lignes du suivi hebdo par PDV + fiche : au retour sur
+// l'onglet, l'écran s'affiche instantanément avec les dernières données
+// connues pendant que la version fraîche se recharge en arrière-plan.
+const weeklyRowsCache = new Map<string, Row[]>();
+const weeklyCacheKey = (ficheType: string, extra = "") => `${getCurrentPdvId() ?? ""}|${ficheType}|${extra}`;
+
+const WEEKLY_COLUMNS =
+  "id, fiche_type, week_start, day_of_week, row_index, article, lot_number, couleur, odeur, texture, stock_initial, entrees, sorties, quantity, visa_operateur, visa_manager, created_at, updated_at";
+
+async function loadWeeklyRows(ficheType: string, article?: string): Promise<Row[]> {
+  const data = await fetchAllRows<any>(
+    () => {
+      let q = supabase.from("weekly_tracking").select(WEEKLY_COLUMNS).eq("fiche_type", ficheType);
+      if (article) q = q.eq("article", article);
+      return q;
+    },
+    // La fiche « Mouvement glaces & tartes » dépasse largement 1000 lignes :
+    // on demande plusieurs pages d'emblée pour réduire les allers-retours.
+    { eagerPages: article ? 1 : ficheType === "Mouvement glaces & tartes" ? 8 : 2 },
+  );
+  return normalizeWeeklyRows(data || []);
 }
 
 function ConformityToggle({
