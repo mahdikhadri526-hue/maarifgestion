@@ -1807,9 +1807,9 @@ export function WeeklyTracking() {
                               );
                             }
                             return (
-                              <Input
+                              <CommittedInput
                                 value={c.lot_number ?? ""}
-                                onChange={(e) => updateCell(day, rowIdx, null, { lot_number: e.target.value })}
+                                onCommit={(v) => updateCell(day, rowIdx, null, { lot_number: v })}
                                 className="h-8 min-w-[240px]"
                                 placeholder={hasQty ? "Aucun lot dispo en mouvement glaces" : "Saisir la quantité…"}
                                 disabled={!hasQty || !editable}
