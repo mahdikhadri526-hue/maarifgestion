@@ -1,5 +1,6 @@
 import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/db";
+import { supabase as rawSupabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -17,7 +18,7 @@ import { useOperators, useManagers } from "@/lib/roster";
 import { useAuth } from "@/contexts/AuthContext";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 import { fetchAllRows } from "@/lib/supabasePaginate";
-import { getCurrentPdvId } from "@/lib/pdvStore";
+import { getCurrentPdvId, requireCurrentPdvId } from "@/lib/pdvStore";
 import { invalidateTables } from "@/lib/requestCache";
 import { MaterielTracking } from "./MaterielTracking";
 import { WeeklyTransfers } from "./WeeklyTransfers";
@@ -1258,12 +1259,18 @@ export function WeeklyTracking() {
         const inserts = payload.filter((item) => !item.id).map(toMutation);
 
         // Mises à jour groupées : une seule requête par lot de 500 lignes
-        // (au lieu d'une requête par cellule modifiée).
+        // (au lieu d'une requête par cellule modifiée). On passe par le client
+        // brut car le proxy PDV transforme le conflit « id » en « pdv_id,id »,
+        // clé qui n'existe pas en base (l'upsert échouait systématiquement).
+        const pdvId = requireCurrentPdvId();
         const updateMutations = updates.map((item) => ({ id: item.id, ...toMutation(item) }));
         const updatePromises = chunk(updateMutations, 500).map((batch) =>
-          supabase.from("weekly_tracking").upsert(batch as never, { onConflict: "id" }).then(({ error }) => {
-            if (error) throw error;
-          }),
+          rawSupabase
+            .from("weekly_tracking")
+            .upsert(batch.map((m) => ({ ...m, pdv_id: pdvId })) as never, { onConflict: "id" })
+            .then(({ error }) => {
+              if (error) throw error;
+            }),
         );
         const insertPromise =
           inserts.length > 0
