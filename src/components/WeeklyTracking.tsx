@@ -1235,29 +1235,36 @@ export function WeeklyTracking() {
         const updates = payload.filter((item) => item.id);
         const inserts = payload.filter((item) => !item.id).map(toMutation);
 
-        await runInBatches(updates, async (item) => {
-          const updateItem = toMutation(item);
-          const { error } = await supabase.from("weekly_tracking").update(updateItem as never).eq("id", item.id);
-          if (error) throw error;
+        // Mises à jour groupées : une seule requête par lot de 500 lignes
+        // (au lieu d'une requête par cellule modifiée).
+        const updateMutations = updates.map((item) => ({ id: item.id, ...toMutation(item) }));
+        const updatePromises = chunk(updateMutations, 500).map((batch) =>
+          supabase.from("weekly_tracking").upsert(batch as never, { onConflict: "id" }).then(({ error }) => {
+            if (error) throw error;
+          }),
+        );
+        const insertPromise =
+          inserts.length > 0
+            ? supabase.from("weekly_tracking").insert(inserts as never).select(WEEKLY_COLUMNS)
+            : Promise.resolve({ data: [] as any[], error: null as any });
 
-          const idx = normalizedRows.findIndex((row) => row.id === item.id);
-          if (idx >= 0) normalizedRows[idx] = { ...normalizedRows[idx], ...updateItem, __dirty: false };
+        const [, insertRes] = await Promise.all([Promise.all(updatePromises), insertPromise]);
+
+        updateMutations.forEach((m) => {
+          const idx = normalizedRows.findIndex((row) => row.id === m.id);
+          if (idx >= 0) normalizedRows[idx] = { ...normalizedRows[idx], ...m, __dirty: false };
         });
-
-        if (inserts.length > 0) {
-          const { data, error } = await supabase
-            .from("weekly_tracking")
-            .insert(inserts as never)
-            .select();
-          if (error) throw error;
-          const saved = normalizeWeeklyRows(data || []);
-          saved.forEach((savedRow) => {
-            const idx = normalizedRows.findIndex((row) => rowKey(row) === rowKey(savedRow));
-            if (idx >= 0) normalizedRows[idx] = { ...savedRow, __dirty: false };
-          });
-        }
+        if (insertRes.error) throw insertRes.error;
+        const saved = normalizeWeeklyRows((insertRes.data || []) as Row[]);
+        saved.forEach((savedRow) => {
+          const idx = normalizedRows.findIndex((row) => rowKey(row) === rowKey(savedRow));
+          if (idx >= 0) normalizedRows[idx] = { ...savedRow, __dirty: false };
+        });
       }
-      setRows(normalizeWeeklyRows(normalizedRows));
+      const finalRows = normalizeWeeklyRows(normalizedRows);
+      weeklyRowsCache.set(weeklyCacheKey(ficheType), finalRows);
+      invalidateTables(["weekly_tracking"]);
+      setRows(finalRows);
       toast.success("Suivi hebdomadaire enregistré");
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de l'enregistrement");
