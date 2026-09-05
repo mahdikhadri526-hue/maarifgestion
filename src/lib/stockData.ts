@@ -371,16 +371,36 @@ export function detectProductUnit(name: string): string {
 
 // Lignes « Mouvement glaces & tartes » du suivi hebdo : table volumineuse,
 // partagée entre plusieurs calculs → mise en cache courte.
-export function getGlaceWeeklyRows(): Promise<any[]> {
+// `fromWeekStart` borne la lecture côté serveur (période filtrée) pour ne pas
+// télécharger tout l'historique à chaque ouverture de la commande.
+export function getGlaceWeeklyRows(fromWeekStart?: string): Promise<any[]> {
   const pdvId = requireCurrentPdvId();
-  return cached(`weeklyGlaceRows:${pdvId}`, ["weekly_tracking"], () =>
-    fetchAllRows<any>(() =>
-      supabase
-        .from("weekly_tracking")
-        .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
-        .eq("fiche_type", "Mouvement glaces & tartes"),
+  return cached(`weeklyGlaceRows:${pdvId}:${fromWeekStart ?? "all"}`, ["weekly_tracking"], () =>
+    fetchAllRows<any>(
+      () => {
+        let q = supabase
+          .from("weekly_tracking")
+          .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
+          .eq("fiche_type", "Mouvement glaces & tartes");
+        if (fromWeekStart) q = q.gte("week_start", fromWeekStart);
+        return q;
+      },
+      { eagerPages: fromWeekStart ? 3 : 8 },
     ),
   );
+}
+
+/** Lundi de la semaine située `weeksBack` semaines avant la date ISO donnée. */
+function weekLowerBound(dateISO: string | undefined, weeksBack: number): string | undefined {
+  if (!dateISO) return undefined;
+  const d = new Date(dateISO + "T00:00:00");
+  if (Number.isNaN(d.getTime())) return undefined;
+  const dow = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - dow - weeksBack * 7);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
 }
 
 function getGlaceGrammageRes(): Promise<any> {
