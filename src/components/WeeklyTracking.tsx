@@ -424,38 +424,94 @@ export function WeeklyTracking() {
     return Array.from(set);
   }, [weekStart, filterFrom, filterTo]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await fetchAllRows<any>(() =>
-          supabase
-            .from("weekly_tracking")
-            .select("*")
-            .eq("fiche_type", ficheType),
-        );
-        setRows(normalizeWeeklyRows(data || []));
-      } catch (error) {
-        toast.error("Erreur de chargement");
-      }
-    })();
-  }, [ficheType]);
+  // Chargement en deux temps : la fenêtre récente (semaine affichée + quelques
+  // semaines avant, nécessaires au report des lots) s'affiche immédiatement ;
+  // l'historique plus ancien arrive ensuite en arrière-plan et reste en cache
+  // longtemps (il ne change quasiment jamais) pour que les changements
+  // d'onglet / de semaine soient instantanés.
+  const recentFrom = useMemo(() => {
+    const minWeek = [...weeksToLoad].sort()[0] ?? weekStart;
+    const d = parseISO(minWeek);
+    d.setDate(d.getDate() - 7 * WEEKLY_RECENT_WEEKS_BACK);
+    return fmt(d);
+  }, [weeksToLoad, weekStart]);
 
   useEffect(() => {
+    let cancelled = false;
+    const pdvKey = getCurrentPdvId() ?? "";
     (async () => {
       try {
-        const data = await fetchAllRows<any>(() =>
-          supabase
-            .from("weekly_tracking")
-            .select("*")
-            .eq("fiche_type", "Mouvement glaces & tartes")
-            .eq("article", "Crème fraîche (mousse fouettée)"),
+        const recent = await cached<Row[]>(
+          `weekly:${pdvKey}:${ficheType}:recent:${recentFrom}`,
+          ["weekly_tracking"],
+          () =>
+            fetchAllRows<any>(() =>
+              supabase
+                .from("weekly_tracking")
+                .select(WEEKLY_COLUMNS)
+                .eq("fiche_type", ficheType)
+                .gte("week_start", recentFrom),
+            ),
         );
-        setCremeGlaceRows(normalizeWeeklyRows(data || []));
+        if (cancelled) return;
+        // Les saisies locales non enregistrées sont conservées (placées en
+        // dernier pour l'emporter en cas d'égalité).
+        setRows((prev) => normalizeWeeklyRows([...(recent || []), ...prev.filter((r) => r.__dirty)]));
+
+        const older = await cached<Row[]>(
+          `weekly:${pdvKey}:${ficheType}:older:${recentFrom}`,
+          ["weekly_tracking"],
+          () =>
+            fetchAllRows<any>(() =>
+              supabase
+                .from("weekly_tracking")
+                .select(WEEKLY_COLUMNS)
+                .eq("fiche_type", ficheType)
+                .lt("week_start", recentFrom),
+            ),
+          WEEKLY_HISTORY_TTL,
+        );
+        if (cancelled) return;
+        if (older && older.length > 0) {
+          setRows((prev) =>
+            normalizeWeeklyRows([
+              ...older,
+              ...prev.filter((r) => r.__dirty || String(r.week_start ?? "") >= recentFrom),
+            ]),
+          );
+        }
+      } catch (error) {
+        if (!cancelled) toast.error("Erreur de chargement");
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [ficheType, recentFrom]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const pdvKey = getCurrentPdvId() ?? "";
+        const data = await cached<Row[]>(
+          `weekly:${pdvKey}:creme-glace`,
+          ["weekly_tracking"],
+          () =>
+            fetchAllRows<any>(() =>
+              supabase
+                .from("weekly_tracking")
+                .select(WEEKLY_COLUMNS)
+                .eq("fiche_type", "Mouvement glaces & tartes")
+                .eq("article", "Crème fraîche (mousse fouettée)"),
+            ),
+          WEEKLY_HISTORY_TTL,
+        );
+        if (!cancelled) setCremeGlaceRows(normalizeWeeklyRows(data || []));
       } catch {
         /* ignore */
       }
     })();
-  }, [weekStart, tab]);
+    return () => { cancelled = true; };
+  }, []);
 
   const CREME_ARTICLE = "Crème fraîche (mousse fouettée)";
 
