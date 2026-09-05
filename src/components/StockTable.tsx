@@ -36,6 +36,8 @@ import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/contexts/AuthContext";
 import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/lib/db";
+import { supabase as rawSupabase } from "@/integrations/supabase/client";
+import { requireCurrentPdvId } from "@/lib/pdvStore";
 import { cn, formatDateFR } from "@/lib/utils";
 import { downloadStructuredPdf } from "@/lib/printExport";
 
