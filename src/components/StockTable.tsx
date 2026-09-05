@@ -857,62 +857,40 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         if (mode === "period") return start ? dd < start : false;
         return false;
       };
-      // Fetch global data ONCE instead of per-product (avoids N+1 round-trips)
-      const [allMovements, initialStocks, units, configs] = await Promise.all([
-        getMovements(),
-        getInitialStocks(),
-        getProductUnits(),
-        getProductUnitConfigs(),
-      ]);
-      // Group movements by productId -> date -> { entrees, sorties }
-      const byProduct: Record<string, Record<string, { entrees: number; sorties: number }>> = {};
-      const productIds = new Set<string>();
-      levels.forEach((l) => productIds.add(l.productId));
-      allMovements.forEach((m) => {
-        if (!productIds.has(m.productId)) return;
-        const unit = units[m.productId] || "PIECE";
-        const cfg = configs[m.productId];
-        const dq = movementPiecesToDisplay(m.quantity, unit, cfg, m.productId);
-        const d = m.date.split("T")[0];
-        if (!byProduct[m.productId]) byProduct[m.productId] = {};
-        const bd = byProduct[m.productId];
-        if (!bd[d]) bd[d] = { entrees: 0, sorties: 0 };
-        if (m.type === "entree") bd[d].entrees += dq;
-        else bd[d].sorties += dq;
-      });
+      // Agrégation côté base (une seule requête légère) au lieu de télécharger
+      // tout l'historique des mouvements du point de vente.
+      const rangeStartISO =
+        mode === "day" ? (day || "1900-01-01")
+        : mode === "month" ? (month ? `${month}-01` : "1900-01-01")
+        : (start || "1900-01-01");
+      const rangeEndISO =
+        mode === "day" ? (day || "2999-12-31")
+        : mode === "month" ? (month ? monthEndISO(month) : "2999-12-31")
+        : (end || "2999-12-31");
+      void matchDate; void isBefore;
+      const pdvId = requireCurrentPdvId();
+      const periodRows = await cached(
+        `st_period_aggs_${pdvId}_${rangeStartISO}_${rangeEndISO}`,
+        ["stock_movements", "initial_stocks"],
+        async () => {
+          const { data, error } = await rawSupabase.rpc("stock_period_aggregates", {
+            _pdv_id: pdvId,
+            _start_date: rangeStartISO,
+            _end_date: rangeEndISO,
+          });
+          if (error) throw error;
+          return (data as any[]) || [];
+        },
+      );
+      const byProductId = new Map<string, any>(periodRows.map((r: any) => [r.product_id, r]));
       const results: Record<string, { stockInitial: number; entrees: number; sorties: number; stockRestant: number }> = {};
       levels.forEach((lvl) => {
-        const initial = initialStocks[lvl.productId] || 0;
-        const byDate = byProduct[lvl.productId] || {};
-        const dates = Object.keys(byDate).sort();
-        let cumul = initial;
-        let stockInitialPeriod: number | null = null;
-        let stockRestantPeriod = initial;
-        let entreesPeriod = 0;
-        let sortiesPeriod = 0;
-        let lastBeforeRestant = initial;
-        for (const date of dates) {
-          const stockInitialDay = cumul;
-          const { entrees, sorties } = byDate[date];
-          cumul = stockInitialDay + entrees - sorties;
-          if (matchDate(date)) {
-            if (stockInitialPeriod === null) stockInitialPeriod = stockInitialDay;
-            entreesPeriod += entrees;
-            sortiesPeriod += sorties;
-            stockRestantPeriod = cumul;
-          } else if (isBefore(date)) {
-            lastBeforeRestant = cumul;
-          }
-        }
-        if (stockInitialPeriod === null) {
-          stockInitialPeriod = lastBeforeRestant;
-          stockRestantPeriod = lastBeforeRestant;
-        }
+        const r = byProductId.get(lvl.productId);
         results[lvl.productId] = {
-          stockInitial: roundStockQuantity(stockInitialPeriod),
-          entrees: roundStockQuantity(entreesPeriod),
-          sorties: roundStockQuantity(sortiesPeriod),
-          stockRestant: roundStockQuantity(stockRestantPeriod),
+          stockInitial: roundStockQuantity(Number(r?.stock_initial ?? 0)),
+          entrees: roundStockQuantity(Number(r?.entrees ?? 0)),
+          sorties: roundStockQuantity(Number(r?.sorties ?? 0)),
+          stockRestant: roundStockQuantity(Number(r?.stock_restant ?? 0)),
         };
       });
       const glaceLevel = levels.find((lvl) => lvl.productName === "GLACE" && lvl.category === "alimentaire");
