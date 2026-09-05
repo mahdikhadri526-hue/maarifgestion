@@ -1605,6 +1605,7 @@ export function WeeklyTracking() {
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-sm font-semibold border border-primary/20">
               <CalendarIcon className="h-3.5 w-3.5" />
               Semaine du {formatDateFR(weekStart)} → {addDays(weekStart, 6)}
+              {loadingRows && <span className="text-xs font-normal text-muted-foreground animate-pulse">· chargement…</span>}
             </div>
             <Button variant="outline" size="icon" className="rounded-full h-9 w-9" onClick={() => shiftWeek(1)}>
               <ChevronRight className="h-4 w-4" />
