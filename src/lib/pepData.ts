@@ -359,7 +359,7 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
     getPepTasks(),
     getPepHolidays(),
     // Le lissage peut repousser une échéance au-delà de l'horizon théorique.
-    getOccurrences(from, readTo),
+    getOccurrences(from, readTo, { withPhotos: false }),
   ]);
   const active = tasks.filter((t) => t.active);
   if (!active.length) return;
@@ -672,7 +672,7 @@ export async function getTodaySummary(): Promise<TodaySummary> {
   const today = todayISO();
   // Un retard n'est rappelé que le lendemain de l'échéance (pas les jours suivants).
   const lateLimit = addDays(today, -1);
-  const occ = await getOccurrences(lateLimit, today);
+  const occ = await getOccurrences(lateLimit, today, { withPhotos: false });
   let todo = 0,
     late = 0,
     done = 0;
