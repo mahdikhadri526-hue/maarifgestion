@@ -1992,6 +1992,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      user_pdv_ids: { Args: { _user_id: string }; Returns: string[] }
       verify_pdv_code: {
         Args: { _code: string; _pdv_id: string }
         Returns: boolean
