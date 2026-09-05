@@ -1301,6 +1301,7 @@ export function WeeklyTracking() {
         }
       }
       setRows(normalizeWeeklyRows(normalizedRows));
+      invalidateTables(["weekly_tracking"]);
       toast.success("Suivi hebdomadaire enregistré");
     } catch (e: any) {
       toast.error(e.message || "Erreur lors de l'enregistrement");
