@@ -515,13 +515,16 @@ function getInitialStockRecords(): Promise<InitialStockRecord[]> {
 export async function getMovements(): Promise<StockMovement[]> {
   const pdvId = requireCurrentPdvId();
   return cached(`movements:${pdvId}`, ["stock_movements"], async () => {
-  const data = await fetchAllRows<any>(() =>
-    supabase
-      .from("stock_movements")
-      .select(
-        "id, date, product_id, product_name, category, type, quantity, performed_by, unit_used, destination, created_at, source",
-      )
-      .order("created_at", { ascending: false }),
+  const data = await fetchAllRows<any>(
+    () =>
+      supabase
+        .from("stock_movements")
+        .select(
+          "id, date, product_id, product_name, category, type, quantity, performed_by, unit_used, destination, created_at, source",
+        )
+        .order("created_at", { ascending: false }),
+    // Historique de plusieurs milliers de lignes : pages chargées en parallèle.
+    { eagerPages: 6 },
   );
   return data.map((row: any) => ({
     id: row.id,
