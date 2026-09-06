@@ -58,22 +58,22 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
   const [performedBy, setPerformedBy] = useState("");
   const [notes, setNotes] = useState("");
 
+  // Tous les transferts de toutes les périodes (pas seulement la semaine affichée)
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("weekly_transfers")
       .select("id,fiche_type,week_start,transfer_date,direction,article,quantity,lot_number,location,performed_by,notes")
       .eq("fiche_type", ficheKey)
-      .eq("week_start", weekStart)
-      .order("transfer_date", { ascending: true })
-      .order("created_at", { ascending: true });
+      .order("transfer_date", { ascending: false })
+      .order("created_at", { ascending: false });
     setLoading(false);
     if (error) {
       console.error(error);
       return;
     }
     setRows((data ?? []) as TransferRow[]);
-  }, [ficheKey, weekStart]);
+  }, [ficheKey]);
 
   useEffect(() => {
     if (open) load();
@@ -87,6 +87,21 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
       else envoye += q;
     });
     return { recu, envoye };
+  }, [rows]);
+
+  // Totaux cumulés par article (toutes périodes confondues)
+  const byArticle = useMemo(() => {
+    const m = new Map<string, { recu: number; envoye: number; count: number }>();
+    rows.forEach((r) => {
+      const key = r.article?.trim() || "— (sans article)";
+      const cur = m.get(key) ?? { recu: 0, envoye: 0, count: 0 };
+      const q = Number(r.quantity ?? 0);
+      if (r.direction === "recu") cur.recu += q;
+      else cur.envoye += q;
+      cur.count += 1;
+      m.set(key, cur);
+    });
+    return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0], "fr"));
   }, [rows]);
 
   const reset = () => {
@@ -218,59 +233,98 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
             {saving ? "Enregistrement..." : "Ajouter le transfert"}
           </Button>
 
-          <div className="rounded-md border overflow-auto max-h-[40vh]">
+          {/* Totaux cumulés par article — toutes périodes confondues */}
+          <div className="rounded-md border overflow-auto max-h-[45vh]">
             <table className="w-full text-sm">
               <thead className="bg-muted sticky top-0">
                 <tr>
-                  <th className="p-2 text-left">Sens</th>
-                  <th className="p-2 text-left">Date</th>
                   <th className="p-2 text-left">Article</th>
-                  <th className="p-2 text-left">Qté</th>
-                  <th className="p-2 text-left">N° lot</th>
-                  <th className="p-2 text-left">Provenance / Destination</th>
-                  <th className="p-2 text-left">Effectué par</th>
-                  <th className="p-2 text-left">Remarques</th>
-                  <th className="p-2" />
+                  <th className="p-2 text-right text-success">Total reçu</th>
+                  <th className="p-2 text-right text-destructive">Total envoyé</th>
+                  <th className="p-2 text-right">Solde</th>
+                  <th className="p-2 text-right text-muted-foreground">Nb</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id} className="border-t">
-                    <td className="p-2">
-                      <span className={cn("inline-flex items-center gap-1 font-medium", r.direction === "recu" ? "text-success" : "text-destructive")}>
-                        {r.direction === "recu" ? <ArrowDownLeft className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
-                        {r.direction === "recu" ? "Reçu" : "Envoyé"}
-                      </span>
-                    </td>
-                    <td className="p-2 whitespace-nowrap">{formatDateFR(r.transfer_date)}</td>
-                    <td className="p-2">{r.article ?? "—"}</td>
-                    <td className="p-2">{r.quantity ?? "—"}</td>
-                    <td className="p-2">{r.lot_number ?? "—"}</td>
-                    <td className="p-2">{r.location ?? "—"}</td>
-                    <td className="p-2">{r.performed_by ?? "—"}</td>
-                    <td className="p-2">{r.notes ?? "—"}</td>
-                    <td className="p-2 text-right">
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(r.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </td>
+                {byArticle.map(([name, t]) => (
+                  <tr key={name} className="border-t">
+                    <td className="p-2 font-medium">{name}</td>
+                    <td className="p-2 text-right tabular-nums text-success font-semibold">{t.recu}</td>
+                    <td className="p-2 text-right tabular-nums text-destructive font-semibold">{t.envoye}</td>
+                    <td className="p-2 text-right tabular-nums font-semibold">{Math.round((t.recu - t.envoye) * 100) / 100}</td>
+                    <td className="p-2 text-right tabular-nums text-muted-foreground">{t.count}</td>
                   </tr>
                 ))}
-                {rows.length === 0 && (
+                {byArticle.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="p-4 text-center text-muted-foreground">
-                      {loading ? "Chargement..." : "Aucun transfert enregistré pour cette semaine."}
+                    <td colSpan={5} className="p-4 text-center text-muted-foreground">
+                      {loading ? "Chargement..." : "Aucun transfert enregistré."}
                     </td>
                   </tr>
                 )}
               </tbody>
+              {byArticle.length > 0 && (
+                <tfoot className="bg-muted/60 border-t font-semibold">
+                  <tr>
+                    <td className="p-2">TOTAL (toutes périodes)</td>
+                    <td className="p-2 text-right tabular-nums text-success">{totals.recu}</td>
+                    <td className="p-2 text-right tabular-nums text-destructive">{totals.envoye}</td>
+                    <td className="p-2 text-right tabular-nums">{Math.round((totals.recu - totals.envoye) * 100) / 100}</td>
+                    <td className="p-2 text-right tabular-nums text-muted-foreground">{rows.length}</td>
+                  </tr>
+                </tfoot>
+              )}
             </table>
           </div>
 
-          <div className="text-xs text-muted-foreground">
-            Total reçu : <span className="text-success font-semibold">{totals.recu}</span> · Total envoyé :{" "}
-            <span className="text-destructive font-semibold">{totals.envoye}</span>
-          </div>
+          {rows.length > 0 && (
+            <details className="rounded-md border">
+              <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground">
+                Détail des transferts ({rows.length})
+              </summary>
+              <div className="overflow-auto max-h-[40vh] border-t">
+                <table className="w-full text-xs">
+                  <thead className="bg-muted sticky top-0">
+                    <tr>
+                      <th className="p-2 text-left">Sens</th>
+                      <th className="p-2 text-left">Date</th>
+                      <th className="p-2 text-left">Article</th>
+                      <th className="p-2 text-left">Qté</th>
+                      <th className="p-2 text-left">N° lot</th>
+                      <th className="p-2 text-left">Provenance / Destination</th>
+                      <th className="p-2 text-left">Effectué par</th>
+                      <th className="p-2 text-left">Remarques</th>
+                      <th className="p-2" />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map((r) => (
+                      <tr key={r.id} className="border-t">
+                        <td className="p-2">
+                          <span className={cn("inline-flex items-center gap-1 font-medium", r.direction === "recu" ? "text-success" : "text-destructive")}>
+                            {r.direction === "recu" ? <ArrowDownLeft className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
+                            {r.direction === "recu" ? "Reçu" : "Envoyé"}
+                          </span>
+                        </td>
+                        <td className="p-2 whitespace-nowrap">{formatDateFR(r.transfer_date)}</td>
+                        <td className="p-2">{r.article ?? "—"}</td>
+                        <td className="p-2">{r.quantity ?? "—"}</td>
+                        <td className="p-2">{r.lot_number ?? "—"}</td>
+                        <td className="p-2">{r.location ?? "—"}</td>
+                        <td className="p-2">{r.performed_by ?? "—"}</td>
+                        <td className="p-2">{r.notes ?? "—"}</td>
+                        <td className="p-2 text-right">
+                          <Button variant="ghost" size="sm" onClick={() => handleDelete(r.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </details>
+          )}
         </div>
       )}
     </div>
