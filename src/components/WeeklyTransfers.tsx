@@ -58,22 +58,22 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
   const [performedBy, setPerformedBy] = useState("");
   const [notes, setNotes] = useState("");
 
+  // Tous les transferts de toutes les périodes (pas seulement la semaine affichée)
   const load = useCallback(async () => {
     setLoading(true);
     const { data, error } = await supabase
       .from("weekly_transfers")
       .select("id,fiche_type,week_start,transfer_date,direction,article,quantity,lot_number,location,performed_by,notes")
       .eq("fiche_type", ficheKey)
-      .eq("week_start", weekStart)
-      .order("transfer_date", { ascending: true })
-      .order("created_at", { ascending: true });
+      .order("transfer_date", { ascending: false })
+      .order("created_at", { ascending: false });
     setLoading(false);
     if (error) {
       console.error(error);
       return;
     }
     setRows((data ?? []) as TransferRow[]);
-  }, [ficheKey, weekStart]);
+  }, [ficheKey]);
 
   useEffect(() => {
     if (open) load();
@@ -87,6 +87,21 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
       else envoye += q;
     });
     return { recu, envoye };
+  }, [rows]);
+
+  // Totaux cumulés par article (toutes périodes confondues)
+  const byArticle = useMemo(() => {
+    const m = new Map<string, { recu: number; envoye: number; count: number }>();
+    rows.forEach((r) => {
+      const key = r.article?.trim() || "— (sans article)";
+      const cur = m.get(key) ?? { recu: 0, envoye: 0, count: 0 };
+      const q = Number(r.quantity ?? 0);
+      if (r.direction === "recu") cur.recu += q;
+      else cur.envoye += q;
+      cur.count += 1;
+      m.set(key, cur);
+    });
+    return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0], "fr"));
   }, [rows]);
 
   const reset = () => {
