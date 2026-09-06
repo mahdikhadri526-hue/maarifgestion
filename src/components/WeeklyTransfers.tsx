@@ -285,7 +285,7 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
                   </tbody>
                 </table>
               </div>
-            </details>
+            </div>
           )}
         </div>
       )}
