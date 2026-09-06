@@ -233,56 +233,18 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
             {saving ? "Enregistrement..." : "Ajouter le transfert"}
           </Button>
 
-          {/* Totaux cumulés par article — toutes périodes confondues */}
-          <div className="rounded-md border overflow-auto max-h-[45vh]">
-            <table className="w-full text-sm">
-              <thead className="bg-muted sticky top-0">
-                <tr>
-                  <th className="p-2 text-left">Article</th>
-                  <th className="p-2 text-right text-success">Total reçu</th>
-                  <th className="p-2 text-right text-destructive">Total envoyé</th>
-                  <th className="p-2 text-right">Solde</th>
-                  <th className="p-2 text-right text-muted-foreground">Nb</th>
-                </tr>
-              </thead>
-              <tbody>
-                {byArticle.map(([name, t]) => (
-                  <tr key={name} className="border-t">
-                    <td className="p-2 font-medium">{name}</td>
-                    <td className="p-2 text-right tabular-nums text-success font-semibold">{t.recu}</td>
-                    <td className="p-2 text-right tabular-nums text-destructive font-semibold">{t.envoye}</td>
-                    <td className="p-2 text-right tabular-nums font-semibold">{Math.round((t.recu - t.envoye) * 100) / 100}</td>
-                    <td className="p-2 text-right tabular-nums text-muted-foreground">{t.count}</td>
-                  </tr>
-                ))}
-                {byArticle.length === 0 && (
-                  <tr>
-                    <td colSpan={5} className="p-4 text-center text-muted-foreground">
-                      {loading ? "Chargement..." : "Aucun transfert enregistré."}
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-              {byArticle.length > 0 && (
-                <tfoot className="bg-muted/60 border-t font-semibold">
-                  <tr>
-                    <td className="p-2">TOTAL (toutes périodes)</td>
-                    <td className="p-2 text-right tabular-nums text-success">{totals.recu}</td>
-                    <td className="p-2 text-right tabular-nums text-destructive">{totals.envoye}</td>
-                    <td className="p-2 text-right tabular-nums">{Math.round((totals.recu - totals.envoye) * 100) / 100}</td>
-                    <td className="p-2 text-right tabular-nums text-muted-foreground">{rows.length}</td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
-
+          {/* Détail des transferts — toutes périodes confondues */}
+          {rows.length === 0 && (
+            <div className="rounded-md border p-4 text-center text-sm text-muted-foreground">
+              {loading ? "Chargement..." : "Aucun transfert enregistré."}
+            </div>
+          )}
           {rows.length > 0 && (
-            <details className="rounded-md border">
-              <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-muted-foreground">
-                Détail des transferts ({rows.length})
-              </summary>
-              <div className="overflow-auto max-h-[40vh] border-t">
+            <div className="rounded-md border">
+              <div className="px-3 py-2 text-xs font-medium text-muted-foreground">
+                Détail des transferts ({rows.length}) — toutes périodes
+              </div>
+              <div className="overflow-auto max-h-[50vh] border-t">
                 <table className="w-full text-xs">
                   <thead className="bg-muted sticky top-0">
                     <tr>
@@ -323,7 +285,7 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
                   </tbody>
                 </table>
               </div>
-            </details>
+            </div>
           )}
         </div>
       )}
