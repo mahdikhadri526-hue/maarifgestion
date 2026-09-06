@@ -268,8 +268,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signOut = async () => {
+    localStorage.removeItem(LAST_ACTIVITY_KEY);
     await supabase.auth.signOut();
   };
+
+  // Déconnexion automatique après 5 minutes d'inactivité (tous les comptes).
+  useEffect(() => {
+    if (!user) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let done = false;
+
+    const logout = () => {
+      if (done) return;
+      done = true;
+      localStorage.removeItem(LAST_ACTIVITY_KEY);
+      supabase.auth.signOut().finally(() => {
+        if (window.location.pathname !== "/") window.location.replace("/");
+      });
+    };
+
+    const arm = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(logout, IDLE_TIMEOUT_MS);
+    };
+
+    const touch = () => {
+      if (done) return;
+      localStorage.setItem(LAST_ACTIVITY_KEY, String(Date.now()));
+      arm();
+    };
+
+    // Vérifie l'inactivité réelle (onglet en arrière-plan, appareil en veille,
+    // rechargement de la page) à partir de l'horodatage persistant.
+    const check = () => {
+      const last = Number(localStorage.getItem(LAST_ACTIVITY_KEY) || 0);
+      if (last && Date.now() - last >= IDLE_TIMEOUT_MS) logout();
+      else if (!last) touch();
+      else arm();
+    };
+
+    const events: (keyof WindowEventMap)[] = [
+      "mousemove",
+      "mousedown",
+      "keydown",
+      "touchstart",
+      "scroll",
+      "wheel",
+      "pointerdown",
+    ];
+    events.forEach((e) => window.addEventListener(e, touch, { passive: true }));
+    const onVisible = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", check);
+    const interval = setInterval(check, 30_000);
+
+    check();
+
+    return () => {
+      if (timer) clearTimeout(timer);
+      clearInterval(interval);
+      events.forEach((e) => window.removeEventListener(e, touch));
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", check);
+    };
+  }, [user?.id]);
 
   const refresh = async () => {
     if (user) await loadRoleAndPerms(user.id);
