@@ -68,6 +68,8 @@ export const ALL_PERMISSIONS = [
   { key: "manage_pep", label: "Gestion Agenda PEP (tâches, fréquences, jours fériés)" },
   { key: "view_tech", label: "Voir le Suivi Technique" },
   { key: "manage_tech", label: "Suivi Technique — responsable technique (prise en charge, statuts, deadline)" },
+  { key: "view_attendance", label: "Voir le pointage (reconnaissance faciale)" },
+  { key: "manage_attendance", label: "Gérer le pointage (enrôler les agents, corriger les pointages)" },
 ] as const;
 
 export type PermissionKey = (typeof ALL_PERMISSIONS)[number]["key"];

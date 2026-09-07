@@ -42,6 +42,7 @@ const PERMISSION_GROUPS: { title: string; keys: string[] }[] = [
   { title: "Recettes", keys: ["view_recipes", "edit_recipes"] },
   { title: "Agenda PEP", keys: ["view_pep", "manage_pep"] },
   { title: "Suivi Technique", keys: ["view_tech", "manage_tech"] },
+  { title: "Pointage (reconnaissance faciale)", keys: ["view_attendance", "manage_attendance"] },
   { title: "Administration", keys: ["manage_roster"] },
 ];
 
