@@ -1667,6 +1667,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 {showRefCols && (
                   <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Réf.</th>
                 )}
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total</th>
+
               </tr>
             </thead>
             <tbody>
