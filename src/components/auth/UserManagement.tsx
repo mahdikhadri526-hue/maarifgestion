@@ -268,6 +268,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   };
 
   const setGroupPerms = async (userId: string, keys: string[], enable: boolean) => {
+    if (!(await ensureSession())) return;
     const { data, error } = enable
       ? await supabase.from("user_permissions").upsert(
           keys.map((k) => ({ user_id: userId, permission_key: k, allowed: true })),
