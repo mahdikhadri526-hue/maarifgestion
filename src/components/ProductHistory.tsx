@@ -108,6 +108,7 @@ function AllProductsSummary({
   const { data: initialStocks } = useInitialStocks();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const { map: mepMap, save: saveMep } = useMiseEnPlace();
 
   useEffect(() => {
     let cancelled = false;
