@@ -184,15 +184,19 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       if (current) next.delete(key); else next.add(key);
       return { ...prev, [userId]: next };
     });
-    const { error } = current
-      ? await supabase.from("user_permissions").delete().eq("user_id", userId).eq("permission_key", key)
+    const { data, error } = current
+      ? await supabase.from("user_permissions").delete().eq("user_id", userId).eq("permission_key", key).select()
       : await supabase.from("user_permissions").upsert(
           { user_id: userId, permission_key: key, allowed: true },
           { onConflict: "user_id,permission_key" },
-        );
+        ).select();
     if (error) toast.error("Erreur : " + error.message);
+    else if (!data || data.length === 0) {
+      toast.error("Modification refusée : votre compte n'a pas le droit de changer les permissions de cet utilisateur.");
+    }
     load();
   };
+
 
   const createUser = async () => {
     if (!newEmail.trim() || newPassword.length < 6) {
