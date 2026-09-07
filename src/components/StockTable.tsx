@@ -1804,9 +1804,19 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       })()}
                     </td>
                   )}
+                  <td className="p-3 text-right">
+                    <MiseEnPlaceInput
+                      value={mepMap[level.productId] ?? 0}
+                      onSave={(val) => saveMep(level.productId, val)}
+                    />
+                  </td>
+                  <td className="p-3 text-right font-mono text-sm font-bold text-primary">
+                    {roundStockQuantity((Number(v.stockRestant) || 0) + (mepMap[level.productId] ?? 0))}
+                  </td>
                 </tr>
                 );
               })}
+
             </tbody>
           </table>
           {filtered.length === 0 && (
