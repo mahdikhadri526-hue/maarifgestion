@@ -1,4 +1,5 @@
 import { useState, useEffect, useDeferredValue, useMemo } from "react";
+import { useMiseEnPlace, MiseEnPlaceInput } from "@/components/MiseEnPlaceCell";
 import {
   Category,
   UnitType,
@@ -342,6 +343,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   // Le stock restant courant est la vue principale : elle utilise directement
   // les agrégats rapides. Les commandes conservent leur filtre mensuel.
+  const { map: mepMap, save: saveMep } = useMiseEnPlace();
   const [mode, setMode] = useState<FilterMode>(variant === "stock" ? "all" : "month");
   const [day, setDay] = useState<string>(todayISO());
   const [month, setMonth] = useState<string>(currentMonthISO());
@@ -1667,6 +1669,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 {showRefCols && (
                   <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Réf.</th>
                 )}
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total</th>
+
               </tr>
             </thead>
             <tbody>
@@ -1801,9 +1806,19 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       })()}
                     </td>
                   )}
+                  <td className="p-3 text-right">
+                    <MiseEnPlaceInput
+                      value={mepMap[level.productId] ?? 0}
+                      onSave={(val) => saveMep(level.productId, val)}
+                    />
+                  </td>
+                  <td className="p-3 text-right font-mono text-sm font-bold text-primary">
+                    {roundStockQuantity((Number(v.stockRestant) || 0) + (mepMap[level.productId] ?? 0))}
+                  </td>
                 </tr>
                 );
               })}
+
             </tbody>
           </table>
           {filtered.length === 0 && (
