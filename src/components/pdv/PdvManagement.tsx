@@ -97,21 +97,25 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
       toast.error("Session expirée — reconnectez-vous pour modifier les permissions.");
       return;
     }
-    if (current) {
-      const { error } = await supabase.from("pdv_permissions" as any).delete().eq("pdv_id", id).eq("permission_key", key);
-      if (error) { toast.error("Erreur : " + error.message); return; }
-    } else {
-      const { data, error } = await supabase.from("pdv_permissions" as any).upsert(
-        { pdv_id: id, permission_key: key, allowed: true },
-        { onConflict: "pdv_id,permission_key" },
-      ).select();
-      if (error) { toast.error("Erreur : " + error.message); return; }
-      if (!data || data.length === 0) {
-        toast.error("Modification refusée : votre compte n'a pas le droit de modifier ce point de vente.");
-        return;
-      }
+    const next = !current;
+    const { data, error } = await supabase.from("pdv_permissions" as any).upsert(
+      { pdv_id: id, permission_key: key, allowed: next },
+      { onConflict: "pdv_id,permission_key" },
+    ).select("pdv_id, permission_key, allowed");
+    if (error) { toast.error("Erreur : " + error.message); return; }
+    if (!data || data.length === 0) {
+      toast.error("Modification refusée : votre compte n'a pas le droit de modifier ce point de vente.");
+      return;
     }
-    loadRights();
+    setPdvPerms((previous) => {
+      const updated = { ...previous };
+      const permissionsForPdv = new Set(updated[id] ?? []);
+      if (next) permissionsForPdv.add(key);
+      else permissionsForPdv.delete(key);
+      updated[id] = permissionsForPdv;
+      return updated;
+    });
+    toast.success(next ? "Permission activée" : "Permission désactivée");
   };
 
 
