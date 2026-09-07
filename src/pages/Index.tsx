@@ -25,7 +25,7 @@ import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, Cl
 import { PepTodayCard } from "@/components/pep/PepTodayCard";
 import { TechAlertsCard } from "@/components/tech/TechAlertsCard";
 import { ManagerVerifyAlert } from "@/components/tech/ManagerVerifyAlert";
-import { isTechEnabled } from "@/lib/techFeature";
+import { isTechEnabled, isPreviewHost } from "@/lib/techFeature";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
@@ -67,7 +67,10 @@ const Index = () => {
     { id: "tech" as Tab, label: "Suivi Technique", icon: Wrench, perm: "view_tech" },
     { id: "pointage" as Tab, label: "Pointage", icon: ScanFace, perm: "view_attendance" },
   ];
-  const tabs = allTabs.filter((t) => can(t.perm) && (t.id !== "tech" || TECH_ENABLED));
+  const ATTENDANCE_ENABLED = isPreviewHost();
+  const tabs = allTabs.filter(
+    (t) => can(t.perm) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED)
+  );
 
   // Ensure current tab is allowed
   if (tabs.length > 0 && !tabs.some((t) => t.id === tab)) {
