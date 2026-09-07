@@ -177,7 +177,20 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
     load();
   };
 
+  // Vérifie que la session est toujours valide avant toute écriture :
+  // après la déconnexion automatique, les écritures échouaient en silence
+  // et la case revenait à son état précédent.
+  const ensureSession = async () => {
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      toast.error("Session expirée — reconnectez-vous pour modifier les permissions.");
+      return false;
+    }
+    return true;
+  };
+
   const togglePerm = async (userId: string, key: string, current: boolean) => {
+    if (!(await ensureSession())) return;
     // Mise à jour optimiste pour un retour visuel immédiat
     setPerms((prev) => {
       const next = new Set(prev[userId] ?? []);
@@ -196,6 +209,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
     }
     load();
   };
+
 
 
   const createUser = async () => {
@@ -254,6 +268,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   };
 
   const setGroupPerms = async (userId: string, keys: string[], enable: boolean) => {
+    if (!(await ensureSession())) return;
     const { data, error } = enable
       ? await supabase.from("user_permissions").upsert(
           keys.map((k) => ({ user_id: userId, permission_key: k, allowed: true })),

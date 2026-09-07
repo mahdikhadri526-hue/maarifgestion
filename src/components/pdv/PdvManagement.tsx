@@ -92,18 +92,28 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
 
   const togglePdvPerm = async (id: string, key: string, current: boolean) => {
     if (!canTogglePerm(key)) return;
+    const { data: sess } = await supabase.auth.getSession();
+    if (!sess.session) {
+      toast.error("Session expirée — reconnectez-vous pour modifier les permissions.");
+      return;
+    }
     if (current) {
       const { error } = await supabase.from("pdv_permissions" as any).delete().eq("pdv_id", id).eq("permission_key", key);
       if (error) { toast.error("Erreur : " + error.message); return; }
     } else {
-      const { error } = await supabase.from("pdv_permissions" as any).upsert(
+      const { data, error } = await supabase.from("pdv_permissions" as any).upsert(
         { pdv_id: id, permission_key: key, allowed: true },
         { onConflict: "pdv_id,permission_key" },
-      );
+      ).select();
       if (error) { toast.error("Erreur : " + error.message); return; }
+      if (!data || data.length === 0) {
+        toast.error("Modification refusée : votre compte n'a pas le droit de modifier ce point de vente.");
+        return;
+      }
     }
     loadRights();
   };
+
 
   const addPdv = async () => {
     if (!code.trim() || !name.trim()) {
