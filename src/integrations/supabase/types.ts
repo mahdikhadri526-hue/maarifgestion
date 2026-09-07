@@ -14,6 +14,113 @@ export type Database = {
   }
   public: {
     Tables: {
+      attendance_agents: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          descriptors: Json
+          full_name: string
+          id: string
+          notes: string | null
+          pdv_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          descriptors?: Json
+          full_name: string
+          id?: string
+          notes?: string | null
+          pdv_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          descriptors?: Json
+          full_name?: string
+          id?: string
+          notes?: string | null
+          pdv_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_agents_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attendance_punches: {
+        Row: {
+          agent_id: string | null
+          agent_name: string
+          created_at: string
+          created_by: string | null
+          device_label: string | null
+          id: string
+          match_score: number | null
+          method: string
+          pdv_id: string
+          punch_date: string
+          punch_type: string
+          punched_at: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          agent_name: string
+          created_at?: string
+          created_by?: string | null
+          device_label?: string | null
+          id?: string
+          match_score?: number | null
+          method?: string
+          pdv_id: string
+          punch_date?: string
+          punch_type: string
+          punched_at?: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          agent_name?: string
+          created_at?: string
+          created_by?: string | null
+          device_label?: string | null
+          id?: string
+          match_score?: number | null
+          method?: string
+          pdv_id?: string
+          punch_date?: string
+          punch_type?: string
+          punched_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_punches_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_punches_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       autocontrols: {
         Row: {
           article: string
