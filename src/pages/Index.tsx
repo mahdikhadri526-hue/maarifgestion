@@ -67,7 +67,10 @@ const Index = () => {
     { id: "tech" as Tab, label: "Suivi Technique", icon: Wrench, perm: "view_tech" },
     { id: "pointage" as Tab, label: "Pointage", icon: ScanFace, perm: "view_attendance" },
   ];
-  const tabs = allTabs.filter((t) => can(t.perm) && (t.id !== "tech" || TECH_ENABLED));
+  const ATTENDANCE_ENABLED = isPreviewHost();
+  const tabs = allTabs.filter(
+    (t) => can(t.perm) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED)
+  );
 
   // Ensure current tab is allowed
   if (tabs.length > 0 && !tabs.some((t) => t.id === tab)) {
