@@ -254,15 +254,19 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   };
 
   const setGroupPerms = async (userId: string, keys: string[], enable: boolean) => {
-    const { error } = enable
+    const { data, error } = enable
       ? await supabase.from("user_permissions").upsert(
           keys.map((k) => ({ user_id: userId, permission_key: k, allowed: true })),
           { onConflict: "user_id,permission_key" },
-        )
-      : await supabase.from("user_permissions").delete().eq("user_id", userId).in("permission_key", keys);
+        ).select()
+      : await supabase.from("user_permissions").delete().eq("user_id", userId).in("permission_key", keys).select();
     if (error) toast.error("Erreur : " + error.message);
+    else if (enable && (!data || data.length === 0)) {
+      toast.error("Modification refusée : votre compte n'a pas le droit de changer les permissions de cet utilisateur.");
+    }
     load();
   };
+
 
   const permLabel = (key: string) =>
     ALL_PERMISSIONS.find((p) => p.key === key)?.label ?? key;
