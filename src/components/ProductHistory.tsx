@@ -254,18 +254,26 @@ function SingleProductHistory({
     }
   }
   const quantiteUtilisee = totals.sorties;
+  const mep = mepMap[productId] ?? 0;
+  const stockTotal = (Number(stockRestantFinal) || 0) + mep;
 
   return (
     <div>
       {productId && (
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 bg-muted/30 border-b text-xs">
+        <div className="grid grid-cols-2 sm:grid-cols-7 gap-2 p-3 bg-muted/30 border-b text-xs">
           <div><div className="text-muted-foreground">Stock Initial</div><div className="font-mono font-semibold text-primary">{stockInitialPeriode}</div></div>
           <div><div className="text-muted-foreground">Entrées</div><div className="font-mono font-semibold text-success">{totals.entrees}</div></div>
           <div><div className="text-muted-foreground">Sorties</div><div className="font-mono font-semibold text-destructive">{totals.sorties}</div></div>
           <div><div className="text-muted-foreground">Quantité utilisée</div><div className="font-mono font-semibold text-warning">{quantiteUtilisee}</div></div>
           <div><div className="text-muted-foreground">Stock Restant</div><div className={`font-mono font-semibold ${stockRestantFinal < 0 ? "text-destructive" : ""}`}>{stockRestantFinal}</div></div>
+          <div>
+            <div className="text-muted-foreground">Stock mise en place</div>
+            <MiseEnPlaceInput value={mep} onSave={(v) => saveMep(productId, v)} />
+          </div>
+          <div><div className="text-muted-foreground">Stock total</div><div className={`font-mono font-bold ${stockTotal < 0 ? "text-destructive" : "text-primary"}`}>{stockTotal}</div></div>
         </div>
       )}
+
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
