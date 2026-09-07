@@ -25,7 +25,7 @@ import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, Cl
 import { PepTodayCard } from "@/components/pep/PepTodayCard";
 import { TechAlertsCard } from "@/components/tech/TechAlertsCard";
 import { ManagerVerifyAlert } from "@/components/tech/ManagerVerifyAlert";
-import { isTechEnabled } from "@/lib/techFeature";
+import { isTechEnabled, isPreviewHost } from "@/lib/techFeature";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
