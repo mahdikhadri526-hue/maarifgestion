@@ -1039,6 +1039,7 @@ export function AutocontrolManager() {
 
   return (
     <div className="space-y-6">
+      <ClaimsReturns />
       {/* Form */}
       <div className="bg-card rounded-xl border p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
