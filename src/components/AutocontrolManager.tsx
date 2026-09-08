@@ -27,6 +27,7 @@ import {
 import { ClipboardCheck, Trash2, Plus, FileCheck, Printer, FileDown, Eye } from "lucide-react";
 import { OPERATORS } from "@/lib/operators";
 import { useOperators, useManagers } from "@/lib/roster";
+import { ClaimsReturns } from "@/components/ClaimsReturns";
 import { getProducts } from "@/lib/stockData";
 import {
   Dialog,
@@ -1039,6 +1040,7 @@ export function AutocontrolManager() {
 
   return (
     <div className="space-y-6">
+      <ClaimsReturns />
       {/* Form */}
       <div className="bg-card rounded-xl border p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-4">

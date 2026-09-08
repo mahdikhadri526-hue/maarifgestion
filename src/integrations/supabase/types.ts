@@ -180,6 +180,65 @@ export type Database = {
           },
         ]
       }
+      claims_returns: {
+        Row: {
+          action_corrective: string | null
+          claim_type: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          entry_date: string
+          entry_time: string | null
+          id: string
+          kind: string
+          manager: string | null
+          origine: string | null
+          pdv_id: string
+          produit: string | null
+          updated_at: string
+        }
+        Insert: {
+          action_corrective?: string | null
+          claim_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_date: string
+          entry_time?: string | null
+          id?: string
+          kind: string
+          manager?: string | null
+          origine?: string | null
+          pdv_id: string
+          produit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action_corrective?: string | null
+          claim_type?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          entry_date?: string
+          entry_time?: string | null
+          id?: string
+          kind?: string
+          manager?: string | null
+          origine?: string | null
+          pdv_id?: string
+          produit?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_returns_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cleaning_logs: {
         Row: {
           collaborateur: string
