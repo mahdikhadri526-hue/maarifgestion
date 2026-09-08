@@ -432,6 +432,7 @@ export function AutocontrolManager() {
   const [exportingMonth, setExportingMonth] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
+  const [showClaims, setShowClaims] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { can } = useAuth();
   const operatorOptions = useOperators();
