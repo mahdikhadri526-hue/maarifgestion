@@ -50,6 +50,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 
+const CLAIMS_FICHE = "Réclamations & Retours";
+
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Oranges/Bigarreaux confits": "Orange confit",
   "Décoration": "",
@@ -430,6 +432,7 @@ export function AutocontrolManager() {
   const [exportingMonth, setExportingMonth] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
+  const [showClaims, setShowClaims] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { can } = useAuth();
   const operatorOptions = useOperators();
@@ -1040,43 +1043,50 @@ export function AutocontrolManager() {
 
   return (
     <div className="space-y-6">
-      <ClaimsReturns />
       {/* Form */}
       <div className="bg-card rounded-xl border p-5 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <ClipboardCheck className="h-5 w-5 text-primary" />
           <h2 className="text-lg font-semibold">Nouvelle fiche d'autocontrôle</h2>
         </div>
+        <div className="mb-3">
+          <label className="text-xs font-medium text-muted-foreground">Type de fiche *</label>
+          <Select
+            value={showClaims ? CLAIMS_FICHE : form.ficheType}
+            onValueChange={(v) => {
+              if (v === CLAIMS_FICHE) {
+                setShowClaims(true);
+                return;
+              }
+              setShowClaims(false);
+              const newType = v as FicheType;
+              setForm((f) => ({
+                ...f,
+                ficheType: newType,
+                article: DEFAULT_ARTICLE_BY_FICHE[newType] ?? f.article,
+                extraData:
+                  newType === "Cornet/Tulipe/Gaufrette"
+                    ? initialCtgExtra()
+                    : newType === "Décoration"
+                    ? initialDecorationExtra()
+                    : newType === "Panaché"
+                    ? initialPanacheExtra()
+                    : null,
+              }));
+            }}
+          >
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {FICHE_TYPES.map((t) => (
+                <SelectItem key={t} value={t}>{t}</SelectItem>
+              ))}
+              <SelectItem value={CLAIMS_FICHE}>{CLAIMS_FICHE}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {!showClaims && (
         <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="sm:col-span-2">
-            <label className="text-xs font-medium text-muted-foreground">Type de fiche *</label>
-            <Select
-              value={form.ficheType}
-              onValueChange={(v) => {
-                const newType = v as FicheType;
-                setForm((f) => ({
-                  ...f,
-                  ficheType: newType,
-                  article: DEFAULT_ARTICLE_BY_FICHE[newType] ?? f.article,
-                  extraData:
-                    newType === "Cornet/Tulipe/Gaufrette"
-                      ? initialCtgExtra()
-                      : newType === "Décoration"
-                      ? initialDecorationExtra()
-                      : newType === "Panaché"
-                      ? initialPanacheExtra()
-                      : null,
-                }));
-              }}
-            >
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {FICHE_TYPES.map((t) => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+
           <div>
             <label className="text-xs font-medium text-muted-foreground">Date *</label>
             <Input
@@ -1628,7 +1638,10 @@ export function AutocontrolManager() {
             </Button>
           </div>
         </form>
+        )}
+        {showClaims && <ClaimsReturns />}
       </div>
+
 
       {/* List */}
       <div className="bg-card rounded-xl border p-5 shadow-sm">
