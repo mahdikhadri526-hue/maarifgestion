@@ -50,6 +50,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 
+const CLAIMS_FICHE = "Réclamations & Retours";
+
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Oranges/Bigarreaux confits": "Orange confit",
   "Décoration": "",
