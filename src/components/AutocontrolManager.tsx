@@ -27,6 +27,7 @@ import {
 import { ClipboardCheck, Trash2, Plus, FileCheck, Printer, FileDown, Eye } from "lucide-react";
 import { OPERATORS } from "@/lib/operators";
 import { useOperators, useManagers } from "@/lib/roster";
+import { ClaimsReturns } from "@/components/ClaimsReturns";
 import { getProducts } from "@/lib/stockData";
 import {
   Dialog,
