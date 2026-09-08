@@ -1628,7 +1628,10 @@ export function AutocontrolManager() {
             </Button>
           </div>
         </form>
+        )}
+        {showClaims && <ClaimsReturns />}
       </div>
+
 
       {/* List */}
       <div className="bg-card rounded-xl border p-5 shadow-sm">
