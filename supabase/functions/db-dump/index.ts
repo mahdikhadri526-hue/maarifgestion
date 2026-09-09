@@ -65,6 +65,8 @@ Deno.serve(async (req) => {
           from += size;
         }
       }
+      const { data: authSql } = await supabase.rpc("export_auth_sql");
+      if (authSql) w("\n-- comptes utilisateurs\n" + authSql + "\n");
       w("\nSET session_replication_role = DEFAULT;\n");
       controller.close();
     },
