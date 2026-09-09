@@ -2128,6 +2128,7 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
+      export_auth_sql: { Args: never; Returns: string }
       has_permission: {
         Args: { _permission_key: string; _user_id: string }
         Returns: boolean
