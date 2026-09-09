@@ -31,7 +31,7 @@ function lit(v: unknown): string {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   const token = req.headers.get("x-dump-token");
-  if (token !== Deno.env.get("DB_DUMP_TOKEN")) {
+  if (token !== Deno.env.get("DB_DUMP_KEY")) {
     return new Response("forbidden", { status: 403, headers: corsHeaders });
   }
   const supabase = createClient(
