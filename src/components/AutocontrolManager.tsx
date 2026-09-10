@@ -1912,6 +1912,13 @@ export function AutocontrolManager() {
                 ))}
               </tbody>
             </table>
+            {visible.length < filtered.length && (
+              <div className="flex justify-center p-3">
+                <Button type="button" variant="outline" size="sm" onClick={() => setVisibleCount((c) => c + 30)}>
+                  Afficher plus ({filtered.length - visible.length} restantes)
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
