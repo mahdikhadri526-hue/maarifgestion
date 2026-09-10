@@ -1033,15 +1033,22 @@ export function AutocontrolManager() {
     }
   };
 
-  const pendingEntries = entries.filter((e) => !e.visaManager || !e.visaManager.trim());
-  const filtered =
-    filterType === "__all__"
-      ? entries
-      : filterType === "__pending__"
-      ? pendingEntries
-      : filterType === "__validated__"
-      ? entries.filter((e) => !!e.visaManager && !!e.visaManager.trim())
-      : entries.filter((e) => e.ficheType === filterType);
+  const pendingEntries = useMemo(
+    () => entries.filter((e) => !e.visaManager || !e.visaManager.trim()),
+    [entries],
+  );
+  const filtered = useMemo(
+    () =>
+      filterType === "__all__"
+        ? entries
+        : filterType === "__pending__"
+        ? pendingEntries
+        : filterType === "__validated__"
+        ? entries.filter((e) => !!e.visaManager && !!e.visaManager.trim())
+        : entries.filter((e) => e.ficheType === filterType),
+    [entries, pendingEntries, filterType],
+  );
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
   return (
     <div className="space-y-6">
