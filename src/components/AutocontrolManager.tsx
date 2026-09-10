@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, lazy, Suspense } from "react";
 import { z } from "zod";
 import { supabase } from "@/lib/db";
 import {
@@ -27,7 +27,9 @@ import {
 import { ClipboardCheck, Trash2, Plus, FileCheck, Printer, FileDown, Eye } from "lucide-react";
 import { OPERATORS } from "@/lib/operators";
 import { useOperators, useManagers } from "@/lib/roster";
-import { ClaimsReturns } from "@/components/ClaimsReturns";
+const ClaimsReturns = lazy(() =>
+  import("@/components/ClaimsReturns").then((m) => ({ default: m.ClaimsReturns })),
+);
 import { getProducts } from "@/lib/stockData";
 import {
   Dialog,
@@ -428,6 +430,7 @@ export function AutocontrolManager() {
   const [entries, setEntries] = useState<AutocontrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>("__all__");
+  const [visibleCount, setVisibleCount] = useState(30);
   const [exportMonth, setExportMonth] = useState<string>(() => new Date().toISOString().slice(0, 7));
   const [exportingMonth, setExportingMonth] = useState(false);
   const [form, setForm] = useState(initialForm);
@@ -1031,15 +1034,25 @@ export function AutocontrolManager() {
     }
   };
 
-  const pendingEntries = entries.filter((e) => !e.visaManager || !e.visaManager.trim());
-  const filtered =
-    filterType === "__all__"
-      ? entries
-      : filterType === "__pending__"
-      ? pendingEntries
-      : filterType === "__validated__"
-      ? entries.filter((e) => !!e.visaManager && !!e.visaManager.trim())
-      : entries.filter((e) => e.ficheType === filterType);
+  const pendingEntries = useMemo(
+    () => entries.filter((e) => !e.visaManager || !e.visaManager.trim()),
+    [entries],
+  );
+  const filtered = useMemo(
+    () =>
+      filterType === "__all__"
+        ? entries
+        : filterType === "__pending__"
+        ? pendingEntries
+        : filterType === "__validated__"
+        ? entries.filter((e) => !!e.visaManager && !!e.visaManager.trim())
+        : entries.filter((e) => e.ficheType === filterType),
+    [entries, pendingEntries, filterType],
+  );
+  const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  useEffect(() => {
+    setVisibleCount(30);
+  }, [filterType]);
 
   return (
     <div className="space-y-6">
@@ -1639,7 +1652,11 @@ export function AutocontrolManager() {
           </div>
         </form>
         )}
-        {showClaims && <ClaimsReturns />}
+        {showClaims && (
+          <Suspense fallback={<p className="text-sm text-muted-foreground">Chargement…</p>}>
+            <ClaimsReturns />
+          </Suspense>
+        )}
       </div>
 
 
@@ -1704,7 +1721,7 @@ export function AutocontrolManager() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((e, idx) => (
+                {visible.map((e, idx) => (
                   <tr
                     key={e.id}
                     className={cn(
@@ -1898,6 +1915,13 @@ export function AutocontrolManager() {
                 ))}
               </tbody>
             </table>
+            {visible.length < filtered.length && (
+              <div className="flex justify-center p-3">
+                <Button type="button" variant="outline" size="sm" onClick={() => setVisibleCount((c) => c + 30)}>
+                  Afficher plus ({filtered.length - visible.length} restantes)
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
