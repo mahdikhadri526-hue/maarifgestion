@@ -430,6 +430,7 @@ export function AutocontrolManager() {
   const [entries, setEntries] = useState<AutocontrolEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>("__all__");
+  const [visibleCount, setVisibleCount] = useState(30);
   const [exportMonth, setExportMonth] = useState<string>(() => new Date().toISOString().slice(0, 7));
   const [exportingMonth, setExportingMonth] = useState(false);
   const [form, setForm] = useState(initialForm);
