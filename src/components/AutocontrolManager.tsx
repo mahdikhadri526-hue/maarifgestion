@@ -1050,6 +1050,9 @@ export function AutocontrolManager() {
     [entries, pendingEntries, filterType],
   );
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  useEffect(() => {
+    setVisibleCount(30);
+  }, [filterType]);
 
   return (
     <div className="space-y-6">
