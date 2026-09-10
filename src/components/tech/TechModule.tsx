@@ -350,6 +350,9 @@ function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose
   const bothValidated = !!issue.tech_validated_at && !!issue.manager_validated_at;
 
   const save = async () => {
+    if ((status === "en_cours" || status === "repare") && !assigned.trim()) {
+      return toast({ title: "Nom de l'intervenant obligatoire", description: "Indiquez qui prend en charge l'intervention.", variant: "destructive" });
+    }
     if ((status === "en_cours" || status === "repare") && !deadline) {
       return toast({ title: "Deadline obligatoire pour l'intervention", variant: "destructive" });
     }
@@ -394,7 +397,11 @@ function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose
               {TECH_PRIORITIES.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </div>
-          <div><Label className="text-xs">Responsable technique</Label><Input value={assigned} onChange={(e) => setAssigned(e.target.value)} placeholder="Nom du technicien / prestataire" /></div>
+          <div>
+            <Label className="text-xs">Intervenant (nom) {(status === "en_cours" || status === "repare") && <span className="text-destructive">*</span>}</Label>
+            <Input value={assigned} onChange={(e) => setAssigned(e.target.value)} placeholder="Nom du technicien / prestataire" />
+            <p className="text-[11px] text-muted-foreground mt-1">Obligatoire dès la prise en charge de l'intervention.</p>
+          </div>
           <div><Label className="text-xs">Deadline de l'intervention</Label><Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} /></div>
           <div><Label className="text-xs">Notes de suivi</Label><Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
         </div>
