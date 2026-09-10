@@ -439,7 +439,6 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
   const save = async () => {
     if (!name.trim()) return toast({ title: "Nom du responsable technique obligatoire", variant: "destructive" });
     if (!action.trim()) return toast({ title: "Action réalisée obligatoire", variant: "destructive" });
-    if (photos.length === 0) return toast({ title: "Photo après réparation obligatoire", variant: "destructive" });
     if (date.slice(0, 10) > today) return toast({ title: "La date de réparation ne peut pas être future", variant: "destructive" });
     setSaving(true);
     try {
