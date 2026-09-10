@@ -1718,7 +1718,7 @@ export function AutocontrolManager() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((e, idx) => (
+                {visible.map((e, idx) => (
                   <tr
                     key={e.id}
                     className={cn(
