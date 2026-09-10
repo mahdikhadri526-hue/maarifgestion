@@ -27,7 +27,9 @@ import {
 import { ClipboardCheck, Trash2, Plus, FileCheck, Printer, FileDown, Eye } from "lucide-react";
 import { OPERATORS } from "@/lib/operators";
 import { useOperators, useManagers } from "@/lib/roster";
-import { ClaimsReturns } from "@/components/ClaimsReturns";
+const ClaimsReturns = lazy(() =>
+  import("@/components/ClaimsReturns").then((m) => ({ default: m.ClaimsReturns })),
+);
 import { getProducts } from "@/lib/stockData";
 import {
   Dialog,
