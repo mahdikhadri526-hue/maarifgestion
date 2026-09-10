@@ -1649,7 +1649,11 @@ export function AutocontrolManager() {
           </div>
         </form>
         )}
-        {showClaims && <ClaimsReturns />}
+        {showClaims && (
+          <Suspense fallback={<p className="text-sm text-muted-foreground">Chargement…</p>}>
+            <ClaimsReturns />
+          </Suspense>
+        )}
       </div>
 
 
