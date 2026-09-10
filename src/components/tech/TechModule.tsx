@@ -306,8 +306,10 @@ export function TechModule() {
                   <div className="flex flex-col gap-1">
                     {canManage && i.status === "a_traiter" && <Button size="sm" onClick={() => setEditing({ ...i, status: "en_cours" })}>Prendre en charge</Button>}
                     {canManage && i.status === "en_cours" && <Button size="sm" onClick={() => setRepairing(i)}>Valider la réparation</Button>}
-                    
-                    {canManage && <Button size="sm" variant="outline" onClick={() => setEditing(i)}>Suivi</Button>}
+
+                    {/* Le bouton « Suivi » est masqué : la saisie se fait via
+                        « Prendre en charge », « Valider la réparation » et les
+                        validations du manager. */}
                     <Button size="sm" variant="ghost" onClick={() => setHistoryOf(i)}><History className="h-4 w-4 mr-1" />Historique</Button>
                     {canManage && (
                       <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => {
