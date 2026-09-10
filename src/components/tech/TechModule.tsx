@@ -471,7 +471,7 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
           <div><Label className="text-xs">Action réalisée *</Label><Textarea rows={3} value={action} onChange={(e) => setAction(e.target.value)} placeholder="Ex : remplacement du thermostat, recharge gaz…" /></div>
           <div><Label className="text-xs">Commentaire du responsable technique</Label><Textarea rows={2} value={comment} onChange={(e) => setComment(e.target.value)} /></div>
           <div>
-            <Label className="text-xs flex items-center gap-1"><Camera className="h-3.5 w-3.5" />Photo(s) après réparation *</Label>
+            <Label className="text-xs flex items-center gap-1"><Camera className="h-3.5 w-3.5" />Photo(s) après réparation <span className="font-normal text-muted-foreground">(facultatif)</span></Label>
             <Input type="file" accept="image/*" capture="environment" multiple onChange={(e) => void addPhotos(e.target.files)} />
             {photos.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
