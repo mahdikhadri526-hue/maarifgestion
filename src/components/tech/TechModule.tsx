@@ -397,7 +397,11 @@ function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose
               {TECH_PRIORITIES.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
           </div>
-          <div><Label className="text-xs">Responsable technique</Label><Input value={assigned} onChange={(e) => setAssigned(e.target.value)} placeholder="Nom du technicien / prestataire" /></div>
+          <div>
+            <Label className="text-xs">Intervenant (nom) {(status === "en_cours" || status === "repare") && <span className="text-destructive">*</span>}</Label>
+            <Input value={assigned} onChange={(e) => setAssigned(e.target.value)} placeholder="Nom du technicien / prestataire" />
+            <p className="text-[11px] text-muted-foreground mt-1">Obligatoire dès la prise en charge de l'intervention.</p>
+          </div>
           <div><Label className="text-xs">Deadline de l'intervention</Label><Input type="date" value={deadline} onChange={(e) => setDeadline(e.target.value)} /></div>
           <div><Label className="text-xs">Notes de suivi</Label><Textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
         </div>
