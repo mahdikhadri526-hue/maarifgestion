@@ -204,10 +204,7 @@ export function TechModule() {
       </div>
 
       <div className="flex gap-2 flex-wrap text-xs">
-        <Button size="sm" variant={view === "dossiers" && filter === "open" ? "default" : "outline"} onClick={() => { setView("dossiers"); setFilter("open"); }}>En cours de traitement</Button>
         <Button size="sm" variant={view === "dossiers" && filter === "all" ? "default" : "outline"} onClick={() => { setView("dossiers"); setFilter("all"); }}>Tous</Button>
-        <Button size="sm" variant={view === "controle" ? "default" : "outline"} onClick={() => setView("controle")}><ClipboardList className="h-3.5 w-3.5 mr-1" />Retards & validations</Button>
-        <Button size="sm" variant={view === "historique" ? "default" : "outline"} onClick={() => setView("historique")}><History className="h-3.5 w-3.5 mr-1" />Historique des interventions</Button>
       </div>
 
       {recurring.size > 0 && view === "dossiers" && (
