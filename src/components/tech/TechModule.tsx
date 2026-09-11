@@ -58,6 +58,7 @@ export function TechModule() {
   // La vérification finale du manager se fait uniquement depuis l'Agenda PEP
   // (tableau « Avancement des réparations »), jamais depuis cette table.
   const [issues, setIssues] = useState<TechIssue[]>([]);
+  const [refusals, setRefusals] = useState<Map<string, TechEvent[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("dossiers");
   const [filter, setFilter] = useState<TechDisplayStatus | "open" | "all">("open");
@@ -72,7 +73,9 @@ export function TechModule() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setIssues(await getTechIssues(central));
+      const [list, refs] = await Promise.all([getTechIssues(central), getManagerRefusals(central)]);
+      setIssues(list);
+      setRefusals(refs);
     } catch (e: any) {
       toast({ title: "Erreur Suivi Technique", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
