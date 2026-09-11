@@ -26,6 +26,7 @@ import {
   deleteTechIssue,
   describeEvent,
   fmtDateTimeFR,
+  getManagerRefusals,
   getTechEvents,
   getTechIssues,
   isDeadlineSoon,
@@ -58,6 +59,7 @@ export function TechModule() {
   // La vérification finale du manager se fait uniquement depuis l'Agenda PEP
   // (tableau « Avancement des réparations »), jamais depuis cette table.
   const [issues, setIssues] = useState<TechIssue[]>([]);
+  const [refusals, setRefusals] = useState<Map<string, TechEvent[]>>(new Map());
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<View>("dossiers");
   const [filter, setFilter] = useState<TechDisplayStatus | "open" | "all">("open");
@@ -72,7 +74,9 @@ export function TechModule() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      setIssues(await getTechIssues(central));
+      const [list, refs] = await Promise.all([getTechIssues(central), getManagerRefusals(central)]);
+      setIssues(list);
+      setRefusals(refs);
     } catch (e: any) {
       toast({ title: "Erreur Suivi Technique", description: e?.message ?? String(e), variant: "destructive" });
     } finally {
@@ -264,6 +268,16 @@ export function TechModule() {
                         <div className="font-semibold">⛔ Validation refusée par le manager — le matériel ne fonctionne pas correctement.</div>
                         <div>Motif : {i.manager_comment}</div>
                         <div className="text-muted-foreground">Le dossier est renvoyé « En cours » : une nouvelle réparation doit être validée.</div>
+                      </div>
+                    )}
+                    {(refusals.get(i.id)?.length ?? 0) > 0 && (
+                      <div className="mt-2 rounded-md border border-destructive/50 bg-destructive/5 p-2 text-xs">
+                        <div className="font-semibold text-destructive">⛔ {refusals.get(i.id)!.length} refus du manager</div>
+                        {refusals.get(i.id)!.map((r) => (
+                          <div key={r.id} className="text-muted-foreground mt-0.5">
+                            {fmtDateTimeFR(r.created_at)}{r.actor_name ? ` · ${r.actor_name}` : ""}{r.details?.comment ? ` — Motif : ${r.details.comment}` : ""}
+                          </div>
+                        ))}
                       </div>
                     )}
                     {i.tech_notes && <p className="text-xs mt-1">🔧 {i.tech_notes}</p>}

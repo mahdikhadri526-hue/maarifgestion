@@ -146,6 +146,27 @@ export async function getTechEvents(issueId?: string, allPdvs = false): Promise<
   return (data ?? []) as TechEvent[];
 }
 
+/**
+ * Tous les refus du manager, regroupés par dossier.
+ * Permet d'afficher l'historique des refus même après une nouvelle réparation.
+ */
+export async function getManagerRefusals(allPdvs = false): Promise<Map<string, TechEvent[]>> {
+  let q = (rawSupabase.from("tech_issue_events" as any) as any)
+    .select("*")
+    .eq("event_type", "refus_manager")
+    .order("created_at", { ascending: false })
+    .limit(1000);
+  if (!allPdvs) q = q.eq("pdv_id", requireCurrentPdvId());
+  const { data, error } = await q;
+  if (error) throw error;
+  const map = new Map<string, TechEvent[]>();
+  for (const e of (data ?? []) as TechEvent[]) {
+    map.set(e.issue_id, [...(map.get(e.issue_id) ?? []), e]);
+  }
+  return map;
+}
+
+
 export interface NewTechIssue {
   equipment: string;
   location?: string | null;
