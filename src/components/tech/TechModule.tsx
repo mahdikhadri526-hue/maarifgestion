@@ -26,6 +26,7 @@ import {
   deleteTechIssue,
   describeEvent,
   fmtDateTimeFR,
+  getManagerRefusals,
   getTechEvents,
   getTechIssues,
   isDeadlineSoon,
