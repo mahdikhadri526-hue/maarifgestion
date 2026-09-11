@@ -220,3 +220,17 @@ export async function deleteBalanceEntry(id: string): Promise<void> {
   const { error } = await supabase.from("hr_balance_entries" as any).delete().eq("id", id);
   if (error) throw error;
 }
+
+/* ------------------------------------------------------------ Pointages (lecture RH) */
+
+export async function getPunchesRange(pdvIds: string[], from: string, to: string) {
+  const { data, error } = await supabase
+    .from("attendance_punches" as any)
+    .select("id, pdv_id, agent_id, agent_name, punch_type, punched_at, punch_date, match_score, method, device_label")
+    .in("pdv_id", pdvIds)
+    .gte("punch_date", from)
+    .lte("punch_date", to)
+    .order("punched_at");
+  if (error) throw error;
+  return (data ?? []) as any[];
+}
