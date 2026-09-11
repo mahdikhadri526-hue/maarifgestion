@@ -204,7 +204,7 @@ export function TechModule() {
       </div>
 
       <div className="flex gap-2 flex-wrap text-xs">
-        <Button size="sm" variant={view === "dossiers" && filter === "all" ? "default" : "outline"} onClick={() => { setView("dossiers"); setFilter("all"); }}>Tous</Button>
+        <Button size="sm" variant={view === "dossiers" && filter === "all" ? "default" : "outline"} onClick={() => { setView("dossiers"); setFilter("all"); }}>Historique</Button>
       </div>
 
       {recurring.size > 0 && view === "dossiers" && (
