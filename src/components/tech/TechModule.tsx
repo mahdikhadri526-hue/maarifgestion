@@ -270,6 +270,16 @@ export function TechModule() {
                         <div className="text-muted-foreground">Le dossier est renvoyé « En cours » : une nouvelle réparation doit être validée.</div>
                       </div>
                     )}
+                    {(refusals.get(i.id)?.length ?? 0) > 0 && (
+                      <div className="mt-2 rounded-md border border-destructive/50 bg-destructive/5 p-2 text-xs">
+                        <div className="font-semibold text-destructive">⛔ {refusals.get(i.id)!.length} refus du manager</div>
+                        {refusals.get(i.id)!.map((r) => (
+                          <div key={r.id} className="text-muted-foreground mt-0.5">
+                            {fmtDateTimeFR(r.created_at)}{r.actor_name ? ` · ${r.actor_name}` : ""}{r.details?.comment ? ` — Motif : ${r.details.comment}` : ""}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {i.tech_notes && <p className="text-xs mt-1">🔧 {i.tech_notes}</p>}
                     {techPhotos(i).length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
