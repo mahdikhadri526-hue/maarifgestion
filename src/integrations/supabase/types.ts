@@ -21,9 +21,12 @@ export type Database = {
           created_by: string | null
           descriptors: Json
           full_name: string
+          hire_date: string | null
           id: string
           notes: string | null
           pdv_id: string
+          poste: string | null
+          staff_level: string
           updated_at: string
         }
         Insert: {
@@ -32,9 +35,12 @@ export type Database = {
           created_by?: string | null
           descriptors?: Json
           full_name: string
+          hire_date?: string | null
           id?: string
           notes?: string | null
           pdv_id: string
+          poste?: string | null
+          staff_level?: string
           updated_at?: string
         }
         Update: {
@@ -43,9 +49,12 @@ export type Database = {
           created_by?: string | null
           descriptors?: Json
           full_name?: string
+          hire_date?: string | null
           id?: string
           notes?: string | null
           pdv_id?: string
+          poste?: string | null
+          staff_level?: string
           updated_at?: string
         }
         Relationships: [
@@ -638,6 +647,141 @@ export type Database = {
           zone?: string
         }
         Relationships: []
+      }
+      hr_balance_entries: {
+        Row: {
+          agent_id: string
+          created_at: string
+          created_by: string | null
+          days: number
+          entry_date: string
+          id: string
+          kind: string
+          pdv_id: string
+          reason: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          created_by?: string | null
+          days?: number
+          entry_date?: string
+          id?: string
+          kind: string
+          pdv_id: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          created_by?: string | null
+          days?: number
+          entry_date?: string
+          id?: string
+          kind?: string
+          pdv_id?: string
+          reason?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_balance_entries_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_balance_entries_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hr_holidays: {
+        Row: {
+          created_at: string
+          holiday_date: string
+          id: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          holiday_date: string
+          id?: string
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          holiday_date?: string
+          id?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hr_schedules: {
+        Row: {
+          agent_id: string
+          created_at: string
+          created_by: string | null
+          day_type: string
+          end_time: string | null
+          id: string
+          notes: string | null
+          pdv_id: string
+          start_time: string | null
+          updated_at: string
+          work_date: string
+        }
+        Insert: {
+          agent_id: string
+          created_at?: string
+          created_by?: string | null
+          day_type?: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          pdv_id: string
+          start_time?: string | null
+          updated_at?: string
+          work_date: string
+        }
+        Update: {
+          agent_id?: string
+          created_at?: string
+          created_by?: string | null
+          day_type?: string
+          end_time?: string | null
+          id?: string
+          notes?: string | null
+          pdv_id?: string
+          start_time?: string | null
+          updated_at?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hr_schedules_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hr_schedules_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       initial_stocks: {
         Row: {
