@@ -195,7 +195,7 @@ function PlanningView({
   return (
     <div className="space-y-3">
       <Card className="p-3 flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="outline" onClick={() => setStart(weekStart(days[0]) && weekDays(start)[0] && addWeek(start, -1))}>
+        <Button size="sm" variant="outline" onClick={() => setStart(addWeek(start, -1))}>
           ← Semaine
         </Button>
         <span className="text-sm font-semibold">

@@ -70,6 +70,8 @@ export const ALL_PERMISSIONS = [
   { key: "manage_tech", label: "Suivi Technique — responsable technique (prise en charge, statuts, deadline)" },
   { key: "view_attendance", label: "Voir le pointage (reconnaissance faciale)" },
   { key: "manage_attendance", label: "Gérer le pointage (enrôler les agents, corriger les pointages)" },
+  { key: "view_hr", label: "Voir le module RH (planning, congés, rapports)" },
+  { key: "manage_hr", label: "RH — vue globale tous PDV (planning managers, congés, jours fériés)" },
 ] as const;
 
 export type PermissionKey = (typeof ALL_PERMISSIONS)[number]["key"];
