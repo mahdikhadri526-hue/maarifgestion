@@ -19,6 +19,7 @@ const EcartModule = lazy(() => import("@/components/EcartModule").then((m) => ({
 const PepModule = lazy(() => import("@/components/pep/PepModule").then((m) => ({ default: m.PepModule })));
 const TechModule = lazy(() => import("@/components/tech/TechModule").then((m) => ({ default: m.TechModule })));
 const AttendanceModule = lazy(() => import("@/components/attendance/AttendanceModule").then((m) => ({ default: m.AttendanceModule })));
+const HrModule = lazy(() => import("@/components/hr/HrModule").then((m) => ({ default: m.HrModule })));
 const UserManagement = lazy(() => import("@/components/auth/UserManagement").then((m) => ({ default: m.UserManagement })));
 const AnomalyCenter = lazy(() => import("@/components/anomalies/AnomalyCenter").then((m) => ({ default: m.AnomalyCenter })));
 import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck, Snowflake, Scale, CalendarClock, Wrench, ScanFace } from "lucide-react";
