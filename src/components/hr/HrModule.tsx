@@ -19,6 +19,8 @@ import {
   formatFr,
   getBalanceEntries,
   getHolidays,
+  createHrAgent,
+  deleteHrAgent,
   getHrAgents,
   getPunchesRange,
   getSchedules,
