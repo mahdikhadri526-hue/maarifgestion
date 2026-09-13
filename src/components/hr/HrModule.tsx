@@ -19,6 +19,8 @@ import {
   formatFr,
   getBalanceEntries,
   getHolidays,
+  createHrAgent,
+  deleteHrAgent,
   getHrAgents,
   getPunchesRange,
   getSchedules,
@@ -376,7 +378,13 @@ function addWeek(iso: string, n: number): string {
 /* ------------------------------------------------------------------ Agents RH */
 
 function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () => Promise<void> | void }) {
-  const { pdvs } = useAuth();
+  const { pdvs, pdvId } = useAuth();
+  const [name, setName] = useState("");
+  const [poste, setPoste] = useState("");
+  const [level, setLevel] = useState<"agent" | "manager">("agent");
+  const [hire, setHire] = useState("");
+  const [busy, setBusy] = useState(false);
+
   const save = async (id: string, patch: any) => {
     try {
       await updateAgentHr(id, patch);
@@ -385,10 +393,88 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
       toast.error(e?.message ?? "Enregistrement impossible");
     }
   };
+
+  const add = async () => {
+    if (!pdvId) {
+      toast.error("Aucun point de vente sélectionné");
+      return;
+    }
+    if (!name.trim()) return;
+    setBusy(true);
+    try {
+      await createHrAgent({
+        pdv_id: pdvId,
+        full_name: name,
+        poste: poste || null,
+        hire_date: hire || null,
+        staff_level: level,
+      });
+      setName("");
+      setPoste("");
+      setHire("");
+      toast.success("Agent ajouté");
+      await onChanged();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Ajout impossible");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (a: HrAgent) => {
+    if (!confirm(`Supprimer ${a.full_name} ? Son planning sera également supprimé.`)) return;
+    try {
+      await deleteHrAgent(a.id);
+      toast.success("Agent supprimé");
+      await onChanged();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Suppression impossible");
+    }
+  };
+
   return (
     <div className="space-y-2">
+      <Card className="p-3 grid gap-2 sm:grid-cols-5 items-end">
+        <div className="sm:col-span-2">
+          <label className="text-[11px] text-muted-foreground">Nom et prénom</label>
+          <Input
+            className="h-9"
+            value={name}
+            placeholder="Nouvel agent"
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && void add()}
+          />
+        </div>
+        <select
+          className="h-9 rounded border bg-background px-2 text-sm"
+          value={poste}
+          onChange={(e) => setPoste(e.target.value)}
+        >
+          <option value="">Poste…</option>
+          {POSTES.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+        <select
+          className="h-9 rounded border bg-background px-2 text-sm"
+          value={level}
+          onChange={(e) => setLevel(e.target.value as any)}
+        >
+          <option value="agent">Agent</option>
+          <option value="manager">Manager</option>
+        </select>
+        <div className="flex gap-2">
+          <Input type="date" className="h-9" value={hire} onChange={(e) => setHire(e.target.value)} />
+          <Button size="sm" onClick={() => void add()} disabled={busy || !name.trim()}>
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
+      </Card>
+
       {agents.map((a) => (
-        <Card key={a.id} className="p-3 grid gap-2 sm:grid-cols-4 items-center">
+        <Card key={a.id} className="p-3 grid gap-2 sm:grid-cols-5 items-center">
           <div>
             <p className="font-medium">{a.full_name}</p>
             <p className="text-xs text-muted-foreground">{pdvs.find((p) => p.id === a.pdv_id)?.name ?? ""}</p>
@@ -422,11 +508,16 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
               onChange={(e) => void save(a.id, { hire_date: e.target.value || null })}
             />
           </div>
+          <div className="flex justify-end">
+            <Button variant="ghost" size="icon" onClick={() => void remove(a)}>
+              <Trash2 className="w-4 h-4 text-destructive" />
+            </Button>
+          </div>
         </Card>
       ))}
       {agents.length === 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">
-          Aucun agent. Enrôlez-les d'abord dans le module Pointage.
+          Aucun agent. Ajoutez-les ci-dessus ou enrôlez-les dans le module Pointage.
         </Card>
       )}
     </div>
