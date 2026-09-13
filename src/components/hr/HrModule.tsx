@@ -508,11 +508,16 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
               onChange={(e) => void save(a.id, { hire_date: e.target.value || null })}
             />
           </div>
+          <div className="flex justify-end">
+            <Button variant="ghost" size="icon" onClick={() => void remove(a)}>
+              <Trash2 className="w-4 h-4 text-destructive" />
+            </Button>
+          </div>
         </Card>
       ))}
       {agents.length === 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">
-          Aucun agent. Enrôlez-les d'abord dans le module Pointage.
+          Aucun agent. Ajoutez-les ci-dessus ou enrôlez-les dans le module Pointage.
         </Card>
       )}
     </div>
