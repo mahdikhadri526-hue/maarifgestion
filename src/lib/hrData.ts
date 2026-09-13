@@ -100,6 +100,30 @@ export async function getHrAgents(pdvIds: string[] | null): Promise<HrAgent[]> {
   return (data ?? []) as unknown as HrAgent[];
 }
 
+export async function createHrAgent(row: {
+  pdv_id: string;
+  full_name: string;
+  poste?: string | null;
+  hire_date?: string | null;
+  staff_level?: StaffLevel;
+}): Promise<void> {
+  const { error } = await supabase.from("attendance_agents" as any).insert({
+    pdv_id: row.pdv_id,
+    full_name: row.full_name.trim(),
+    poste: row.poste || null,
+    hire_date: row.hire_date || null,
+    staff_level: row.staff_level ?? "agent",
+    descriptors: [],
+    active: true,
+  });
+  if (error) throw error;
+}
+
+export async function deleteHrAgent(id: string): Promise<void> {
+  const { error } = await supabase.from("attendance_agents" as any).delete().eq("id", id);
+  if (error) throw error;
+}
+
 export async function updateAgentHr(
   id: string,
   patch: { poste?: string | null; hire_date?: string | null; staff_level?: StaffLevel },
