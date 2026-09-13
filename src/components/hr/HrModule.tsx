@@ -474,7 +474,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
       </Card>
 
       {agents.map((a) => (
-        <Card key={a.id} className="p-3 grid gap-2 sm:grid-cols-4 items-center">
+        <Card key={a.id} className="p-3 grid gap-2 sm:grid-cols-5 items-center">
           <div>
             <p className="font-medium">{a.full_name}</p>
             <p className="text-xs text-muted-foreground">{pdvs.find((p) => p.id === a.pdv_id)?.name ?? ""}</p>
