@@ -118,6 +118,7 @@ export function HrModule() {
         />
       )}
       {view === "agents" && <AgentsHrView agents={agents} onChanged={reload} />}
+      {view === "horaires" && <ShiftTimesView canEdit={isRh} />}
       {view === "feries" && <HolidaysView holidays={holidays} canEdit={isRh} onChanged={reload} />}
       {view === "suivi" && (
         <Card className="p-4 space-y-4">
