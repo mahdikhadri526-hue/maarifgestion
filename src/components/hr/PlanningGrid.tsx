@@ -35,6 +35,7 @@ export function PlanningGrid({
   onChanged,
   showLevelToggle = true,
   readOnly = false,
+  agentsReadOnly = false,
   caissierMode = "bottom",
   title = "Planning hebdomadaire",
 }: {
@@ -46,6 +47,8 @@ export function PlanningGrid({
   showLevelToggle?: boolean;
   /** true = consultation uniquement (aucune modification possible). */
   readOnly?: boolean;
+  /** true = lignes des agents en lecture seule (managers et caissiers modifiables). */
+  agentsReadOnly?: boolean;
   /** Gestion des caissiers : en bas (défaut), exclus de la grille, ou grille dédiée. */
   caissierMode?: "bottom" | "exclude" | "only";
   title?: string;
