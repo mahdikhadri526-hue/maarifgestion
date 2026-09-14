@@ -796,14 +796,32 @@ function ReportsView({
         ) : (
           <div />
         )}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" onClick={() => void run()} disabled={loading}>
             {loading ? "…" : "Afficher"}
           </Button>
           <Button size="sm" variant="outline" onClick={exportCsv} disabled={rows.length === 0}>
             <Download className="w-4 h-4 mr-1" /> Export
           </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setSearch("");
+              setAgentId("");
+              setPdvFilter("");
+            }}
+          >
+            Réinit.
+          </Button>
         </div>
+        {(search.trim() || agentId) && (
+          <p className="col-span-full text-[11px] text-muted-foreground">
+            {visibleAgents.length === 0
+              ? `Aucun employé ne correspond à « ${search.trim()} ».`
+              : `${visibleAgents.length} employé${visibleAgents.length > 1 ? "s" : ""} dans la liste.`}
+          </p>
+        )}
       </Card>
 
       {rows.length > 0 && (
