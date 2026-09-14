@@ -55,6 +55,8 @@ export function PlanningModule() {
 
   /* ------------------------------------------------------------ Ajout */
   const [name, setName] = useState("");
+  const [matricule, setMatricule] = useState("");
+  const [hire, setHire] = useState("");
   const [poste, setPoste] = useState("");
   const [level, setLevel] = useState<"agent" | "manager">("agent");
   const [newPdvId, setNewPdvId] = useState<string>(pdvId ?? "");
@@ -72,10 +74,13 @@ export function PlanningModule() {
         pdv_id: newPdvId,
         full_name: name,
         poste: poste || null,
-        hire_date: null,
+        hire_date: hire || null,
         staff_level: level,
+        matricule: matricule || null,
       });
       setName("");
+      setMatricule("");
+      setHire("");
       setPoste("");
       toast.success("Agent ajouté au planning");
       await reload();
@@ -127,7 +132,7 @@ export function PlanningModule() {
         </div>
       </div>
 
-      <Card className="p-3 grid gap-2 sm:grid-cols-5 items-end">
+      <Card className="p-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-7 items-end">
         <div className="sm:col-span-2">
           <label className="text-[11px] text-muted-foreground">Nom et prénom</label>
           <Input
@@ -136,6 +141,25 @@ export function PlanningModule() {
             placeholder="Nouvel agent"
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && void add()}
+          />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">Matricule</label>
+          <Input
+            className="h-9"
+            value={matricule}
+            placeholder="N° matricule"
+            onChange={(e) => setMatricule(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && void add()}
+          />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">Date d'embauche</label>
+          <Input
+            className="h-9"
+            type="date"
+            value={hire}
+            onChange={(e) => setHire(e.target.value)}
           />
         </div>
         <div>
