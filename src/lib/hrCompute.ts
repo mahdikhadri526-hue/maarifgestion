@@ -155,6 +155,8 @@ export function computeBalance(params: {
   hireDate: string | null;
   schedules: HrSchedule[];
   entries: HrBalanceEntry[];
+  /** Dates de jours fériés (YYYY-MM-DD) : un jour férié planifié « Travail » crédite 1 jour de récupération. */
+  holidays?: string[];
   at?: Date;
 }): AgentBalance {
   const at = params.at ?? new Date();
@@ -163,6 +165,13 @@ export function computeBalance(params: {
   let debitLeave = 0;
   let creditRecup = 0;
   let debitRecup = 0;
+
+  const holidaySet = new Set(params.holidays ?? []);
+  const workedHolidays = params.schedules.filter(
+    (s) => s.day_type === "travail" && holidaySet.has(s.work_date),
+  ).length;
+  creditRecup += workedHolidays;
+
   params.entries.forEach((e) => {
     const d = Number(e.days) || 0;
     if (e.kind === "conge_credit") creditLeave += d;
