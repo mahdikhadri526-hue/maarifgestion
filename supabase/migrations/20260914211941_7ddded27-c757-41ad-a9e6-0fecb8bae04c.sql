@@ -1,0 +1,5 @@
+CREATE POLICY "tech_can_view_agents" ON public.attendance_agents FOR SELECT TO authenticated USING (public.has_permission(auth.uid(), 'manage_tech'));
+CREATE POLICY "tech_can_view_schedules" ON public.hr_schedules FOR SELECT TO authenticated USING (public.has_permission(auth.uid(), 'manage_tech'));
+CREATE POLICY "tech_can_insert_schedules" ON public.hr_schedules FOR INSERT TO authenticated WITH CHECK (public.has_permission(auth.uid(), 'manage_tech'));
+CREATE POLICY "tech_can_update_schedules" ON public.hr_schedules FOR UPDATE TO authenticated USING (public.has_permission(auth.uid(), 'manage_tech')) WITH CHECK (public.has_permission(auth.uid(), 'manage_tech'));
+CREATE POLICY "tech_can_view_holidays" ON public.hr_holidays FOR SELECT TO authenticated USING (public.has_permission(auth.uid(), 'manage_tech'));

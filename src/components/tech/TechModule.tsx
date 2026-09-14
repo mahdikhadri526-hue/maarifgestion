@@ -45,10 +45,12 @@ import {
   type TechDisplayStatus,
 } from "@/lib/techData";
 import { ReportIssueDialog } from "./ReportIssueDialog";
+import { PlanningGrid } from "@/components/hr/PlanningGrid";
+import { getHolidays, getHrAgents, type HrAgent, type HrHoliday } from "@/lib/hrData";
 
 const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 };
 
-type View = "dossiers" | "controle" | "historique";
+type View = "dossiers" | "controle" | "historique" | "planning";
 
 export function TechModule() {
   const { can, pdv, isAdmin } = useAuth();
@@ -70,6 +72,9 @@ export function TechModule() {
   const [historyOf, setHistoryOf] = useState<TechIssue | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const today = todayISO();
+  // Planning Ménage & Sécurité : établi par le responsable technique.
+  const [hrAgents, setHrAgents] = useState<HrAgent[]>([]);
+  const [hrHolidays, setHrHolidays] = useState<HrHoliday[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -85,6 +90,24 @@ export function TechModule() {
   }, [central]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const loadPlanning = useCallback(async () => {
+    try {
+      const year = new Date().getFullYear();
+      const [a, h] = await Promise.all([
+        getHrAgents(null),
+        getHolidays(`${year - 1}-01-01`, `${year + 1}-12-31`),
+      ]);
+      setHrAgents(a);
+      setHrHolidays(h);
+    } catch (e: any) {
+      toast({ title: "Erreur planning", description: e?.message ?? String(e), variant: "destructive" });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (view === "planning") void loadPlanning();
+  }, [view, loadPlanning]);
 
   const pdvOptions = useMemo(() => {
     const m = new Map<string, string>();
@@ -209,7 +232,23 @@ export function TechModule() {
 
       <div className="flex gap-2 flex-wrap text-xs">
         <Button size="sm" variant={view === "dossiers" && filter === "all" ? "default" : "outline"} onClick={() => { setView("dossiers"); setFilter("all"); }}>Historique</Button>
+        <Button size="sm" variant={view === "planning" ? "default" : "outline"} onClick={() => setView(view === "planning" ? "dossiers" : "planning")}>
+          <ClipboardList className="h-4 w-4 mr-1" />Planning Ménage & Sécurité
+        </Button>
       </div>
+
+      {view === "planning" && (
+        <PlanningGrid
+          agents={hrAgents}
+          holidays={hrHolidays}
+          isRh
+          onChanged={loadPlanning}
+          showLevelToggle={false}
+          techMode="only"
+          readOnly={!canManage && !isAdmin}
+          title="Planning Ménage & Sécurité"
+        />
+      )}
 
       {recurring.size > 0 && view === "dossiers" && (
         <div className="rounded-lg border border-amber-500/60 bg-card p-3 text-sm">

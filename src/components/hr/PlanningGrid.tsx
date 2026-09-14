@@ -37,6 +37,7 @@ export function PlanningGrid({
   readOnly = false,
   agentsReadOnly = false,
   caissierMode = "bottom",
+  techMode = "exclude",
   title = "Planning hebdomadaire",
 }: {
   agents: HrAgent[];
@@ -51,6 +52,8 @@ export function PlanningGrid({
   agentsReadOnly?: boolean;
   /** Gestion des caissiers : en bas (défaut), exclus de la grille, ou grille dédiée. */
   caissierMode?: "bottom" | "exclude" | "only";
+  /** Postes Ménage / Sécurité : exclus (défaut) ou grille dédiée (responsable technique). */
+  techMode?: "exclude" | "only";
   title?: string;
 }) {
   const { pdvs } = useAuth();
@@ -60,29 +63,39 @@ export function PlanningGrid({
   const [loading, setLoading] = useState(false);
 
   const days = useMemo(() => weekDays(start), [start]);
-  const isCaissier = (a: HrAgent) => (a.poste ?? "").trim().toLowerCase() === "caissier";
+  const norm = (s: string | null | undefined) =>
+    (s ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const isCaissier = (a: HrAgent) => norm(a.poste) === "caissier";
+  /** Postes planifiés par le responsable technique. */
+  const isTechPoste = (a: HrAgent) => {
+    const p = norm(a.poste);
+    return p === "menage" || p.includes("securite");
+  };
   /** Les caissiers sont planifiés par la RH : affichés en bas, verrouillés pour les managers. */
   const list = useMemo(() => {
-    const base = agents.filter((a) => a.active && (a.staff_level ?? "agent") === level);
+    const actives = agents.filter((a) => a.active);
+    if (techMode === "only") return actives.filter(isTechPoste);
+    const pool = actives.filter((a) => !isTechPoste(a));
+    const base = pool.filter((a) => (a.staff_level ?? "agent") === level);
     if (caissierMode === "exclude") return base.filter((a) => !isCaissier(a));
     if (caissierMode === "only") return base.filter(isCaissier);
     // Mode « bottom » : les caissiers sont regroupés dans la vue Managers (en bas),
     // la vue Agents ne montre que les agents hors caissiers.
-    const caissiers = agents.filter(
-      (a) => a.active && (a.staff_level ?? "agent") === "agent" && isCaissier(a),
-    );
+    const caissiers = pool.filter((a) => (a.staff_level ?? "agent") === "agent" && isCaissier(a));
     if (level === "manager") return [...base, ...caissiers];
     return base.filter((a) => !isCaissier(a));
-  }, [agents, level, caissierMode]);
+  }, [agents, level, caissierMode, techMode]);
   const firstCaissierId = useMemo(
-    () => (caissierMode === "bottom" ? list.find(isCaissier)?.id ?? null : null),
-    [list, caissierMode],
+    () => (caissierMode === "bottom" && techMode !== "only" ? list.find(isCaissier)?.id ?? null : null),
+    [list, caissierMode, techMode],
   );
   const rowReadOnly = (a: HrAgent) =>
     readOnly ||
-    (isCaissier(a)
-      ? !isRh
-      : agentsReadOnly && (a.staff_level ?? "agent") === "agent");
+    (isTechPoste(a)
+      ? techMode !== "only"
+      : isCaissier(a)
+        ? !isRh
+        : agentsReadOnly && (a.staff_level ?? "agent") === "agent");
   const holidayMap = useMemo(
     () => new Map(holidays.map((h) => [h.holiday_date, h.label])),
     [holidays],
@@ -221,7 +234,9 @@ export function PlanningGrid({
 
       {list.length === 0 ? (
         <div className="p-8 text-center text-sm text-muted-foreground">
-          Aucun {level === "manager" ? "manager" : "agent"} enregistré pour ce périmètre.
+          {techMode === "only"
+            ? "Aucun agent Ménage / Sécurité enregistré pour ce périmètre."
+            : `Aucun ${level === "manager" ? "manager" : "agent"} enregistré pour ce périmètre.`}
         </div>
       ) : (
         <div className="overflow-x-auto">
