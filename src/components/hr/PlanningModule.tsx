@@ -4,14 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, RefreshCw, Trash2, Users } from "lucide-react";
+import { CalendarDays, Plus, RefreshCw, Trash2, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { PlanningGrid } from "./PlanningGrid";
 import {
   createHrAgent,
   deleteHrAgent,
   formatFr,
+  getHolidays,
+  getHrAgents,
   getPlanningRows,
   POSTES,
+  type HrAgent,
+  type HrHoliday,
   type PlanningRow,
 } from "@/lib/hrData";
 
@@ -28,14 +33,25 @@ export function PlanningModule() {
   );
 
   const [rows, setRows] = useState<PlanningRow[]>([]);
+  const [agents, setAgents] = useState<HrAgent[]>([]);
+  const [holidays, setHolidays] = useState<HrHoliday[]>([]);
   const [loading, setLoading] = useState(true);
   const [pdvFilter, setPdvFilter] = useState<string>(pdvId ?? "all");
+  const [section, setSection] = useState<"grille" | "liste">("grille");
 
   const reload = useCallback(async () => {
     if (scopePdvIds && scopePdvIds.length === 0) return;
     setLoading(true);
     try {
-      setRows(await getPlanningRows(scopePdvIds));
+      const year = new Date().getFullYear();
+      const [p, a, h] = await Promise.all([
+        getPlanningRows(scopePdvIds),
+        getHrAgents(scopePdvIds),
+        getHolidays(`${year - 1}-01-01`, `${year + 1}-12-31`),
+      ]);
+      setRows(p);
+      setAgents(a);
+      setHolidays(h);
     } catch (e: any) {
       toast.error(e?.message ?? "Chargement impossible");
     } finally {
@@ -52,6 +68,11 @@ export function PlanningModule() {
   const visible = useMemo(
     () => rows.filter((r) => pdvFilter === "all" || r.pdv_id === pdvFilter),
     [rows, pdvFilter],
+  );
+
+  const visibleAgents = useMemo(
+    () => agents.filter((a) => pdvFilter === "all" || a.pdv_id === pdvFilter),
+    [agents, pdvFilter],
   );
 
   /* ------------------------------------------------------------ Ajout */
@@ -111,8 +132,22 @@ export function PlanningModule() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Users className="w-5 h-5" /> Planning — liste des agents
+          <CalendarDays className="w-5 h-5" /> Planning
         </h2>
+        <Button
+          size="sm"
+          variant={section === "grille" ? "default" : "outline"}
+          onClick={() => setSection("grille")}
+        >
+          <CalendarDays className="w-4 h-4 mr-1" /> Planning hebdomadaire
+        </Button>
+        <Button
+          size="sm"
+          variant={section === "liste" ? "default" : "outline"}
+          onClick={() => setSection("liste")}
+        >
+          <Users className="w-4 h-4 mr-1" /> Liste des agents
+        </Button>
         <Button variant="ghost" size="sm" onClick={() => void reload()} disabled={loading}>
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
         </Button>
@@ -133,6 +168,12 @@ export function PlanningModule() {
         </div>
       </div>
 
+      {section === "grille" && (
+        <PlanningGrid agents={visibleAgents} holidays={holidays} isRh={isRh} onChanged={reload} />
+      )}
+
+      {section === "liste" && (
+        <>
       <Card className="p-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-7 items-end">
         <div className="sm:col-span-2">
           <label className="text-[11px] text-muted-foreground">Nom et prénom</label>
@@ -261,8 +302,10 @@ export function PlanningModule() {
         </table>
       </Card>
       <p className="text-xs text-muted-foreground">
-        {visible.length} agent(s) — cette liste alimente l'élaboration du planning hebdomadaire (module RH).
+        {visible.length} agent(s) — cette liste alimente l'élaboration du planning hebdomadaire.
       </p>
+        </>
+      )}
     </div>
   );
 }
