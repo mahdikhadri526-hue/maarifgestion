@@ -452,7 +452,7 @@ function BalancesView({
           <>
             <div className="grid gap-2 sm:grid-cols-5">
               <select className="h-9 rounded border bg-background px-2 text-sm" value={agentId} onChange={(e) => setAgentId(e.target.value)}>
-                <option value="">Agent…</option>
+                <option value="">Employé…</option>
                 {visibleAgents.map((a) => (
                   <option key={a.id} value={a.id}>
                     {a.full_name}
