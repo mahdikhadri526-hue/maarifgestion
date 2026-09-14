@@ -40,6 +40,7 @@ export function PlanningGrid({
   techMode = "exclude",
   techCategorySeparators = false,
   groupedCategories = false,
+  planningPdvId = null,
   title = "Planning hebdomadaire",
 }: {
   agents: HrAgent[];
@@ -60,6 +61,8 @@ export function PlanningGrid({
   techCategorySeparators?: boolean;
   /** Affiche les catégories dans une grille unique ; le mode RH inclut aussi les managers. */
   groupedCategories?: boolean | "rh";
+  /** PDV dont le planning est affiché ; limite les catégories partagées à leurs lignes planifiées. */
+  planningPdvId?: string | null;
   title?: string;
 }) {
   const { pdvs } = useAuth();
@@ -83,8 +86,10 @@ export function PlanningGrid({
     if (groupedCategories) {
       const agentRows = actives.filter((a) => (a.staff_level ?? "agent") === "agent");
       const regular = agentRows.filter((a) => !isCaissier(a) && !isTechPoste(a));
-      const caissiers = agentRows.filter(isCaissier);
-      const technical = agentRows.filter(isTechPoste);
+      const isPlannedHere = (a: HrAgent) =>
+        !planningPdvId || rows.some((r) => r.agent_id === a.id && r.pdv_id === planningPdvId);
+      const caissiers = agentRows.filter((a) => isCaissier(a) && isPlannedHere(a));
+      const technical = agentRows.filter((a) => isTechPoste(a) && isPlannedHere(a));
       const managers = actives.filter((a) => (a.staff_level ?? "agent") === "manager");
       return groupedCategories === "rh"
         ? [...managers, ...caissiers, ...regular, ...technical]
@@ -106,7 +111,7 @@ export function PlanningGrid({
     const caissiers = pool.filter((a) => (a.staff_level ?? "agent") === "agent" && isCaissier(a));
     if (level === "manager") return [...base, ...caissiers];
     return base.filter((a) => !isCaissier(a));
-  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories]);
+  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows]);
   const firstCaissierId = useMemo(
     () => ((groupedCategories || (caissierMode === "bottom" && techMode !== "only")) ? list.find(isCaissier)?.id ?? null : null),
     [list, caissierMode, techMode, groupedCategories],
@@ -144,9 +149,12 @@ export function PlanningGrid({
   );
 
   const load = useCallback(async () => {
-    const ids = Array.from(new Set(agents.map((a) => a.pdv_id)));
+    const ids = planningPdvId
+      ? [planningPdvId]
+      : Array.from(new Set(agents.map((a) => a.pdv_id)));
     if (ids.length === 0) return;
     setLoading(true);
+    setRows([]);
     try {
       setRows(await getSchedules(ids, days[0], days[6]));
     } catch (e: any) {
@@ -154,7 +162,7 @@ export function PlanningGrid({
     } finally {
       setLoading(false);
     }
-  }, [agents, days]);
+  }, [agents, days, planningPdvId]);
 
   useEffect(() => {
     void load();
@@ -186,7 +194,7 @@ export function PlanningGrid({
   ) => {
     const cur = cell(agent.id, date);
     const next = {
-      pdv_id: agent.pdv_id,
+      pdv_id: planningPdvId ?? agent.pdv_id,
       agent_id: agent.id,
       work_date: date,
       day_type: patch.day_type ?? (cur?.day_type as DayType) ?? "travail",
