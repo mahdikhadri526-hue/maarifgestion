@@ -63,7 +63,13 @@ export function PlanningGrid({
     const base = agents.filter((a) => a.active && (a.staff_level ?? "agent") === level);
     if (caissierMode === "exclude") return base.filter((a) => !isCaissier(a));
     if (caissierMode === "only") return base.filter(isCaissier);
-    return [...base.filter((a) => !isCaissier(a)), ...base.filter(isCaissier)];
+    // Mode « bottom » : les caissiers sont regroupés dans la vue Managers (en bas),
+    // la vue Agents ne montre que les agents hors caissiers.
+    const caissiers = agents.filter(
+      (a) => a.active && (a.staff_level ?? "agent") === "agent" && isCaissier(a),
+    );
+    if (level === "manager") return [...base, ...caissiers];
+    return base.filter((a) => !isCaissier(a));
   }, [agents, level, caissierMode]);
   const firstCaissierId = useMemo(
     () => (caissierMode === "bottom" ? list.find(isCaissier)?.id ?? null : null),
