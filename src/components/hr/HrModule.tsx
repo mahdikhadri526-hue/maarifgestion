@@ -438,8 +438,6 @@ function BalancesView({
             onClick={() => {
               setFPdv("all");
               setFSearch("");
-              setFFrom("");
-              setFTo("");
             }}
           >
             Réinit.
