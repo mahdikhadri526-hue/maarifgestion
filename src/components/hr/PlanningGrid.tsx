@@ -405,17 +405,15 @@ export function PlanningGrid({
                             <span className="block text-[10px] font-semibold">
                               {type ? DAY_TYPE_LABELS[type] : "—"}
                             </span>
-                            {type === "travail" && (
-                              <>
-                                {needsAssignment(a) && c?.work_shift && (
-                                  <span className="mt-1 block border-t border-current/15 pt-1 text-[9px] font-medium">
-                                    {pdvs.find((p) => p.id === c.pdv_id)?.name ?? "PDV"} — {shiftLabel(c.work_shift)}
-                                  </span>
-                                )}
-                                <span className={`${needsAssignment(a) && c?.work_shift ? "mt-0.5" : "mt-1 border-t border-current/15 pt-1"} block text-[9px] opacity-80`}>
-                                  {c?.start_time || "--:--"} – {c?.end_time || "--:--"}
-                                </span>
-                              </>
+                            {type === "travail" && needsAssignment(a) && c?.work_shift && (
+                              <span className="mt-1 block border-t border-current/15 pt-1 text-[9px] font-medium">
+                                {pdvs.find((p) => p.id === c.pdv_id)?.name ?? "PDV"} — {shiftLabel(c.work_shift)}
+                              </span>
+                            )}
+                            {type === "travail" && !needsAssignment(a) && (
+                              <span className="mt-1 block border-t border-current/15 pt-1 text-[9px] opacity-80">
+                                {c?.start_time || "--:--"} – {c?.end_time || "--:--"}
+                              </span>
                             )}
                           </div>
                         ) : (
