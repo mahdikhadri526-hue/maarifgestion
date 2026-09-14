@@ -807,10 +807,12 @@ function ReportsView({
     if (ids.length === 0) return;
     setLoading(true);
     try {
-      const [punches, schedules] = await Promise.all([
+      const [punches, schedules, shiftRows] = await Promise.all([
         getPunchesRange(ids, from, to),
         getSchedules(ids, from, to),
+        getShiftTimes(),
       ]);
+      const shiftStarts = shiftStartMap(shiftRows);
       const holidayMap = new Map(holidays.map((h) => [h.holiday_date, h.label]));
       const targetAgents = agents.filter(
         (a) =>
