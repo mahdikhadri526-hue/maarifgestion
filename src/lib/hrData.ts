@@ -13,7 +13,7 @@ export const DAY_TYPE_LABELS: Record<DayType, string> = {
 
 export const DAY_TYPES: DayType[] = ["travail", "repos", "conge", "recuperation"];
 
-export const POSTES = ["Service", "Comptoir", "Passe", "Ménage", "Agent de sécurité"] as const;
+export const POSTES = ["Service", "Comptoir", "Caissier", "Passe", "Ménage", "Agent de sécurité"] as const;
 
 export type StaffLevel = "agent" | "manager";
 
