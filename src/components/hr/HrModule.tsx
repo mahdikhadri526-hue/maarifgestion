@@ -157,6 +157,11 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
   const [hire, setHire] = useState("");
   const [newPdvId, setNewPdvId] = useState<string>(pdvId ?? "");
   const [busy, setBusy] = useState(false);
+  const [showList, setShowList] = useState(false);
+  const [search, setSearch] = useState("");
+  const filteredAgents = search.trim()
+    ? agents.filter((a) => a.full_name.toLowerCase().includes(search.trim().toLowerCase()))
+    : agents;
 
   const save = async (id: string, patch: any) => {
     try {
