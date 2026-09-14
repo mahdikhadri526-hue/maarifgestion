@@ -455,7 +455,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
 
   return (
     <div className="space-y-2">
-      <Card className="p-3 grid gap-2 sm:grid-cols-5 items-end">
+      <Card className="p-3 grid gap-2 sm:grid-cols-6 items-end">
         <div className="sm:col-span-2">
           <label className="text-[11px] text-muted-foreground">Nom et prénom</label>
           <Input
@@ -465,6 +465,21 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && void add()}
           />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">Point de vente</label>
+          <select
+            className="h-9 w-full rounded border bg-background px-2 text-sm"
+            value={newPdvId}
+            onChange={(e) => setNewPdvId(e.target.value)}
+          >
+            <option value="">PDV…</option>
+            {pdvs.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
         </div>
         <select
           className="h-9 rounded border bg-background px-2 text-sm"
