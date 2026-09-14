@@ -228,14 +228,16 @@ export function PlanningModule() {
           <tbody>
             {visible.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
+                <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
                   {loading ? "Chargement…" : "Aucun agent dans le planning"}
                 </td>
               </tr>
             )}
             {visible.map((r) => (
               <tr key={r.id} className="border-b last:border-0">
+                <td className="px-3 py-2">{r.matricule ?? "—"}</td>
                 <td className="px-3 py-2 font-medium">{r.full_name}</td>
+                <td className="px-3 py-2">{r.hire_date ? formatFr(r.hire_date) : "—"}</td>
                 <td className="px-3 py-2">{r.poste ?? "—"}</td>
                 <td className="px-3 py-2">
                   <Badge variant={r.staff_level === "manager" ? "default" : "outline"}>
