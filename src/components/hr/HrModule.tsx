@@ -267,7 +267,9 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
         </div>
       </Card>
 
-      {agents.map((a) => (
+      {agents.map((a) => {
+        const isManager = (a.staff_level ?? "agent") === "manager";
+        return (
         <Card key={a.id} className="p-3 grid gap-2 sm:grid-cols-5 items-center">
           <div>
             <p className="font-medium">{a.full_name}</p>
@@ -315,7 +317,8 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
             </Button>
           </div>
         </Card>
-      ))}
+        );
+      })}
       {agents.length === 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">
           Aucun agent. Ajoutez-les ci-dessus ou enrôlez-les dans le module Pointage.
