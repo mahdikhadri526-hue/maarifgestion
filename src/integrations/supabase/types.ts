@@ -24,6 +24,7 @@ export type Database = {
           hire_date: string | null
           id: string
           matricule: string | null
+          multi_pdv: boolean
           notes: string | null
           pdv_id: string
           poste: string | null
@@ -39,6 +40,7 @@ export type Database = {
           hire_date?: string | null
           id?: string
           matricule?: string | null
+          multi_pdv?: boolean
           notes?: string | null
           pdv_id: string
           poste?: string | null
@@ -54,6 +56,7 @@ export type Database = {
           hire_date?: string | null
           id?: string
           matricule?: string | null
+          multi_pdv?: boolean
           notes?: string | null
           pdv_id?: string
           poste?: string | null
@@ -1480,6 +1483,7 @@ export type Database = {
           hire_date: string | null
           id: string
           matricule: string | null
+          multi_pdv: boolean
           pdv_id: string
           poste: string | null
           staff_level: string
@@ -1493,6 +1497,7 @@ export type Database = {
           hire_date?: string | null
           id?: string
           matricule?: string | null
+          multi_pdv?: boolean
           pdv_id: string
           poste?: string | null
           staff_level?: string
@@ -1506,6 +1511,7 @@ export type Database = {
           hire_date?: string | null
           id?: string
           matricule?: string | null
+          multi_pdv?: boolean
           pdv_id?: string
           poste?: string | null
           staff_level?: string
