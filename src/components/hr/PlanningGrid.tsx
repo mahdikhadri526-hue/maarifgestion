@@ -75,7 +75,7 @@ export function PlanningGrid({
     () => (caissierMode === "bottom" ? list.find(isCaissier)?.id ?? null : null),
     [list, caissierMode],
   );
-  const rowReadOnly = (a: HrAgent) => (isCaissier(a) ? !isRh : readOnly);
+  const rowReadOnly = (a: HrAgent) => readOnly || (isCaissier(a) && !isRh);
   const holidayMap = useMemo(
     () => new Map(holidays.map((h) => [h.holiday_date, h.label])),
     [holidays],

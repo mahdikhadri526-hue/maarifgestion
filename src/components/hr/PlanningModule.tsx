@@ -110,7 +110,7 @@ export function PlanningModule() {
           onChanged={reload}
           showLevelToggle={false}
           caissierMode="only"
-          readOnly={!isRh}
+          readOnly
           title="Planning caissiers — établi par la RH"
         />
       )}
