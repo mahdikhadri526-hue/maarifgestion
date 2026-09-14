@@ -403,6 +403,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
   const [poste, setPoste] = useState("");
   const [level, setLevel] = useState<"agent" | "manager">("agent");
   const [hire, setHire] = useState("");
+  const [newPdvId, setNewPdvId] = useState<string>(pdvId ?? "");
   const [busy, setBusy] = useState(false);
 
   const save = async (id: string, patch: any) => {
@@ -415,15 +416,15 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
   };
 
   const add = async () => {
-    if (!pdvId) {
-      toast.error("Aucun point de vente sélectionné");
+    if (!newPdvId) {
+      toast.error("Choisissez le point de vente");
       return;
     }
     if (!name.trim()) return;
     setBusy(true);
     try {
       await createHrAgent({
-        pdv_id: pdvId,
+        pdv_id: newPdvId,
         full_name: name,
         poste: poste || null,
         hire_date: hire || null,
