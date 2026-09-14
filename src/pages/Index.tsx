@@ -20,6 +20,7 @@ const PepModule = lazy(() => import("@/components/pep/PepModule").then((m) => ({
 const TechModule = lazy(() => import("@/components/tech/TechModule").then((m) => ({ default: m.TechModule })));
 const AttendanceModule = lazy(() => import("@/components/attendance/AttendanceModule").then((m) => ({ default: m.AttendanceModule })));
 const HrModule = lazy(() => import("@/components/hr/HrModule").then((m) => ({ default: m.HrModule })));
+const PlanningModule = lazy(() => import("@/components/hr/PlanningModule").then((m) => ({ default: m.PlanningModule })));
 const UserManagement = lazy(() => import("@/components/auth/UserManagement").then((m) => ({ default: m.UserManagement })));
 const AnomalyCenter = lazy(() => import("@/components/anomalies/AnomalyCenter").then((m) => ({ default: m.AnomalyCenter })));
 import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck, Snowflake, Scale, CalendarClock, Wrench, ScanFace, Users } from "lucide-react";
@@ -32,7 +33,7 @@ import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
 
-type Tab = "dashboard" | "rh" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "pep" | "tech" | "pointage";
+type Tab = "dashboard" | "rh" | "planning" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "pep" | "tech" | "pointage";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -68,10 +69,11 @@ const Index = () => {
     { id: "tech" as Tab, label: "Suivi Technique", icon: Wrench, perm: "view_tech" },
     { id: "pointage" as Tab, label: "Pointage", icon: ScanFace, perm: "view_attendance" },
     { id: "rh" as Tab, label: "RH — Plannings", icon: Users, perm: "view_hr" },
+    { id: "planning" as Tab, label: "Planning", icon: CalendarDays, perm: "view_hr" },
   ];
   const ATTENDANCE_ENABLED = isPreviewHost();
   const tabs = allTabs.filter(
-    (t) => can(t.perm) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED) && (t.id !== "rh" || ATTENDANCE_ENABLED)
+    (t) => can(t.perm) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED) && (t.id !== "rh" || ATTENDANCE_ENABLED) && (t.id !== "planning" || ATTENDANCE_ENABLED)
   );
 
   // Ensure current tab is allowed
@@ -249,6 +251,7 @@ const Index = () => {
             {TECH_ENABLED && tab === "tech" && <TechModule />}
             {tab === "pointage" && <AttendanceModule />}
             {tab === "rh" && <HrModule />}
+            {tab === "planning" && <PlanningModule />}
           </Suspense>
         )}
       </main>
