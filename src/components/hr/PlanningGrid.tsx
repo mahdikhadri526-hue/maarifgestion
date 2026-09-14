@@ -234,7 +234,9 @@ export function PlanningGrid({
 
       {list.length === 0 ? (
         <div className="p-8 text-center text-sm text-muted-foreground">
-          Aucun {level === "manager" ? "manager" : "agent"} enregistré pour ce périmètre.
+          {techMode === "only"
+            ? "Aucun agent Ménage / Sécurité enregistré pour ce périmètre."
+            : `Aucun ${level === "manager" ? "manager" : "agent"} enregistré pour ce périmètre.`}
         </div>
       ) : (
         <div className="overflow-x-auto">
