@@ -109,6 +109,7 @@ export async function createHrAgent(row: {
   hire_date?: string | null;
   staff_level?: StaffLevel;
   matricule?: string | null;
+  multi_pdv?: boolean;
 }): Promise<void> {
   const { data, error } = await supabase
     .from("attendance_agents" as any)
@@ -119,6 +120,7 @@ export async function createHrAgent(row: {
       hire_date: row.hire_date || null,
       staff_level: row.staff_level ?? "agent",
       matricule: row.matricule?.trim() || null,
+      multi_pdv: row.multi_pdv ?? false,
       descriptors: [],
       active: true,
     })
@@ -134,6 +136,7 @@ export async function createHrAgent(row: {
     staff_level: row.staff_level ?? "agent",
     matricule: row.matricule?.trim() || null,
     hire_date: row.hire_date || null,
+    multi_pdv: row.multi_pdv ?? false,
     active: true,
   });
   if (pErr) throw pErr;
