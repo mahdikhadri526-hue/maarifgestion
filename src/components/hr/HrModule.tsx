@@ -38,7 +38,8 @@ import {
 } from "@/lib/hrData";
 import { computeBalance, computeDay, downloadCsv, toCsv } from "@/lib/hrCompute";
 
-type View = "planning" | "agents" | "soldes" | "feries" | "rapports";
+type View = "planning" | "agents" | "soldes" | "feries" | "suivi";
+type SuiviSection = "soldes" | "rapports";
 
 export function HrModule() {
   const { pdvId, pdvs, can, isAdmin } = useAuth();
@@ -49,6 +50,7 @@ export function HrModule() {
   );
 
   const [view, setView] = useState<View>("planning");
+  const [suiviSection, setSuiviSection] = useState<SuiviSection>("soldes");
   const [agents, setAgents] = useState<HrAgent[]>([]);
   const [holidays, setHolidays] = useState<HrHoliday[]>([]);
   const [balances, setBalances] = useState<HrBalanceEntry[]>([]);
@@ -84,9 +86,8 @@ export function HrModule() {
   const tabs: { id: View; label: string; icon: any }[] = [
     { id: "planning", label: "Planning", icon: CalendarDays },
     { id: "agents", label: "Agents", icon: Users },
-    { id: "soldes", label: "Congés & Récup", icon: Sun },
     { id: "feries", label: "Jours fériés", icon: CalendarDays },
-    { id: "rapports", label: "Rapports", icon: BarChart3 },
+    { id: "suivi", label: "Congés & Rapports", icon: BarChart3 },
   ];
 
   return (
@@ -107,12 +108,31 @@ export function HrModule() {
         <PlanningView agents={agents} holidays={holidays} isRh={isRh} onChanged={reload} />
       )}
       {view === "agents" && <AgentsHrView agents={agents} onChanged={reload} />}
-      {view === "soldes" && (
-        <BalancesView agents={agents} schedules={allSchedules} entries={balances} holidays={holidays} onChanged={reload} />
-      )}
       {view === "feries" && <HolidaysView holidays={holidays} canEdit={isRh} onChanged={reload} />}
-      {view === "rapports" && (
-        <ReportsView agents={agents} holidays={holidays} scopePdvIds={scopePdvIds} isRh={isRh} />
+      {view === "suivi" && (
+        <Card className="p-4 space-y-4">
+          <div className="flex flex-wrap items-center gap-2 border-b pb-3">
+            <Button
+              size="sm"
+              variant={suiviSection === "soldes" ? "default" : "outline"}
+              onClick={() => setSuiviSection("soldes")}
+            >
+              <Sun className="w-4 h-4 mr-1" /> Congés & Récup
+            </Button>
+            <Button
+              size="sm"
+              variant={suiviSection === "rapports" ? "default" : "outline"}
+              onClick={() => setSuiviSection("rapports")}
+            >
+              <BarChart3 className="w-4 h-4 mr-1" /> Rapports
+            </Button>
+          </div>
+          {suiviSection === "soldes" ? (
+            <BalancesView agents={agents} schedules={allSchedules} entries={balances} holidays={holidays} onChanged={reload} />
+          ) : (
+            <ReportsView agents={agents} holidays={holidays} scopePdvIds={scopePdvIds} isRh={isRh} />
+          )}
+        </Card>
       )}
     </div>
   );
