@@ -108,7 +108,7 @@ export function HrModule() {
       )}
       {view === "agents" && <AgentsHrView agents={agents} onChanged={reload} />}
       {view === "soldes" && (
-        <BalancesView agents={agents} schedules={allSchedules} entries={balances} onChanged={reload} />
+        <BalancesView agents={agents} schedules={allSchedules} entries={balances} holidays={holidays} onChanged={reload} />
       )}
       {view === "feries" && <HolidaysView holidays={holidays} canEdit={isRh} onChanged={reload} />}
       {view === "rapports" && (
@@ -530,13 +530,16 @@ function BalancesView({
   agents,
   schedules,
   entries,
+  holidays,
   onChanged,
 }: {
   agents: HrAgent[];
   schedules: HrSchedule[];
   entries: HrBalanceEntry[];
+  holidays: HrHoliday[];
   onChanged: () => Promise<void> | void;
 }) {
+  const holidayDates = useMemo(() => holidays.map((h) => h.holiday_date), [holidays]);
   const [agentId, setAgentId] = useState("");
   const [kind, setKind] = useState("recup_credit");
   const [days, setDays] = useState("1");
@@ -600,6 +603,7 @@ function BalancesView({
             hireDate: a.hire_date,
             schedules: schedules.filter((s) => s.agent_id === a.id),
             entries: entries.filter((e) => e.agent_id === a.id),
+            holidays: holidayDates,
           });
           return (
             <Card key={a.id} className="p-3">
