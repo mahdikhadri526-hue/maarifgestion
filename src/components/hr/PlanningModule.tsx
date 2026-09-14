@@ -58,6 +58,11 @@ export function PlanningModule() {
     [agents, pdvFilter],
   );
 
+  const hasCaissiers = useMemo(
+    () => visibleAgents.some((a) => (a.poste ?? "").trim().toLowerCase() === "caissier"),
+    [visibleAgents],
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -94,7 +99,21 @@ export function PlanningModule() {
         isRh={isRh}
         onChanged={reload}
         showLevelToggle={false}
+        caissierMode="exclude"
       />
+
+      {hasCaissiers && (
+        <PlanningGrid
+          agents={visibleAgents}
+          holidays={holidays}
+          isRh={isRh}
+          onChanged={reload}
+          showLevelToggle={false}
+          caissierMode="only"
+          readOnly={!isRh}
+          title="Planning caissiers — établi par la RH"
+        />
+      )}
     </div>
   );
 }

@@ -35,6 +35,8 @@ export function PlanningGrid({
   onChanged,
   showLevelToggle = true,
   readOnly = false,
+  caissierMode = "bottom",
+  title = "Planning hebdomadaire",
 }: {
   agents: HrAgent[];
   holidays: HrHoliday[];
@@ -44,6 +46,9 @@ export function PlanningGrid({
   showLevelToggle?: boolean;
   /** true = consultation uniquement (aucune modification possible). */
   readOnly?: boolean;
+  /** Gestion des caissiers : en bas (défaut), exclus de la grille, ou grille dédiée. */
+  caissierMode?: "bottom" | "exclude" | "only";
+  title?: string;
 }) {
   const { pdvs } = useAuth();
   const [start, setStart] = useState(() => weekStart(isoDate(new Date())));
@@ -56,9 +61,14 @@ export function PlanningGrid({
   /** Les caissiers sont planifiés par la RH : affichés en bas, verrouillés pour les managers. */
   const list = useMemo(() => {
     const base = agents.filter((a) => a.active && (a.staff_level ?? "agent") === level);
+    if (caissierMode === "exclude") return base.filter((a) => !isCaissier(a));
+    if (caissierMode === "only") return base.filter(isCaissier);
     return [...base.filter((a) => !isCaissier(a)), ...base.filter(isCaissier)];
-  }, [agents, level]);
-  const firstCaissierId = useMemo(() => list.find(isCaissier)?.id ?? null, [list]);
+  }, [agents, level, caissierMode]);
+  const firstCaissierId = useMemo(
+    () => (caissierMode === "bottom" ? list.find(isCaissier)?.id ?? null : null),
+    [list, caissierMode],
+  );
   const rowReadOnly = (a: HrAgent) => (isCaissier(a) ? !isRh : readOnly);
   const holidayMap = useMemo(
     () => new Map(holidays.map((h) => [h.holiday_date, h.label])),
@@ -133,7 +143,7 @@ export function PlanningGrid({
       <div className="flex flex-col gap-3 border-b border-border bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold">
-            Planning hebdomadaire
+            {title}
             {readOnly && (
               <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
                 Lecture seule
