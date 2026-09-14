@@ -159,7 +159,7 @@ export function PlanningGrid({
   const load = useCallback(async () => {
     const ids = planningPdvId
       ? [planningPdvId]
-      : Array.from(new Set(agents.map((a) => a.pdv_id)));
+      : pdvs.map((p) => p.id);
     if (ids.length === 0) return;
     setLoading(true);
     setRows([]);
@@ -170,7 +170,7 @@ export function PlanningGrid({
     } finally {
       setLoading(false);
     }
-  }, [agents, days, planningPdvId]);
+  }, [days, pdvs, planningPdvId]);
 
   useEffect(() => {
     void load();
