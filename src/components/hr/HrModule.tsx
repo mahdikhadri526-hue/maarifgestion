@@ -505,6 +505,36 @@ function BalancesView({
         )}
       </Card>
 
+      <Card className="p-3 grid gap-2 sm:grid-cols-3 items-end">
+        <div>
+          <label className="text-[11px] text-muted-foreground">Point de vente</label>
+          <select className="h-9 w-full rounded border bg-background px-2 text-sm" value={fPdv} onChange={(e) => setFPdv(e.target.value)}>
+            <option value="all">Tous les PDV</option>
+            {pdvs.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">Recherche employé</label>
+          <Input className="h-9" placeholder="Nom…" value={fSearch} onChange={(e) => setFSearch(e.target.value)} />
+        </div>
+        <div className="flex gap-2 items-end">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setFPdv("all");
+              setFSearch("");
+            }}
+          >
+            Réinit.
+          </Button>
+        </div>
+      </Card>
+
 
       <div className="space-y-2">
         {visibleAgents.map((a) => {
