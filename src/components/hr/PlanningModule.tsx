@@ -4,14 +4,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, RefreshCw, Trash2, Users } from "lucide-react";
+import { CalendarDays, Plus, RefreshCw, Trash2, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { PlanningGrid } from "./PlanningGrid";
 import {
   createHrAgent,
   deleteHrAgent,
   formatFr,
+  getHolidays,
+  getHrAgents,
   getPlanningRows,
   POSTES,
+  type HrAgent,
+  type HrHoliday,
   type PlanningRow,
 } from "@/lib/hrData";
 
