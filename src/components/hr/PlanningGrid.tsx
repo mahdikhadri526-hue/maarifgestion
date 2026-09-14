@@ -256,7 +256,7 @@ export function PlanningGrid({
                     const type = c?.day_type as DayType | undefined;
                     return (
                       <td key={d} className={`!p-1 border-r border-border/60 ${i > 4 ? "bg-muted/40" : ""}`}>
-                        {readOnly ? (
+                        {rowReadOnly(a) ? (
                           <div className={`min-h-[58px] rounded-md border px-1.5 py-1.5 text-center ${cellTone(type)}`}>
                             <span className="block text-[10px] font-semibold">
                               {type ? DAY_TYPE_LABELS[type] : "—"}
