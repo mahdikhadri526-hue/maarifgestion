@@ -668,8 +668,13 @@ function ReportsView({
   const [to, setTo] = useState(today);
   const [agentId, setAgentId] = useState("");
   const [pdvFilter, setPdvFilter] = useState("");
+  const [search, setSearch] = useState("");
   const [rows, setRows] = useState<ReturnType<typeof computeDay>[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const matchesName = (name: string) =>
+    !search.trim() || name.toLowerCase().includes(search.trim().toLowerCase());
+  const visibleAgents = agents.filter((a) => matchesName(a.full_name));
 
   const run = async () => {
     const ids = pdvFilter ? [pdvFilter] : scopePdvIds;
@@ -682,7 +687,9 @@ function ReportsView({
       ]);
       const holidayMap = new Map(holidays.map((h) => [h.holiday_date, h.label]));
       const targetAgents = agents.filter(
-        (a) => ids.includes(a.pdv_id) && (!agentId || a.id === agentId),
+        (a) =>
+          ids.includes(a.pdv_id) &&
+          (agentId ? a.id === agentId : matchesName(a.full_name)),
       );
       const out: ReturnType<typeof computeDay>[] = [];
       const dates: string[] = [];
