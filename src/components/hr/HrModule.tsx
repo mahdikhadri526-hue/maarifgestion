@@ -364,8 +364,6 @@ function BalancesView({
   // Filtres
   const [fPdv, setFPdv] = useState("all");
   const [fSearch, setFSearch] = useState("");
-  const [fFrom, setFFrom] = useState("");
-  const [fTo, setFTo] = useState("");
 
   const visibleAgents = useMemo(
     () =>
@@ -383,11 +381,9 @@ function BalancesView({
     () =>
       entries.filter((e) => {
         if (!visibleAgentIds.has(e.agent_id)) return false;
-        if (fFrom && e.entry_date < fFrom) return false;
-        if (fTo && e.entry_date > fTo) return false;
         return true;
       }),
-    [entries, visibleAgentIds, fFrom, fTo],
+    [entries, visibleAgentIds],
   );
 
   const add = async () => {
