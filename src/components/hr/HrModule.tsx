@@ -538,10 +538,10 @@ function BalancesView({
         })}
       </div>
 
-      {entries.length > 0 && (
+      {visibleEntries.length > 0 && (
         <Card className="p-3 space-y-1">
-          <p className="text-sm font-semibold mb-1">Historique des mouvements</p>
-          {entries.slice(0, 40).map((e) => (
+          <p className="text-sm font-semibold mb-1">Historique des mouvements ({visibleEntries.length})</p>
+          {visibleEntries.slice(0, 40).map((e) => (
             <div key={e.id} className="flex items-center justify-between gap-2 text-xs border-b py-1">
               <span>
                 {formatFr(e.entry_date)} — {agents.find((a) => a.id === e.agent_id)?.full_name ?? "?"} — {e.kind} — {e.days} j
