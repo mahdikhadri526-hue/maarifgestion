@@ -415,6 +415,11 @@ export function PlanningGrid({
                             )}
                             {type === "travail" && !needsAssignment(a) && (
                               <span className="mt-1 block border-t border-current/15 pt-1 text-[9px] opacity-80">
+                                {needsPdvAndHours(a) && (
+                                  <span className="block font-medium">
+                                    {pdvs.find((p) => p.id === c?.pdv_id)?.name ?? "PDV"}
+                                  </span>
+                                )}
                                 {c?.start_time || "--:--"} – {c?.end_time || "--:--"}
                               </span>
                             )}
