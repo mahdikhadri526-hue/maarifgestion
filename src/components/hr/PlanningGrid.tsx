@@ -81,8 +81,11 @@ export function PlanningGrid({
     const p = norm(a.poste);
     return p === "menage" || p.includes("securite");
   };
-  const needsAssignment = (a: HrAgent) =>
-    (a.staff_level ?? "agent") === "manager" || isCaissier(a) || isTechPoste(a);
+  /** Managers : affectation « PDV — Matin / Après-midi ». */
+  const needsAssignment = (a: HrAgent) => (a.staff_level ?? "agent") === "manager";
+  /** Caissiers, ménage et sécurité : choix du PDV + horaires d'entrée / sortie. */
+  const needsPdvAndHours = (a: HrAgent) =>
+    (a.staff_level ?? "agent") !== "manager" && (isCaissier(a) || isTechPoste(a));
   const shiftLabel = (shift: WorkShift | null | undefined) =>
     shift === "matin" ? "Matin" : shift === "apres_midi" ? "Après-midi" : "";
   /** Les caissiers sont planifiés par la RH : affichés en bas, verrouillés pour les managers. */
