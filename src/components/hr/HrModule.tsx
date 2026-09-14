@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { BarChart3, CalendarDays, ChevronLeft, ChevronRight, Download, Plus, RefreshCw, Sun, Trash2, Users } from "lucide-react";
+import { BarChart3, CalendarDays, ChevronLeft, ChevronRight, Clock, Download, Plus, RefreshCw, Sun, Trash2, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import type { AttendancePunch } from "@/lib/attendanceData";
 import {
@@ -24,6 +24,12 @@ import {
   getHrAgents,
   getPunchesRange,
   getSchedules,
+  getShiftTimes,
+  saveShiftTime,
+  shiftStartMap,
+  SHIFT_LABELS,
+  type PdvShiftTime,
+  type WorkShift,
   isoDate,
   POSTES,
   saveSchedule,
@@ -39,7 +45,7 @@ import {
 import { computeBalance, computeDay, downloadCsv, toCsv } from "@/lib/hrCompute";
 import { PlanningGrid, addWeek } from "./PlanningGrid";
 
-type View = "planning" | "agents" | "soldes" | "feries" | "suivi";
+type View = "planning" | "agents" | "horaires" | "soldes" | "feries" | "suivi";
 type SuiviSection = "soldes" | "rapports";
 
 export function HrModule() {
@@ -86,6 +92,7 @@ export function HrModule() {
 
   const tabs: { id: View; label: string; icon: any }[] = [
     { id: "agents", label: "Employés", icon: Users },
+    { id: "horaires", label: "Horaires shifts", icon: Clock },
     { id: "planning", label: "Planning", icon: CalendarDays },
     { id: "feries", label: "Jours fériés", icon: CalendarDays },
     { id: "suivi", label: "Congés & Rapports", icon: BarChart3 },
@@ -117,6 +124,7 @@ export function HrModule() {
         />
       )}
       {view === "agents" && <AgentsHrView agents={agents} onChanged={reload} />}
+      {view === "horaires" && <ShiftTimesView canEdit={isRh} />}
       {view === "feries" && <HolidaysView holidays={holidays} canEdit={isRh} onChanged={reload} />}
       {view === "suivi" && (
         <Card className="p-4 space-y-4">
@@ -144,6 +152,124 @@ export function HrModule() {
         </Card>
       )}
     </div>
+  );
+}
+
+/* ------------------------------------------------------------------ Horaires de shift par PDV */
+
+function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
+  const { pdvs } = useAuth();
+  const [rows, setRows] = useState<PdvShiftTime[]>([]);
+  const [draft, setDraft] = useState<Record<string, { start: string; end: string }>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await getShiftTimes();
+      setRows(data);
+      const d: Record<string, { start: string; end: string }> = {};
+      data.forEach((r) => {
+        d[`${r.pdv_id}|${r.shift}`] = { start: r.start_time ?? "", end: r.end_time ?? "" };
+      });
+      setDraft(d);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Chargement impossible");
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const shifts: WorkShift[] = ["matin", "apres_midi"];
+
+  const save = async (pdv_id: string, shift: WorkShift) => {
+    const key = `${pdv_id}|${shift}`;
+    const v = draft[key];
+    if (!v?.start) {
+      toast.error("Indiquez l'heure de début");
+      return;
+    }
+    setBusy(key);
+    try {
+      await saveShiftTime({ pdv_id, shift, start_time: v.start, end_time: v.end || null });
+      toast.success("Horaire enregistré");
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Enregistrement impossible");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const setField = (key: string, field: "start" | "end", value: string) =>
+    setDraft((d) => ({ ...d, [key]: { start: d[key]?.start ?? "", end: d[key]?.end ?? "", [field]: value } }));
+
+  return (
+    <Card className="p-4 space-y-3">
+      <div>
+        <h3 className="font-semibold">Horaires des shifts par point de vente</h3>
+        <p className="text-xs text-muted-foreground">
+          Heures de début du matin et de l'après-midi — utilisées pour calculer le retard des managers, caissiers,
+          ménage et sécurité.
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50">
+            <tr className="text-left">
+              <th className="p-2">Point de vente</th>
+              <th className="p-2">Shift</th>
+              <th className="p-2">Début</th>
+              <th className="p-2">Fin (facultatif)</th>
+              <th className="p-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {pdvs.map((p) =>
+              shifts.map((sh) => {
+                const key = `${p.id}|${sh}`;
+                const v = draft[key] ?? { start: "", end: "" };
+                return (
+                  <tr key={key} className="border-t">
+                    <td className="p-2 whitespace-nowrap">{sh === "matin" ? p.name : ""}</td>
+                    <td className="p-2 whitespace-nowrap">{SHIFT_LABELS[sh]}</td>
+                    <td className="p-2">
+                      <Input
+                        type="time"
+                        className="h-9 w-32"
+                        value={v.start}
+                        disabled={!canEdit}
+                        onChange={(e) => setField(key, "start", e.target.value)}
+                      />
+                    </td>
+                    <td className="p-2">
+                      <Input
+                        type="time"
+                        className="h-9 w-32"
+                        value={v.end}
+                        disabled={!canEdit}
+                        onChange={(e) => setField(key, "end", e.target.value)}
+                      />
+                    </td>
+                    <td className="p-2">
+                      {canEdit && (
+                        <Button size="sm" disabled={busy === key} onClick={() => void save(p.id, sh)}>
+                          Enregistrer
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              }),
+            )}
+          </tbody>
+        </table>
+      </div>
+      {rows.length === 0 && (
+        <p className="text-xs text-muted-foreground">Aucun horaire enregistré pour le moment.</p>
+      )}
+    </Card>
   );
 }
 
@@ -681,10 +807,12 @@ function ReportsView({
     if (ids.length === 0) return;
     setLoading(true);
     try {
-      const [punches, schedules] = await Promise.all([
+      const [punches, schedules, shiftRows] = await Promise.all([
         getPunchesRange(ids, from, to),
         getSchedules(ids, from, to),
+        getShiftTimes(),
       ]);
+      const shiftStarts = shiftStartMap(shiftRows);
       const holidayMap = new Map(holidays.map((h) => [h.holiday_date, h.label]));
       const targetAgents = agents.filter(
         (a) =>
@@ -714,6 +842,7 @@ function ReportsView({
               pdvId: a.pdv_id,
               punches: dayPunches,
               schedule: sch,
+              shiftStarts,
               holidayLabel: holidayMap.get(date) ?? null,
             }),
           );

@@ -57,6 +57,8 @@ export function computeDay(params: {
   punches: AttendancePunch[];
   schedule: HrSchedule | null;
   holidayLabel?: string | null;
+  /** Heures de début de shift par PDV : clé `${pdv_id}|${shift}` → "HH:MM". */
+  shiftStarts?: Record<string, string>;
 }): DayResult {
   const { date, agentId, agentName, pdvId, punches, schedule } = params;
   const dayType = (schedule?.day_type as DayType | undefined) ?? null;
@@ -73,7 +75,11 @@ export function computeDay(params: {
   const worked = Math.max(0, workedMs) / 3_600_000;
 
   let lateMinutes = 0;
-  const plannedStart = schedule?.start_time ?? null;
+  const shiftStart =
+    schedule?.work_shift && params.shiftStarts
+      ? params.shiftStarts[`${schedule.pdv_id ?? pdvId}|${schedule.work_shift}`] ?? null
+      : null;
+  const plannedStart = schedule?.start_time ?? shiftStart;
   const pm = toMinutes(plannedStart);
   if (dayType === "travail" && pm !== null && e) {
     const d = new Date(e);
