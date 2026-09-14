@@ -70,6 +70,11 @@ export function PlanningModule() {
     [rows, pdvFilter],
   );
 
+  const visibleAgents = useMemo(
+    () => agents.filter((a) => pdvFilter === "all" || a.pdv_id === pdvFilter),
+    [agents, pdvFilter],
+  );
+
   /* ------------------------------------------------------------ Ajout */
   const [name, setName] = useState("");
   const [matricule, setMatricule] = useState("");
