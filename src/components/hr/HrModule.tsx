@@ -39,7 +39,7 @@ import {
 import { computeBalance, computeDay, downloadCsv, toCsv } from "@/lib/hrCompute";
 import { PlanningGrid, addWeek } from "./PlanningGrid";
 
-type View = "planning" | "agents" | "soldes" | "feries" | "suivi";
+type View = "planning" | "agents" | "horaires" | "soldes" | "feries" | "suivi";
 type SuiviSection = "soldes" | "rapports";
 
 export function HrModule() {
