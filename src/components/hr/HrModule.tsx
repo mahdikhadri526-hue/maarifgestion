@@ -419,7 +419,7 @@ function BalancesView({
 
   return (
     <div className="space-y-3">
-      <Card className="p-3 grid gap-2 sm:grid-cols-4 items-end">
+      <Card className="p-3 grid gap-2 sm:grid-cols-3 items-end">
         <div>
           <label className="text-[11px] text-muted-foreground">Point de vente</label>
           <select className="h-9 w-full rounded border bg-background px-2 text-sm" value={fPdv} onChange={(e) => setFPdv(e.target.value)}>
@@ -435,15 +435,7 @@ function BalancesView({
           <label className="text-[11px] text-muted-foreground">Recherche agent</label>
           <Input className="h-9" placeholder="Nom…" value={fSearch} onChange={(e) => setFSearch(e.target.value)} />
         </div>
-        <div>
-          <label className="text-[11px] text-muted-foreground">Du</label>
-          <Input type="date" className="h-9" value={fFrom} onChange={(e) => setFFrom(e.target.value)} />
-        </div>
         <div className="flex gap-2 items-end">
-          <div className="flex-1">
-            <label className="text-[11px] text-muted-foreground">Au</label>
-            <Input type="date" className="h-9" value={fTo} onChange={(e) => setFTo(e.target.value)} />
-          </div>
           <Button
             size="sm"
             variant="outline"
