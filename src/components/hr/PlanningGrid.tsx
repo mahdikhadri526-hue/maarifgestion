@@ -35,6 +35,7 @@ export function PlanningGrid({
   onChanged,
   showLevelToggle = true,
   readOnly = false,
+  agentsReadOnly = false,
   caissierMode = "bottom",
   title = "Planning hebdomadaire",
 }: {
@@ -46,6 +47,8 @@ export function PlanningGrid({
   showLevelToggle?: boolean;
   /** true = consultation uniquement (aucune modification possible). */
   readOnly?: boolean;
+  /** true = lignes des agents en lecture seule (managers et caissiers modifiables). */
+  agentsReadOnly?: boolean;
   /** Gestion des caissiers : en bas (défaut), exclus de la grille, ou grille dédiée. */
   caissierMode?: "bottom" | "exclude" | "only";
   title?: string;
@@ -75,7 +78,11 @@ export function PlanningGrid({
     () => (caissierMode === "bottom" ? list.find(isCaissier)?.id ?? null : null),
     [list, caissierMode],
   );
-  const rowReadOnly = (a: HrAgent) => readOnly || (isCaissier(a) && !isRh);
+  const rowReadOnly = (a: HrAgent) =>
+    readOnly ||
+    (isCaissier(a)
+      ? !isRh
+      : agentsReadOnly && (a.staff_level ?? "agent") === "agent");
   const holidayMap = useMemo(
     () => new Map(holidays.map((h) => [h.holiday_date, h.label])),
     [holidays],
