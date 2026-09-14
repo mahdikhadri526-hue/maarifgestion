@@ -267,7 +267,9 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
         </div>
       </Card>
 
-      {agents.map((a) => (
+      {agents.map((a) => {
+        const isManager = (a.staff_level ?? "agent") === "manager";
+        return (
         <Card key={a.id} className="p-3 grid gap-2 sm:grid-cols-5 items-center">
           <div>
             <p className="font-medium">{a.full_name}</p>
@@ -276,11 +278,13 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
             </p>
           </div>
           <select
-            className="h-9 rounded border bg-background px-2 text-sm"
+            className="h-9 rounded border bg-background px-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
             value={a.poste ?? ""}
             onChange={(e) => void save(a.id, { poste: e.target.value || null })}
+            disabled={isManager}
+            title={isManager ? "Poste non requis pour un manager" : undefined}
           >
-            <option value="">Poste…</option>
+            <option value="">{isManager ? "Poste non requis" : "Poste…"}</option>
             {POSTES.map((p) => (
               <option key={p} value={p}>
                 {p}
@@ -290,7 +294,10 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
           <select
             className="h-9 rounded border bg-background px-2 text-sm"
             value={a.staff_level ?? "agent"}
-            onChange={(e) => void save(a.id, { staff_level: e.target.value as any })}
+            onChange={(e) => {
+              const v = e.target.value as any;
+              void save(a.id, v === "manager" ? { staff_level: v, poste: null } : { staff_level: v });
+            }}
           >
             <option value="agent">Agent</option>
             <option value="manager">Manager</option>
@@ -310,7 +317,8 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
             </Button>
           </div>
         </Card>
-      ))}
+        );
+      })}
       {agents.length === 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">
           Aucun agent. Ajoutez-les ci-dessus ou enrôlez-les dans le module Pointage.
