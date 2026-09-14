@@ -55,8 +55,8 @@ export function PlanningGrid({
   caissierMode?: "bottom" | "exclude" | "only";
   /** Postes Ménage / Sécurité : exclus (défaut) ou grille dédiée (responsable technique). */
   techMode?: "exclude" | "only";
-  /** Affiche agents, caissiers et personnel technique dans une grille unique avec séparateurs. */
-  groupedCategories?: boolean;
+  /** Affiche les catégories dans une grille unique ; le mode RH inclut aussi les managers. */
+  groupedCategories?: boolean | "rh";
   title?: string;
 }) {
   const { pdvs } = useAuth();
@@ -78,11 +78,14 @@ export function PlanningGrid({
   const list = useMemo(() => {
     const actives = agents.filter((a) => a.active);
     if (groupedCategories) {
-      const scoped = actives.filter((a) => (a.staff_level ?? "agent") === "agent");
-      const regular = scoped.filter((a) => !isCaissier(a) && !isTechPoste(a));
-      const caissiers = scoped.filter(isCaissier);
-      const technical = scoped.filter(isTechPoste);
-      return [...regular, ...caissiers, ...technical];
+      const agentRows = actives.filter((a) => (a.staff_level ?? "agent") === "agent");
+      const regular = agentRows.filter((a) => !isCaissier(a) && !isTechPoste(a));
+      const caissiers = agentRows.filter(isCaissier);
+      const technical = agentRows.filter(isTechPoste);
+      const managers = actives.filter((a) => (a.staff_level ?? "agent") === "manager");
+      return groupedCategories === "rh"
+        ? [...managers, ...caissiers, ...regular, ...technical]
+        : [...regular, ...caissiers, ...technical];
     }
     if (techMode === "only") return actives.filter(isTechPoste);
     const pool = actives.filter((a) => !isTechPoste(a));
@@ -103,12 +106,20 @@ export function PlanningGrid({
     () => (groupedCategories ? list.find(isTechPoste)?.id ?? null : null),
     [list, groupedCategories],
   );
+  const firstManagerId = useMemo(
+    () => (groupedCategories === "rh" ? list.find((a) => (a.staff_level ?? "agent") === "manager")?.id ?? null : null),
+    [list, groupedCategories],
+  );
+  const firstRegularAgentId = useMemo(
+    () => (groupedCategories === "rh" ? list.find((a) => (a.staff_level ?? "agent") === "agent" && !isCaissier(a) && !isTechPoste(a))?.id ?? null : null),
+    [list, groupedCategories],
+  );
   const rowReadOnly = (a: HrAgent) =>
     readOnly ||
     (isTechPoste(a)
       ? groupedCategories || techMode !== "only"
       : isCaissier(a)
-        ? groupedCategories || !isRh
+        ? (groupedCategories === true) || !isRh
         : agentsReadOnly && (a.staff_level ?? "agent") === "agent");
   const holidayMap = useMemo(
     () => new Map(holidays.map((h) => [h.holiday_date, h.label])),
@@ -279,13 +290,33 @@ export function PlanningGrid({
             <tbody>
               {list.map((a) => (
                 <Fragment key={a.id}>
+                {a.id === firstManagerId && (
+                  <tr key={`sep-manager-${a.id}`}>
+                    <td
+                      colSpan={days.length + 1}
+                      className="sticky left-0 border-t border-border !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                    >
+                      Managers — planning établi par la RH
+                    </td>
+                  </tr>
+                )}
                 {a.id === firstCaissierId && (
                   <tr key={`sep-${a.id}`}>
                     <td
                       colSpan={days.length + 1}
                       className="sticky left-0 !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
                     >
-                      Caissiers — planning établi par la RH (lecture seule)
+                      Caissiers — planning établi par la RH{groupedCategories === true && " (lecture seule)"}
+                    </td>
+                  </tr>
+                )}
+                {a.id === firstRegularAgentId && (
+                  <tr key={`sep-agent-${a.id}`}>
+                    <td
+                      colSpan={days.length + 1}
+                      className="sticky left-0 border-t border-border !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                    >
+                      Agents — lecture seule
                     </td>
                   </tr>
                 )}
