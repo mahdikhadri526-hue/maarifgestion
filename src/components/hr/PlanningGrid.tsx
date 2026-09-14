@@ -81,8 +81,11 @@ export function PlanningGrid({
     const p = norm(a.poste);
     return p === "menage" || p.includes("securite");
   };
-  const needsAssignment = (a: HrAgent) =>
-    (a.staff_level ?? "agent") === "manager" || isCaissier(a) || isTechPoste(a);
+  /** Managers : affectation « PDV — Matin / Après-midi ». */
+  const needsAssignment = (a: HrAgent) => (a.staff_level ?? "agent") === "manager";
+  /** Caissiers, ménage et sécurité : choix du PDV + horaires d'entrée / sortie. */
+  const needsPdvAndHours = (a: HrAgent) =>
+    (a.staff_level ?? "agent") !== "manager" && (isCaissier(a) || isTechPoste(a));
   const shiftLabel = (shift: WorkShift | null | undefined) =>
     shift === "matin" ? "Matin" : shift === "apres_midi" ? "Après-midi" : "";
   /** Les caissiers sont planifiés par la RH : affichés en bas, verrouillés pour les managers. */
@@ -412,6 +415,11 @@ export function PlanningGrid({
                             )}
                             {type === "travail" && !needsAssignment(a) && (
                               <span className="mt-1 block border-t border-current/15 pt-1 text-[9px] opacity-80">
+                                {needsPdvAndHours(a) && (
+                                  <span className="block font-medium">
+                                    {pdvs.find((p) => p.id === c?.pdv_id)?.name ?? "PDV"}
+                                  </span>
+                                )}
                                 {c?.start_time || "--:--"} – {c?.end_time || "--:--"}
                               </span>
                             )}
@@ -447,6 +455,22 @@ export function PlanningGrid({
                                     <option key={`${p.id}-matin`} value={`${p.id}|matin`}>{p.name} — Matin</option>,
                                     <option key={`${p.id}-apres_midi`} value={`${p.id}|apres_midi`}>{p.name} — Après-midi</option>,
                                   ]))}
+                                </select>
+                              )}
+                              {needsPdvAndHours(a) && (
+                                <select
+                                  aria-label={`Point de vente de ${a.full_name} le ${formatFr(d)}`}
+                                  className="mt-0.5 h-6 w-full cursor-pointer border-t border-current/15 bg-transparent text-center text-[9px] font-medium outline-none"
+                                  value={c?.pdv_id ?? ""}
+                                  onChange={(e) => {
+                                    if (!e.target.value) return;
+                                    void update(a, d, { pdv_id: e.target.value, work_shift: null });
+                                  }}
+                                >
+                                  <option value="">PDV…</option>
+                                  {pdvs.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                  ))}
                                 </select>
                               )}
                               {!needsAssignment(a) && (
