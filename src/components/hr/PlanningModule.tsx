@@ -168,6 +168,12 @@ export function PlanningModule() {
         </div>
       </div>
 
+      {section === "grille" && (
+        <PlanningGrid agents={visibleAgents} holidays={holidays} isRh={isRh} onChanged={reload} />
+      )}
+
+      {section === "liste" && (
+        <>
       <Card className="p-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-7 items-end">
         <div className="sm:col-span-2">
           <label className="text-[11px] text-muted-foreground">Nom et prénom</label>
