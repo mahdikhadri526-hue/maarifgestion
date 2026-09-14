@@ -842,6 +842,7 @@ function ReportsView({
               pdvId: a.pdv_id,
               punches: dayPunches,
               schedule: sch,
+              shiftStarts,
               holidayLabel: holidayMap.get(date) ?? null,
             }),
           );
