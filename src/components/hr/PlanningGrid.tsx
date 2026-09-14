@@ -226,6 +226,17 @@ export function PlanningGrid({
             </thead>
             <tbody>
               {list.map((a) => (
+                <>
+                {a.id === firstCaissierId && (
+                  <tr key={`sep-${a.id}`}>
+                    <td
+                      colSpan={days.length + 1}
+                      className="sticky left-0 !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                    >
+                      Caissiers — planning établi par la RH{!isRh && " (lecture seule)"}
+                    </td>
+                  </tr>
+                )}
                 <tr key={a.id} className="group">
                   <td className="sticky left-0 z-20 !bg-card !px-3 !py-2 border-r border-border group-hover:!bg-accent">
                     <div className="flex min-w-0 items-center gap-2.5">
