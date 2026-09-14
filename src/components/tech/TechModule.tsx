@@ -245,6 +245,7 @@ export function TechModule() {
           onChanged={loadPlanning}
           showLevelToggle={false}
           techMode="only"
+          techCategorySeparators
           readOnly={!canManage && !isAdmin}
           title="Planning Ménage & Sécurité"
         />
