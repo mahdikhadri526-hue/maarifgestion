@@ -33,14 +33,25 @@ export function PlanningModule() {
   );
 
   const [rows, setRows] = useState<PlanningRow[]>([]);
+  const [agents, setAgents] = useState<HrAgent[]>([]);
+  const [holidays, setHolidays] = useState<HrHoliday[]>([]);
   const [loading, setLoading] = useState(true);
   const [pdvFilter, setPdvFilter] = useState<string>(pdvId ?? "all");
+  const [section, setSection] = useState<"grille" | "liste">("grille");
 
   const reload = useCallback(async () => {
     if (scopePdvIds && scopePdvIds.length === 0) return;
     setLoading(true);
     try {
-      setRows(await getPlanningRows(scopePdvIds));
+      const year = new Date().getFullYear();
+      const [p, a, h] = await Promise.all([
+        getPlanningRows(scopePdvIds),
+        getHrAgents(scopePdvIds),
+        getHolidays(`${year - 1}-01-01`, `${year + 1}-12-31`),
+      ]);
+      setRows(p);
+      setAgents(a);
+      setHolidays(h);
     } catch (e: any) {
       toast.error(e?.message ?? "Chargement impossible");
     } finally {
