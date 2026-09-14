@@ -106,6 +106,7 @@ export async function createHrAgent(row: {
   poste?: string | null;
   hire_date?: string | null;
   staff_level?: StaffLevel;
+  matricule?: string | null;
 }): Promise<void> {
   const { data, error } = await supabase
     .from("attendance_agents" as any)
@@ -115,6 +116,7 @@ export async function createHrAgent(row: {
       poste: row.poste || null,
       hire_date: row.hire_date || null,
       staff_level: row.staff_level ?? "agent",
+      matricule: row.matricule?.trim() || null,
       descriptors: [],
       active: true,
     })
@@ -128,6 +130,8 @@ export async function createHrAgent(row: {
     full_name: row.full_name.trim(),
     poste: row.poste || null,
     staff_level: row.staff_level ?? "agent",
+    matricule: row.matricule?.trim() || null,
+    hire_date: row.hire_date || null,
     active: true,
   });
   if (pErr) throw pErr;
@@ -145,6 +149,8 @@ export interface PlanningRow {
   pdv_id: string;
   agent_id: string | null;
   full_name: string;
+  matricule: string | null;
+  hire_date: string | null;
   poste: string | null;
   staff_level: StaffLevel;
   active: boolean;
@@ -153,7 +159,7 @@ export interface PlanningRow {
 export async function getPlanningRows(pdvIds: string[] | null): Promise<PlanningRow[]> {
   let q = supabase
     .from("planning" as any)
-    .select("id, pdv_id, agent_id, full_name, poste, staff_level, active")
+    .select("id, pdv_id, agent_id, full_name, matricule, hire_date, poste, staff_level, active")
     .order("full_name");
   if (pdvIds && pdvIds.length > 0) q = q.in("pdv_id", pdvIds);
   const { data, error } = await q;
