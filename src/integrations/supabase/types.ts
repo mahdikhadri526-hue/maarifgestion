@@ -1468,6 +1468,57 @@ export type Database = {
           },
         ]
       }
+      planning: {
+        Row: {
+          active: boolean
+          agent_id: string | null
+          created_at: string
+          full_name: string
+          id: string
+          pdv_id: string
+          poste: string | null
+          staff_level: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          agent_id?: string | null
+          created_at?: string
+          full_name: string
+          id?: string
+          pdv_id: string
+          poste?: string | null
+          staff_level?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          agent_id?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          pdv_id?: string
+          poste?: string | null
+          staff_level?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planning_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "attendance_agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planning_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_catalog: {
         Row: {
           category: string
