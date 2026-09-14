@@ -107,21 +107,58 @@ export async function createHrAgent(row: {
   hire_date?: string | null;
   staff_level?: StaffLevel;
 }): Promise<void> {
-  const { error } = await supabase.from("attendance_agents" as any).insert({
+  const { data, error } = await supabase
+    .from("attendance_agents" as any)
+    .insert({
+      pdv_id: row.pdv_id,
+      full_name: row.full_name.trim(),
+      poste: row.poste || null,
+      hire_date: row.hire_date || null,
+      staff_level: row.staff_level ?? "agent",
+      descriptors: [],
+      active: true,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  // Alimente aussi la table « planning » (liste des agents par PDV)
+  const { error: pErr } = await supabase.from("planning" as any).insert({
     pdv_id: row.pdv_id,
+    agent_id: (data as any)?.id ?? null,
     full_name: row.full_name.trim(),
     poste: row.poste || null,
-    hire_date: row.hire_date || null,
     staff_level: row.staff_level ?? "agent",
-    descriptors: [],
     active: true,
   });
-  if (error) throw error;
+  if (pErr) throw pErr;
 }
 
 export async function deleteHrAgent(id: string): Promise<void> {
   const { error } = await supabase.from("attendance_agents" as any).delete().eq("id", id);
   if (error) throw error;
+}
+
+/* ------------------------------------------------------------ Table Planning */
+
+export interface PlanningRow {
+  id: string;
+  pdv_id: string;
+  agent_id: string | null;
+  full_name: string;
+  poste: string | null;
+  staff_level: StaffLevel;
+  active: boolean;
+}
+
+export async function getPlanningRows(pdvIds: string[] | null): Promise<PlanningRow[]> {
+  let q = supabase
+    .from("planning" as any)
+    .select("id, pdv_id, agent_id, full_name, poste, staff_level, active")
+    .order("full_name");
+  if (pdvIds && pdvIds.length > 0) q = q.in("pdv_id", pdvIds);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as unknown as PlanningRow[];
 }
 
 export async function updateAgentHr(
