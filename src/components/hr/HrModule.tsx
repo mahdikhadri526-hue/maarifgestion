@@ -668,8 +668,13 @@ function ReportsView({
   const [to, setTo] = useState(today);
   const [agentId, setAgentId] = useState("");
   const [pdvFilter, setPdvFilter] = useState("");
+  const [search, setSearch] = useState("");
   const [rows, setRows] = useState<ReturnType<typeof computeDay>[]>([]);
   const [loading, setLoading] = useState(false);
+
+  const matchesName = (name: string) =>
+    !search.trim() || name.toLowerCase().includes(search.trim().toLowerCase());
+  const visibleAgents = agents.filter((a) => matchesName(a.full_name));
 
   const run = async () => {
     const ids = pdvFilter ? [pdvFilter] : scopePdvIds;
@@ -682,7 +687,9 @@ function ReportsView({
       ]);
       const holidayMap = new Map(holidays.map((h) => [h.holiday_date, h.label]));
       const targetAgents = agents.filter(
-        (a) => ids.includes(a.pdv_id) && (!agentId || a.id === agentId),
+        (a) =>
+          ids.includes(a.pdv_id) &&
+          (agentId ? a.id === agentId : matchesName(a.full_name)),
       );
       const out: ReturnType<typeof computeDay>[] = [];
       const dates: string[] = [];
@@ -739,7 +746,7 @@ function ReportsView({
     const data = rows.map((r) => ({
       Date: formatFr(r.date),
       PDV: pdvs.find((p) => p.id === r.pdvId)?.name ?? "",
-      Agent: r.agentName,
+      Employé: r.agentName,
       Journée: r.dayType ? DAY_TYPE_LABELS[r.dayType] : "—",
       Férié: r.holidayLabel ?? "",
       "Entrée prévue": r.plannedStart ?? "",
@@ -757,12 +764,21 @@ function ReportsView({
 
   return (
     <div className="space-y-3">
-      <Card className="p-3 grid gap-2 sm:grid-cols-5">
+      <Card className="p-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" />
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" />
+        <Input
+          placeholder="Rechercher un employé…"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setAgentId("");
+          }}
+          className="h-9"
+        />
         <select className="h-9 rounded border bg-background px-2 text-sm" value={agentId} onChange={(e) => setAgentId(e.target.value)}>
-          <option value="">Tous les agents</option>
-          {agents.map((a) => (
+          <option value="">Tous les employés</option>
+          {visibleAgents.map((a) => (
             <option key={a.id} value={a.id}>
               {a.full_name}
             </option>
@@ -780,14 +796,32 @@ function ReportsView({
         ) : (
           <div />
         )}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" onClick={() => void run()} disabled={loading}>
             {loading ? "…" : "Afficher"}
           </Button>
           <Button size="sm" variant="outline" onClick={exportCsv} disabled={rows.length === 0}>
             <Download className="w-4 h-4 mr-1" /> Export
           </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => {
+              setSearch("");
+              setAgentId("");
+              setPdvFilter("");
+            }}
+          >
+            Réinit.
+          </Button>
         </div>
+        {(search.trim() || agentId) && (
+          <p className="col-span-full text-[11px] text-muted-foreground">
+            {visibleAgents.length === 0
+              ? `Aucun employé ne correspond à « ${search.trim()} ».`
+              : `${visibleAgents.length} employé${visibleAgents.length > 1 ? "s" : ""} dans la liste.`}
+          </p>
+        )}
       </Card>
 
       {rows.length > 0 && (
