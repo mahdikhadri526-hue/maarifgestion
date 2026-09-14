@@ -16,6 +16,7 @@ export const DAY_TYPES: DayType[] = ["travail", "repos", "conge", "recuperation"
 export const POSTES = ["Service", "Comptoir", "Caissier", "Passe", "Ménage", "Agent de sécurité"] as const;
 
 export type StaffLevel = "agent" | "manager";
+export type WorkShift = "matin" | "apres_midi";
 
 export interface HrAgent {
   id: string;
@@ -37,6 +38,7 @@ export interface HrSchedule {
   day_type: DayType;
   start_time: string | null;
   end_time: string | null;
+  work_shift: WorkShift | null;
   notes: string | null;
 }
 
@@ -189,7 +191,7 @@ export async function getSchedules(
 ): Promise<HrSchedule[]> {
   const { data, error } = await supabase
     .from("hr_schedules" as any)
-    .select("id, pdv_id, agent_id, work_date, day_type, start_time, end_time, notes")
+    .select("id, pdv_id, agent_id, work_date, day_type, start_time, end_time, work_shift, notes")
     .in("pdv_id", pdvIds)
     .gte("work_date", from)
     .lte("work_date", to)
@@ -205,6 +207,7 @@ export async function saveSchedule(row: {
   day_type: DayType;
   start_time?: string | null;
   end_time?: string | null;
+  work_shift?: WorkShift | null;
   notes?: string | null;
 }): Promise<void> {
   const { error } = await supabase
@@ -214,6 +217,7 @@ export async function saveSchedule(row: {
         ...row,
         start_time: row.day_type === "travail" ? row.start_time || null : null,
         end_time: row.day_type === "travail" ? row.end_time || null : null,
+        work_shift: row.day_type === "travail" ? row.work_shift || null : null,
       },
       { onConflict: "agent_id,work_date" },
     );

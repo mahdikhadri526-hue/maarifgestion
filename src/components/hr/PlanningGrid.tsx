@@ -19,6 +19,7 @@ import {
   type HrAgent,
   type HrHoliday,
   type HrSchedule,
+  type WorkShift,
 } from "@/lib/hrData";
 
 export function addWeek(iso: string, n: number): string {
@@ -80,6 +81,10 @@ export function PlanningGrid({
     const p = norm(a.poste);
     return p === "menage" || p.includes("securite");
   };
+  const needsAssignment = (a: HrAgent) =>
+    (a.staff_level ?? "agent") === "manager" || isCaissier(a) || isTechPoste(a);
+  const shiftLabel = (shift: WorkShift | null | undefined) =>
+    shift === "matin" ? "Matin" : shift === "apres_midi" ? "Après-midi" : "";
   /** Les caissiers sont planifiés par la RH : affichés en bas, verrouillés pour les managers. */
   const list = useMemo(() => {
     const actives = agents.filter((a) => a.active);
@@ -190,16 +195,17 @@ export function PlanningGrid({
   const update = async (
     agent: HrAgent,
     date: string,
-    patch: { day_type?: DayType; start_time?: string; end_time?: string },
+    patch: { day_type?: DayType; start_time?: string; end_time?: string; pdv_id?: string; work_shift?: WorkShift | null },
   ) => {
     const cur = cell(agent.id, date);
     const next = {
-      pdv_id: planningPdvId ?? agent.pdv_id,
+      pdv_id: patch.pdv_id ?? cur?.pdv_id ?? planningPdvId ?? agent.pdv_id,
       agent_id: agent.id,
       work_date: date,
       day_type: patch.day_type ?? (cur?.day_type as DayType) ?? "travail",
       start_time: patch.start_time ?? cur?.start_time ?? "",
       end_time: patch.end_time ?? cur?.end_time ?? "",
+      work_shift: patch.work_shift === undefined ? cur?.work_shift ?? null : patch.work_shift,
     };
     setRows((prev) => {
       const others = prev.filter((r) => !(r.agent_id === agent.id && r.work_date === date));
@@ -400,9 +406,16 @@ export function PlanningGrid({
                               {type ? DAY_TYPE_LABELS[type] : "—"}
                             </span>
                             {type === "travail" && (
-                              <span className="mt-1 block border-t border-current/15 pt-1 text-[9px] opacity-80">
-                                {c?.start_time || "--:--"} – {c?.end_time || "--:--"}
-                              </span>
+                              <>
+                                {needsAssignment(a) && c?.work_shift && (
+                                  <span className="mt-1 block border-t border-current/15 pt-1 text-[9px] font-medium">
+                                    {pdvs.find((p) => p.id === c.pdv_id)?.name ?? "PDV"} — {shiftLabel(c.work_shift)}
+                                  </span>
+                                )}
+                                <span className={`${needsAssignment(a) && c?.work_shift ? "mt-0.5" : "mt-1 border-t border-current/15 pt-1"} block text-[9px] opacity-80`}>
+                                  {c?.start_time || "--:--"} – {c?.end_time || "--:--"}
+                                </span>
+                              </>
                             )}
                           </div>
                         ) : (
@@ -419,6 +432,25 @@ export function PlanningGrid({
                               ))}
                             </select>
                             {type === "travail" && (
+                              <>
+                              {needsAssignment(a) && (
+                                <select
+                                  aria-label={`Affectation de ${a.full_name} le ${formatFr(d)}`}
+                                  className="mt-0.5 h-6 w-full cursor-pointer border-t border-current/15 bg-transparent text-center text-[9px] font-medium outline-none"
+                                  value={c?.work_shift ? `${c.pdv_id}|${c.work_shift}` : ""}
+                                  onChange={(e) => {
+                                    const [selectedPdvId, selectedShift] = e.target.value.split("|");
+                                    if (!selectedPdvId || (selectedShift !== "matin" && selectedShift !== "apres_midi")) return;
+                                    void update(a, d, { pdv_id: selectedPdvId, work_shift: selectedShift });
+                                  }}
+                                >
+                                  <option value="">PDV — période</option>
+                                  {pdvs.flatMap((p) => ([
+                                    <option key={`${p.id}-matin`} value={`${p.id}|matin`}>{p.name} — Matin</option>,
+                                    <option key={`${p.id}-apres_midi`} value={`${p.id}|apres_midi`}>{p.name} — Après-midi</option>,
+                                  ]))}
+                                </select>
+                              )}
                               <div className="mt-0.5 flex items-center gap-0.5 border-t border-current/15 pt-0.5">
                                 <Input
                                   type="time"
@@ -436,6 +468,7 @@ export function PlanningGrid({
                                   onChange={(e) => void update(a, d, { end_time: e.target.value })}
                                 />
                               </div>
+                              </>
                             )}
                           </div>
                         )}

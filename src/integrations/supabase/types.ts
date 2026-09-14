@@ -745,6 +745,7 @@ export type Database = {
           start_time: string | null
           updated_at: string
           work_date: string
+          work_shift: string | null
         }
         Insert: {
           agent_id: string
@@ -758,6 +759,7 @@ export type Database = {
           start_time?: string | null
           updated_at?: string
           work_date: string
+          work_shift?: string | null
         }
         Update: {
           agent_id?: string
@@ -771,6 +773,7 @@ export type Database = {
           start_time?: string | null
           updated_at?: string
           work_date?: string
+          work_shift?: string | null
         }
         Relationships: [
           {
