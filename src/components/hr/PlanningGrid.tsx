@@ -457,6 +457,22 @@ export function PlanningGrid({
                                   ]))}
                                 </select>
                               )}
+                              {needsPdvAndHours(a) && (
+                                <select
+                                  aria-label={`Point de vente de ${a.full_name} le ${formatFr(d)}`}
+                                  className="mt-0.5 h-6 w-full cursor-pointer border-t border-current/15 bg-transparent text-center text-[9px] font-medium outline-none"
+                                  value={c?.pdv_id ?? ""}
+                                  onChange={(e) => {
+                                    if (!e.target.value) return;
+                                    void update(a, d, { pdv_id: e.target.value, work_shift: null });
+                                  }}
+                                >
+                                  <option value="">PDV…</option>
+                                  {pdvs.map((p) => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                  ))}
+                                </select>
+                              )}
                               {!needsAssignment(a) && (
                                 <div className="mt-0.5 flex items-center gap-0.5 border-t border-current/15 pt-0.5">
                                   <Input
