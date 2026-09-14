@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   createHrAgent,
   deleteHrAgent,
+  formatFr,
   getPlanningRows,
   POSTES,
   type PlanningRow,
@@ -55,6 +56,8 @@ export function PlanningModule() {
 
   /* ------------------------------------------------------------ Ajout */
   const [name, setName] = useState("");
+  const [matricule, setMatricule] = useState("");
+  const [hire, setHire] = useState("");
   const [poste, setPoste] = useState("");
   const [level, setLevel] = useState<"agent" | "manager">("agent");
   const [newPdvId, setNewPdvId] = useState<string>(pdvId ?? "");
@@ -72,10 +75,13 @@ export function PlanningModule() {
         pdv_id: newPdvId,
         full_name: name,
         poste: poste || null,
-        hire_date: null,
+        hire_date: hire || null,
         staff_level: level,
+        matricule: matricule || null,
       });
       setName("");
+      setMatricule("");
+      setHire("");
       setPoste("");
       toast.success("Agent ajouté au planning");
       await reload();
@@ -127,7 +133,7 @@ export function PlanningModule() {
         </div>
       </div>
 
-      <Card className="p-3 grid gap-2 sm:grid-cols-5 items-end">
+      <Card className="p-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-7 items-end">
         <div className="sm:col-span-2">
           <label className="text-[11px] text-muted-foreground">Nom et prénom</label>
           <Input
@@ -136,6 +142,25 @@ export function PlanningModule() {
             placeholder="Nouvel agent"
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && void add()}
+          />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">Matricule</label>
+          <Input
+            className="h-9"
+            value={matricule}
+            placeholder="N° matricule"
+            onChange={(e) => setMatricule(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && void add()}
+          />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">Date d'embauche</label>
+          <Input
+            className="h-9"
+            type="date"
+            value={hire}
+            onChange={(e) => setHire(e.target.value)}
           />
         </div>
         <div>
@@ -190,7 +215,9 @@ export function PlanningModule() {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50 text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+              <th className="px-3 py-2">Matricule</th>
               <th className="px-3 py-2">Agent</th>
+              <th className="px-3 py-2">Embauche</th>
               <th className="px-3 py-2">Poste</th>
               <th className="px-3 py-2">Niveau</th>
               {isRh && <th className="px-3 py-2">PDV</th>}
@@ -201,14 +228,16 @@ export function PlanningModule() {
           <tbody>
             {visible.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
+                <td colSpan={8} className="px-3 py-8 text-center text-muted-foreground">
                   {loading ? "Chargement…" : "Aucun agent dans le planning"}
                 </td>
               </tr>
             )}
             {visible.map((r) => (
               <tr key={r.id} className="border-b last:border-0">
+                <td className="px-3 py-2">{r.matricule ?? "—"}</td>
                 <td className="px-3 py-2 font-medium">{r.full_name}</td>
+                <td className="px-3 py-2">{r.hire_date ? formatFr(r.hire_date) : "—"}</td>
                 <td className="px-3 py-2">{r.poste ?? "—"}</td>
                 <td className="px-3 py-2">
                   <Badge variant={r.staff_level === "manager" ? "default" : "outline"}>
