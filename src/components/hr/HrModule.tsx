@@ -149,6 +149,124 @@ export function HrModule() {
   );
 }
 
+/* ------------------------------------------------------------------ Horaires de shift par PDV */
+
+function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
+  const { pdvs } = useAuth();
+  const [rows, setRows] = useState<PdvShiftTime[]>([]);
+  const [draft, setDraft] = useState<Record<string, { start: string; end: string }>>({});
+  const [busy, setBusy] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const data = await getShiftTimes();
+      setRows(data);
+      const d: Record<string, { start: string; end: string }> = {};
+      data.forEach((r) => {
+        d[`${r.pdv_id}|${r.shift}`] = { start: r.start_time ?? "", end: r.end_time ?? "" };
+      });
+      setDraft(d);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Chargement impossible");
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const shifts: WorkShift[] = ["matin", "apres_midi"];
+
+  const save = async (pdv_id: string, shift: WorkShift) => {
+    const key = `${pdv_id}|${shift}`;
+    const v = draft[key];
+    if (!v?.start) {
+      toast.error("Indiquez l'heure de début");
+      return;
+    }
+    setBusy(key);
+    try {
+      await saveShiftTime({ pdv_id, shift, start_time: v.start, end_time: v.end || null });
+      toast.success("Horaire enregistré");
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Enregistrement impossible");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const setField = (key: string, field: "start" | "end", value: string) =>
+    setDraft((d) => ({ ...d, [key]: { start: d[key]?.start ?? "", end: d[key]?.end ?? "", [field]: value } }));
+
+  return (
+    <Card className="p-4 space-y-3">
+      <div>
+        <h3 className="font-semibold">Horaires des shifts par point de vente</h3>
+        <p className="text-xs text-muted-foreground">
+          Heures de début du matin et de l'après-midi — utilisées pour calculer le retard des managers, caissiers,
+          ménage et sécurité.
+        </p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/50">
+            <tr className="text-left">
+              <th className="p-2">Point de vente</th>
+              <th className="p-2">Shift</th>
+              <th className="p-2">Début</th>
+              <th className="p-2">Fin (facultatif)</th>
+              <th className="p-2"></th>
+            </tr>
+          </thead>
+          <tbody>
+            {pdvs.map((p) =>
+              shifts.map((sh) => {
+                const key = `${p.id}|${sh}`;
+                const v = draft[key] ?? { start: "", end: "" };
+                return (
+                  <tr key={key} className="border-t">
+                    <td className="p-2 whitespace-nowrap">{sh === "matin" ? p.name : ""}</td>
+                    <td className="p-2 whitespace-nowrap">{SHIFT_LABELS[sh]}</td>
+                    <td className="p-2">
+                      <Input
+                        type="time"
+                        className="h-9 w-32"
+                        value={v.start}
+                        disabled={!canEdit}
+                        onChange={(e) => setField(key, "start", e.target.value)}
+                      />
+                    </td>
+                    <td className="p-2">
+                      <Input
+                        type="time"
+                        className="h-9 w-32"
+                        value={v.end}
+                        disabled={!canEdit}
+                        onChange={(e) => setField(key, "end", e.target.value)}
+                      />
+                    </td>
+                    <td className="p-2">
+                      {canEdit && (
+                        <Button size="sm" disabled={busy === key} onClick={() => void save(p.id, sh)}>
+                          Enregistrer
+                        </Button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              }),
+            )}
+          </tbody>
+        </table>
+      </div>
+      {rows.length === 0 && (
+        <p className="text-xs text-muted-foreground">Aucun horaire enregistré pour le moment.</p>
+      )}
+    </Card>
+  );
+}
+
 /* ------------------------------------------------------------------ Agents RH */
 
 function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () => Promise<void> | void }) {
