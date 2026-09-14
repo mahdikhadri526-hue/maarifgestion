@@ -63,6 +63,18 @@ export function PlanningModule() {
     [visibleAgents],
   );
 
+  const hasTechAgents = useMemo(
+    () => visibleAgents.some((a) => {
+      const poste = (a.poste ?? "")
+        .trim()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+      return poste === "menage" || poste.includes("securite");
+    }),
+    [visibleAgents],
+  );
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
@@ -113,6 +125,21 @@ export function PlanningModule() {
           readOnly
           title="Planning caissiers — établi par la RH"
         />
+      )}
+
+      {hasTechAgents && (
+        <div className="rounded-lg border-2 border-primary p-1">
+          <PlanningGrid
+            agents={visibleAgents}
+            holidays={holidays}
+            isRh={isRh}
+            onChanged={reload}
+            showLevelToggle={false}
+            techMode="only"
+            readOnly
+            title="Planning Ménage & Sécurité — établi par le responsable technique"
+          />
+        </div>
       )}
     </div>
   );
