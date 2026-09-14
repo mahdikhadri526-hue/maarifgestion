@@ -132,8 +132,22 @@ export function PlanningModule() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Users className="w-5 h-5" /> Planning — liste des agents
+          <CalendarDays className="w-5 h-5" /> Planning
         </h2>
+        <Button
+          size="sm"
+          variant={section === "grille" ? "default" : "outline"}
+          onClick={() => setSection("grille")}
+        >
+          <CalendarDays className="w-4 h-4 mr-1" /> Planning hebdomadaire
+        </Button>
+        <Button
+          size="sm"
+          variant={section === "liste" ? "default" : "outline"}
+          onClick={() => setSection("liste")}
+        >
+          <Users className="w-4 h-4 mr-1" /> Liste des agents
+        </Button>
         <Button variant="ghost" size="sm" onClick={() => void reload()} disabled={loading}>
           <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
         </Button>
