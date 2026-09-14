@@ -67,18 +67,22 @@ export function PlanningModule() {
         </Button>
         {isRh && <Badge variant="secondary">Vue RH — tous les PDV</Badge>}
         <div className="ml-auto">
-          <select
-            className="h-9 rounded border bg-background px-2 text-sm"
-            value={pdvFilter}
-            onChange={(e) => setPdvFilter(e.target.value)}
-          >
-            {isRh && <option value="all">Tous les PDV</option>}
-            {pdvs.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
+          {isRh ? (
+            <select
+              className="h-9 rounded border bg-background px-2 text-sm"
+              value={pdvFilter}
+              onChange={(e) => setPdvFilter(e.target.value)}
+            >
+              <option value="all">Tous les PDV</option>
+              {pdvs.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <Badge variant="outline">{pdvName}</Badge>
+          )}
         </div>
       </div>
 
