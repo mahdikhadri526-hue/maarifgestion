@@ -38,6 +38,7 @@ export function PlanningGrid({
   agentsReadOnly = false,
   caissierMode = "bottom",
   techMode = "exclude",
+  groupedCategories = false,
   title = "Planning hebdomadaire",
 }: {
   agents: HrAgent[];
@@ -54,6 +55,8 @@ export function PlanningGrid({
   caissierMode?: "bottom" | "exclude" | "only";
   /** Postes Ménage / Sécurité : exclus (défaut) ou grille dédiée (responsable technique). */
   techMode?: "exclude" | "only";
+  /** Affiche agents, caissiers et personnel technique dans une grille unique avec séparateurs. */
+  groupedCategories?: boolean;
   title?: string;
 }) {
   const { pdvs } = useAuth();
@@ -74,6 +77,13 @@ export function PlanningGrid({
   /** Les caissiers sont planifiés par la RH : affichés en bas, verrouillés pour les managers. */
   const list = useMemo(() => {
     const actives = agents.filter((a) => a.active);
+    if (groupedCategories) {
+      const scoped = actives.filter((a) => (a.staff_level ?? "agent") === "agent");
+      const regular = scoped.filter((a) => !isCaissier(a) && !isTechPoste(a));
+      const caissiers = scoped.filter(isCaissier);
+      const technical = scoped.filter(isTechPoste);
+      return [...regular, ...caissiers, ...technical];
+    }
     if (techMode === "only") return actives.filter(isTechPoste);
     const pool = actives.filter((a) => !isTechPoste(a));
     const base = pool.filter((a) => (a.staff_level ?? "agent") === level);
@@ -84,17 +94,21 @@ export function PlanningGrid({
     const caissiers = pool.filter((a) => (a.staff_level ?? "agent") === "agent" && isCaissier(a));
     if (level === "manager") return [...base, ...caissiers];
     return base.filter((a) => !isCaissier(a));
-  }, [agents, level, caissierMode, techMode]);
+  }, [agents, level, caissierMode, techMode, groupedCategories]);
   const firstCaissierId = useMemo(
-    () => (caissierMode === "bottom" && techMode !== "only" ? list.find(isCaissier)?.id ?? null : null),
-    [list, caissierMode, techMode],
+    () => ((groupedCategories || (caissierMode === "bottom" && techMode !== "only")) ? list.find(isCaissier)?.id ?? null : null),
+    [list, caissierMode, techMode, groupedCategories],
+  );
+  const firstTechId = useMemo(
+    () => (groupedCategories ? list.find(isTechPoste)?.id ?? null : null),
+    [list, groupedCategories],
   );
   const rowReadOnly = (a: HrAgent) =>
     readOnly ||
     (isTechPoste(a)
-      ? techMode !== "only"
+      ? groupedCategories || techMode !== "only"
       : isCaissier(a)
-        ? !isRh
+        ? groupedCategories || !isRh
         : agentsReadOnly && (a.staff_level ?? "agent") === "agent");
   const holidayMap = useMemo(
     () => new Map(holidays.map((h) => [h.holiday_date, h.label])),
@@ -271,7 +285,17 @@ export function PlanningGrid({
                       colSpan={days.length + 1}
                       className="sticky left-0 !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
                     >
-                      Caissiers — planning établi par la RH{!isRh && " (lecture seule)"}
+                      Caissiers — planning établi par la RH (lecture seule)
+                    </td>
+                  </tr>
+                )}
+                {a.id === firstTechId && (
+                  <tr key={`sep-tech-${a.id}`}>
+                    <td
+                      colSpan={days.length + 1}
+                      className="sticky left-0 border-t border-border !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                    >
+                      Ménage & Sécurité — planning établi par le responsable technique (lecture seule)
                     </td>
                   </tr>
                 )}
