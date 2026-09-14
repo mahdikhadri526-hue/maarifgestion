@@ -160,19 +160,27 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
   };
 
   const add = async () => {
+    const isAllPdvs = newPdvId === "__all__";
     if (!newPdvId) {
       toast.error("Choisissez le point de vente");
       return;
     }
     if (!name.trim()) return;
+    // PDV « d'attache » obligatoire en base : on prend le PDV courant (ou le 1er) quand « Tous les PDV ».
+    const effectivePdvId = isAllPdvs ? (pdvId ?? pdvs[0]?.id ?? "") : newPdvId;
+    if (!effectivePdvId) {
+      toast.error("Aucun point de vente disponible");
+      return;
+    }
     setBusy(true);
     try {
       await createHrAgent({
-        pdv_id: newPdvId,
+        pdv_id: effectivePdvId,
         full_name: name,
         poste: poste || null,
         hire_date: hire || null,
         staff_level: level,
+        multi_pdv: isAllPdvs,
       });
       setName("");
       setPoste("");
@@ -218,6 +226,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
             onChange={(e) => setNewPdvId(e.target.value)}
           >
             <option value="">PDV…</option>
+            <option value="__all__">Tous les PDV</option>
             {pdvs.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.name}
