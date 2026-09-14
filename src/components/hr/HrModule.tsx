@@ -106,7 +106,7 @@ export function HrModule() {
       </div>
 
       {view === "planning" && (
-        <PlanningGrid agents={agents} holidays={holidays} isRh={isRh} onChanged={reload} />
+        <PlanningGrid agents={agents} holidays={holidays} isRh={isRh} onChanged={reload} readOnly />
       )}
       {view === "agents" && <AgentsHrView agents={agents} onChanged={reload} />}
       {view === "feries" && <HolidaysView holidays={holidays} canEdit={isRh} onChanged={reload} />}

@@ -34,6 +34,7 @@ export function PlanningGrid({
   isRh,
   onChanged,
   showLevelToggle = true,
+  readOnly = false,
 }: {
   agents: HrAgent[];
   holidays: HrHoliday[];
@@ -41,6 +42,8 @@ export function PlanningGrid({
   onChanged: () => Promise<void> | void;
   /** false = masquer le sélecteur Managers/Agents (grille agents uniquement). */
   showLevelToggle?: boolean;
+  /** true = consultation uniquement (aucune modification possible). */
+  readOnly?: boolean;
 }) {
   const { pdvs } = useAuth();
   const [start, setStart] = useState(() => weekStart(isoDate(new Date())));
@@ -125,9 +128,17 @@ export function PlanningGrid({
     <Card className="overflow-hidden border-border shadow-sm">
       <div className="flex flex-col gap-3 border-b border-border bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Planning hebdomadaire</h2>
+          <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold">
+            Planning hebdomadaire
+            {readOnly && (
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Lecture seule
+              </span>
+            )}
+          </h2>
           <p className="text-sm text-muted-foreground">
             Semaine du {formatFr(days[0])} au {formatFr(days[6])}
+            {readOnly && " — consultation uniquement"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -230,38 +241,51 @@ export function PlanningGrid({
                     const type = c?.day_type as DayType | undefined;
                     return (
                       <td key={d} className={`!p-1 border-r border-border/60 ${i > 4 ? "bg-muted/40" : ""}`}>
-                        <div className={`min-h-[58px] rounded-md border px-1.5 py-1 ${cellTone(type)}`}>
-                          <select
-                            aria-label={`${a.full_name}, ${DOW_LABELS[i]} ${formatFr(d)}`}
-                            className="h-6 w-full cursor-pointer bg-transparent text-center text-[10px] font-semibold outline-none"
-                            value={type ?? ""}
-                            onChange={(e) => void update(a, d, { day_type: e.target.value as DayType })}
-                          >
-                            <option value="">+ Planifier</option>
-                            {DAY_TYPES.map((t) => (
-                              <option key={t} value={t}>{DAY_TYPE_LABELS[t]}</option>
-                            ))}
-                          </select>
-                          {type === "travail" && (
-                            <div className="mt-0.5 flex items-center gap-0.5 border-t border-current/15 pt-0.5">
-                              <Input
-                                type="time"
-                                aria-label={`Entrée prévue de ${a.full_name} le ${formatFr(d)}`}
-                                className="h-6 min-w-0 border-0 bg-transparent px-0 text-center text-[9px] shadow-none focus-visible:ring-1"
-                                value={c?.start_time ?? ""}
-                                onChange={(e) => void update(a, d, { start_time: e.target.value })}
-                              />
-                              <span className="text-[9px] opacity-60">–</span>
-                              <Input
-                                type="time"
-                                aria-label={`Sortie prévue de ${a.full_name} le ${formatFr(d)}`}
-                                className="h-6 min-w-0 border-0 bg-transparent px-0 text-center text-[9px] shadow-none focus-visible:ring-1"
-                                value={c?.end_time ?? ""}
-                                onChange={(e) => void update(a, d, { end_time: e.target.value })}
-                              />
-                            </div>
-                          )}
-                        </div>
+                        {readOnly ? (
+                          <div className={`min-h-[58px] rounded-md border px-1.5 py-1.5 text-center ${cellTone(type)}`}>
+                            <span className="block text-[10px] font-semibold">
+                              {type ? DAY_TYPE_LABELS[type] : "—"}
+                            </span>
+                            {type === "travail" && (
+                              <span className="mt-1 block border-t border-current/15 pt-1 text-[9px] opacity-80">
+                                {c?.start_time || "--:--"} – {c?.end_time || "--:--"}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className={`min-h-[58px] rounded-md border px-1.5 py-1 ${cellTone(type)}`}>
+                            <select
+                              aria-label={`${a.full_name}, ${DOW_LABELS[i]} ${formatFr(d)}`}
+                              className="h-6 w-full cursor-pointer bg-transparent text-center text-[10px] font-semibold outline-none"
+                              value={type ?? ""}
+                              onChange={(e) => void update(a, d, { day_type: e.target.value as DayType })}
+                            >
+                              <option value="">+ Planifier</option>
+                              {DAY_TYPES.map((t) => (
+                                <option key={t} value={t}>{DAY_TYPE_LABELS[t]}</option>
+                              ))}
+                            </select>
+                            {type === "travail" && (
+                              <div className="mt-0.5 flex items-center gap-0.5 border-t border-current/15 pt-0.5">
+                                <Input
+                                  type="time"
+                                  aria-label={`Entrée prévue de ${a.full_name} le ${formatFr(d)}`}
+                                  className="h-6 min-w-0 border-0 bg-transparent px-0 text-center text-[9px] shadow-none focus-visible:ring-1"
+                                  value={c?.start_time ?? ""}
+                                  onChange={(e) => void update(a, d, { start_time: e.target.value })}
+                                />
+                                <span className="text-[9px] opacity-60">–</span>
+                                <Input
+                                  type="time"
+                                  aria-label={`Sortie prévue de ${a.full_name} le ${formatFr(d)}`}
+                                  className="h-6 min-w-0 border-0 bg-transparent px-0 text-center text-[9px] shadow-none focus-visible:ring-1"
+                                  value={c?.end_time ?? ""}
+                                  onChange={(e) => void update(a, d, { end_time: e.target.value })}
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </td>
                     );
                   })}
