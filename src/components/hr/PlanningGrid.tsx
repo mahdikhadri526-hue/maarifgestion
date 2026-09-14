@@ -226,7 +226,7 @@ export function PlanningGrid({
             </thead>
             <tbody>
               {list.map((a) => (
-                <>
+                <Fragment key={a.id}>
                 {a.id === firstCaissierId && (
                   <tr key={`sep-${a.id}`}>
                     <td
