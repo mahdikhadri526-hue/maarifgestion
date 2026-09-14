@@ -626,20 +626,28 @@ function BalancesView({
             holidays: holidayDates,
           });
           return (
-            <Card key={a.id} className="p-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div>
-                  <p className="font-medium">{a.full_name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Embauche : {a.hire_date ? formatFr(a.hire_date) : "non renseignée"}
-                  </p>
-                </div>
-                <div className="flex flex-wrap gap-2 text-xs">
-                  <Badge variant="secondary">Congés acquis {b.accrued}</Badge>
-                  <Badge variant="secondary">Pris {b.leaveTaken}</Badge>
-                  <Badge>Restants {b.leaveRemaining}</Badge>
-                  <Badge variant="outline">Récup restante {b.recupRemaining}</Badge>
-                </div>
+            <Card key={a.id} className="p-3 space-y-1.5">
+              <div>
+                <p className="font-medium">{a.full_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  Embauche : {a.hire_date ? formatFr(a.hire_date) : "non renseignée"}
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-semibold w-24">Congés</span>
+                <Badge variant="secondary">Acquis {b.accrued}</Badge>
+                <Badge variant="secondary">Pris {b.leaveTaken}</Badge>
+                <Badge>Restants {b.leaveRemaining}</Badge>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-semibold w-24">Récupération</span>
+                <Badge variant="outline">Acquise {b.recupCredit}</Badge>
+                <Badge variant="outline">Prise {b.recupTaken}</Badge>
+                <Badge variant="outline">Restante {b.recupRemaining}</Badge>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-xs border-t pt-1.5">
+                <span className="font-semibold w-24">Total</span>
+                <Badge>Total restant {Number((b.leaveRemaining + b.recupRemaining).toFixed(2))} j</Badge>
               </div>
             </Card>
           );
