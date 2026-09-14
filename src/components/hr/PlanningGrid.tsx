@@ -256,7 +256,7 @@ export function PlanningGrid({
               className="h-8"
               onClick={() => setLevel("agent")}
             >
-              Agents
+              Employés
             </Button>
           </div>
           )}
