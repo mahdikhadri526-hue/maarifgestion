@@ -804,7 +804,7 @@ function ReportsView({
         <table className="w-full text-xs border rounded">
           <thead className="bg-muted">
             <tr>
-              {["Date", "Agent", "Journée", "Prévu", "Entrée", "Pause", "Sortie", "Heures", "H. sup.", "Retard", "Statut"].map((h) => (
+              {["Date", "Employé", "Journée", "Prévu", "Entrée", "Pause", "Sortie", "Heures", "H. sup.", "Retard", "Statut"].map((h) => (
                 <th key={h} className="p-2 text-left whitespace-nowrap">
                   {h}
                 </th>
