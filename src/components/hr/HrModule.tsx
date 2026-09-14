@@ -106,19 +106,15 @@ export function HrModule() {
       </div>
 
       {view === "planning" && (
-        <div className="space-y-4">
-          <PlanningGrid agents={agents} holidays={holidays} isRh={isRh} onChanged={reload} agentsReadOnly />
-          <PlanningGrid
-            agents={agents}
-            holidays={holidays}
-            isRh={isRh}
-            onChanged={reload}
-            showLevelToggle={false}
-            techMode="only"
-            readOnly
-            title="Planning Ménage & Sécurité — établi par le responsable technique"
-          />
-        </div>
+        <PlanningGrid
+          agents={agents}
+          holidays={holidays}
+          isRh={isRh}
+          onChanged={reload}
+          showLevelToggle={false}
+          agentsReadOnly
+          groupedCategories="rh"
+        />
       )}
       {view === "agents" && <AgentsHrView agents={agents} onChanged={reload} />}
       {view === "feries" && <HolidaysView holidays={holidays} canEdit={isRh} onChanged={reload} />}
