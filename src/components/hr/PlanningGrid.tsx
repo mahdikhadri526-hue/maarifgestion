@@ -52,10 +52,14 @@ export function PlanningGrid({
   const [loading, setLoading] = useState(false);
 
   const days = useMemo(() => weekDays(start), [start]);
-  const list = useMemo(
-    () => agents.filter((a) => a.active && (a.staff_level ?? "agent") === level),
-    [agents, level],
-  );
+  const isCaissier = (a: HrAgent) => (a.poste ?? "").trim().toLowerCase() === "caissier";
+  /** Les caissiers sont planifiés par la RH : affichés en bas, verrouillés pour les managers. */
+  const list = useMemo(() => {
+    const base = agents.filter((a) => a.active && (a.staff_level ?? "agent") === level);
+    return [...base.filter((a) => !isCaissier(a)), ...base.filter(isCaissier)];
+  }, [agents, level]);
+  const firstCaissierId = useMemo(() => list.find(isCaissier)?.id ?? null, [list]);
+  const rowReadOnly = (a: HrAgent) => (isCaissier(a) ? !isRh : readOnly);
   const holidayMap = useMemo(
     () => new Map(holidays.map((h) => [h.holiday_date, h.label])),
     [holidays],
