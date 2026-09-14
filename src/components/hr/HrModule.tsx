@@ -351,17 +351,53 @@ function BalancesView({
   holidays: HrHoliday[];
   onChanged: () => Promise<void> | void;
 }) {
+  const { pdvs } = useAuth();
+  const today = isoDate(new Date());
   const holidayDates = useMemo(() => holidays.map((h) => h.holiday_date), [holidays]);
   const [agentId, setAgentId] = useState("");
   const [kind, setKind] = useState("recup_credit");
   const [days, setDays] = useState("1");
-  const [date, setDate] = useState(isoDate(new Date()));
+  const [date, setDate] = useState(today);
   const [reason, setReason] = useState("");
+  const [showForm, setShowForm] = useState(false);
+
+  // Filtres
+  const [fPdv, setFPdv] = useState("all");
+  const [fSearch, setFSearch] = useState("");
+  const [fFrom, setFFrom] = useState("");
+  const [fTo, setFTo] = useState("");
+
+  const visibleAgents = useMemo(
+    () =>
+      agents.filter((a) => {
+        if (fPdv !== "all" && !a.multi_pdv && a.pdv_id !== fPdv) return false;
+        if (fSearch.trim() && !a.full_name.toLowerCase().includes(fSearch.trim().toLowerCase())) return false;
+        return true;
+      }),
+    [agents, fPdv, fSearch],
+  );
+
+  const visibleAgentIds = useMemo(() => new Set(visibleAgents.map((a) => a.id)), [visibleAgents]);
+
+  const visibleEntries = useMemo(
+    () =>
+      entries.filter((e) => {
+        if (!visibleAgentIds.has(e.agent_id)) return false;
+        if (fFrom && e.entry_date < fFrom) return false;
+        if (fTo && e.entry_date > fTo) return false;
+        return true;
+      }),
+    [entries, visibleAgentIds, fFrom, fTo],
+  );
 
   const add = async () => {
     const agent = agents.find((a) => a.id === agentId);
     if (!agent) {
       toast.error("Choisissez un agent");
+      return;
+    }
+    if (date > today) {
+      toast.error("La date ne peut pas dépasser aujourd'hui");
       return;
     }
     try {
@@ -374,7 +410,7 @@ function BalancesView({
         reason: reason || null,
       });
       setReason("");
-      toast.success("Mouvement enregistré");
+      toast.success("Solde de reprise enregistré");
       await onChanged();
     } catch (e: any) {
       toast.error(e?.message ?? "Enregistrement impossible");
@@ -383,34 +419,90 @@ function BalancesView({
 
   return (
     <div className="space-y-3">
-      <Card className="p-3 space-y-2">
-        <p className="text-sm font-semibold">Ajouter un mouvement de solde</p>
-        <div className="grid gap-2 sm:grid-cols-5">
-          <select className="h-9 rounded border bg-background px-2 text-sm" value={agentId} onChange={(e) => setAgentId(e.target.value)}>
-            <option value="">Agent…</option>
-            {agents.map((a) => (
-              <option key={a.id} value={a.id}>
-                {a.full_name}
+      <Card className="p-3 grid gap-2 sm:grid-cols-4 items-end">
+        <div>
+          <label className="text-[11px] text-muted-foreground">Point de vente</label>
+          <select className="h-9 w-full rounded border bg-background px-2 text-sm" value={fPdv} onChange={(e) => setFPdv(e.target.value)}>
+            <option value="all">Tous les PDV</option>
+            {pdvs.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.name}
               </option>
             ))}
           </select>
-          <select className="h-9 rounded border bg-background px-2 text-sm" value={kind} onChange={(e) => setKind(e.target.value)}>
-            <option value="recup_credit">Récupération acquise (+)</option>
-            <option value="recup_debit">Récupération prise (−)</option>
-            <option value="conge_credit">Congé supplémentaire (+)</option>
-            <option value="conge_debit">Congé pris hors planning (−)</option>
-          </select>
-          <Input type="number" step="0.5" value={days} onChange={(e) => setDays(e.target.value)} className="h-9" />
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-9" />
-          <Input placeholder="Motif" value={reason} onChange={(e) => setReason(e.target.value)} className="h-9" />
         </div>
-        <Button size="sm" onClick={() => void add()}>
-          <Plus className="w-4 h-4 mr-1" /> Ajouter
-        </Button>
+        <div>
+          <label className="text-[11px] text-muted-foreground">Recherche agent</label>
+          <Input className="h-9" placeholder="Nom…" value={fSearch} onChange={(e) => setFSearch(e.target.value)} />
+        </div>
+        <div>
+          <label className="text-[11px] text-muted-foreground">Du</label>
+          <Input type="date" className="h-9" value={fFrom} onChange={(e) => setFFrom(e.target.value)} />
+        </div>
+        <div className="flex gap-2 items-end">
+          <div className="flex-1">
+            <label className="text-[11px] text-muted-foreground">Au</label>
+            <Input type="date" className="h-9" value={fTo} onChange={(e) => setFTo(e.target.value)} />
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setFPdv("all");
+              setFSearch("");
+              setFFrom("");
+              setFTo("");
+            }}
+          >
+            Réinit.
+          </Button>
+        </div>
       </Card>
 
+      <Card className="p-3 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold">Reprise des soldes existants</p>
+            <p className="text-[11px] text-muted-foreground">
+              À utiliser uniquement pour saisir les congés et récupérations acquis par les employés avant l'utilisation de
+              l'application. Ensuite, les soldes se calculent automatiquement.
+            </p>
+          </div>
+          <Button size="sm" variant={showForm ? "secondary" : "outline"} onClick={() => setShowForm((v) => !v)}>
+            {showForm ? "Fermer" : "Saisir une reprise"}
+          </Button>
+        </div>
+        {showForm && (
+          <>
+            <div className="grid gap-2 sm:grid-cols-5">
+              <select className="h-9 rounded border bg-background px-2 text-sm" value={agentId} onChange={(e) => setAgentId(e.target.value)}>
+                <option value="">Agent…</option>
+                {visibleAgents.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.full_name}
+                  </option>
+                ))}
+              </select>
+              <select className="h-9 rounded border bg-background px-2 text-sm" value={kind} onChange={(e) => setKind(e.target.value)}>
+                <option value="recup_credit">Récupération acquise (+)</option>
+                <option value="recup_debit">Récupération prise (−)</option>
+                <option value="conge_credit">Congé supplémentaire (+)</option>
+                <option value="conge_debit">Congé pris hors planning (−)</option>
+              </select>
+              <Input type="number" step="0.5" value={days} onChange={(e) => setDays(e.target.value)} className="h-9" />
+              <Input type="date" max={today} value={date} onChange={(e) => setDate(e.target.value)} className="h-9" />
+              <Input placeholder="Motif" value={reason} onChange={(e) => setReason(e.target.value)} className="h-9" />
+            </div>
+            <Button size="sm" onClick={() => void add()}>
+              <Plus className="w-4 h-4 mr-1" /> Ajouter
+            </Button>
+          </>
+        )}
+      </Card>
+
+
       <div className="space-y-2">
-        {agents.map((a) => {
+        {visibleAgents.map((a) => {
           const b = computeBalance({
             hireDate: a.hire_date,
             schedules: schedules.filter((s) => s.agent_id === a.id),
@@ -446,10 +538,10 @@ function BalancesView({
         })}
       </div>
 
-      {entries.length > 0 && (
+      {visibleEntries.length > 0 && (
         <Card className="p-3 space-y-1">
-          <p className="text-sm font-semibold mb-1">Historique des mouvements</p>
-          {entries.slice(0, 40).map((e) => (
+          <p className="text-sm font-semibold mb-1">Historique des mouvements ({visibleEntries.length})</p>
+          {visibleEntries.slice(0, 40).map((e) => (
             <div key={e.id} className="flex items-center justify-between gap-2 text-xs border-b py-1">
               <span>
                 {formatFr(e.entry_date)} — {agents.find((a) => a.id === e.agent_id)?.full_name ?? "?"} — {e.kind} — {e.days} j
