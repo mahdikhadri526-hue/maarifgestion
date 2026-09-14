@@ -280,7 +280,21 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
         </div>
       </Card>
 
-      {agents.map((a) => {
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={() => setShowList((v) => !v)}>
+          {showList ? "Masquer" : "Afficher"} la liste des agents ({agents.length})
+        </Button>
+        {showList && (
+          <Input
+            className="h-9 max-w-[220px]"
+            placeholder="Rechercher par nom…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        )}
+      </div>
+
+      {showList && filteredAgents.map((a) => {
         const isManager = (a.staff_level ?? "agent") === "manager";
         return (
         <Card key={a.id} className="p-3 grid gap-2 sm:grid-cols-5 items-center">
