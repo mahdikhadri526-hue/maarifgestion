@@ -502,7 +502,7 @@ function BalancesView({
 
 
       <div className="space-y-2">
-        {agents.map((a) => {
+        {visibleAgents.map((a) => {
           const b = computeBalance({
             hireDate: a.hire_date,
             schedules: schedules.filter((s) => s.agent_id === a.id),
