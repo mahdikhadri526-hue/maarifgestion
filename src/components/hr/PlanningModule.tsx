@@ -51,6 +51,8 @@ export function PlanningModule() {
     void reload();
   }, [reload]);
 
+  const pdvName = pdvs.find((p) => p.id === pdvId)?.name ?? "Mon point de vente";
+
   const visibleAgents = useMemo(
     () => agents.filter((a) => pdvFilter === "all" || a.pdv_id === pdvFilter),
     [agents, pdvFilter],
