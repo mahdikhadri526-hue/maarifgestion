@@ -72,6 +72,9 @@ export function TechModule() {
   const [historyOf, setHistoryOf] = useState<TechIssue | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const today = todayISO();
+  // Planning Ménage & Sécurité : établi par le responsable technique.
+  const [hrAgents, setHrAgents] = useState<HrAgent[]>([]);
+  const [hrHolidays, setHrHolidays] = useState<HrHoliday[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -87,6 +90,24 @@ export function TechModule() {
   }, [central]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const loadPlanning = useCallback(async () => {
+    try {
+      const year = new Date().getFullYear();
+      const [a, h] = await Promise.all([
+        getHrAgents(null),
+        getHolidays(`${year - 1}-01-01`, `${year + 1}-12-31`),
+      ]);
+      setHrAgents(a);
+      setHrHolidays(h);
+    } catch (e: any) {
+      toast({ title: "Erreur planning", description: e?.message ?? String(e), variant: "destructive" });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (view === "planning") void loadPlanning();
+  }, [view, loadPlanning]);
 
   const pdvOptions = useMemo(() => {
     const m = new Map<string, string>();
