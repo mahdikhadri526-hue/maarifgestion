@@ -764,12 +764,21 @@ function ReportsView({
 
   return (
     <div className="space-y-3">
-      <Card className="p-3 grid gap-2 sm:grid-cols-5">
+      <Card className="p-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" />
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" />
+        <Input
+          placeholder="Rechercher un employé…"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setAgentId("");
+          }}
+          className="h-9"
+        />
         <select className="h-9 rounded border bg-background px-2 text-sm" value={agentId} onChange={(e) => setAgentId(e.target.value)}>
-          <option value="">Tous les agents</option>
-          {agents.map((a) => (
+          <option value="">Tous les employés</option>
+          {visibleAgents.map((a) => (
             <option key={a.id} value={a.id}>
               {a.full_name}
             </option>
