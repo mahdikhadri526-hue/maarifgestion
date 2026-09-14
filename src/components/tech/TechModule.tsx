@@ -232,7 +232,23 @@ export function TechModule() {
 
       <div className="flex gap-2 flex-wrap text-xs">
         <Button size="sm" variant={view === "dossiers" && filter === "all" ? "default" : "outline"} onClick={() => { setView("dossiers"); setFilter("all"); }}>Historique</Button>
+        <Button size="sm" variant={view === "planning" ? "default" : "outline"} onClick={() => setView(view === "planning" ? "dossiers" : "planning")}>
+          <ClipboardList className="h-4 w-4 mr-1" />Planning Ménage & Sécurité
+        </Button>
       </div>
+
+      {view === "planning" && (
+        <PlanningGrid
+          agents={hrAgents}
+          holidays={hrHolidays}
+          isRh
+          onChanged={loadPlanning}
+          showLevelToggle={false}
+          techMode="only"
+          readOnly={!canManage && !isAdmin}
+          title="Planning Ménage & Sécurité"
+        />
+      )}
 
       {recurring.size > 0 && view === "dossiers" && (
         <div className="rounded-lg border border-amber-500/60 bg-card p-3 text-sm">
