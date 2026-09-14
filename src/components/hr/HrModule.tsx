@@ -108,12 +108,31 @@ export function HrModule() {
         <PlanningView agents={agents} holidays={holidays} isRh={isRh} onChanged={reload} />
       )}
       {view === "agents" && <AgentsHrView agents={agents} onChanged={reload} />}
-      {view === "soldes" && (
-        <BalancesView agents={agents} schedules={allSchedules} entries={balances} holidays={holidays} onChanged={reload} />
-      )}
       {view === "feries" && <HolidaysView holidays={holidays} canEdit={isRh} onChanged={reload} />}
-      {view === "rapports" && (
-        <ReportsView agents={agents} holidays={holidays} scopePdvIds={scopePdvIds} isRh={isRh} />
+      {view === "suivi" && (
+        <Card className="p-4 space-y-4">
+          <div className="flex flex-wrap items-center gap-2 border-b pb-3">
+            <Button
+              size="sm"
+              variant={suiviSection === "soldes" ? "default" : "outline"}
+              onClick={() => setSuiviSection("soldes")}
+            >
+              <Sun className="w-4 h-4 mr-1" /> Congés & Récup
+            </Button>
+            <Button
+              size="sm"
+              variant={suiviSection === "rapports" ? "default" : "outline"}
+              onClick={() => setSuiviSection("rapports")}
+            >
+              <BarChart3 className="w-4 h-4 mr-1" /> Rapports
+            </Button>
+          </div>
+          {suiviSection === "soldes" ? (
+            <BalancesView agents={agents} schedules={allSchedules} entries={balances} holidays={holidays} onChanged={reload} />
+          ) : (
+            <ReportsView agents={agents} holidays={holidays} scopePdvIds={scopePdvIds} isRh={isRh} />
+          )}
+        </Card>
       )}
     </div>
   );
