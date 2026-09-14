@@ -405,17 +405,15 @@ export function PlanningGrid({
                             <span className="block text-[10px] font-semibold">
                               {type ? DAY_TYPE_LABELS[type] : "—"}
                             </span>
-                            {type === "travail" && (
-                              <>
-                                {needsAssignment(a) && c?.work_shift && (
-                                  <span className="mt-1 block border-t border-current/15 pt-1 text-[9px] font-medium">
-                                    {pdvs.find((p) => p.id === c.pdv_id)?.name ?? "PDV"} — {shiftLabel(c.work_shift)}
-                                  </span>
-                                )}
-                                <span className={`${needsAssignment(a) && c?.work_shift ? "mt-0.5" : "mt-1 border-t border-current/15 pt-1"} block text-[9px] opacity-80`}>
-                                  {c?.start_time || "--:--"} – {c?.end_time || "--:--"}
-                                </span>
-                              </>
+                            {type === "travail" && needsAssignment(a) && c?.work_shift && (
+                              <span className="mt-1 block border-t border-current/15 pt-1 text-[9px] font-medium">
+                                {pdvs.find((p) => p.id === c.pdv_id)?.name ?? "PDV"} — {shiftLabel(c.work_shift)}
+                              </span>
+                            )}
+                            {type === "travail" && !needsAssignment(a) && (
+                              <span className="mt-1 block border-t border-current/15 pt-1 text-[9px] opacity-80">
+                                {c?.start_time || "--:--"} – {c?.end_time || "--:--"}
+                              </span>
                             )}
                           </div>
                         ) : (
@@ -451,23 +449,25 @@ export function PlanningGrid({
                                   ]))}
                                 </select>
                               )}
-                              <div className="mt-0.5 flex items-center gap-0.5 border-t border-current/15 pt-0.5">
-                                <Input
-                                  type="time"
-                                  aria-label={`Entrée prévue de ${a.full_name} le ${formatFr(d)}`}
-                                  className="h-6 min-w-0 border-0 bg-transparent px-0 text-center text-[9px] shadow-none focus-visible:ring-1"
-                                  value={c?.start_time ?? ""}
-                                  onChange={(e) => void update(a, d, { start_time: e.target.value })}
-                                />
-                                <span className="text-[9px] opacity-60">–</span>
-                                <Input
-                                  type="time"
-                                  aria-label={`Sortie prévue de ${a.full_name} le ${formatFr(d)}`}
-                                  className="h-6 min-w-0 border-0 bg-transparent px-0 text-center text-[9px] shadow-none focus-visible:ring-1"
-                                  value={c?.end_time ?? ""}
-                                  onChange={(e) => void update(a, d, { end_time: e.target.value })}
-                                />
-                              </div>
+                              {!needsAssignment(a) && (
+                                <div className="mt-0.5 flex items-center gap-0.5 border-t border-current/15 pt-0.5">
+                                  <Input
+                                    type="time"
+                                    aria-label={`Entrée prévue de ${a.full_name} le ${formatFr(d)}`}
+                                    className="h-6 min-w-0 border-0 bg-transparent px-0 text-center text-[9px] shadow-none focus-visible:ring-1"
+                                    value={c?.start_time ?? ""}
+                                    onChange={(e) => void update(a, d, { start_time: e.target.value })}
+                                  />
+                                  <span className="text-[9px] opacity-60">–</span>
+                                  <Input
+                                    type="time"
+                                    aria-label={`Sortie prévue de ${a.full_name} le ${formatFr(d)}`}
+                                    className="h-6 min-w-0 border-0 bg-transparent px-0 text-center text-[9px] shadow-none focus-visible:ring-1"
+                                    value={c?.end_time ?? ""}
+                                    onChange={(e) => void update(a, d, { end_time: e.target.value })}
+                                  />
+                                </div>
+                              )}
                               </>
                             )}
                           </div>
