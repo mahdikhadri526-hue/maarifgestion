@@ -390,7 +390,7 @@ export function PlanningGrid({
                       <span className="min-w-0">
                         <span className="block truncate text-xs font-semibold">{a.full_name}</span>
                         <span className="block truncate text-[10px] text-muted-foreground">
-                          {[a.poste, isRh ? (a.multi_pdv ? "Tous les PDV" : pdvs.find((p) => p.id === a.pdv_id)?.name) : (a.multi_pdv ? "Tous les PDV" : null)].filter(Boolean).join(" · ") || (level === "manager" ? "Manager" : "Agent")}
+                          {[a.poste, isRh ? (a.multi_pdv ? "Tous les PDV" : pdvs.find((p) => p.id === a.pdv_id)?.name) : (a.multi_pdv ? "Tous les PDV" : null)].filter(Boolean).join(" · ") || (level === "manager" ? "Manager" : "Employé")}
                         </span>
                       </span>
                     </div>

@@ -198,7 +198,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
       setName("");
       setPoste("");
       setHire("");
-      toast.success("Agent ajouté");
+      toast.success("Employé ajouté");
       await onChanged();
     } catch (e: any) {
       toast.error(e?.message ?? "Ajout impossible");
@@ -211,7 +211,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
     if (!confirm(`Supprimer ${a.full_name} ? Son planning sera également supprimé.`)) return;
     try {
       await deleteHrAgent(a.id);
-      toast.success("Agent supprimé");
+      toast.success("Employé supprimé");
       await onChanged();
     } catch (e: any) {
       toast.error(e?.message ?? "Suppression impossible");
@@ -226,7 +226,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
           <Input
             className="h-9"
             value={name}
-            placeholder="Nouvel agent"
+            placeholder="Nouvel employé"
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && void add()}
           />
@@ -256,7 +256,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
             if (v === "manager") setPoste("");
           }}
         >
-          <option value="agent">Agent</option>
+          <option value="agent">Employé</option>
           <option value="manager">Manager</option>
         </select>
         <select
@@ -282,7 +282,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
 
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={() => setShowList((v) => !v)}>
-          {showList ? "Masquer" : "Afficher"} la liste des agents ({agents.length})
+          {showList ? "Masquer" : "Afficher"} la liste des employés ({agents.length})
         </Button>
         {showList && (
           <Input
@@ -326,7 +326,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
               void save(a.id, v === "manager" ? { staff_level: v, poste: null } : { staff_level: v });
             }}
           >
-            <option value="agent">Agent</option>
+            <option value="agent">Employé</option>
             <option value="manager">Manager</option>
           </select>
           <div>
@@ -348,7 +348,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
       })}
       {showList && filteredAgents.length === 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">
-          {search.trim() ? "Aucun agent ne correspond à cette recherche." : "Aucun agent. Ajoutez-les ci-dessus ou enrôlez-les dans le module Pointage."}
+          {search.trim() ? "Aucun employé ne correspond à cette recherche." : "Aucun employé. Ajoutez-les ci-dessus ou enrôlez-les dans le module Pointage."}
         </Card>
       )}
     </div>
