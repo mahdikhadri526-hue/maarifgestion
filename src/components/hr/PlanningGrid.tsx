@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,10 +52,14 @@ export function PlanningGrid({
   const [loading, setLoading] = useState(false);
 
   const days = useMemo(() => weekDays(start), [start]);
-  const list = useMemo(
-    () => agents.filter((a) => a.active && (a.staff_level ?? "agent") === level),
-    [agents, level],
-  );
+  const isCaissier = (a: HrAgent) => (a.poste ?? "").trim().toLowerCase() === "caissier";
+  /** Les caissiers sont planifiés par la RH : affichés en bas, verrouillés pour les managers. */
+  const list = useMemo(() => {
+    const base = agents.filter((a) => a.active && (a.staff_level ?? "agent") === level);
+    return [...base.filter((a) => !isCaissier(a)), ...base.filter(isCaissier)];
+  }, [agents, level]);
+  const firstCaissierId = useMemo(() => list.find(isCaissier)?.id ?? null, [list]);
+  const rowReadOnly = (a: HrAgent) => (isCaissier(a) ? !isRh : readOnly);
   const holidayMap = useMemo(
     () => new Map(holidays.map((h) => [h.holiday_date, h.label])),
     [holidays],
@@ -222,6 +226,17 @@ export function PlanningGrid({
             </thead>
             <tbody>
               {list.map((a) => (
+                <Fragment key={a.id}>
+                {a.id === firstCaissierId && (
+                  <tr key={`sep-${a.id}`}>
+                    <td
+                      colSpan={days.length + 1}
+                      className="sticky left-0 !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                    >
+                      Caissiers — planning établi par la RH{!isRh && " (lecture seule)"}
+                    </td>
+                  </tr>
+                )}
                 <tr key={a.id} className="group">
                   <td className="sticky left-0 z-20 !bg-card !px-3 !py-2 border-r border-border group-hover:!bg-accent">
                     <div className="flex min-w-0 items-center gap-2.5">
@@ -241,7 +256,7 @@ export function PlanningGrid({
                     const type = c?.day_type as DayType | undefined;
                     return (
                       <td key={d} className={`!p-1 border-r border-border/60 ${i > 4 ? "bg-muted/40" : ""}`}>
-                        {readOnly ? (
+                        {rowReadOnly(a) ? (
                           <div className={`min-h-[58px] rounded-md border px-1.5 py-1.5 text-center ${cellTone(type)}`}>
                             <span className="block text-[10px] font-semibold">
                               {type ? DAY_TYPE_LABELS[type] : "—"}
@@ -290,6 +305,7 @@ export function PlanningGrid({
                     );
                   })}
                 </tr>
+                </Fragment>
               ))}
             </tbody>
           </table>
