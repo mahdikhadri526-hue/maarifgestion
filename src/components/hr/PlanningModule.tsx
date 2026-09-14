@@ -54,9 +54,11 @@ export function PlanningModule() {
   const pdvName = pdvs.find((p) => p.id === pdvId)?.name ?? "Mon point de vente";
 
   const visibleAgents = useMemo(
-    () => agents.filter((a) => pdvFilter === "all" || a.pdv_id === pdvFilter),
+    () => agents.filter((a) => pdvFilter === "all" || a.pdv_id === pdvFilter || a.multi_pdv),
     [agents, pdvFilter],
   );
+
+  const planningPdvId = isRh ? (pdvFilter === "all" ? null : pdvFilter) : pdvId;
 
   return (
     <div className="space-y-4">
@@ -95,6 +97,7 @@ export function PlanningModule() {
         onChanged={reload}
         showLevelToggle={false}
         groupedCategories
+        planningPdvId={planningPdvId}
       />
     </div>
   );
