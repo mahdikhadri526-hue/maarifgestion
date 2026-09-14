@@ -157,6 +157,11 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
   const [hire, setHire] = useState("");
   const [newPdvId, setNewPdvId] = useState<string>(pdvId ?? "");
   const [busy, setBusy] = useState(false);
+  const [showList, setShowList] = useState(false);
+  const [search, setSearch] = useState("");
+  const filteredAgents = search.trim()
+    ? agents.filter((a) => a.full_name.toLowerCase().includes(search.trim().toLowerCase()))
+    : agents;
 
   const save = async (id: string, patch: any) => {
     try {
@@ -275,7 +280,21 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
         </div>
       </Card>
 
-      {agents.map((a) => {
+      <div className="flex items-center gap-2">
+        <Button variant="outline" size="sm" onClick={() => setShowList((v) => !v)}>
+          {showList ? "Masquer" : "Afficher"} la liste des agents ({agents.length})
+        </Button>
+        {showList && (
+          <Input
+            className="h-9 max-w-[220px]"
+            placeholder="Rechercher par nom…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        )}
+      </div>
+
+      {showList && filteredAgents.map((a) => {
         const isManager = (a.staff_level ?? "agent") === "manager";
         return (
         <Card key={a.id} className="p-3 grid gap-2 sm:grid-cols-5 items-center">
@@ -327,9 +346,9 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
         </Card>
         );
       })}
-      {agents.length === 0 && (
+      {showList && filteredAgents.length === 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">
-          Aucun agent. Ajoutez-les ci-dessus ou enrôlez-les dans le module Pointage.
+          {search.trim() ? "Aucun agent ne correspond à cette recherche." : "Aucun agent. Ajoutez-les ci-dessus ou enrôlez-les dans le module Pointage."}
         </Card>
       )}
     </div>
