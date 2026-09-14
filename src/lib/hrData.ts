@@ -25,6 +25,8 @@ export interface HrAgent {
   poste: string | null;
   hire_date: string | null;
   staff_level: StaffLevel;
+  /** true = l'agent peut travailler sur tous les PDV. */
+  multi_pdv?: boolean;
 }
 
 export interface HrSchedule {
@@ -92,9 +94,9 @@ export const DOW_LABELS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "S
 export async function getHrAgents(pdvIds: string[] | null): Promise<HrAgent[]> {
   let q = supabase
     .from("attendance_agents" as any)
-    .select("id, pdv_id, full_name, active, poste, hire_date, staff_level")
+    .select("id, pdv_id, full_name, active, poste, hire_date, staff_level, multi_pdv")
     .order("full_name");
-  if (pdvIds && pdvIds.length > 0) q = q.in("pdv_id", pdvIds);
+  if (pdvIds && pdvIds.length > 0) q = q.or(`pdv_id.in.(${pdvIds.join(",")}),multi_pdv.eq.true`);
   const { data, error } = await q;
   if (error) throw error;
   return (data ?? []) as unknown as HrAgent[];
