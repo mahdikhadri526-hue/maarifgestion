@@ -1217,6 +1217,44 @@ export type Database = {
           },
         ]
       }
+      pdv_shift_times: {
+        Row: {
+          created_at: string
+          end_time: string | null
+          id: string
+          pdv_id: string
+          shift: string
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          pdv_id: string
+          shift: string
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_time?: string | null
+          id?: string
+          pdv_id?: string
+          shift?: string
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdv_shift_times_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pdvs: {
         Row: {
           access_code: string
