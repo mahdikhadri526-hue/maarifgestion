@@ -346,9 +346,9 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
         </Card>
         );
       })}
-      {agents.length === 0 && (
+      {showList && filteredAgents.length === 0 && (
         <Card className="p-6 text-center text-sm text-muted-foreground">
-          Aucun agent. Ajoutez-les ci-dessus ou enrôlez-les dans le module Pointage.
+          {search.trim() ? "Aucun agent ne correspond à cette recherche." : "Aucun agent. Ajoutez-les ci-dessus ou enrôlez-les dans le module Pointage."}
         </Card>
       )}
     </div>
