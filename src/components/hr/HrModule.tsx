@@ -227,23 +227,28 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
         </div>
         <select
           className="h-9 rounded border bg-background px-2 text-sm"
+          value={level}
+          onChange={(e) => {
+            const v = e.target.value as any;
+            setLevel(v);
+            if (v === "manager") setPoste("");
+          }}
+        >
+          <option value="agent">Agent</option>
+          <option value="manager">Manager</option>
+        </select>
+        <select
+          className="h-9 rounded border bg-background px-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           value={poste}
           onChange={(e) => setPoste(e.target.value)}
+          disabled={level === "manager"}
         >
-          <option value="">Poste…</option>
+          <option value="">{level === "manager" ? "Poste non requis" : "Poste…"}</option>
           {POSTES.map((p) => (
             <option key={p} value={p}>
               {p}
             </option>
           ))}
-        </select>
-        <select
-          className="h-9 rounded border bg-background px-2 text-sm"
-          value={level}
-          onChange={(e) => setLevel(e.target.value as any)}
-        >
-          <option value="agent">Agent</option>
-          <option value="manager">Manager</option>
         </select>
         <div className="flex gap-2">
           <Input type="date" className="h-9" value={hire} onChange={(e) => setHire(e.target.value)} />
