@@ -34,6 +34,7 @@ export function PlanningGrid({
   isRh,
   onChanged,
   showLevelToggle = true,
+  readOnly = false,
 }: {
   agents: HrAgent[];
   holidays: HrHoliday[];
@@ -41,6 +42,8 @@ export function PlanningGrid({
   onChanged: () => Promise<void> | void;
   /** false = masquer le sélecteur Managers/Agents (grille agents uniquement). */
   showLevelToggle?: boolean;
+  /** true = consultation uniquement (aucune modification possible). */
+  readOnly?: boolean;
 }) {
   const { pdvs } = useAuth();
   const [start, setStart] = useState(() => weekStart(isoDate(new Date())));
@@ -125,9 +128,17 @@ export function PlanningGrid({
     <Card className="overflow-hidden border-border shadow-sm">
       <div className="flex flex-col gap-3 border-b border-border bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Planning hebdomadaire</h2>
+          <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold">
+            Planning hebdomadaire
+            {readOnly && (
+              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                Lecture seule
+              </span>
+            )}
+          </h2>
           <p className="text-sm text-muted-foreground">
             Semaine du {formatFr(days[0])} au {formatFr(days[6])}
+            {readOnly && " — consultation uniquement"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
