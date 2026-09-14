@@ -277,8 +277,10 @@ export function PlanningModule() {
         </table>
       </Card>
       <p className="text-xs text-muted-foreground">
-        {visible.length} agent(s) — cette liste alimente l'élaboration du planning hebdomadaire (module RH).
+        {visible.length} agent(s) — cette liste alimente l'élaboration du planning hebdomadaire.
       </p>
+        </>
+      )}
     </div>
   );
 }
