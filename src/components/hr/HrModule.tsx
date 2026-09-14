@@ -86,9 +86,8 @@ export function HrModule() {
   const tabs: { id: View; label: string; icon: any }[] = [
     { id: "planning", label: "Planning", icon: CalendarDays },
     { id: "agents", label: "Agents", icon: Users },
-    { id: "soldes", label: "Congés & Récup", icon: Sun },
     { id: "feries", label: "Jours fériés", icon: CalendarDays },
-    { id: "rapports", label: "Rapports", icon: BarChart3 },
+    { id: "suivi", label: "Congés & Rapports", icon: BarChart3 },
   ];
 
   return (
