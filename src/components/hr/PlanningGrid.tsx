@@ -131,6 +131,7 @@ export function PlanningGrid({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {showLevelToggle && (
           <div className="flex rounded-md border border-border bg-muted p-0.5">
             {isRh && (
               <Button
@@ -151,6 +152,7 @@ export function PlanningGrid({
               Agents
             </Button>
           </div>
+          )}
           <Button
             size="icon"
             variant="outline"
@@ -181,7 +183,7 @@ export function PlanningGrid({
 
       {list.length === 0 ? (
         <div className="p-8 text-center text-sm text-muted-foreground">
-          Aucun {level === "manager" ? "manager" : "agent"} enregistré. Ajoutez-les dans l'onglet « Liste des agents ».
+          Aucun {level === "manager" ? "manager" : "agent"} enregistré pour ce périmètre.
         </div>
       ) : (
         <div className="overflow-x-auto">
