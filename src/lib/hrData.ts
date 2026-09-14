@@ -229,6 +229,50 @@ export async function deleteSchedule(id: string): Promise<void> {
   if (error) throw error;
 }
 
+/* ------------------------------------------------------------ Horaires de shift par PDV */
+
+export interface PdvShiftTime {
+  id: string;
+  pdv_id: string;
+  shift: WorkShift;
+  start_time: string;
+  end_time: string | null;
+}
+
+export const SHIFT_LABELS: Record<WorkShift, string> = {
+  matin: "Matin",
+  apres_midi: "Après-midi",
+};
+
+export async function getShiftTimes(): Promise<PdvShiftTime[]> {
+  const { data, error } = await supabase
+    .from("pdv_shift_times" as any)
+    .select("id, pdv_id, shift, start_time, end_time");
+  if (error) throw error;
+  return (data ?? []) as unknown as PdvShiftTime[];
+}
+
+export async function saveShiftTime(row: {
+  pdv_id: string;
+  shift: WorkShift;
+  start_time: string;
+  end_time?: string | null;
+}): Promise<void> {
+  const { error } = await supabase
+    .from("pdv_shift_times" as any)
+    .upsert({ ...row, end_time: row.end_time || null }, { onConflict: "pdv_id,shift" });
+  if (error) throw error;
+}
+
+/** Clé `${pdv_id}|${shift}` → heure de début. */
+export function shiftStartMap(rows: PdvShiftTime[]): Record<string, string> {
+  const out: Record<string, string> = {};
+  rows.forEach((r) => {
+    out[`${r.pdv_id}|${r.shift}`] = r.start_time;
+  });
+  return out;
+}
+
 /* ------------------------------------------------------------ Jours fériés */
 
 export async function getHolidays(from?: string, to?: string): Promise<HrHoliday[]> {
