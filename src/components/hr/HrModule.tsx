@@ -746,7 +746,7 @@ function ReportsView({
     const data = rows.map((r) => ({
       Date: formatFr(r.date),
       PDV: pdvs.find((p) => p.id === r.pdvId)?.name ?? "",
-      Agent: r.agentName,
+      Employé: r.agentName,
       Journée: r.dayType ? DAY_TYPE_LABELS[r.dayType] : "—",
       Férié: r.holidayLabel ?? "",
       "Entrée prévue": r.plannedStart ?? "",
