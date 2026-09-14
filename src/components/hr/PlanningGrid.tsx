@@ -38,6 +38,7 @@ export function PlanningGrid({
   agentsReadOnly = false,
   caissierMode = "bottom",
   techMode = "exclude",
+  techCategorySeparators = false,
   groupedCategories = false,
   title = "Planning hebdomadaire",
 }: {
@@ -55,6 +56,8 @@ export function PlanningGrid({
   caissierMode?: "bottom" | "exclude" | "only";
   /** Postes Ménage / Sécurité : exclus (défaut) ou grille dédiée (responsable technique). */
   techMode?: "exclude" | "only";
+  /** Sépare Ménage et Sécurité dans la grille technique sans répéter le calendrier. */
+  techCategorySeparators?: boolean;
   /** Affiche les catégories dans une grille unique ; le mode RH inclut aussi les managers. */
   groupedCategories?: boolean | "rh";
   title?: string;
@@ -87,7 +90,13 @@ export function PlanningGrid({
         ? [...managers, ...caissiers, ...regular, ...technical]
         : [...regular, ...caissiers, ...technical];
     }
-    if (techMode === "only") return actives.filter(isTechPoste);
+    if (techMode === "only") {
+      const technical = actives.filter(isTechPoste);
+      if (!techCategorySeparators) return technical;
+      const menage = technical.filter((a) => norm(a.poste) === "menage");
+      const securite = technical.filter((a) => norm(a.poste).includes("securite"));
+      return [...menage, ...securite];
+    }
     const pool = actives.filter((a) => !isTechPoste(a));
     const base = pool.filter((a) => (a.staff_level ?? "agent") === level);
     if (caissierMode === "exclude") return base.filter((a) => !isCaissier(a));
@@ -97,7 +106,7 @@ export function PlanningGrid({
     const caissiers = pool.filter((a) => (a.staff_level ?? "agent") === "agent" && isCaissier(a));
     if (level === "manager") return [...base, ...caissiers];
     return base.filter((a) => !isCaissier(a));
-  }, [agents, level, caissierMode, techMode, groupedCategories]);
+  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories]);
   const firstCaissierId = useMemo(
     () => ((groupedCategories || (caissierMode === "bottom" && techMode !== "only")) ? list.find(isCaissier)?.id ?? null : null),
     [list, caissierMode, techMode, groupedCategories],
@@ -113,6 +122,14 @@ export function PlanningGrid({
   const firstRegularAgentId = useMemo(
     () => (groupedCategories === "rh" ? list.find((a) => (a.staff_level ?? "agent") === "agent" && !isCaissier(a) && !isTechPoste(a))?.id ?? null : null),
     [list, groupedCategories],
+  );
+  const firstMenageId = useMemo(
+    () => (techCategorySeparators ? list.find((a) => norm(a.poste) === "menage")?.id ?? null : null),
+    [list, techCategorySeparators],
+  );
+  const firstSecuriteId = useMemo(
+    () => (techCategorySeparators ? list.find((a) => norm(a.poste).includes("securite"))?.id ?? null : null),
+    [list, techCategorySeparators],
   );
   const rowReadOnly = (a: HrAgent) =>
     readOnly ||
@@ -290,6 +307,26 @@ export function PlanningGrid({
             <tbody>
               {list.map((a) => (
                 <Fragment key={a.id}>
+                {a.id === firstMenageId && (
+                  <tr key={`sep-menage-${a.id}`}>
+                    <td
+                      colSpan={days.length + 1}
+                      className="sticky left-0 border-t border-border !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                    >
+                      Ménage
+                    </td>
+                  </tr>
+                )}
+                {a.id === firstSecuriteId && (
+                  <tr key={`sep-securite-${a.id}`}>
+                    <td
+                      colSpan={days.length + 1}
+                      className="sticky left-0 border-t border-border !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                    >
+                      Sécurité
+                    </td>
+                  </tr>
+                )}
                 {a.id === firstManagerId && (
                   <tr key={`sep-manager-${a.id}`}>
                     <td
