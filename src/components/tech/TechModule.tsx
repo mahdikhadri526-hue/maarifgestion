@@ -45,10 +45,12 @@ import {
   type TechDisplayStatus,
 } from "@/lib/techData";
 import { ReportIssueDialog } from "./ReportIssueDialog";
+import { PlanningGrid } from "@/components/hr/PlanningGrid";
+import { getHolidays, getHrAgents, type HrAgent, type HrHoliday } from "@/lib/hrData";
 
 const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 };
 
-type View = "dossiers" | "controle" | "historique";
+type View = "dossiers" | "controle" | "historique" | "planning";
 
 export function TechModule() {
   const { can, pdv, isAdmin } = useAuth();
