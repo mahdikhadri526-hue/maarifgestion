@@ -38,7 +38,8 @@ import {
 } from "@/lib/hrData";
 import { computeBalance, computeDay, downloadCsv, toCsv } from "@/lib/hrCompute";
 
-type View = "planning" | "agents" | "soldes" | "feries" | "rapports";
+type View = "planning" | "agents" | "soldes" | "feries" | "suivi";
+type SuiviSection = "soldes" | "rapports";
 
 export function HrModule() {
   const { pdvId, pdvs, can, isAdmin } = useAuth();
@@ -49,6 +50,7 @@ export function HrModule() {
   );
 
   const [view, setView] = useState<View>("planning");
+  const [suiviSection, setSuiviSection] = useState<SuiviSection>("soldes");
   const [agents, setAgents] = useState<HrAgent[]>([]);
   const [holidays, setHolidays] = useState<HrHoliday[]>([]);
   const [balances, setBalances] = useState<HrBalanceEntry[]>([]);
