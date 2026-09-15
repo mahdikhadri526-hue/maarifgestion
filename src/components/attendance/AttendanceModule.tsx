@@ -337,10 +337,7 @@ function JournalView({
 /* ------------------------------------------------------------------ Agents */
 
 function AgentsView({ agents, onChanged }: { agents: AttendanceAgent[]; onChanged: () => Promise<void> | void }) {
-  const { pdvId } = useAuth();
-  const operators = useOperators();
   const { videoRef, on, error, start, stop } = useCamera();
-  const [name, setName] = useState("");
   const [shots, setShots] = useState<number[][]>([]);
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
