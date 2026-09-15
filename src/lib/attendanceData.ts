@@ -43,7 +43,7 @@ export async function getAgents(pdvId: string): Promise<AttendanceAgent[]> {
   const { data, error } = await supabase
     .from("attendance_agents" as any)
     .select("id, pdv_id, full_name, descriptors, active, notes")
-    .eq("pdv_id", pdvId)
+    .or(`pdv_id.eq.${pdvId},multi_pdv.eq.true`)
     .order("full_name");
   if (error) throw error;
   return ((data ?? []) as any[]).map((r) => ({

@@ -1,17 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Camera, CameraOff, UserPlus, Trash2, RefreshCw, ScanFace, Users, ListChecks } from "lucide-react";
+import { Camera, CameraOff, UserPlus, RefreshCw, ScanFace, Users, ListChecks } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOperators } from "@/lib/roster";
 import { computeDescriptor, findBestMatch, loadFaceApi, MATCH_THRESHOLD, type FaceCandidate } from "@/lib/faceRecognition";
 import {
   addPunch,
-  createAgent,
-  deleteAgent,
   deletePunch,
   formatTime,
   getAgents,
@@ -337,10 +333,7 @@ function JournalView({
 /* ------------------------------------------------------------------ Agents */
 
 function AgentsView({ agents, onChanged }: { agents: AttendanceAgent[]; onChanged: () => Promise<void> | void }) {
-  const { pdvId } = useAuth();
-  const operators = useOperators();
   const { videoRef, on, error, start, stop } = useCamera();
-  const [name, setName] = useState("");
   const [shots, setShots] = useState<number[][]>([]);
   const [status, setStatus] = useState("");
   const [saving, setSaving] = useState(false);
@@ -366,23 +359,16 @@ function AgentsView({ agents, onChanged }: { agents: AttendanceAgent[]; onChange
   };
 
   const save = async () => {
-    if (!pdvId) return;
+    if (!targetId) {
+      toast.error("Choisissez l'employé (créé dans la table RH)");
+      return;
+    }
     setSaving(true);
     try {
-      if (targetId) {
-        const existing = agents.find((a) => a.id === targetId);
-        await updateAgentDescriptors(targetId, [...(existing?.descriptors ?? []), ...shots]);
-        toast.success("Visage ajouté à l'agent");
-      } else {
-        if (!name.trim()) {
-          toast.error("Indiquez le nom de l'agent");
-          return;
-        }
-        await createAgent(pdvId, name, shots);
-        toast.success("Agent enrôlé");
-      }
+      const existing = agents.find((a) => a.id === targetId);
+      await updateAgentDescriptors(targetId, [...(existing?.descriptors ?? []), ...shots]);
+      toast.success("Visage enregistré");
       setShots([]);
-      setName("");
       setTargetId(null);
       stop();
       await onChanged();
@@ -396,25 +382,29 @@ function AgentsView({ agents, onChanged }: { agents: AttendanceAgent[]; onChange
   return (
     <div className="space-y-4">
       <Card className="p-4 space-y-3">
-        <p className="font-semibold text-sm">
-          {targetId ? "Ajouter un visage à un agent existant" : "Enrôler un nouvel agent"}
+        <p className="font-semibold text-sm">Enregistrer le visage d'un employé</p>
+        <p className="text-xs text-muted-foreground">
+          La création des employés se fait uniquement dans la table RH ; leur nom apparaît ensuite ici.
         </p>
 
-        {!targetId && (
-          <>
-            <Input
-              list="attendance-operators"
-              placeholder="Nom de l'agent"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <datalist id="attendance-operators">
-              {operators.map((o) => (
-                <option key={o} value={o} />
-              ))}
-            </datalist>
-          </>
-        )}
+        <select
+          className="w-full h-9 rounded-md border bg-background px-2 text-sm"
+          value={targetId ?? ""}
+          onChange={(e) => {
+            setTargetId(e.target.value || null);
+            setShots([]);
+            setStatus("");
+          }}
+        >
+          <option value="">Employé…</option>
+          {agents.map((a) => (
+            <option key={a.id} value={a.id}>
+              {a.full_name}
+              {a.descriptors.length > 0 ? ` (${a.descriptors.length} visage(s))` : ""}
+            </option>
+          ))}
+        </select>
+
 
         <div className="relative rounded-lg overflow-hidden bg-muted aspect-[4/3] max-w-md mx-auto">
           <video ref={videoRef} playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
@@ -482,22 +472,13 @@ function AgentsView({ agents, onChanged }: { agents: AttendanceAgent[]; onChange
               >
                 {a.active ? "Désactiver" : "Activer"}
               </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={async () => {
-                  if (!confirm(`Supprimer ${a.full_name} ?`)) return;
-                  await deleteAgent(a.id);
-                  await onChanged();
-                }}
-              >
-                <Trash2 className="w-4 h-4 text-destructive" />
-              </Button>
             </div>
           </Card>
         ))}
         {agents.length === 0 && (
-          <Card className="p-6 text-center text-sm text-muted-foreground">Aucun agent enrôlé.</Card>
+          <Card className="p-6 text-center text-sm text-muted-foreground">
+            Aucun employé. Créez-le d'abord dans la table RH.
+          </Card>
         )}
       </div>
     </div>
