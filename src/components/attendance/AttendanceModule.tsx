@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Camera, CameraOff, UserPlus, RefreshCw, ScanFace, Users, ListChecks, Lock } from "lucide-react";
+import { Camera, CameraOff, UserPlus, RefreshCw, ScanFace, Users, ListChecks, Lock, Maximize, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,6 +39,8 @@ export function AttendanceModule() {
   const [unlocked, setUnlocked] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const [pin, setPin] = useState("");
+  const [pinAction, setPinAction] = useState<"unlock" | "fullscreen" | "exit">("unlock");
+  const [fullscreen, setFullscreen] = useState(false);
   const [view, setView] = useState<View>("pointage");
   const [agents, setAgents] = useState<AttendanceAgent[]>([]);
   const [punches, setPunches] = useState<AttendancePunch[]>([]);
