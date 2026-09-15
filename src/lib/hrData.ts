@@ -15,7 +15,7 @@ export const DAY_TYPES: DayType[] = ["travail", "repos", "conge", "recuperation"
 
 export const POSTES = ["Service", "Comptoir", "Caissier", "Passe", "Ménage", "Agent de sécurité"] as const;
 
-export type StaffLevel = "agent" | "manager";
+export type StaffLevel = "agent" | "manager" | "direction";
 export type WorkShift = "matin" | "apres_midi";
 
 export interface HrAgent {

@@ -352,7 +352,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
   const { pdvs, pdvId } = useAuth();
   const [name, setName] = useState("");
   const [poste, setPoste] = useState("");
-  const [level, setLevel] = useState<"agent" | "manager">("agent");
+  const [level, setLevel] = useState<"agent" | "manager" | "direction">("agent");
   const [hire, setHire] = useState("");
   const [newPdvId, setNewPdvId] = useState<string>(pdvId ?? "");
   const [busy, setBusy] = useState(false);
@@ -452,19 +452,20 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
           onChange={(e) => {
             const v = e.target.value as any;
             setLevel(v);
-            if (v === "manager") setPoste("");
+            if (v !== "agent") setPoste("");
           }}
         >
-          <option value="agent">Employé</option>
+          <option value="agent">Collaborateur</option>
           <option value="manager">Manager</option>
+          <option value="direction">Direction</option>
         </select>
         <select
           className="h-9 rounded border bg-background px-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
           value={poste}
           onChange={(e) => setPoste(e.target.value)}
-          disabled={level === "manager"}
+          disabled={level !== "agent"}
         >
-          <option value="">{level === "manager" ? "Poste non requis" : "Poste…"}</option>
+          <option value="">{level !== "agent" ? "Poste non requis" : "Poste…"}</option>
           {POSTES.map((p) => (
             <option key={p} value={p}>
               {p}
@@ -494,7 +495,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
       </div>
 
       {showList && filteredAgents.map((a) => {
-        const isManager = (a.staff_level ?? "agent") === "manager";
+        const isManager = (a.staff_level ?? "agent") !== "agent";
         return (
         <Card key={a.id} className="p-3 grid gap-2 sm:grid-cols-5 items-center">
           <div>
@@ -522,11 +523,12 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
             value={a.staff_level ?? "agent"}
             onChange={(e) => {
               const v = e.target.value as any;
-              void save(a.id, v === "manager" ? { staff_level: v, poste: null } : { staff_level: v });
+              void save(a.id, v !== "agent" ? { staff_level: v, poste: null } : { staff_level: v });
             }}
           >
-            <option value="agent">Employé</option>
+            <option value="agent">Collaborateur</option>
             <option value="manager">Manager</option>
+            <option value="direction">Direction</option>
           </select>
           <div>
             <label className="text-[11px] text-muted-foreground">Date d'embauche</label>
