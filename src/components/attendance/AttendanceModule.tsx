@@ -148,7 +148,7 @@ function useCamera() {
     setError(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
+        video: { facingMode: "user", width: { ideal: 1280 }, height: { ideal: 960 } },
         audio: false,
       });
       streamRef.current = stream;
@@ -250,6 +250,7 @@ function PunchView({
         if (!next) {
           setStatus(`${match.name} — journée déjà complète`);
           cooldown.current[match.id] = now + COOLDOWN_MS;
+          stop();
           return;
         }
         cooldown.current[match.id] = now + COOLDOWN_MS;
@@ -263,6 +264,8 @@ function PunchView({
         setLast({ name: match.name, type: next, time: formatTime(new Date().toISOString()) });
         setStatus(`${PUNCH_LABELS[next]} enregistrée pour ${match.name}`);
         await onDone();
+        // Visage reconnu et pointage enregistré : on coupe la caméra.
+        stop();
       } catch (e: any) {
         setStatus(e?.message ?? "Erreur de pointage");
       } finally {
@@ -274,12 +277,12 @@ function PunchView({
       cancelled = true;
       clearInterval(id);
     };
-  }, [on, ready, pdvId, candidates, doneFor, onDone, videoRef]);
+  }, [on, ready, pdvId, candidates, doneFor, onDone, videoRef, stop]);
 
   return (
     <div className="space-y-4">
       <Card className="p-4 space-y-3">
-        <div className="relative rounded-lg overflow-hidden bg-muted aspect-[4/3] max-w-md mx-auto">
+        <div className="relative rounded-lg overflow-hidden bg-muted aspect-[3/4] w-full max-w-lg mx-auto">
           <video ref={videoRef} playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
           {!on && (
             <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
@@ -291,17 +294,13 @@ function PunchView({
         <p className="text-center text-sm font-medium">{status}</p>
         {error && <p className="text-center text-sm text-destructive">{error}</p>}
 
-        <div className="flex justify-center gap-2">
-          {!on ? (
+        {!on && (
+          <div className="flex justify-center gap-2">
             <Button onClick={() => void handleStart()}>
               <Camera className="w-4 h-4 mr-1" /> Démarrer le pointage
             </Button>
-          ) : (
-            <Button variant="outline" onClick={stop}>
-              <CameraOff className="w-4 h-4 mr-1" /> Arrêter
-            </Button>
-          )}
-        </div>
+          </div>
+        )}
 
         {candidates.length === 0 && (
           <p className="text-center text-xs text-muted-foreground">
