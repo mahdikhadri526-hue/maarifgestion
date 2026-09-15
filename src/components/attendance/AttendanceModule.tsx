@@ -362,6 +362,14 @@ function PunchView({
   return (
     <div className="space-y-4">
       <Card className="p-4 space-y-3">
+        {!on && (
+          <div className="flex justify-center gap-2">
+            <Button onClick={() => void handleStart()} className="w-full max-w-lg text-base py-5">
+              <Camera className="w-5 h-5 mr-1" /> Démarrer le pointage
+            </Button>
+          </div>
+        )}
+
         <div className="relative rounded-lg overflow-hidden bg-muted aspect-[3/4] w-full max-w-lg mx-auto">
           <video ref={videoRef} playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
           {!on && (
@@ -374,13 +382,6 @@ function PunchView({
         <p className="text-center text-sm font-medium">{status}</p>
         {error && <p className="text-center text-sm text-destructive">{error}</p>}
 
-        {!on && (
-          <div className="flex justify-center gap-2">
-            <Button onClick={() => void handleStart()}>
-              <Camera className="w-4 h-4 mr-1" /> Démarrer le pointage
-            </Button>
-          </div>
-        )}
 
         {candidates.length === 0 && (
           <p className="text-center text-xs text-muted-foreground">
