@@ -1,17 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Camera, CameraOff, UserPlus, Trash2, RefreshCw, ScanFace, Users, ListChecks } from "lucide-react";
+import { Camera, CameraOff, UserPlus, RefreshCw, ScanFace, Users, ListChecks } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useOperators } from "@/lib/roster";
 import { computeDescriptor, findBestMatch, loadFaceApi, MATCH_THRESHOLD, type FaceCandidate } from "@/lib/faceRecognition";
 import {
   addPunch,
-  createAgent,
-  deleteAgent,
   deletePunch,
   formatTime,
   getAgents,
