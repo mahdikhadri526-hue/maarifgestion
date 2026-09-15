@@ -23,6 +23,33 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 
 export const ROLE_ORDER: AppRole[] = ["admin", "regional_admin", "manager", "operator", "viewer"];
 
+// Liste complète des permissions, regroupées par tableau / module de l'application.
+export const PERMISSION_GROUPS: { title: string; keys: string[] }[] = [
+  { title: "Tableau de bord & rapports", keys: ["view_dashboard", "view_reports"] },
+  { title: "Stock initial", keys: ["view_stock", "edit_stock", "delete_stock", "edit_remaining_stock"] },
+  { title: "Mouvements", keys: ["view_movements", "edit_movements", "delete_movements"] },
+  { title: "Réquisitions", keys: ["view_requisitions", "edit_requisitions", "delete_requisitions"] },
+  { title: "Lots & DLC", keys: ["view_lots", "edit_lots", "delete_lots"] },
+  { title: "Autocontrôle", keys: ["view_autocontrol", "edit_autocontrol", "delete_autocontrol"] },
+  { title: "Réclamations & retours", keys: ["view_claims", "edit_claims", "delete_claims"] },
+  { title: "Contrôle STUFFS de glace", keys: ["view_glace", "edit_glace", "delete_glace"] },
+  { title: "Suivi hebdomadaire & transferts", keys: ["view_weekly", "edit_weekly", "delete_weekly"] },
+  { title: "Températures frigos", keys: ["view_temperatures", "edit_temperatures", "delete_temperatures"] },
+  { title: "Gestion des matériels – Température", keys: ["view_equipments", "edit_equipments", "delete_equipments"] },
+  { title: "Catalogue produits – Alimentaire & Emballage", keys: ["view_products", "edit_products", "delete_products"] },
+  { title: "Nettoyage", keys: ["view_cleaning", "edit_cleaning", "delete_cleaning"] },
+  { title: "Inventaire", keys: ["view_inventory", "manage_inventory"] },
+  { title: "Calcul des écarts", keys: ["view_ecarts", "edit_ecarts"] },
+  { title: "Recettes & produits finis", keys: ["view_recipes", "edit_recipes"] },
+  { title: "Agenda PEP", keys: ["view_pep", "manage_pep"] },
+  { title: "Suivi Technique", keys: ["view_tech", "manage_tech"] },
+  { title: "Pointage (reconnaissance faciale)", keys: ["view_attendance", "manage_attendance"] },
+  { title: "RH — Plannings", keys: ["view_hr", "manage_hr"] },
+  { title: "Planning", keys: ["view_planning", "manage_planning"] },
+  { title: "Centre des anomalies", keys: ["view_anomalies"] },
+  { title: "Administration", keys: ["manage_roster"] },
+];
+
 export const ALL_PERMISSIONS = [
   { key: "view_dashboard", label: "Voir le tableau de bord" },
   { key: "view_stock", label: "Voir le stock initial" },
@@ -41,8 +68,14 @@ export const ALL_PERMISSIONS = [
   { key: "view_autocontrol", label: "Voir l'autocontrôle" },
   { key: "edit_autocontrol", label: "Modifier l'autocontrôle" },
   { key: "delete_autocontrol", label: "Supprimer de l'autocontrôle" },
-  { key: "view_weekly", label: "Voir le suivi hebdomadaire" },
-  { key: "edit_weekly", label: "Modifier le suivi hebdomadaire" },
+  { key: "view_claims", label: "Voir les réclamations & retours" },
+  { key: "edit_claims", label: "Saisir / modifier les réclamations & retours" },
+  { key: "delete_claims", label: "Supprimer des réclamations & retours" },
+  { key: "view_glace", label: "Voir le contrôle STUFFS de glace" },
+  { key: "edit_glace", label: "Saisir / modifier le contrôle STUFFS de glace" },
+  { key: "delete_glace", label: "Supprimer du contrôle STUFFS de glace" },
+  { key: "view_weekly", label: "Voir le suivi hebdomadaire (et transferts)" },
+  { key: "edit_weekly", label: "Modifier le suivi hebdomadaire (et transferts)" },
   { key: "delete_weekly", label: "Supprimer du suivi hebdomadaire" },
   { key: "view_temperatures", label: "Voir les températures frigos" },
   { key: "edit_temperatures", label: "Modifier les températures frigos" },
@@ -69,9 +102,12 @@ export const ALL_PERMISSIONS = [
   { key: "view_tech", label: "Voir le Suivi Technique" },
   { key: "manage_tech", label: "Suivi Technique — responsable technique (prise en charge, statuts, deadline)" },
   { key: "view_attendance", label: "Voir le pointage (reconnaissance faciale)" },
-  { key: "manage_attendance", label: "Gérer le pointage (enrôler les agents, corriger les pointages)" },
-  { key: "view_hr", label: "Voir le module RH (planning, congés, rapports)" },
-  { key: "manage_hr", label: "RH — vue globale tous PDV (planning managers, congés, jours fériés)" },
+  { key: "manage_attendance", label: "Gérer le pointage (enrôler les employés, corriger les pointages)" },
+  { key: "view_hr", label: "Voir le module RH (employés, horaires shifts, congés, rapports)" },
+  { key: "manage_hr", label: "RH — vue globale tous PDV (employés, plannings managers/caissiers, congés, jours fériés)" },
+  { key: "view_planning", label: "Voir la table Planning" },
+  { key: "manage_planning", label: "Élaborer le planning des employés du PDV" },
+  { key: "view_anomalies", label: "Voir le centre des anomalies" },
 ] as const;
 
 export type PermissionKey = (typeof ALL_PERMISSIONS)[number]["key"];
