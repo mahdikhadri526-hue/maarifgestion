@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { ALL_PERMISSIONS, AppRole, useAuth } from "@/contexts/AuthContext";
+import { ALL_PERMISSIONS, PERMISSION_GROUPS, AppRole, useAuth } from "@/contexts/AuthContext";
 
 const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
   admin: ALL_PERMISSIONS.map((p) => p.key),
@@ -20,20 +20,26 @@ const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
     "view_requisitions", "edit_requisitions", "delete_requisitions",
     "view_lots", "edit_lots", "delete_lots",
     "view_autocontrol", "edit_autocontrol",
+    "view_claims", "edit_claims",
+    "view_glace", "edit_glace",
     "view_weekly", "edit_weekly",
     "view_temperatures", "edit_temperatures",
     "view_cleaning", "edit_cleaning",
     "view_reports", "view_recipes", "edit_recipes",
     "view_ecarts", "edit_ecarts",
+    "view_planning", "manage_planning",
   ],
   operator: [
     "view_dashboard", "view_movements", "edit_movements",
     "view_requisitions", "edit_requisitions",
     "view_lots", "edit_lots",
     "view_autocontrol", "edit_autocontrol",
+    "view_claims", "edit_claims",
+    "view_glace", "edit_glace",
     "view_weekly", "edit_weekly",
     "view_temperatures", "edit_temperatures",
     "view_cleaning", "edit_cleaning",
+    "view_planning",
   ],
   viewer: ["view_dashboard", "view_stock", "view_movements", "view_requisitions", "view_lots", "view_reports"],
 };
@@ -244,22 +250,31 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
                   Vous gérez les permissions de vos points de vente.
                 </p>
               )}
-              {ALL_PERMISSIONS.map((perm) => {
-                const has = pdvPerms[editing.id]?.has(perm.key) ?? false;
-                return (
-                  <label key={perm.key} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
-                    <Checkbox
-                      checked={has}
-                      disabled={!canTogglePerm(perm.key)}
-                      onCheckedChange={() => togglePdvPerm(editing.id, perm.key, has)}
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{perm.label}</div>
-                      <div className="text-xs text-muted-foreground">{perm.key}</div>
-                    </div>
-                  </label>
-                );
-              })}
+              {PERMISSION_GROUPS.map((group) => (
+                <div key={group.title} className="space-y-1">
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground pt-2 border-t">
+                    {group.title}
+                  </div>
+                  {group.keys.map((key) => {
+                    const perm = ALL_PERMISSIONS.find((p) => p.key === key);
+                    if (!perm) return null;
+                    const has = pdvPerms[editing.id]?.has(key) ?? false;
+                    return (
+                      <label key={key} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
+                        <Checkbox
+                          checked={has}
+                          disabled={!canTogglePerm(key)}
+                          onCheckedChange={() => togglePdvPerm(editing.id, key, has)}
+                        />
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{perm.label}</div>
+                          <div className="text-xs text-muted-foreground">{key}</div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           )}
           <DialogFooter>

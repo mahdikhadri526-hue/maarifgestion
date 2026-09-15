@@ -60,7 +60,7 @@ const Index = () => {
     { id: "lots" as Tab, label: "Lots / DLC", icon: Boxes, perm: "view_lots" },
     { id: "requisition" as Tab, label: "Réquisition", icon: ClipboardList, perm: "view_requisitions" },
     { id: "autocontrole" as Tab, label: "Autocontrôle", icon: ClipboardCheck, perm: "view_autocontrol" },
-    { id: "stuffs-glace" as Tab, label: "Contrôle STUFFS de glace", icon: Snowflake, perm: "view_autocontrol" },
+    { id: "stuffs-glace" as Tab, label: "Contrôle STUFFS de glace", icon: Snowflake, perm: "view_glace", alt: "view_autocontrol" },
     { id: "hebdo" as Tab, label: "Suivi hebdomadaire", icon: CalendarDays, perm: "view_weekly" },
     { id: "temperatures" as Tab, label: "Températures frigos", icon: Thermometer, perm: "view_temperatures" },
     { id: "nettoyage" as Tab, label: "Nettoyage", icon: Sparkles, perm: "view_cleaning" },
@@ -69,11 +69,11 @@ const Index = () => {
     { id: "tech" as Tab, label: "Suivi Technique", icon: Wrench, perm: "view_tech" },
     { id: "pointage" as Tab, label: "Pointage", icon: ScanFace, perm: "view_attendance" },
     { id: "rh" as Tab, label: "RH — Plannings", icon: Users, perm: "view_hr" },
-    { id: "planning" as Tab, label: "Planning", icon: CalendarDays, perm: "view_hr" },
+    { id: "planning" as Tab, label: "Planning", icon: CalendarDays, perm: "view_planning", alt: "view_hr" },
   ];
   const ATTENDANCE_ENABLED = isPreviewHost();
   const tabs = allTabs.filter(
-    (t) => can(t.perm) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED) && (t.id !== "rh" || ATTENDANCE_ENABLED) && (t.id !== "planning" || ATTENDANCE_ENABLED)
+    (t) => (can(t.perm) || (!!(t as { alt?: string }).alt && can((t as { alt?: string }).alt!))) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED) && (t.id !== "rh" || ATTENDANCE_ENABLED) && (t.id !== "planning" || ATTENDANCE_ENABLED)
   );
 
   // Ensure current tab is allowed
@@ -99,7 +99,7 @@ const Index = () => {
         </div>
       </header>
 
-      {showAnomalies && (isAdmin || isRegionalAdmin) ? (
+      {showAnomalies && (isAdmin || isRegionalAdmin || can("view_anomalies")) ? (
         <main className="max-w-5xl mx-auto px-4 py-6">
           <Suspense fallback={<TabFallback />}>
             <AnomalyCenter onBack={() => setShowAnomalies(false)} />

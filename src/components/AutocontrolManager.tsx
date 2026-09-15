@@ -1093,7 +1093,9 @@ export function AutocontrolManager() {
               {FICHE_TYPES.map((t) => (
                 <SelectItem key={t} value={t}>{t}</SelectItem>
               ))}
-              <SelectItem value={CLAIMS_FICHE}>{CLAIMS_FICHE}</SelectItem>
+              {(can("view_claims") || can("view_autocontrol")) && (
+                <SelectItem value={CLAIMS_FICHE}>{CLAIMS_FICHE}</SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
