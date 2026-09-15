@@ -1034,7 +1034,8 @@ function ReportsView({
         <Card className="p-3 flex flex-wrap gap-2 text-xs">
           <Badge variant="secondary">Heures {totals.worked.toFixed(2)}</Badge>
           <Badge variant="secondary">Heures sup. {totals.overtime.toFixed(2)}</Badge>
-          <Badge variant="secondary">Retard {totals.late} min</Badge>
+          <Badge variant="secondary">Retard {formatMinutes(totals.late)}</Badge>
+          <Badge variant="secondary">Retard pause {formatMinutes(totals.pauseLate)}</Badge>
           <Badge variant="destructive">Absences {totals.absences}</Badge>
           <Badge variant="outline">Congés {totals.conges}</Badge>
           <Badge variant="outline">Récup {totals.recups}</Badge>
@@ -1045,7 +1046,7 @@ function ReportsView({
         <table className="w-full text-xs border rounded">
           <thead className="bg-muted">
             <tr>
-              {["Date", "Employé", "Journée", "Prévu", "Entrée", "Pause", "Sortie", "Heures", "H. sup.", "Retard", "Statut"].map((h) => (
+              {["Date", "Employé", "Journée", "Prévu", "Entrée", "Pause", "Sortie", "Heures", "H. sup.", "Retard", "Retard pause", "Statut"].map((h) => (
                 <th key={h} className="p-2 text-left whitespace-nowrap">
                   {h}
                 </th>
