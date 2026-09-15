@@ -99,7 +99,7 @@ const Index = () => {
         </div>
       </header>
 
-      {showAnomalies && (isAdmin || isRegionalAdmin) ? (
+      {showAnomalies && (isAdmin || isRegionalAdmin || can("view_anomalies")) ? (
         <main className="max-w-5xl mx-auto px-4 py-6">
           <Suspense fallback={<TabFallback />}>
             <AnomalyCenter onBack={() => setShowAnomalies(false)} />
