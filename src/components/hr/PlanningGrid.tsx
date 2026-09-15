@@ -513,3 +513,60 @@ export function PlanningGrid({
     </Card>
   );
 }
+
+/** "0800" / "8:00" / "800" → "08:00". Renvoie "" si illisible. */
+function normalizeTime(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 4);
+  if (digits.length < 3) {
+    if (digits.length === 0) return "";
+    const h = Number(digits);
+    return h >= 0 && h <= 23 ? `${String(h).padStart(2, "0")}:00` : "";
+  }
+  const h = Number(digits.slice(0, digits.length - 2));
+  const m = Number(digits.slice(-2));
+  if (h > 23 || m > 59) return "";
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+/** Sortie = entrée + 8 h. */
+function addEightHours(start: string): string {
+  if (!start) return "";
+  const [h, m] = start.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return "";
+  const total = (h * 60 + m + 8 * 60) % (24 * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
+function StartTimeInput({
+  label,
+  value,
+  onCommit,
+}: {
+  label: string;
+  value: string;
+  onCommit: (v: string) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const shown = draft ?? (value ? value.slice(0, 5) : "");
+  const commit = () => {
+    if (draft === null) return;
+    const v = normalizeTime(draft);
+    setDraft(null);
+    if (v !== (value ? value.slice(0, 5) : "")) onCommit(v);
+  };
+  return (
+    <Input
+      inputMode="numeric"
+      placeholder="0800"
+      maxLength={5}
+      aria-label={label}
+      className="h-6 min-w-0 flex-1 border-0 bg-transparent px-0 text-center text-[9px] shadow-none focus-visible:ring-1"
+      value={shown}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+      }}
+    />
+  );
+}
