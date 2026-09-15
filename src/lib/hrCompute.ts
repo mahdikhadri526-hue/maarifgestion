@@ -210,6 +210,12 @@ export function computeBalance(params: {
   };
 }
 
+/** Formate des minutes en « 00h00m ». */
+export function formatMinutes(min: number): string {
+  const t = Math.round(min);
+  return `${String(Math.floor(t / 60)).padStart(2, "0")}h${String(t % 60).padStart(2, "0")}`;
+}
+
 /* ------------------------------------------------------------ Export CSV */
 
 export function toCsv(rows: Record<string, string | number>[]): string {
