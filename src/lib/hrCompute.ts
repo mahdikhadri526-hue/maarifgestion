@@ -1,4 +1,5 @@
 import type { AttendancePunch, PunchType } from "@/lib/attendanceData";
+import { isoDayOfWeek } from "@/lib/hrData";
 import type { DayType, HrBalanceEntry, HrSchedule } from "@/lib/hrData";
 
 /* ------------------------------------------------------------ Heures */
@@ -57,7 +58,7 @@ export function computeDay(params: {
   punches: AttendancePunch[];
   schedule: HrSchedule | null;
   holidayLabel?: string | null;
-  /** Heures de début de shift par PDV : clé `${pdv_id}|${shift}` → "HH:MM". */
+  /** Heures de début de shift : clé `${pdv_id}|${shift}|${jour ISO}` → "HH:MM". */
   shiftStarts?: Record<string, string>;
 }): DayResult {
   const { date, agentId, agentName, pdvId, punches, schedule } = params;
@@ -77,7 +78,7 @@ export function computeDay(params: {
   let lateMinutes = 0;
   const shiftStart =
     schedule?.work_shift && params.shiftStarts
-      ? params.shiftStarts[`${schedule.pdv_id ?? pdvId}|${schedule.work_shift}`] ?? null
+      ? params.shiftStarts[`${schedule.pdv_id ?? pdvId}|${schedule.work_shift}|${isoDayOfWeek(date)}`] ?? null
       : null;
   const plannedStart = schedule?.start_time ?? shiftStart;
   const pm = toMinutes(plannedStart);

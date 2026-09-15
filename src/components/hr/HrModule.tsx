@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ import {
   saveShiftTime,
   shiftStartMap,
   SHIFT_LABELS,
+  WEEKDAYS,
   type PdvShiftTime,
   type WorkShift,
   isoDate,
@@ -162,6 +163,7 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
   const [rows, setRows] = useState<PdvShiftTime[]>([]);
   const [draft, setDraft] = useState<Record<string, { start: string; end: string }>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const [pdvSel, setPdvSel] = useState<string>("");
 
   const load = useCallback(async () => {
     try {
@@ -169,7 +171,7 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
       setRows(data);
       const d: Record<string, { start: string; end: string }> = {};
       data.forEach((r) => {
-        d[`${r.pdv_id}|${r.shift}`] = { start: r.start_time ?? "", end: r.end_time ?? "" };
+        d[`${r.pdv_id}|${r.shift}|${r.day_of_week}`] = { start: r.start_time ?? "", end: r.end_time ?? "" };
       });
       setDraft(d);
     } catch (e: any) {
@@ -181,10 +183,14 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
     void load();
   }, [load]);
 
+  useEffect(() => {
+    if (!pdvSel && pdvs.length) setPdvSel(pdvs[0].id);
+  }, [pdvs, pdvSel]);
+
   const shifts: WorkShift[] = ["matin", "apres_midi"];
 
-  const save = async (pdv_id: string, shift: WorkShift) => {
-    const key = `${pdv_id}|${shift}`;
+  const save = async (pdv_id: string, shift: WorkShift, day_of_week: number) => {
+    const key = `${pdv_id}|${shift}|${day_of_week}`;
     const v = draft[key];
     if (!v?.start) {
       toast.error("Indiquez l'heure de début");
@@ -192,8 +198,34 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
     }
     setBusy(key);
     try {
-      await saveShiftTime({ pdv_id, shift, start_time: v.start, end_time: v.end || null });
+      await saveShiftTime({ pdv_id, shift, day_of_week, start_time: v.start, end_time: v.end || null });
       toast.success("Horaire enregistré");
+      await load();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Enregistrement impossible");
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const saveAll = async () => {
+    if (!pdvSel) return;
+    setBusy("all");
+    try {
+      for (const sh of shifts) {
+        for (const d of WEEKDAYS) {
+          const v = draft[`${pdvSel}|${sh}|${d.value}`];
+          if (!v?.start) continue;
+          await saveShiftTime({
+            pdv_id: pdvSel,
+            shift: sh,
+            day_of_week: d.value,
+            start_time: v.start,
+            end_time: v.end || null,
+          });
+        }
+      }
+      toast.success("Horaires de la semaine enregistrés");
       await load();
     } catch (e: any) {
       toast.error(e?.message ?? "Enregistrement impossible");
@@ -207,62 +239,103 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
 
   return (
     <Card className="p-4 space-y-3">
-      <div>
-        <h3 className="font-semibold">Horaires des shifts par point de vente</h3>
-        <p className="text-xs text-muted-foreground">
-          Heures de début du matin et de l'après-midi — utilisées pour calculer le retard des managers, caissiers,
-          ménage et sécurité.
-        </p>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h3 className="font-semibold">Horaires des shifts par jour et par point de vente</h3>
+          <p className="text-xs text-muted-foreground">
+            Heure de début (et fin facultative) du matin et de l'après-midi pour chaque jour de la semaine — utilisée
+            pour calculer le retard des managers, caissiers, ménage et sécurité.
+          </p>
+        </div>
+        <div className="flex items-end gap-2">
+          <div>
+            <label className="text-xs text-muted-foreground">Point de vente</label>
+            <select
+              className="h-9 w-48 rounded-md border bg-background px-2 text-sm"
+              value={pdvSel}
+              onChange={(e) => setPdvSel(e.target.value)}
+            >
+              {pdvs.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          {canEdit && (
+            <Button size="sm" disabled={busy === "all"} onClick={() => void saveAll()}>
+              Tout enregistrer
+            </Button>
+          )}
+        </div>
       </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-muted/50">
             <tr className="text-left">
-              <th className="p-2">Point de vente</th>
-              <th className="p-2">Shift</th>
-              <th className="p-2">Début</th>
-              <th className="p-2">Fin (facultatif)</th>
+              <th className="p-2">Jour</th>
+              {shifts.map((sh) => (
+                <th key={sh} className="p-2" colSpan={2}>
+                  {SHIFT_LABELS[sh]}
+                </th>
+              ))}
+              <th className="p-2"></th>
+            </tr>
+            <tr className="text-left text-xs text-muted-foreground">
+              <th className="p-2"></th>
+              {shifts.map((sh) => (
+                <Fragment key={sh}>
+                  <th className="p-2 font-normal">Début</th>
+                  <th className="p-2 font-normal">Fin</th>
+                </Fragment>
+              ))}
               <th className="p-2"></th>
             </tr>
           </thead>
           <tbody>
-            {pdvs.map((p) =>
-              shifts.map((sh) => {
-                const key = `${p.id}|${sh}`;
-                const v = draft[key] ?? { start: "", end: "" };
-                return (
-                  <tr key={key} className="border-t">
-                    <td className="p-2 whitespace-nowrap">{sh === "matin" ? p.name : ""}</td>
-                    <td className="p-2 whitespace-nowrap">{SHIFT_LABELS[sh]}</td>
-                    <td className="p-2">
-                      <Input
-                        type="time"
-                        className="h-9 w-32"
-                        value={v.start}
-                        disabled={!canEdit}
-                        onChange={(e) => setField(key, "start", e.target.value)}
-                      />
-                    </td>
-                    <td className="p-2">
-                      <Input
-                        type="time"
-                        className="h-9 w-32"
-                        value={v.end}
-                        disabled={!canEdit}
-                        onChange={(e) => setField(key, "end", e.target.value)}
-                      />
-                    </td>
-                    <td className="p-2">
-                      {canEdit && (
-                        <Button size="sm" disabled={busy === key} onClick={() => void save(p.id, sh)}>
-                          Enregistrer
-                        </Button>
-                      )}
-                    </td>
-                  </tr>
-                );
-              }),
-            )}
+            {WEEKDAYS.map((d) => (
+              <tr key={d.value} className="border-t">
+                <td className="p-2 whitespace-nowrap font-medium">{d.label}</td>
+                {shifts.map((sh) => {
+                  const key = `${pdvSel}|${sh}|${d.value}`;
+                  const v = draft[key] ?? { start: "", end: "" };
+                  return (
+                    <Fragment key={sh}>
+                      <td className="p-2">
+                        <Input
+                          type="time"
+                          className="h-9 w-28"
+                          value={v.start}
+                          disabled={!canEdit || !pdvSel}
+                          onChange={(e) => setField(key, "start", e.target.value)}
+                        />
+                      </td>
+                      <td className="p-2">
+                        <Input
+                          type="time"
+                          className="h-9 w-28"
+                          value={v.end}
+                          disabled={!canEdit || !pdvSel}
+                          onChange={(e) => setField(key, "end", e.target.value)}
+                        />
+                      </td>
+                    </Fragment>
+                  );
+                })}
+                <td className="p-2">
+                  {canEdit &&
+                    shifts.map((sh) => {
+                      const key = `${pdvSel}|${sh}|${d.value}`;
+                      return busy === key ? (
+                        <span key={sh} className="text-xs text-muted-foreground">
+                          …
+                        </span>
+                      ) : null;
+                    })}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
