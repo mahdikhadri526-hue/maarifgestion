@@ -2402,6 +2402,10 @@ export type Database = {
         Returns: string
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_agent_scheduled_for_user: {
+        Args: { _agent_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_regional_admin: { Args: { _user_id: string }; Returns: boolean }
       stock_movement_aggregates:
         | {
