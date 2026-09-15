@@ -28,6 +28,7 @@ import {
   saveShiftTime,
   shiftStartMap,
   SHIFT_LABELS,
+  WEEKDAYS,
   type PdvShiftTime,
   type WorkShift,
   isoDate,
