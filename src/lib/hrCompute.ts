@@ -17,6 +17,7 @@ function punchAt(punches: AttendancePunch[], type: PunchType): number | null {
 }
 
 export const OVERTIME_THRESHOLD_HOURS = 8;
+export const PAUSE_ALLOWED_MINUTES = 30;
 
 export interface DayResult {
   date: string;
@@ -36,6 +37,8 @@ export interface DayResult {
   workedHours: number;
   overtimeHours: number;
   lateMinutes: number;
+  /** Retard au retour de pause au-delà de 30 minutes. */
+  pauseLateMinutes: number;
   present: boolean;
   absence: boolean;
 }
