@@ -82,7 +82,7 @@ export function PlanningGrid({
     return p === "menage" || p.includes("securite");
   };
   /** Managers : affectation « PDV — Matin / Après-midi ». */
-  const needsAssignment = (a: HrAgent) => (a.staff_level ?? "agent") === "manager";
+  const needsAssignment = (a: HrAgent) => (a.staff_level ?? "agent") !== "agent";
   /** Caissiers, ménage et sécurité : choix du PDV + horaires d'entrée / sortie. */
   const needsPdvAndHours = (a: HrAgent) =>
     (a.staff_level ?? "agent") !== "manager" && (isCaissier(a) || isTechPoste(a));
@@ -98,7 +98,7 @@ export function PlanningGrid({
         !planningPdvId || rows.some((r) => r.agent_id === a.id && r.pdv_id === planningPdvId);
       const caissiers = agentRows.filter((a) => isCaissier(a) && isPlannedHere(a));
       const technical = agentRows.filter((a) => isTechPoste(a) && isPlannedHere(a));
-      const managers = actives.filter((a) => (a.staff_level ?? "agent") === "manager");
+      const managers = actives.filter((a) => (a.staff_level ?? "agent") !== "agent");
       return groupedCategories === "rh"
         ? [...managers, ...caissiers, ...regular, ...technical]
         : [...regular, ...caissiers, ...technical];
@@ -111,7 +111,9 @@ export function PlanningGrid({
       return [...menage, ...securite];
     }
     const pool = actives.filter((a) => !isTechPoste(a));
-    const base = pool.filter((a) => (a.staff_level ?? "agent") === level);
+    const base = pool.filter((a) =>
+      level === "manager" ? (a.staff_level ?? "agent") !== "agent" : (a.staff_level ?? "agent") === "agent",
+    );
     if (caissierMode === "exclude") return base.filter((a) => !isCaissier(a));
     if (caissierMode === "only") return base.filter(isCaissier);
     // Mode « bottom » : les caissiers sont regroupés dans la vue Managers (en bas),
@@ -129,7 +131,7 @@ export function PlanningGrid({
     [list, groupedCategories],
   );
   const firstManagerId = useMemo(
-    () => (groupedCategories === "rh" ? list.find((a) => (a.staff_level ?? "agent") === "manager")?.id ?? null : null),
+    () => (groupedCategories === "rh" ? list.find((a) => (a.staff_level ?? "agent") !== "agent")?.id ?? null : null),
     [list, groupedCategories],
   );
   const firstRegularAgentId = useMemo(
