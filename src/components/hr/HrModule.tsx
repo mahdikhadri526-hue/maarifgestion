@@ -1071,7 +1071,10 @@ function ReportsView({
                 <td className="p-2 whitespace-nowrap">{r.workedHours.toFixed(2)}</td>
                 <td className="p-2 whitespace-nowrap">{r.overtimeHours > 0 ? r.overtimeHours.toFixed(2) : "—"}</td>
                 <td className={`p-2 whitespace-nowrap ${r.lateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
-                  {r.lateMinutes > 0 ? `${r.lateMinutes} min` : "—"}
+                  {r.lateMinutes > 0 ? formatMinutes(r.lateMinutes) : "—"}
+                </td>
+                <td className={`p-2 whitespace-nowrap ${r.pauseLateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
+                  {r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "—"}
                 </td>
                 <td className="p-2 whitespace-nowrap">
                   {r.absence ? (
