@@ -25,26 +25,6 @@ const ROLE_LABELS: Record<AppRole, string> = {
   viewer: "Lecteur",
 };
 
-const PERMISSION_GROUPS: { title: string; keys: string[] }[] = [
-  { title: "Tableau de bord & rapports", keys: ["view_dashboard", "view_reports"] },
-  { title: "Stock", keys: ["view_stock", "edit_stock", "delete_stock", "edit_remaining_stock"] },
-  { title: "Mouvements", keys: ["view_movements", "edit_movements", "delete_movements"] },
-  { title: "Réquisitions", keys: ["view_requisitions", "edit_requisitions", "delete_requisitions"] },
-  { title: "Lots & DLC", keys: ["view_lots", "edit_lots", "delete_lots"] },
-  { title: "Autocontrôle", keys: ["view_autocontrol", "edit_autocontrol", "delete_autocontrol"] },
-  { title: "Suivi hebdomadaire", keys: ["view_weekly", "edit_weekly", "delete_weekly"] },
-  { title: "Températures", keys: ["view_temperatures", "edit_temperatures", "delete_temperatures"] },
-  { title: "Gestion des matériels – Température", keys: ["view_equipments", "edit_equipments", "delete_equipments"] },
-  { title: "Catalogue produits – Alimentaire & Emballage", keys: ["view_products", "edit_products", "delete_products"] },
-  { title: "Nettoyage", keys: ["view_cleaning", "edit_cleaning", "delete_cleaning"] },
-  { title: "Inventaire", keys: ["view_inventory", "manage_inventory"] },
-  { title: "Calcul des écarts", keys: ["view_ecarts", "edit_ecarts"] },
-  { title: "Recettes", keys: ["view_recipes", "edit_recipes"] },
-  { title: "Agenda PEP", keys: ["view_pep", "manage_pep"] },
-  { title: "Suivi Technique", keys: ["view_tech", "manage_tech"] },
-  { title: "Pointage (reconnaissance faciale)", keys: ["view_attendance", "manage_attendance"] },
-  { title: "Administration", keys: ["manage_roster"] },
-];
 
 interface ProfileRow {
   user_id: string;
