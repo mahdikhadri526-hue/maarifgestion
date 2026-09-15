@@ -261,6 +261,7 @@ function PunchView({
   const [last, setLast] = useState<{ name: string; type: PunchType; time: string } | null>(null);
   const busy = useRef(false);
   const cooldown = useRef<Record<string, number>>({});
+  const lastFaceAt = useRef(0);
 
   const candidates: FaceCandidate[] = useMemo(
     () =>
@@ -286,8 +287,21 @@ function PunchView({
       return;
     }
     await start();
+    lastFaceAt.current = Date.now();
     setStatus("Présentez votre visage devant la caméra");
   };
+
+  // Si aucun visage n'est détecté pendant 10 secondes, on coupe la caméra.
+  useEffect(() => {
+    if (!on) return;
+    const id = setInterval(() => {
+      if (Date.now() - lastFaceAt.current > 10_000) {
+        stop();
+        setStatus("Aucun visage détecté — caméra arrêtée");
+      }
+    }, 500);
+    return () => clearInterval(id);
+  }, [on, stop]);
 
   useEffect(() => {
     if (!on || !ready || !pdvId) return;
@@ -301,6 +315,7 @@ function PunchView({
           setStatus("Aucun visage détecté");
           return;
         }
+        lastFaceAt.current = Date.now();
         const match = findBestMatch(desc, candidates);
         if (!match || match.distance > MATCH_THRESHOLD) {
           setStatus("Visage non reconnu — contactez le manager");
