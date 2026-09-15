@@ -483,7 +483,7 @@ export function PlanningGrid({
                                     }
                                   />
                                   <span className="text-[9px] opacity-60">–</span>
-                                  <span className="h-6 min-w-0 flex-1 text-center text-[9px] leading-6 opacity-70">
+                                  <span className="h-6 min-w-0 flex-1 text-center font-mono text-xs font-medium leading-6 opacity-70">
                                     {c?.end_time ? c.end_time.slice(0, 5) : "--:--"}
                                   </span>
                                 </div>
@@ -560,7 +560,7 @@ function StartTimeInput({
       placeholder="0800"
       maxLength={5}
       aria-label={label}
-      className="h-6 min-w-0 flex-1 border-0 bg-transparent px-0 text-center text-[9px] shadow-none focus-visible:ring-1"
+      className="h-6 min-w-0 flex-1 border-0 bg-transparent px-0 text-center font-mono !text-xs font-medium shadow-none focus-visible:ring-1"
       value={shown}
       onChange={(e) => setDraft(e.target.value)}
       onBlur={commit}
