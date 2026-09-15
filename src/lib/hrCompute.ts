@@ -57,7 +57,7 @@ export function computeDay(params: {
   punches: AttendancePunch[];
   schedule: HrSchedule | null;
   holidayLabel?: string | null;
-  /** Heures de début de shift par PDV : clé `${pdv_id}|${shift}` → "HH:MM". */
+  /** Heures de début de shift : clé `${pdv_id}|${shift}|${jour ISO}` → "HH:MM". */
   shiftStarts?: Record<string, string>;
 }): DayResult {
   const { date, agentId, agentName, pdvId, punches, schedule } = params;
