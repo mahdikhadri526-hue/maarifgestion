@@ -17,6 +17,7 @@ function punchAt(punches: AttendancePunch[], type: PunchType): number | null {
 }
 
 export const OVERTIME_THRESHOLD_HOURS = 8;
+export const PAUSE_ALLOWED_MINUTES = 30;
 
 export interface DayResult {
   date: string;
@@ -36,6 +37,8 @@ export interface DayResult {
   workedHours: number;
   overtimeHours: number;
   lateMinutes: number;
+  /** Retard au retour de pause au-delà de 30 minutes. */
+  pauseLateMinutes: number;
   present: boolean;
   absence: boolean;
 }
@@ -70,6 +73,8 @@ export function computeDay(params: {
   const s = punchAt(punches, "sortie");
 
   const pauseMs = ps && pe && pe > ps ? pe - ps : 0;
+  const pauseLateMinutes =
+    ps && pe ? Math.max(0, Math.round((pe - ps) / 60000) - PAUSE_ALLOWED_MINUTES) : 0;
   let workedMs = 0;
   if (e && s && s > e) workedMs = s - e - pauseMs;
   else if (e && ps && ps > e) workedMs = ps - e;
@@ -110,6 +115,7 @@ export function computeDay(params: {
     workedHours: Number(worked.toFixed(2)),
     overtimeHours: Number(Math.max(0, worked - OVERTIME_THRESHOLD_HOURS).toFixed(2)),
     lateMinutes,
+    pauseLateMinutes,
     present,
     absence,
   };
@@ -202,6 +208,12 @@ export function computeBalance(params: {
     recupTaken,
     recupRemaining: Number((creditRecup - recupTaken).toFixed(2)),
   };
+}
+
+/** Formate des minutes en « 00h00m ». */
+export function formatMinutes(min: number): string {
+  const t = Math.round(min);
+  return `${String(Math.floor(t / 60)).padStart(2, "0")}h${String(t % 60).padStart(2, "0")}`;
 }
 
 /* ------------------------------------------------------------ Export CSV */

@@ -43,7 +43,7 @@ import {
   type HrHoliday,
   type HrSchedule,
 } from "@/lib/hrData";
-import { computeBalance, computeDay, downloadCsv, toCsv } from "@/lib/hrCompute";
+import { computeBalance, computeDay, downloadCsv, formatMinutes, toCsv } from "@/lib/hrCompute";
 import { PlanningGrid, addWeek } from "./PlanningGrid";
 
 type View = "planning" | "agents" | "horaires" | "soldes" | "feries" | "suivi";
@@ -938,11 +938,12 @@ function ReportsView({
         worked: acc.worked + r.workedHours,
         overtime: acc.overtime + r.overtimeHours,
         late: acc.late + r.lateMinutes,
+        pauseLate: acc.pauseLate + r.pauseLateMinutes,
         absences: acc.absences + (r.absence ? 1 : 0),
         conges: acc.conges + (r.dayType === "conge" ? 1 : 0),
         recups: acc.recups + (r.dayType === "recuperation" ? 1 : 0),
       }),
-      { worked: 0, overtime: 0, late: 0, absences: 0, conges: 0, recups: 0 },
+      { worked: 0, overtime: 0, late: 0, pauseLate: 0, absences: 0, conges: 0, recups: 0 },
     );
   }, [rows]);
 
@@ -960,7 +961,8 @@ function ReportsView({
       Sortie: r.sortie ?? "",
       "Heures travaillées": r.workedHours,
       "Heures sup.": r.overtimeHours,
-      "Retard (min)": r.lateMinutes,
+      "Retard": r.lateMinutes > 0 ? formatMinutes(r.lateMinutes) : "",
+      "Retard pause": r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "",
       Présence: r.present ? "Présent" : r.absence ? "Absence à justifier" : "—",
     }));
     downloadCsv(`rapport-rh-${from}_${to}.csv`, toCsv(data));
@@ -1032,7 +1034,8 @@ function ReportsView({
         <Card className="p-3 flex flex-wrap gap-2 text-xs">
           <Badge variant="secondary">Heures {totals.worked.toFixed(2)}</Badge>
           <Badge variant="secondary">Heures sup. {totals.overtime.toFixed(2)}</Badge>
-          <Badge variant="secondary">Retard {totals.late} min</Badge>
+          <Badge variant="secondary">Retard {formatMinutes(totals.late)}</Badge>
+          <Badge variant="secondary">Retard pause {formatMinutes(totals.pauseLate)}</Badge>
           <Badge variant="destructive">Absences {totals.absences}</Badge>
           <Badge variant="outline">Congés {totals.conges}</Badge>
           <Badge variant="outline">Récup {totals.recups}</Badge>
@@ -1043,7 +1046,7 @@ function ReportsView({
         <table className="w-full text-xs border rounded">
           <thead className="bg-muted">
             <tr>
-              {["Date", "Employé", "Journée", "Prévu", "Entrée", "Pause", "Sortie", "Heures", "H. sup.", "Retard", "Statut"].map((h) => (
+              {["Date", "Employé", "Journée", "Prévu", "Entrée", "Pause", "Sortie", "Heures", "H. sup.", "Retard", "Retard pause", "Statut"].map((h) => (
                 <th key={h} className="p-2 text-left whitespace-nowrap">
                   {h}
                 </th>
@@ -1068,7 +1071,10 @@ function ReportsView({
                 <td className="p-2 whitespace-nowrap">{r.workedHours.toFixed(2)}</td>
                 <td className="p-2 whitespace-nowrap">{r.overtimeHours > 0 ? r.overtimeHours.toFixed(2) : "—"}</td>
                 <td className={`p-2 whitespace-nowrap ${r.lateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
-                  {r.lateMinutes > 0 ? `${r.lateMinutes} min` : "—"}
+                  {r.lateMinutes > 0 ? formatMinutes(r.lateMinutes) : "—"}
+                </td>
+                <td className={`p-2 whitespace-nowrap ${r.pauseLateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
+                  {r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "—"}
                 </td>
                 <td className="p-2 whitespace-nowrap">
                   {r.absence ? (
