@@ -43,7 +43,7 @@ import {
   type HrHoliday,
   type HrSchedule,
 } from "@/lib/hrData";
-import { computeBalance, computeDay, downloadCsv, toCsv } from "@/lib/hrCompute";
+import { computeBalance, computeDay, downloadCsv, formatMinutes, toCsv } from "@/lib/hrCompute";
 import { PlanningGrid, addWeek } from "./PlanningGrid";
 
 type View = "planning" | "agents" | "horaires" | "soldes" | "feries" | "suivi";
@@ -938,6 +938,7 @@ function ReportsView({
         worked: acc.worked + r.workedHours,
         overtime: acc.overtime + r.overtimeHours,
         late: acc.late + r.lateMinutes,
+        pauseLate: acc.pauseLate + r.pauseLateMinutes,
         absences: acc.absences + (r.absence ? 1 : 0),
         conges: acc.conges + (r.dayType === "conge" ? 1 : 0),
         recups: acc.recups + (r.dayType === "recuperation" ? 1 : 0),
