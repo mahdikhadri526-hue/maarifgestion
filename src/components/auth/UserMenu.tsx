@@ -11,7 +11,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 
 export function UserMenu({ onOpenAdmin, onOpenAnomalies }: { onOpenAdmin: () => void; onOpenAnomalies?: () => void }) {
-  const { user, role, isAdmin, isRegionalAdmin, signOut, pdv, selectPdv, multiPdvEnabled } = useAuth();
+  const { user, role, isAdmin, isRegionalAdmin, signOut, pdv, selectPdv, multiPdvEnabled, can } = useAuth();
   if (!user) return null;
   return (
     <DropdownMenu>
@@ -41,7 +41,7 @@ export function UserMenu({ onOpenAdmin, onOpenAnomalies }: { onOpenAdmin: () => 
             {isAdmin ? "Gestion des utilisateurs" : "Permissions de mes PDV"}
           </DropdownMenuItem>
         )}
-        {(isAdmin || isRegionalAdmin) && onOpenAnomalies && (
+        {(isAdmin || isRegionalAdmin || can("view_anomalies")) && onOpenAnomalies && (
           <DropdownMenuItem onClick={onOpenAnomalies}>
             <AlertTriangle className="h-4 w-4 mr-2" /> Centre des anomalies
           </DropdownMenuItem>
