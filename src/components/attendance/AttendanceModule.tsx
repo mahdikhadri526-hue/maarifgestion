@@ -3,7 +3,9 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Camera, CameraOff, UserPlus, RefreshCw, ScanFace, Users, ListChecks } from "lucide-react";
+import { Camera, CameraOff, UserPlus, RefreshCw, ScanFace, Users, ListChecks, Lock } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { computeDescriptor, findBestMatch, loadFaceApi, MATCH_THRESHOLD, type FaceCandidate } from "@/lib/faceRecognition";
 import {
@@ -29,9 +31,14 @@ type View = "pointage" | "agents" | "journal";
 const COOLDOWN_MS = 60_000;
 const SHOTS_REQUIRED = 3;
 
+const KIOSK_PIN = "1975";
+
 export function AttendanceModule() {
   const { pdvId, can } = useAuth();
   const canManage = can("manage_attendance");
+  const [unlocked, setUnlocked] = useState(false);
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pin, setPin] = useState("");
   const [view, setView] = useState<View>("pointage");
   const [agents, setAgents] = useState<AttendanceAgent[]>([]);
   const [punches, setPunches] = useState<AttendancePunch[]>([]);
@@ -55,31 +62,79 @@ export function AttendanceModule() {
     void reload();
   }, [reload]);
 
+  const submitPin = () => {
+    if (pin === KIOSK_PIN) {
+      setUnlocked(true);
+      setPinOpen(false);
+      setPin("");
+    } else {
+      toast.error("Code incorrect");
+      setPin("");
+    }
+  };
+
+  const lock = () => {
+    setUnlocked(false);
+    setView("pointage");
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap gap-2">
-        <Button variant={view === "pointage" ? "default" : "outline"} size="sm" onClick={() => setView("pointage")}>
-          <ScanFace className="w-4 h-4 mr-1" /> Pointage
-        </Button>
-        <Button variant={view === "journal" ? "default" : "outline"} size="sm" onClick={() => setView("journal")}>
-          <ListChecks className="w-4 h-4 mr-1" /> Journal du jour
-        </Button>
-        {canManage && (
-          <Button variant={view === "agents" ? "default" : "outline"} size="sm" onClick={() => setView("agents")}>
-            <Users className="w-4 h-4 mr-1" /> Agents ({agents.length})
+      <div className="flex flex-wrap items-center gap-2">
+        {unlocked ? (
+          <>
+            <Button variant={view === "pointage" ? "default" : "outline"} size="sm" onClick={() => setView("pointage")}>
+              <ScanFace className="w-4 h-4 mr-1" /> Pointage
+            </Button>
+            <Button variant={view === "journal" ? "default" : "outline"} size="sm" onClick={() => setView("journal")}>
+              <ListChecks className="w-4 h-4 mr-1" /> Journal du jour
+            </Button>
+            {canManage && (
+              <Button variant={view === "agents" ? "default" : "outline"} size="sm" onClick={() => setView("agents")}>
+                <Users className="w-4 h-4 mr-1" /> Employés ({agents.length})
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => void reload()} disabled={loading}>
+              <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={lock}>
+              <Lock className="w-4 h-4 mr-1" /> Verrouiller
+            </Button>
+          </>
+        ) : (
+          <Button variant="ghost" size="sm" onClick={() => setPinOpen(true)}>
+            <Lock className="w-4 h-4" />
           </Button>
         )}
-        <Button variant="ghost" size="sm" onClick={() => void reload()} disabled={loading}>
-          <RefreshCw className={`w-4 h-4 ${loading ? "animate-spin" : ""}`} />
-        </Button>
       </div>
 
-      {view === "pointage" && <PunchView agents={agents} punches={punches} onDone={reload} />}
-      {view === "journal" && <JournalView punches={punches} canManage={canManage} onChanged={reload} />}
-      {view === "agents" && canManage && <AgentsView agents={agents} onChanged={reload} />}
+      {!unlocked && <PunchView agents={agents} punches={punches} onDone={reload} />}
+      {unlocked && view === "pointage" && <PunchView agents={agents} punches={punches} onDone={reload} />}
+      {unlocked && view === "journal" && <JournalView punches={punches} canManage={canManage} onChanged={reload} />}
+      {unlocked && view === "agents" && canManage && <AgentsView agents={agents} onChanged={reload} />}
+
+      <Dialog open={pinOpen} onOpenChange={(o) => { setPinOpen(o); if (!o) setPin(""); }}>
+        <DialogContent className="max-w-xs">
+          <DialogHeader>
+            <DialogTitle>Accès réservé</DialogTitle>
+          </DialogHeader>
+          <Input
+            type="password"
+            inputMode="numeric"
+            maxLength={8}
+            placeholder="Code"
+            value={pin}
+            onChange={(e) => setPin(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submitPin()}
+            autoFocus
+          />
+          <Button onClick={submitPin}>Déverrouiller</Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
 
 /* ------------------------------------------------------------------ Caméra */
 
