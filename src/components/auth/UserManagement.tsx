@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, ShieldCheck, Settings2, UserPlus, Trash2, KeyRound, Search, Store, Users, ListChecks } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ALL_PERMISSIONS, AppRole, useAuth } from "@/contexts/AuthContext";
+import { ALL_PERMISSIONS, PERMISSION_GROUPS, AppRole, useAuth } from "@/contexts/AuthContext";
 import { PdvManagement } from "@/components/pdv/PdvManagement";
 import { RosterManagement } from "@/components/roster/RosterManagement";
 
