@@ -69,11 +69,11 @@ const Index = () => {
     { id: "tech" as Tab, label: "Suivi Technique", icon: Wrench, perm: "view_tech" },
     { id: "pointage" as Tab, label: "Pointage", icon: ScanFace, perm: "view_attendance" },
     { id: "rh" as Tab, label: "RH — Plannings", icon: Users, perm: "view_hr" },
-    { id: "planning" as Tab, label: "Planning", icon: CalendarDays, perm: "view_hr" },
+    { id: "planning" as Tab, label: "Planning", icon: CalendarDays, perm: "view_planning", alt: "view_hr" },
   ];
   const ATTENDANCE_ENABLED = isPreviewHost();
   const tabs = allTabs.filter(
-    (t) => can(t.perm) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED) && (t.id !== "rh" || ATTENDANCE_ENABLED) && (t.id !== "planning" || ATTENDANCE_ENABLED)
+    (t) => (can(t.perm) || (!!(t as { alt?: string }).alt && can((t as { alt?: string }).alt!))) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED) && (t.id !== "rh" || ATTENDANCE_ENABLED) && (t.id !== "planning" || ATTENDANCE_ENABLED)
   );
 
   // Ensure current tab is allowed
