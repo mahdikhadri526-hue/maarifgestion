@@ -77,7 +77,7 @@ export function computeDay(params: {
   let lateMinutes = 0;
   const shiftStart =
     schedule?.work_shift && params.shiftStarts
-      ? params.shiftStarts[`${schedule.pdv_id ?? pdvId}|${schedule.work_shift}`] ?? null
+      ? params.shiftStarts[`${schedule.pdv_id ?? pdvId}|${schedule.work_shift}|${isoDayOfWeek(date)}`] ?? null
       : null;
   const plannedStart = schedule?.start_time ?? shiftStart;
   const pm = toMinutes(plannedStart);
