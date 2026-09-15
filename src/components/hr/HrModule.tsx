@@ -943,7 +943,7 @@ function ReportsView({
         conges: acc.conges + (r.dayType === "conge" ? 1 : 0),
         recups: acc.recups + (r.dayType === "recuperation" ? 1 : 0),
       }),
-      { worked: 0, overtime: 0, late: 0, absences: 0, conges: 0, recups: 0 },
+      { worked: 0, overtime: 0, late: 0, pauseLate: 0, absences: 0, conges: 0, recups: 0 },
     );
   }, [rows]);
 
@@ -961,7 +961,8 @@ function ReportsView({
       Sortie: r.sortie ?? "",
       "Heures travaillées": r.workedHours,
       "Heures sup.": r.overtimeHours,
-      "Retard (min)": r.lateMinutes,
+      "Retard": r.lateMinutes > 0 ? formatMinutes(r.lateMinutes) : "",
+      "Retard pause": r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "",
       Présence: r.present ? "Présent" : r.absence ? "Absence à justifier" : "—",
     }));
     downloadCsv(`rapport-rh-${from}_${to}.csv`, toCsv(data));
