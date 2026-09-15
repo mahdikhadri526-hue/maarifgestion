@@ -250,22 +250,31 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
                   Vous gérez les permissions de vos points de vente.
                 </p>
               )}
-              {ALL_PERMISSIONS.map((perm) => {
-                const has = pdvPerms[editing.id]?.has(perm.key) ?? false;
-                return (
-                  <label key={perm.key} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
-                    <Checkbox
-                      checked={has}
-                      disabled={!canTogglePerm(perm.key)}
-                      onCheckedChange={() => togglePdvPerm(editing.id, perm.key, has)}
-                    />
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{perm.label}</div>
-                      <div className="text-xs text-muted-foreground">{perm.key}</div>
-                    </div>
-                  </label>
-                );
-              })}
+              {PERMISSION_GROUPS.map((group) => (
+                <div key={group.title} className="space-y-1">
+                  <div className="text-[11px] uppercase tracking-wide text-muted-foreground pt-2 border-t">
+                    {group.title}
+                  </div>
+                  {group.keys.map((key) => {
+                    const perm = ALL_PERMISSIONS.find((p) => p.key === key);
+                    if (!perm) return null;
+                    const has = pdvPerms[editing.id]?.has(key) ?? false;
+                    return (
+                      <label key={key} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
+                        <Checkbox
+                          checked={has}
+                          disabled={!canTogglePerm(key)}
+                          onCheckedChange={() => togglePdvPerm(editing.id, key, has)}
+                        />
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{perm.label}</div>
+                          <div className="text-xs text-muted-foreground">{key}</div>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              ))}
             </div>
           )}
           <DialogFooter>
