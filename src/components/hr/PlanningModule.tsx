@@ -35,7 +35,9 @@ export function PlanningModule() {
     try {
       const year = new Date().getFullYear();
       const [a, h] = await Promise.all([
-        getHrAgents(scopePdvIds),
+        // null : la sécurité côté base limite déjà aux PDV autorisés et aux
+        // employés planifiés dans ces PDV (caissiers, ménage, sécurité).
+        getHrAgents(null),
         getHolidays(`${year - 1}-01-01`, `${year + 1}-12-31`),
       ]);
       setAgents(a);
