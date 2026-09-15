@@ -250,6 +250,7 @@ function PunchView({
         if (!next) {
           setStatus(`${match.name} — journée déjà complète`);
           cooldown.current[match.id] = now + COOLDOWN_MS;
+          stop();
           return;
         }
         cooldown.current[match.id] = now + COOLDOWN_MS;
@@ -263,6 +264,8 @@ function PunchView({
         setLast({ name: match.name, type: next, time: formatTime(new Date().toISOString()) });
         setStatus(`${PUNCH_LABELS[next]} enregistrée pour ${match.name}`);
         await onDone();
+        // Visage reconnu et pointage enregistré : on coupe la caméra.
+        stop();
       } catch (e: any) {
         setStatus(e?.message ?? "Erreur de pointage");
       } finally {
