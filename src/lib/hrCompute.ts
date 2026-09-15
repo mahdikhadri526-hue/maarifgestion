@@ -73,6 +73,8 @@ export function computeDay(params: {
   const s = punchAt(punches, "sortie");
 
   const pauseMs = ps && pe && pe > ps ? pe - ps : 0;
+  const pauseLateMinutes =
+    ps && pe ? Math.max(0, Math.round((pe - ps) / 60000) - PAUSE_ALLOWED_MINUTES) : 0;
   let workedMs = 0;
   if (e && s && s > e) workedMs = s - e - pauseMs;
   else if (e && ps && ps > e) workedMs = ps - e;
@@ -113,6 +115,7 @@ export function computeDay(params: {
     workedHours: Number(worked.toFixed(2)),
     overtimeHours: Number(Math.max(0, worked - OVERTIME_THRESHOLD_HOURS).toFixed(2)),
     lateMinutes,
+    pauseLateMinutes,
     present,
     absence,
   };
