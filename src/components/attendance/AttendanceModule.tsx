@@ -476,22 +476,13 @@ function AgentsView({ agents, onChanged }: { agents: AttendanceAgent[]; onChange
               >
                 {a.active ? "Désactiver" : "Activer"}
               </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={async () => {
-                  if (!confirm(`Supprimer ${a.full_name} ?`)) return;
-                  await deleteAgent(a.id);
-                  await onChanged();
-                }}
-              >
-                <Trash2 className="w-4 h-4 text-destructive" />
-              </Button>
             </div>
           </Card>
         ))}
         {agents.length === 0 && (
-          <Card className="p-6 text-center text-sm text-muted-foreground">Aucun agent enrôlé.</Card>
+          <Card className="p-6 text-center text-sm text-muted-foreground">
+            Aucun employé. Créez-le d'abord dans la table RH.
+          </Card>
         )}
       </div>
     </div>
