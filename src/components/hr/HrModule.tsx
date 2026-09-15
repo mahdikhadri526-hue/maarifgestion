@@ -352,7 +352,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
   const { pdvs, pdvId } = useAuth();
   const [name, setName] = useState("");
   const [poste, setPoste] = useState("");
-  const [level, setLevel] = useState<"agent" | "manager">("agent");
+  const [level, setLevel] = useState<"agent" | "manager" | "direction">("agent");
   const [hire, setHire] = useState("");
   const [newPdvId, setNewPdvId] = useState<string>(pdvId ?? "");
   const [busy, setBusy] = useState(false);
