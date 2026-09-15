@@ -35,7 +35,9 @@ export function PlanningModule() {
     try {
       const year = new Date().getFullYear();
       const [a, h] = await Promise.all([
-        getHrAgents(scopePdvIds),
+        // null : la sécurité côté base limite déjà aux PDV autorisés et aux
+        // employés planifiés dans ces PDV (caissiers, ménage, sécurité).
+        getHrAgents(null),
         getHolidays(`${year - 1}-01-01`, `${year + 1}-12-31`),
       ]);
       setAgents(a);
@@ -53,8 +55,21 @@ export function PlanningModule() {
 
   const pdvName = pdvs.find((p) => p.id === pdvId)?.name ?? "Mon point de vente";
 
+  /** Caissiers, ménage et sécurité : la grille les filtre selon le PDV planifié. */
+  const isShared = (poste: string | null) => {
+    const p = (poste ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+    return p === "caissier" || p === "menage" || p.includes("securite");
+  };
+
   const visibleAgents = useMemo(
-    () => agents.filter((a) => pdvFilter === "all" || a.pdv_id === pdvFilter || a.multi_pdv),
+    () =>
+      agents.filter(
+        (a) => pdvFilter === "all" || a.pdv_id === pdvFilter || a.multi_pdv || isShared(a.poste),
+      ),
     [agents, pdvFilter],
   );
 
