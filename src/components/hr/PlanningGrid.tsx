@@ -475,23 +475,20 @@ export function PlanningGrid({
                               )}
                               {!needsAssignment(a) && (
                                 <div className="mt-0.5 flex items-center gap-0.5 border-t border-current/15 pt-0.5">
-                                  <Input
-                                    type="time"
-                                    aria-label={`Entrée prévue de ${a.full_name} le ${formatFr(d)}`}
-                                    className="h-6 min-w-0 border-0 bg-transparent px-0 text-center text-[9px] shadow-none focus-visible:ring-1"
+                                  <StartTimeInput
+                                    label={`Entrée prévue de ${a.full_name} le ${formatFr(d)}`}
                                     value={c?.start_time ?? ""}
-                                    onChange={(e) => void update(a, d, { start_time: e.target.value })}
+                                    onCommit={(v) =>
+                                      void update(a, d, { start_time: v, end_time: addEightHours(v) })
+                                    }
                                   />
                                   <span className="text-[9px] opacity-60">–</span>
-                                  <Input
-                                    type="time"
-                                    aria-label={`Sortie prévue de ${a.full_name} le ${formatFr(d)}`}
-                                    className="h-6 min-w-0 border-0 bg-transparent px-0 text-center text-[9px] shadow-none focus-visible:ring-1"
-                                    value={c?.end_time ?? ""}
-                                    onChange={(e) => void update(a, d, { end_time: e.target.value })}
-                                  />
+                                  <span className="h-6 min-w-0 flex-1 text-center text-[9px] leading-6 opacity-70">
+                                    {c?.end_time ? c.end_time.slice(0, 5) : "--:--"}
+                                  </span>
                                 </div>
                               )}
+
                               </>
                             )}
                           </div>
@@ -514,5 +511,62 @@ export function PlanningGrid({
         <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-primary" />Récupération</span>
       </div>
     </Card>
+  );
+}
+
+/** "0800" / "8:00" / "800" → "08:00". Renvoie "" si illisible. */
+function normalizeTime(raw: string): string {
+  const digits = raw.replace(/\D/g, "").slice(0, 4);
+  if (digits.length < 3) {
+    if (digits.length === 0) return "";
+    const h = Number(digits);
+    return h >= 0 && h <= 23 ? `${String(h).padStart(2, "0")}:00` : "";
+  }
+  const h = Number(digits.slice(0, digits.length - 2));
+  const m = Number(digits.slice(-2));
+  if (h > 23 || m > 59) return "";
+  return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+}
+
+/** Sortie = entrée + 8 h. */
+function addEightHours(start: string): string {
+  if (!start) return "";
+  const [h, m] = start.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return "";
+  const total = (h * 60 + m + 8 * 60) % (24 * 60);
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
+function StartTimeInput({
+  label,
+  value,
+  onCommit,
+}: {
+  label: string;
+  value: string;
+  onCommit: (v: string) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const shown = draft ?? (value ? value.slice(0, 5) : "");
+  const commit = () => {
+    if (draft === null) return;
+    const v = normalizeTime(draft);
+    setDraft(null);
+    if (v !== (value ? value.slice(0, 5) : "")) onCommit(v);
+  };
+  return (
+    <Input
+      inputMode="numeric"
+      placeholder="0800"
+      maxLength={5}
+      aria-label={label}
+      className="h-6 min-w-0 flex-1 border-0 bg-transparent px-0 text-center text-[9px] shadow-none focus-visible:ring-1"
+      value={shown}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={commit}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+      }}
+    />
   );
 }
