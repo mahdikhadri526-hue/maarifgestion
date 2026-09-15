@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Camera, CameraOff, UserPlus, RefreshCw, ScanFace, Users, ListChecks, Lock } from "lucide-react";
+import { Camera, CameraOff, UserPlus, RefreshCw, ScanFace, Users, ListChecks, Lock, Maximize, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
@@ -39,6 +39,8 @@ export function AttendanceModule() {
   const [unlocked, setUnlocked] = useState(false);
   const [pinOpen, setPinOpen] = useState(false);
   const [pin, setPin] = useState("");
+  const [pinAction, setPinAction] = useState<"unlock" | "fullscreen" | "exit">("unlock");
+  const [fullscreen, setFullscreen] = useState(false);
   const [view, setView] = useState<View>("pointage");
   const [agents, setAgents] = useState<AttendanceAgent[]>([]);
   const [punches, setPunches] = useState<AttendancePunch[]>([]);
@@ -63,20 +65,78 @@ export function AttendanceModule() {
   }, [reload]);
 
   const submitPin = () => {
-    if (pin === KIOSK_PIN) {
-      setUnlocked(true);
-      setPinOpen(false);
-      setPin("");
-    } else {
+    if (pin !== KIOSK_PIN) {
       toast.error("Code incorrect");
       setPin("");
+      return;
     }
+    setPinOpen(false);
+    setPin("");
+    if (pinAction === "fullscreen") {
+      setFullscreen(true);
+      try {
+        void document.documentElement.requestFullscreen?.();
+      } catch {
+        /* plein écran navigateur non disponible */
+      }
+    } else if (pinAction === "exit") {
+      setFullscreen(false);
+      try {
+        if (document.fullscreenElement) void document.exitFullscreen();
+      } catch {
+        /* ignore */
+      }
+    } else {
+      setUnlocked(true);
+    }
+    setPinAction("unlock");
   };
 
   const lock = () => {
     setUnlocked(false);
     setView("pointage");
   };
+
+  const openPin = (action: "unlock" | "fullscreen" | "exit") => {
+    setPinAction(action);
+    setPinOpen(true);
+  };
+
+  if (fullscreen) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-center p-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-3 right-3"
+          onClick={() => openPin("exit")}
+        >
+          <X className="w-4 h-4" />
+        </Button>
+        <div className="w-full max-w-2xl">
+          <PunchView agents={agents} punches={punches} onDone={reload} />
+        </div>
+        <Dialog open={pinOpen} onOpenChange={(o) => { setPinOpen(o); if (!o) setPin(""); }}>
+          <DialogContent className="max-w-xs">
+            <DialogHeader>
+              <DialogTitle>Quitter le plein écran</DialogTitle>
+            </DialogHeader>
+            <Input
+              type="password"
+              inputMode="numeric"
+              maxLength={8}
+              placeholder="Code"
+              value={pin}
+              onChange={(e) => setPin(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submitPin()}
+              autoFocus
+            />
+            <Button onClick={submitPin}>Valider</Button>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -102,9 +162,14 @@ export function AttendanceModule() {
             </Button>
           </>
         ) : (
-          <Button variant="ghost" size="sm" onClick={() => setPinOpen(true)}>
-            <Lock className="w-4 h-4" />
-          </Button>
+          <>
+            <Button variant="ghost" size="sm" onClick={() => openPin("unlock")}>
+              <Lock className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => openPin("fullscreen")}>
+              <Maximize className="w-4 h-4 mr-1" /> Plein écran
+            </Button>
+          </>
         )}
       </div>
 
