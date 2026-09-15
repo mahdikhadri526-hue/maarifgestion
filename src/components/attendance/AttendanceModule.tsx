@@ -162,9 +162,14 @@ export function AttendanceModule() {
             </Button>
           </>
         ) : (
-          <Button variant="ghost" size="sm" onClick={() => setPinOpen(true)}>
-            <Lock className="w-4 h-4" />
-          </Button>
+          <>
+            <Button variant="ghost" size="sm" onClick={() => openPin("unlock")}>
+              <Lock className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => openPin("fullscreen")}>
+              <Maximize className="w-4 h-4 mr-1" /> Plein écran
+            </Button>
+          </>
         )}
       </div>
 
