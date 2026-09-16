@@ -83,21 +83,26 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="bg-sidebar text-sidebar-foreground border-b border-sidebar-border">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full overflow-hidden">
-            <img src={logo} alt="Oliveri Logo" className="w-full h-full object-cover" />
+      {kiosk ? (
+        <KioskToggle active={kiosk} onChange={setKiosk} />
+      ) : (
+        <header className="bg-sidebar text-sidebar-foreground border-b border-sidebar-border">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full overflow-hidden">
+              <img src={logo} alt="Oliveri Logo" className="w-full h-full object-cover" />
+            </div>
+            <div className="flex-1">
+              <h1 className="text-lg font-bold tracking-tight">Gestion de Stock Maarif</h1>
+              <p className="text-xs text-sidebar-foreground/60">Suivi des entrées, sorties et stock restant</p>
+            </div>
+            <KioskToggle active={kiosk} onChange={setKiosk} />
+            <UserMenu
+              onOpenAdmin={() => { setShowAnomalies(false); setShowAdmin(true); }}
+              onOpenAnomalies={() => { setShowAdmin(false); setShowAnomalies(true); }}
+            />
           </div>
-          <div className="flex-1">
-            <h1 className="text-lg font-bold tracking-tight">Gestion de Stock Maarif</h1>
-            <p className="text-xs text-sidebar-foreground/60">Suivi des entrées, sorties et stock restant</p>
-          </div>
-          <UserMenu
-            onOpenAdmin={() => { setShowAnomalies(false); setShowAdmin(true); }}
-            onOpenAnomalies={() => { setShowAdmin(false); setShowAnomalies(true); }}
-          />
-        </div>
-      </header>
+        </header>
+      )}
 
       {showAnomalies && (isAdmin || isRegionalAdmin || can("view_anomalies")) ? (
         <main className="max-w-5xl mx-auto px-4 py-6">
