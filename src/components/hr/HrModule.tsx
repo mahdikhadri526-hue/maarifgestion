@@ -640,6 +640,48 @@ function BalancesView({
     }
   };
 
+  const addOpening = async () => {
+    const agent = agents.find((a) => a.id === oAgentId);
+    if (!agent) {
+      toast.error("Choisissez un employé");
+      return;
+    }
+    if (oDate > today) {
+      toast.error("La date ne peut pas dépasser aujourd'hui");
+      return;
+    }
+    const leaveDays = Number(oLeave) || 0;
+    const recupDays = Number(oRecup) || 0;
+    try {
+      // Un nouveau solde de départ remplace l'ancien pour cet employé.
+      for (const old of entries.filter(
+        (e) => e.agent_id === agent.id && (e.kind === "conge_ouverture" || e.kind === "recup_ouverture"),
+      )) {
+        await deleteBalanceEntry(old.id);
+      }
+      await addBalanceEntry({
+        pdv_id: agent.pdv_id,
+        agent_id: agent.id,
+        kind: "conge_ouverture" as any,
+        days: leaveDays,
+        entry_date: oDate,
+        reason: "Solde de départ — congés restants",
+      });
+      await addBalanceEntry({
+        pdv_id: agent.pdv_id,
+        agent_id: agent.id,
+        kind: "recup_ouverture" as any,
+        days: recupDays,
+        entry_date: oDate,
+        reason: "Solde de départ — récupérations restantes",
+      });
+      toast.success("Solde de départ enregistré");
+      await onChanged();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Enregistrement impossible");
+    }
+  };
+
   return (
     <div className="space-y-3">
 
