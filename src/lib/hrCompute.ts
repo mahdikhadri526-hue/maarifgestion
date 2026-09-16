@@ -173,28 +173,54 @@ export function computeBalance(params: {
   at?: Date;
 }): AgentBalance {
   const at = params.at ?? new Date();
-  const accruedBase = accruedLeaveDays(params.hireDate, at);
+
+  // Solde de départ (« ce qui reste » à la date de démarrage de l'application).
+  const lastOpening = (kind: "conge_ouverture" | "recup_ouverture") =>
+    params.entries
+      .filter((e) => e.kind === kind)
+      .sort((a, b) => a.entry_date.localeCompare(b.entry_date))
+      .at(-1);
+  const leaveOpening = lastOpening("conge_ouverture");
+  const recupOpening = lastOpening("recup_ouverture");
+
+  // Tout ce qui précède la date de reprise est déjà inclus dans le solde de départ.
+  const afterLeave = (iso: string) => !leaveOpening || iso > leaveOpening.entry_date;
+  const afterRecup = (iso: string) => !recupOpening || iso > recupOpening.entry_date;
+
+  const accruedBase = leaveOpening
+    ? Number(leaveOpening.days) +
+      Math.max(
+        0,
+        accruedLeaveDays(params.hireDate, at) -
+          accruedLeaveDays(params.hireDate, new Date(`${leaveOpening.entry_date}T12:00:00`)),
+      )
+    : accruedLeaveDays(params.hireDate, at);
+
   let creditLeave = 0;
   let debitLeave = 0;
-  let creditRecup = 0;
+  let creditRecup = recupOpening ? Number(recupOpening.days) || 0 : 0;
   let debitRecup = 0;
 
   const holidaySet = new Set(params.holidays ?? []);
   const workedHolidays = params.schedules.filter(
-    (s) => s.day_type === "travail" && holidaySet.has(s.work_date),
+    (s) => s.day_type === "travail" && holidaySet.has(s.work_date) && afterRecup(s.work_date),
   ).length;
   creditRecup += workedHolidays;
 
   params.entries.forEach((e) => {
     const d = Number(e.days) || 0;
-    if (e.kind === "conge_credit") creditLeave += d;
-    else if (e.kind === "conge_debit") debitLeave += d;
-    else if (e.kind === "recup_credit") creditRecup += d;
-    else if (e.kind === "recup_debit") debitRecup += d;
+    if (e.kind === "conge_credit" && afterLeave(e.entry_date)) creditLeave += d;
+    else if (e.kind === "conge_debit" && afterLeave(e.entry_date)) debitLeave += d;
+    else if (e.kind === "recup_credit" && afterRecup(e.entry_date)) creditRecup += d;
+    else if (e.kind === "recup_debit" && afterRecup(e.entry_date)) debitRecup += d;
   });
 
-  const plannedLeave = params.schedules.filter((s) => s.day_type === "conge").length;
-  const plannedRecup = params.schedules.filter((s) => s.day_type === "recuperation").length;
+  const plannedLeave = params.schedules.filter(
+    (s) => s.day_type === "conge" && afterLeave(s.work_date),
+  ).length;
+  const plannedRecup = params.schedules.filter(
+    (s) => s.day_type === "recuperation" && afterRecup(s.work_date),
+  ).length;
 
   const accrued = Number((accruedBase + creditLeave).toFixed(2));
   const leaveTaken = plannedLeave + debitLeave;

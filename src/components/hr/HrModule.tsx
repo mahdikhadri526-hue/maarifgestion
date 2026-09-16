@@ -581,6 +581,13 @@ function BalancesView({
   const [reason, setReason] = useState("");
   const [showForm, setShowForm] = useState(false);
 
+  // Solde de départ (report à la date de démarrage de l'application)
+  const [showOpening, setShowOpening] = useState(false);
+  const [oAgentId, setOAgentId] = useState("");
+  const [oLeave, setOLeave] = useState("0");
+  const [oRecup, setORecup] = useState("0");
+  const [oDate, setODate] = useState(today);
+
   // Filtres
   const [fPdv, setFPdv] = useState("all");
   const [fSearch, setFSearch] = useState("");
@@ -633,6 +640,48 @@ function BalancesView({
     }
   };
 
+  const addOpening = async () => {
+    const agent = agents.find((a) => a.id === oAgentId);
+    if (!agent) {
+      toast.error("Choisissez un employé");
+      return;
+    }
+    if (oDate > today) {
+      toast.error("La date ne peut pas dépasser aujourd'hui");
+      return;
+    }
+    const leaveDays = Number(oLeave) || 0;
+    const recupDays = Number(oRecup) || 0;
+    try {
+      // Un nouveau solde de départ remplace l'ancien pour cet employé.
+      for (const old of entries.filter(
+        (e) => e.agent_id === agent.id && (e.kind === "conge_ouverture" || e.kind === "recup_ouverture"),
+      )) {
+        await deleteBalanceEntry(old.id);
+      }
+      await addBalanceEntry({
+        pdv_id: agent.pdv_id,
+        agent_id: agent.id,
+        kind: "conge_ouverture" as any,
+        days: leaveDays,
+        entry_date: oDate,
+        reason: "Solde de départ — congés restants",
+      });
+      await addBalanceEntry({
+        pdv_id: agent.pdv_id,
+        agent_id: agent.id,
+        kind: "recup_ouverture" as any,
+        days: recupDays,
+        entry_date: oDate,
+        reason: "Solde de départ — récupérations restantes",
+      });
+      toast.success("Solde de départ enregistré");
+      await onChanged();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Enregistrement impossible");
+    }
+  };
+
   return (
     <div className="space-y-3">
 
@@ -672,6 +721,54 @@ function BalancesView({
             </div>
             <Button size="sm" onClick={() => void add()}>
               <Plus className="w-4 h-4 mr-1" /> Ajouter
+            </Button>
+          </>
+        )}
+      </Card>
+
+      <Card className="p-3 space-y-2">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <p className="text-sm font-semibold">Solde de départ (ce qui reste)</p>
+            <p className="text-[11px] text-muted-foreground">
+              Saisissez, pour chaque employé, les jours de congé et de récupération qui lui restent au jour du démarrage
+              de l'application. Le calcul automatique repart ensuite à partir de cette date.
+            </p>
+          </div>
+          <Button size="sm" variant={showOpening ? "secondary" : "outline"} onClick={() => setShowOpening((v) => !v)}>
+            {showOpening ? "Fermer" : "Saisir un solde de départ"}
+          </Button>
+        </div>
+        {showOpening && (
+          <>
+            <div className="grid gap-2 sm:grid-cols-4">
+              <select
+                className="h-9 rounded border bg-background px-2 text-sm"
+                value={oAgentId}
+                onChange={(e) => setOAgentId(e.target.value)}
+              >
+                <option value="">Employé…</option>
+                {visibleAgents.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.full_name}
+                  </option>
+                ))}
+              </select>
+              <div>
+                <label className="text-[11px] text-muted-foreground">Congés restants (j)</label>
+                <Input type="number" step="0.5" value={oLeave} onChange={(e) => setOLeave(e.target.value)} className="h-9" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground">Récup. restantes (j)</label>
+                <Input type="number" step="0.5" value={oRecup} onChange={(e) => setORecup(e.target.value)} className="h-9" />
+              </div>
+              <div>
+                <label className="text-[11px] text-muted-foreground">À la date du</label>
+                <Input type="date" max={today} value={oDate} onChange={(e) => setODate(e.target.value)} className="h-9" />
+              </div>
+            </div>
+            <Button size="sm" onClick={() => void addOpening()}>
+              <Plus className="w-4 h-4 mr-1" /> Enregistrer le solde de départ
             </Button>
           </>
         )}
