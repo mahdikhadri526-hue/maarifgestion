@@ -581,6 +581,13 @@ function BalancesView({
   const [reason, setReason] = useState("");
   const [showForm, setShowForm] = useState(false);
 
+  // Solde de départ (report à la date de démarrage de l'application)
+  const [showOpening, setShowOpening] = useState(false);
+  const [oAgentId, setOAgentId] = useState("");
+  const [oLeave, setOLeave] = useState("0");
+  const [oRecup, setORecup] = useState("0");
+  const [oDate, setODate] = useState(today);
+
   // Filtres
   const [fPdv, setFPdv] = useState("all");
   const [fSearch, setFSearch] = useState("");
