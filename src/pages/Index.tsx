@@ -42,6 +42,7 @@ const Index = () => {
   const [showStock, setShowStock] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAnomalies, setShowAnomalies] = useState(false);
+  const [kiosk, setKiosk] = useState(false);
 
   // Charge le catalogue produits personnalisé (ajouts / modifications / suppressions)
   useEffect(() => {
