@@ -688,47 +688,6 @@ function BalancesView({
       <Card className="p-3 space-y-2">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <p className="text-sm font-semibold">Reprise des soldes existants</p>
-            <p className="text-[11px] text-muted-foreground">
-              À utiliser uniquement pour saisir les congés et récupérations acquis par les employés avant l'utilisation de
-              l'application. Ensuite, les soldes se calculent automatiquement.
-            </p>
-          </div>
-          <Button size="sm" variant={showForm ? "secondary" : "outline"} onClick={() => setShowForm((v) => !v)}>
-            {showForm ? "Fermer" : "Saisir une reprise"}
-          </Button>
-        </div>
-        {showForm && (
-          <>
-            <div className="grid gap-2 sm:grid-cols-5">
-              <select className="h-9 rounded border bg-background px-2 text-sm" value={agentId} onChange={(e) => setAgentId(e.target.value)}>
-                <option value="">Employé…</option>
-                {visibleAgents.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.full_name}
-                  </option>
-                ))}
-              </select>
-              <select className="h-9 rounded border bg-background px-2 text-sm" value={kind} onChange={(e) => setKind(e.target.value)}>
-                <option value="recup_credit">Récupération acquise (+)</option>
-                <option value="recup_debit">Récupération prise (−)</option>
-                <option value="conge_credit">Congé supplémentaire (+)</option>
-                <option value="conge_debit">Congé pris hors planning (−)</option>
-              </select>
-              <Input type="number" step="0.5" value={days} onChange={(e) => setDays(e.target.value)} className="h-9" />
-              <Input type="date" max={today} value={date} onChange={(e) => setDate(e.target.value)} className="h-9" />
-              <Input placeholder="Motif" value={reason} onChange={(e) => setReason(e.target.value)} className="h-9" />
-            </div>
-            <Button size="sm" onClick={() => void add()}>
-              <Plus className="w-4 h-4 mr-1" /> Ajouter
-            </Button>
-          </>
-        )}
-      </Card>
-
-      <Card className="p-3 space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <div>
             <p className="text-sm font-semibold">Solde de départ (ce qui reste)</p>
             <p className="text-[11px] text-muted-foreground">
               Saisissez, pour chaque employé, les jours de congé et de récupération qui lui restent au jour du démarrage
