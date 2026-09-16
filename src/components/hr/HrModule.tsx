@@ -574,13 +574,6 @@ function BalancesView({
   const { pdvs } = useAuth();
   const today = isoDate(new Date());
   const holidayDates = useMemo(() => holidays.map((h) => h.holiday_date), [holidays]);
-  const [agentId, setAgentId] = useState("");
-  const [kind, setKind] = useState("recup_credit");
-  const [days, setDays] = useState("1");
-  const [date, setDate] = useState(today);
-  const [reason, setReason] = useState("");
-  const [showForm, setShowForm] = useState(false);
-
   // Solde de départ (report à la date de démarrage de l'application)
   const [showOpening, setShowOpening] = useState(false);
   const [oAgentId, setOAgentId] = useState("");
@@ -612,33 +605,6 @@ function BalancesView({
       }),
     [entries, visibleAgentIds],
   );
-
-  const add = async () => {
-    const agent = agents.find((a) => a.id === agentId);
-    if (!agent) {
-      toast.error("Choisissez un agent");
-      return;
-    }
-    if (date > today) {
-      toast.error("La date ne peut pas dépasser aujourd'hui");
-      return;
-    }
-    try {
-      await addBalanceEntry({
-        pdv_id: agent.pdv_id,
-        agent_id: agent.id,
-        kind: kind as any,
-        days: Number(days) || 0,
-        entry_date: date,
-        reason: reason || null,
-      });
-      setReason("");
-      toast.success("Solde de reprise enregistré");
-      await onChanged();
-    } catch (e: any) {
-      toast.error(e?.message ?? "Enregistrement impossible");
-    }
-  };
 
   const addOpening = async () => {
     const agent = agents.find((a) => a.id === oAgentId);
@@ -684,47 +650,6 @@ function BalancesView({
 
   return (
     <div className="space-y-3">
-
-      <Card className="p-3 space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <p className="text-sm font-semibold">Reprise des soldes existants</p>
-            <p className="text-[11px] text-muted-foreground">
-              À utiliser uniquement pour saisir les congés et récupérations acquis par les employés avant l'utilisation de
-              l'application. Ensuite, les soldes se calculent automatiquement.
-            </p>
-          </div>
-          <Button size="sm" variant={showForm ? "secondary" : "outline"} onClick={() => setShowForm((v) => !v)}>
-            {showForm ? "Fermer" : "Saisir une reprise"}
-          </Button>
-        </div>
-        {showForm && (
-          <>
-            <div className="grid gap-2 sm:grid-cols-5">
-              <select className="h-9 rounded border bg-background px-2 text-sm" value={agentId} onChange={(e) => setAgentId(e.target.value)}>
-                <option value="">Employé…</option>
-                {visibleAgents.map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.full_name}
-                  </option>
-                ))}
-              </select>
-              <select className="h-9 rounded border bg-background px-2 text-sm" value={kind} onChange={(e) => setKind(e.target.value)}>
-                <option value="recup_credit">Récupération acquise (+)</option>
-                <option value="recup_debit">Récupération prise (−)</option>
-                <option value="conge_credit">Congé supplémentaire (+)</option>
-                <option value="conge_debit">Congé pris hors planning (−)</option>
-              </select>
-              <Input type="number" step="0.5" value={days} onChange={(e) => setDays(e.target.value)} className="h-9" />
-              <Input type="date" max={today} value={date} onChange={(e) => setDate(e.target.value)} className="h-9" />
-              <Input placeholder="Motif" value={reason} onChange={(e) => setReason(e.target.value)} className="h-9" />
-            </div>
-            <Button size="sm" onClick={() => void add()}>
-              <Plus className="w-4 h-4 mr-1" /> Ajouter
-            </Button>
-          </>
-        )}
-      </Card>
 
       <Card className="p-3 space-y-2">
         <div className="flex items-center justify-between gap-2">
