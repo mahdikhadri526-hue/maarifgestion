@@ -574,13 +574,6 @@ function BalancesView({
   const { pdvs } = useAuth();
   const today = isoDate(new Date());
   const holidayDates = useMemo(() => holidays.map((h) => h.holiday_date), [holidays]);
-  const [agentId, setAgentId] = useState("");
-  const [kind, setKind] = useState("recup_credit");
-  const [days, setDays] = useState("1");
-  const [date, setDate] = useState(today);
-  const [reason, setReason] = useState("");
-  const [showForm, setShowForm] = useState(false);
-
   // Solde de départ (report à la date de démarrage de l'application)
   const [showOpening, setShowOpening] = useState(false);
   const [oAgentId, setOAgentId] = useState("");
@@ -612,33 +605,6 @@ function BalancesView({
       }),
     [entries, visibleAgentIds],
   );
-
-  const add = async () => {
-    const agent = agents.find((a) => a.id === agentId);
-    if (!agent) {
-      toast.error("Choisissez un agent");
-      return;
-    }
-    if (date > today) {
-      toast.error("La date ne peut pas dépasser aujourd'hui");
-      return;
-    }
-    try {
-      await addBalanceEntry({
-        pdv_id: agent.pdv_id,
-        agent_id: agent.id,
-        kind: kind as any,
-        days: Number(days) || 0,
-        entry_date: date,
-        reason: reason || null,
-      });
-      setReason("");
-      toast.success("Solde de reprise enregistré");
-      await onChanged();
-    } catch (e: any) {
-      toast.error(e?.message ?? "Enregistrement impossible");
-    }
-  };
 
   const addOpening = async () => {
     const agent = agents.find((a) => a.id === oAgentId);
