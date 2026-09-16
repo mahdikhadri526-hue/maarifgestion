@@ -48,7 +48,14 @@ export interface HrHoliday {
   label: string;
 }
 
-export type BalanceKind = "conge_credit" | "conge_debit" | "recup_credit" | "recup_debit";
+export type BalanceKind =
+  | "conge_credit"
+  | "conge_debit"
+  | "recup_credit"
+  | "recup_debit"
+  /** Solde restant repris à la date de démarrage de l'application (point de départ du calcul). */
+  | "conge_ouverture"
+  | "recup_ouverture";
 
 export interface HrBalanceEntry {
   id: string;
