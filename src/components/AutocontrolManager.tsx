@@ -994,7 +994,15 @@ export function AutocontrolManager() {
           dlc: (isDecoration || isPerte) ? null : (baseResult.data.dlc || null),
         visaManager: baseResult.data.visaManager,
         notes: baseResult.data.notes,
-        extraData: isCtg ? extraData : isDecoration ? decorationExtra : isPanache ? panacheExtra : null,
+        extraData: isCtg
+          ? extraData
+          : isDecoration
+            ? decorationExtra
+            : isPanache
+              ? panacheExtra
+              : isPerte
+                ? ({ perteType } as any)
+                : null,
       });
       if (isPanache) {
         await syncTarteMovementEntry(
@@ -1125,12 +1133,46 @@ export function AutocontrolManager() {
               </SelectContent>
             </Select>
           </div>
+          {isPerte && (
+            <div className="sm:col-span-2">
+              <label className="text-xs font-medium text-muted-foreground">Type de perte *</label>
+              <Select
+                value={perteType}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    article: "",
+                    extraData: { ...(f.extraData as any), perteType: v } as any,
+                  }))
+                }
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="produit">Perte produit</SelectItem>
+                  <SelectItem value="materiel">Casse matériel</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {!isPanache && !isCtg && !isDecoration && (
           <div className="sm:col-span-2">
             <label className="text-xs font-medium text-muted-foreground">
-              {isPerte ? "Produit / matériel *" : "Article / Désignation *"}
+              {isPerte ? (perteType === "materiel" ? "Matériel *" : "Produit *") : "Article / Désignation *"}
             </label>
-            {ARTICLE_OPTIONS_BY_FICHE[form.ficheType] && ARTICLE_OPTIONS_BY_FICHE[form.ficheType]!.length > 0 ? (
+            {isPerte ? (
+              <Select
+                value={form.article}
+                onValueChange={(v) => setForm((f) => ({ ...f, article: v }))}
+              >
+                <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
+                <SelectContent className="max-h-72">
+                  {perteOptions.map((opt) => (
+                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : ARTICLE_OPTIONS_BY_FICHE[form.ficheType] && ARTICLE_OPTIONS_BY_FICHE[form.ficheType]!.length > 0 ? (
               <Select
                 value={form.article}
                 onValueChange={(v) => setForm((f) => ({ ...f, article: v }))}
