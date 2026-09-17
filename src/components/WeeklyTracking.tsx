@@ -26,29 +26,12 @@ import { WeeklyTransfers } from "./WeeklyTransfers";
 const SHOW_KG_BAC = false; // colonne Kg/bac masquée
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
-const TARTE_ARTICLES = [
-  "Tarte 6", "Tarte 8", "Tarte 10", "Tte Sp.", "Tte.Sp 8", "Tte Mac.", "Tte Sor.",
-  "Tche Sor.", "Tche Mac.", "Tche Nap.", "Bûche", "Bûche Sp.", "N.F", "Demis",
-  "Maria Louisa", "Maria mangue", "Maria framboise", "Maria reglisse", "M.Loulou", "Panachés",
-  "Mac.Chocolat P", "Mac.Pistache P", "Mac.Caramel P", "Mac.Cfé P", "Mac.Mng P", "Mac.Cit P",
-  "Mac.Chocolat N", "Mac.Pistache N", "Mac.Caramel N", "Mac.Cfé N", "Mac.Mng N", "Mac.Cit N",
-  "Chantilly,F,C", "Cho.Logo", "PJA", "Cho.Blnc", "Amd.Crml", "Sirop.Blc", "Sirop.Crml",
-  "Merg.trt", "Merg.Pt KG", "Merg.Pt SCH", "Merg.Glacé", "Org.Confit", "Biscuit",
-  "Bigarreaux", "Cake Chocolat", "Cake.citron", "Pain Savoi", "Brownies.G", "Brownies.Top",
-  "Amandes.Top", "Noix.Top", "Tulipes", "Cornet", "Gaufrette",
-  "Orange fruits", "Citron fruits", "POMME fruits", "POIRE fruits", "Ananas fruits", "Kiwi fruits",
-];
-const NETTOYANT_ARTICLES = [
-  "Rc 20", "Chlorane", "Solnet", "Flexi", "Mitard A", "Renovac", "Clean plack",
-  "Handonet", "Rince Matic", "Wach Matic", "Handobac",
-];
-const GLACE_ARTICLES = [
-  "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
-  "Parfait", "Fraise", "Framboise", "Orange", "Mangue", "Citron", "Pêche",
-  "Banane", "Citron menthe", "Orange cannelle", "Réglisse",
-  "Crème fraîche (mousse fouettée)",
-];
-const ARTICLES = [...TARTE_ARTICLES, ...GLACE_ARTICLES, ...NETTOYANT_ARTICLES];
+import {
+  WEEKLY_TARTE_ARTICLES as TARTE_ARTICLES,
+  WEEKLY_GLACE_ARTICLES as GLACE_ARTICLES,
+  WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES,
+  WEEKLY_ALL_ARTICLES as ARTICLES,
+} from "@/lib/weeklyArticles";
 
 function getMonday(d: Date) {
   const date = new Date(d);
