@@ -88,4 +88,8 @@ export const WEEKLY_GLACE_ARTICLES = [
   "Banane", "Citron menthe", "Orange cannelle", "Réglisse",
   "Crème fraîche (mousse fouettée)",
 ];
-export const ARTICLES = [...TARTE_ARTICLES, ...GLACE_ARTICLES, ...NETTOYANT_ARTICLES];
+export const WEEKLY_ALL_ARTICLES = [
+  ...WEEKLY_TARTE_ARTICLES,
+  ...WEEKLY_GLACE_ARTICLES,
+  ...WEEKLY_NETTOYANT_ARTICLES,
+];
