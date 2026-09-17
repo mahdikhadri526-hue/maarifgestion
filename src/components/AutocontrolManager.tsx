@@ -32,6 +32,12 @@ const ClaimsReturns = lazy(() =>
 );
 import { getProducts } from "@/lib/stockData";
 import {
+  MATERIEL_ARTICLES,
+  WEEKLY_TARTE_ARTICLES,
+  WEEKLY_GLACE_ARTICLES,
+  WEEKLY_NETTOYANT_ARTICLES,
+} from "@/lib/weeklyArticles";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -644,6 +650,22 @@ export function AutocontrolManager() {
   const isDecoration = form.ficheType === "Décoration";
   const isPanache = form.ficheType === "Panaché";
   const isPerte = form.ficheType === "Suivi perte produit et casse matériel";
+  const perteType: "produit" | "materiel" =
+    (form.extraData as any)?.perteType === "materiel" ? "materiel" : "produit";
+  const perteOptions = useMemo(() => {
+    if (!isPerte) return [] as string[];
+    if (perteType === "materiel") return MATERIEL_ARTICLES.map((a) => a.name);
+    const stock = [...getProducts("alimentaire"), ...getProducts("emballage")].map((p) => p.name);
+    const all = [
+      ...stock,
+      ...WEEKLY_TARTE_ARTICLES,
+      ...WEEKLY_GLACE_ARTICLES,
+      ...WEEKLY_NETTOYANT_ARTICLES,
+    ];
+    return Array.from(new Set(all.map((n) => n.trim()).filter(Boolean))).sort((a, b) =>
+      a.localeCompare(b, "fr"),
+    );
+  }, [isPerte, perteType]);
   const isAutoDlc = isPanache || (form.ficheType === "Oranges/Bigarreaux confits" && isConfit);
 
   const refresh = useCallback(async () => {
