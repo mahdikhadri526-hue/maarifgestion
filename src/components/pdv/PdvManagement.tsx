@@ -45,8 +45,14 @@ const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
 };
 
 export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
-  const { pdvs, refreshPdvs, pdvId, isAdmin, isRegionalAdmin, permissions } = useAuth();
+  const { pdvs, refreshPdvs, pdvId, isAdmin, isRegionalAdmin, permissions, can } = useAuth();
   const canEditPerms = isAdmin || isRegionalAdmin;
+  // Chaque compte ne voit que les permissions qu'il détient lui-même.
+  const visibleGroups = isAdmin
+    ? PERMISSION_GROUPS
+    : PERMISSION_GROUPS.map((g) => ({ ...g, keys: g.keys.filter((k) => can(k)) })).filter(
+        (g) => g.keys.length > 0,
+      );
   const canTogglePerm = (_key: string) => isAdmin || isRegionalAdmin;
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
