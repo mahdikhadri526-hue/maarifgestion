@@ -190,11 +190,11 @@ export function PlanningGrid({
       .join("");
 
   const cellTone = (type: DayType | undefined) => {
-    if (type === "travail") return "border-success/30 bg-success/10 text-success";
-    if (type === "repos") return "border-border bg-secondary text-secondary-foreground";
-    if (type === "conge") return "border-warning/40 bg-warning/15 text-warning-foreground";
-    if (type === "recuperation") return "border-primary/25 bg-accent text-accent-foreground";
-    return "border-dashed border-border bg-card text-muted-foreground";
+    if (type === "travail") return "border-success/45 bg-success/15 text-success shadow-sm";
+    if (type === "repos") return "border-border bg-secondary text-secondary-foreground shadow-sm";
+    if (type === "conge") return "border-warning/55 bg-warning/20 text-warning-foreground shadow-sm";
+    if (type === "recuperation") return "border-primary/40 bg-primary/10 text-primary shadow-sm";
+    return "border-dashed border-border bg-background text-muted-foreground";
   };
 
   const update = async (
@@ -226,29 +226,29 @@ export function PlanningGrid({
   };
 
   return (
-    <Card className="overflow-hidden border-border shadow-sm">
-      <div className="flex flex-col gap-3 border-b border-border bg-card px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <Card className="overflow-hidden border-border shadow-md">
+      <div className="flex flex-col gap-3 border-b border-border bg-sidebar px-5 py-4 text-sidebar-foreground sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="flex flex-wrap items-center gap-2 text-lg font-semibold">
             {title}
             {readOnly && (
-              <span className="rounded-full border border-border bg-muted px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+              <span className="rounded-full border border-sidebar-border bg-sidebar-accent px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-sidebar-foreground">
                 Lecture seule
               </span>
             )}
           </h2>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm font-medium text-sidebar-foreground/70">
             Semaine du {formatFr(days[0])} au {formatFr(days[6])}
             {readOnly && " — consultation uniquement"}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {showLevelToggle && (
-          <div className="flex rounded-md border border-border bg-muted p-0.5">
+          <div className="flex rounded-md border border-sidebar-border bg-sidebar-accent p-0.5">
             {isRh && (
               <Button
                 size="sm"
-                variant={level === "manager" ? "default" : "ghost"}
+                variant={level === "manager" ? "secondary" : "ghost"}
                 className="h-8"
                 onClick={() => setLevel("manager")}
               >
@@ -257,7 +257,7 @@ export function PlanningGrid({
             )}
             <Button
               size="sm"
-              variant={level === "agent" ? "default" : "ghost"}
+              variant={level === "agent" ? "secondary" : "ghost"}
               className="h-8"
               onClick={() => setLevel("agent")}
             >
@@ -267,7 +267,7 @@ export function PlanningGrid({
           )}
           <Button
             size="icon"
-            variant="outline"
+            variant="secondary"
             className="h-9 w-9"
             aria-label="Semaine précédente"
             title="Semaine précédente"
@@ -275,12 +275,12 @@ export function PlanningGrid({
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <Button size="sm" variant="outline" className="h-9" onClick={() => setStart(weekStart(isoDate(new Date())))}>
+          <Button size="sm" variant="secondary" className="h-9" onClick={() => setStart(weekStart(isoDate(new Date())))}>
             Aujourd'hui
           </Button>
           <Button
             size="icon"
-            variant="outline"
+            variant="secondary"
             className="h-9 w-9"
             aria-label="Semaine suivante"
             title="Semaine suivante"
@@ -306,17 +306,17 @@ export function PlanningGrid({
               <col className="w-[220px]" />
               {days.map((d) => <col key={d} className="w-[123px]" />)}
             </colgroup>
-            <thead>
+            <thead className="bg-card">
               <tr>
-                <th className="sticky left-0 z-30 !bg-accent !px-4 !py-3 text-left text-[11px] font-semibold uppercase border-r border-border">
+                <th className="sticky left-0 z-30 !bg-sidebar !px-4 !py-3 text-left text-[11px] font-bold uppercase text-sidebar-foreground border-r border-sidebar-border">
                   Collaborateur
                 </th>
                 {days.map((d, i) => {
                   const hol = holidayMap.get(d);
                   return (
-                    <th key={d} className={`!px-2 !py-2 text-center ${i > 4 ? "!bg-muted" : "!bg-accent"}`}>
-                      <span className="block text-[11px] font-semibold normal-case">{DOW_LABELS[i]}</span>
-                      <span className="block text-[10px] font-medium text-muted-foreground">{formatFr(d).slice(0, 5)}</span>
+                    <th key={d} className={`!px-2 !py-2.5 text-center border-b-2 ${i > 4 ? "!bg-secondary border-muted-foreground/30" : "!bg-card border-primary/60"}`}>
+                      <span className="block text-[11px] font-bold normal-case text-foreground">{DOW_LABELS[i]}</span>
+                      <span className="block text-[10px] font-semibold text-muted-foreground">{formatFr(d).slice(0, 5)}</span>
                       {hol && <span className="mt-1 block truncate text-[9px] font-medium normal-case text-warning-foreground">Férié</span>}
                     </th>
                   );
@@ -330,7 +330,7 @@ export function PlanningGrid({
                   <tr key={`sep-menage-${a.id}`}>
                     <td
                       colSpan={days.length + 1}
-                      className="sticky left-0 border-t border-border !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                       className="sticky left-0 border-t border-primary/25 !bg-accent !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
                     >
                       Ménage
                     </td>
@@ -340,7 +340,7 @@ export function PlanningGrid({
                   <tr key={`sep-securite-${a.id}`}>
                     <td
                       colSpan={days.length + 1}
-                      className="sticky left-0 border-t border-border !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                       className="sticky left-0 border-t border-primary/25 !bg-accent !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
                     >
                       Sécurité
                     </td>
@@ -350,7 +350,7 @@ export function PlanningGrid({
                   <tr key={`sep-manager-${a.id}`}>
                     <td
                       colSpan={days.length + 1}
-                      className="sticky left-0 border-t border-border !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                       className="sticky left-0 border-t border-primary/25 !bg-accent !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
                     >
                       Managers — planning établi par la RH
                     </td>
@@ -360,7 +360,7 @@ export function PlanningGrid({
                   <tr key={`sep-${a.id}`}>
                     <td
                       colSpan={days.length + 1}
-                      className="sticky left-0 !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                       className="sticky left-0 border-t border-primary/25 !bg-accent !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
                     >
                       Caissiers — planning établi par la RH{groupedCategories === true && " (lecture seule)"}
                     </td>
@@ -370,7 +370,7 @@ export function PlanningGrid({
                   <tr key={`sep-agent-${a.id}`}>
                     <td
                       colSpan={days.length + 1}
-                      className="sticky left-0 border-t border-border !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                       className="sticky left-0 border-t border-primary/25 !bg-accent !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
                     >
                       Agents — lecture seule
                     </td>
@@ -380,20 +380,20 @@ export function PlanningGrid({
                   <tr key={`sep-tech-${a.id}`}>
                     <td
                       colSpan={days.length + 1}
-                      className="sticky left-0 border-t border-border !bg-muted !px-4 !py-1.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground"
+                       className="sticky left-0 border-t border-primary/25 !bg-accent !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
                     >
                       Ménage & Sécurité — planning établi par le responsable technique (lecture seule)
                     </td>
                   </tr>
                 )}
                 <tr key={a.id} className="group">
-                  <td className="sticky left-0 z-20 !bg-card !px-3 !py-2 border-r border-border group-hover:!bg-accent">
+                  <td className="sticky left-0 z-20 !bg-card !px-3 !py-2 border-r-2 border-border group-hover:!bg-accent">
                     <div className="flex min-w-0 items-center gap-2.5">
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-[10px] font-semibold text-accent-foreground">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 text-[10px] font-bold text-primary ring-1 ring-primary/20">
                         {initials(a.full_name)}
                       </span>
                       <span className="min-w-0">
-                        <span className="block truncate text-xs font-semibold">{a.full_name}</span>
+                        <span className="block truncate text-xs font-bold text-foreground">{a.full_name}</span>
                         <span className="block truncate text-[10px] text-muted-foreground">
                           {[a.poste, isRh ? (a.multi_pdv ? "Tous les PDV" : pdvs.find((p) => p.id === a.pdv_id)?.name) : (a.multi_pdv ? "Tous les PDV" : null)].filter(Boolean).join(" · ") || (level === "manager" ? "Manager" : "Employé")}
                         </span>
@@ -404,7 +404,7 @@ export function PlanningGrid({
                     const c = cell(a.id, d);
                     const type = c?.day_type as DayType | undefined;
                     return (
-                      <td key={d} className={`!p-1 border-r border-border/60 ${i > 4 ? "bg-muted/40" : ""}`}>
+                       <td key={d} className={`!p-1.5 border-r border-border/70 ${i > 4 ? "bg-muted/60" : "bg-card"}`}>
                         {rowReadOnly(a) ? (
                           <div className={`min-h-[58px] rounded-md border px-1.5 py-1.5 text-center ${cellTone(type)}`}>
                             <span className="block text-[10px] font-semibold">
@@ -506,11 +506,11 @@ export function PlanningGrid({
         </div>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-border bg-muted/60 px-4 py-3 text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-success" />Travail</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-secondary-foreground/40" />Repos</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-warning" />Congé</span>
-        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-primary" />Récupération</span>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2 border-t border-border bg-secondary px-5 py-3 text-[11px] font-semibold text-secondary-foreground">
+        <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-success ring-2 ring-success/20" />Travail</span>
+        <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-muted-foreground ring-2 ring-muted-foreground/15" />Repos</span>
+        <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-warning ring-2 ring-warning/20" />Congé</span>
+        <span className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-primary ring-2 ring-primary/20" />Récupération</span>
       </div>
     </Card>
   );
