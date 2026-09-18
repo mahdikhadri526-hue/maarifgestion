@@ -369,11 +369,15 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
   const ordered = [...active].sort((a, b) => (isFixed(a.frequency) ? -1 : 1) - (isFixed(b.frequency) ? -1 : 1));
 
   for (const task of ordered) {
-    for (const raw of rawDueDates(task, today, to)) {
+    // On balaye la même fenêtre que les occurrences lues (y compris le passé
+    // récent) : une échéance lissée d'un jour passé vers une date future doit
+    // rester « désirée », sinon elle serait supprimée le lendemain.
+    for (const raw of rawDueDates(task, from, to)) {
       const key = `${task.id}|${raw}`;
       desiredKeys.add(key);
       const stored = existingByKey.get(key);
       if (stored) continue; // planification figée
+      if (raw < today) continue; // on ne recrée jamais le passé
       const due = isFixed(task.frequency)
         ? raw
         : balancedDate(raw, holidays, load, task.weekend_allowed);
@@ -389,9 +393,11 @@ export async function ensurePlanning(horizonDays = 75): Promise<void> {
       (o) =>
         o.status === "todo" &&
         o.due_date >= today &&
+        o.original_due_date >= from &&
         (!activeIds.has(o.task_id) || !desiredKeys.has(`${o.task_id}|${o.original_due_date}`)),
     )
     .map((o) => o.id);
+
 
   for (let i = 0; i < obsoleteIds.length; i += 200) {
     const { error } = await rawSupabase.from("pep_occurrences").delete().in("id", obsoleteIds.slice(i, i + 200));
