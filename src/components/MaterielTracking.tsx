@@ -182,7 +182,7 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
           <div>
             <h3 className="font-semibold">Suivi matériel — semaine du {formatDateFR(weekStart)}</h3>
             <p className="text-xs text-muted-foreground">
-              SI (lundi), Entrées et Sorties modifiables pour toutes les semaines. Restant = SI + E − S.
+              SI saisi une seule fois par semaine. Entrées et Sorties modifiables pour toutes les semaines. Restant = SI + E − S.
             </p>
           </div>
           {(editable || siEditable) && (
@@ -214,7 +214,7 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
                 Article
               </th>
               <th className="p-2 text-center bg-muted border-r w-[110px] min-w-[110px] text-[11px] sticky top-0 z-30">
-                SI (lundi)
+                SI (semaine)
               </th>
               <th className="p-2 text-center bg-success/10 text-success border-r w-[110px] min-w-[110px] text-[11px] sticky top-0 z-30">
                 Entrées
