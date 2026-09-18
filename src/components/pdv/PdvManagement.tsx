@@ -256,7 +256,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
                   Vous gérez les permissions de vos points de vente.
                 </p>
               )}
-              {PERMISSION_GROUPS.map((group) => (
+              {visibleGroups.map((group) => (
                 <div key={group.title} className="space-y-1">
                   <div className="text-[11px] uppercase tracking-wide text-muted-foreground pt-2 border-t">
                     {group.title}
