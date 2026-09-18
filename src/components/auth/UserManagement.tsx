@@ -273,6 +273,14 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   const permLabel = (key: string) =>
     ALL_PERMISSIONS.find((p) => p.key === key)?.label ?? key;
 
+  // Chaque compte ne voit (et n'accorde) que les permissions qu'il détient
+  // lui-même ; l'administrateur principal garde la liste complète.
+  const visibleGroups = isAdmin
+    ? PERMISSION_GROUPS
+    : PERMISSION_GROUPS.map((g) => ({ ...g, keys: g.keys.filter((k) => can(k)) })).filter(
+        (g) => g.keys.length > 0,
+      );
+
   const filteredUsers = users.filter((u) => {
     const q = search.trim().toLowerCase();
     const matchQ =
@@ -583,7 +591,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
                   className="pl-8"
                 />
               </div>
-              {PERMISSION_GROUPS.map((g) => {
+              {visibleGroups.map((g) => {
                 const q = permSearch.trim().toLowerCase();
                 const keys = g.keys.filter(
                   (k) => !q || permLabel(k).toLowerCase().includes(q) || k.includes(q),

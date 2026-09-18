@@ -45,8 +45,14 @@ const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
 };
 
 export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
-  const { pdvs, refreshPdvs, pdvId, isAdmin, isRegionalAdmin, permissions } = useAuth();
+  const { pdvs, refreshPdvs, pdvId, isAdmin, isRegionalAdmin, permissions, can } = useAuth();
   const canEditPerms = isAdmin || isRegionalAdmin;
+  // Chaque compte ne voit que les permissions qu'il détient lui-même.
+  const visibleGroups = isAdmin
+    ? PERMISSION_GROUPS
+    : PERMISSION_GROUPS.map((g) => ({ ...g, keys: g.keys.filter((k) => can(k)) })).filter(
+        (g) => g.keys.length > 0,
+      );
   const canTogglePerm = (_key: string) => isAdmin || isRegionalAdmin;
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
@@ -250,7 +256,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
                   Vous gérez les permissions de vos points de vente.
                 </p>
               )}
-              {PERMISSION_GROUPS.map((group) => (
+              {visibleGroups.map((group) => (
                 <div key={group.title} className="space-y-1">
                   <div className="text-[11px] uppercase tracking-wide text-muted-foreground pt-2 border-t">
                     {group.title}
