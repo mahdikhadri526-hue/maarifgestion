@@ -591,7 +591,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
                   className="pl-8"
                 />
               </div>
-              {PERMISSION_GROUPS.map((g) => {
+              {visibleGroups.map((g) => {
                 const q = permSearch.trim().toLowerCase();
                 const keys = g.keys.filter(
                   (k) => !q || permLabel(k).toLowerCase().includes(q) || k.includes(q),
