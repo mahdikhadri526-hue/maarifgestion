@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Building2, Plus, Trash2, Settings2, Lock } from "lucide-react";
+import { Building2, Trash2, Settings2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -54,10 +54,6 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
         (g) => g.keys.length > 0,
       );
   const canTogglePerm = (_key: string) => isAdmin || isRegionalAdmin;
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const [accessCode, setAccessCode] = useState("");
-  const [saving, setSaving] = useState(false);
   const [pdvRoles, setPdvRoles] = useState<Record<string, AppRole>>({});
   const [pdvPerms, setPdvPerms] = useState<Record<string, Set<string>>>({});
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
@@ -130,31 +126,6 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
     toast.success(next ? "Permission activée" : "Permission désactivée");
   };
 
-
-  const addPdv = async () => {
-    if (!code.trim() || !name.trim()) {
-      toast.error("Code et nom obligatoires");
-      return;
-    }
-    if (!accessCode.trim()) {
-      toast.error("Code d'accès obligatoire");
-      return;
-    }
-    setSaving(true);
-    const { error } = await supabase
-      .from("pdvs")
-      .insert({ code: code.trim(), name: name.trim(), access_code: accessCode.trim() } as any);
-    setSaving(false);
-    if (error) {
-      toast.error("Erreur : " + error.message);
-      return;
-    }
-    setCode("");
-    setName("");
-    setAccessCode("");
-    toast.success("Point de vente ajouté");
-    reload();
-  };
 
   const rename = async (id: string, newName: string) => {
     const { error } = await supabase.from("pdvs").update({ name: newName }).eq("id", id);
@@ -231,14 +202,6 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
             </Button>
           </div>
         ))}
-        {isAdmin && <div className="flex gap-2 pt-2 border-t">
-          <Input placeholder="Code" className="w-24 h-9" value={code} onChange={(e) => setCode(e.target.value)} />
-          <Input placeholder="Nom du point de vente" className="h-9" value={name} onChange={(e) => setName(e.target.value)} />
-          <Input placeholder="Code d'accès" className="w-32 h-9" value={accessCode} onChange={(e) => setAccessCode(e.target.value)} />
-          <Button size="sm" onClick={addPdv} disabled={saving}>
-            <Plus className="h-4 w-4 mr-1" /> Ajouter
-          </Button>
-        </div>}
       </CardContent>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
