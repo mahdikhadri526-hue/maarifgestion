@@ -1658,6 +1658,45 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             <p className="text-center text-muted-foreground py-8">Aucune donnée</p>
           )}
         </div>
+      ) : isWeeklyCat ? (
+        <div className="bg-card rounded-lg border overflow-x-auto max-w-full">
+          <table className="weekly-sticky-table text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", overflow: "visible" }}>
+            <thead className="bg-muted sticky top-0 z-30">
+              <tr className="border-b bg-muted/50">
+                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Article</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Restant</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stockWeeklyRows
+                .filter((r) => r.article.toLowerCase().includes(search.toLowerCase()))
+                .map((r, rowI) => (
+                  <tr key={r.article} className={cn("border-b last:border-0 hover:bg-muted/30 transition-colors", rowI % 2 === 1 && "bg-muted/30")}>
+                    <td className="p-3 text-sm font-medium weekly-sticky-column border-r bg-card w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>{r.article}</td>
+                    <td className="p-3 text-right font-mono text-sm text-primary font-semibold">{r.stockInitial}</td>
+                    <td className="p-3 text-right font-mono text-sm text-success">{r.entrees}</td>
+                    <td className="p-3 text-right font-mono text-sm text-accent-foreground">{r.sorties}</td>
+                    <td className={`p-3 text-right font-mono text-sm font-semibold ${r.stockRestant < 0 ? "text-destructive" : ""}`}>{r.stockRestant}</td>
+                  </tr>
+                ))}
+              {stockWeeklyRows.length > 0 && (
+                <tr className="border-t-2 bg-muted/40 font-semibold">
+                  <td className="p-3 text-sm weekly-sticky-column border-r bg-muted w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>TOTAL</td>
+                  <td className="p-3 text-right font-mono text-sm text-primary">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.stockInitial, 0))}</td>
+                  <td className="p-3 text-right font-mono text-sm text-success">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.entrees, 0))}</td>
+                  <td className="p-3 text-right font-mono text-sm text-accent-foreground">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.sorties, 0))}</td>
+                  <td className="p-3 text-right font-mono text-sm">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.stockRestant, 0))}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          {stockWeeklyRows.length === 0 && (
+            <p className="text-center text-muted-foreground py-8">Aucune donnée</p>
+          )}
+        </div>
       ) : variant === "order" ? (
         <div className="overflow-x-auto max-w-full">
           <table className="stock-sticky-table text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", overflow: "visible" }}>
