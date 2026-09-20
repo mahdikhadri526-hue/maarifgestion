@@ -726,9 +726,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           category === "tarte" ? TARTE_ARTICLES
           : category === "nettoyant" ? NETTOYANT_ARTICLES
           : GLACE_ARTICLES;
-        const ficheType = category === "nettoyant"
-          ? "Mouvement produits nettoyants"
-          : "Mouvement glaces & tartes";
+        const ficheType = "Mouvement glaces & tartes";
         const wr = weekRangeFilter(mode, day, month, start, end);
         const data = await cached(
           `st_weekly_orders_${category}_${wr.from ?? "all"}`,
