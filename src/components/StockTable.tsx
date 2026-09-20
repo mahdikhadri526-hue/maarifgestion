@@ -39,6 +39,7 @@ import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/lib/db";
 import { cn, formatDateFR } from "@/lib/utils";
 import { downloadStructuredPdf } from "@/lib/printExport";
+import { WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES } from "@/lib/weeklyArticles";
 
 const TARTE_ARTICLES = [
   "Tarte 6", "Tarte 8", "Tarte 10", "Tte Sp.", "Tte.Sp 8", "Tte Mac.", "Tte Sor.",
@@ -336,7 +337,7 @@ const monthEndISO = (month: string) => {
 };
 
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
-  const [category, setCategory] = useState<Category | "all" | "tarte" | "glace">(variant === "order" ? "alimentaire" : "all");
+  const [category, setCategory] = useState<Category | "all" | "tarte" | "glace" | "nettoyant">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
   // Saisie non bloquante : le filtrage de la longue liste suit la frappe sans la figer.
   const deferredSearch = useDeferredValue(search);
@@ -570,7 +571,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
   };
 
-  const isWeeklyCat = category === "tarte" || category === "glace";
+  const isWeeklyCat = category === "tarte" || category === "glace" || category === "nettoyant";
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
   // Un seul chargement pour toutes les catégories : le filtre Alim./Emb. est
   // appliqué côté client pour un basculement instantané (pas de refetch).
@@ -721,7 +722,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     setWeeklyLoading(true);
     (async () => {
       try {
-        const list = category === "tarte" ? TARTE_ARTICLES : GLACE_ARTICLES;
+        const list =
+          category === "tarte" ? TARTE_ARTICLES
+          : category === "nettoyant" ? NETTOYANT_ARTICLES
+          : GLACE_ARTICLES;
+        const ficheType = category === "nettoyant"
+          ? "Mouvement produits nettoyants"
+          : "Mouvement glaces & tartes";
         const wr = weekRangeFilter(mode, day, month, start, end);
         const data = await cached(
           `st_weekly_orders_${category}_${wr.from ?? "all"}`,
@@ -731,7 +738,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               let q = supabase
                 .from("weekly_tracking")
                 .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
-                .eq("fiche_type", "Mouvement glaces & tartes")
+                .eq("fiche_type", ficheType)
                 .in("article", list as unknown as string[]);
               if (wr.from) q = q.gte("week_start", wr.from);
               return q;
@@ -1419,7 +1426,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             </div>
             <div className="flex rounded-md border overflow-hidden">
               {(variant === "order"
-                ? (["alimentaire", "emballage", "tarte", "glace"] as const)
+                ? (["alimentaire", "emballage", "tarte", "glace", "nettoyant"] as const)
                 : (["all", "alimentaire", "emballage"] as const)
               ).map((cat) => (
                 <button
@@ -1431,7 +1438,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       : "bg-card text-muted-foreground hover:bg-muted"
                   }`}
                 >
-                  {cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : cat === "emballage" ? "Emballage" : cat === "tarte" ? "Tartes" : "Glaces"}
+                  {cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : cat === "emballage" ? "Emballage" : cat === "tarte" ? "Tartes" : cat === "nettoyant" ? "Nettoyants" : "Glaces"}
                 </button>
               ))}
             </div>
