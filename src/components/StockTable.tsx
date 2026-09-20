@@ -1559,7 +1559,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       </div>
       {(loading || periodLoading || weeklyLoading) ? (
         <p className="text-center text-muted-foreground py-8">Chargement...</p>
-      ) : isWeeklyCat ? (
+      ) : isWeeklyCat && variant === "order" ? (
         <div className="bg-card rounded-lg border overflow-x-auto max-w-full">
           <table className="weekly-sticky-table text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", overflow: "visible" }}>
             <thead className="bg-muted sticky top-0 z-30">
