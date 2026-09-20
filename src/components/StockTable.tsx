@@ -1488,7 +1488,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             <div className="flex rounded-md border overflow-hidden">
               {(variant === "order"
                 ? (["alimentaire", "emballage", "tarte", "glace", "nettoyant"] as const)
-                : (["all", "alimentaire", "emballage"] as const)
+                : (["all", "alimentaire", "emballage", "creme", "tarte", "glace", "nettoyant"] as const)
               ).map((cat) => (
                 <button
                   key={cat}
