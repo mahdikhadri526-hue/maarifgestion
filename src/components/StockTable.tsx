@@ -39,7 +39,7 @@ import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/lib/db";
 import { cn, formatDateFR } from "@/lib/utils";
 import { downloadStructuredPdf } from "@/lib/printExport";
-import { WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES } from "@/lib/weeklyArticles";
+import { WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES, WEEKLY_ALL_ARTICLES as ALL_WEEKLY_ARTICLES } from "@/lib/weeklyArticles";
 
 const TARTE_ARTICLES = [
   "Tarte 6", "Tarte 8", "Tarte 10", "Tte Sp.", "Tte.Sp 8", "Tte Mac.", "Tte Sor.",
@@ -337,7 +337,7 @@ const monthEndISO = (month: string) => {
 };
 
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
-  const [category, setCategory] = useState<Category | "all" | "tarte" | "glace" | "nettoyant">(variant === "order" ? "alimentaire" : "all");
+  const [category, setCategory] = useState<Category | "all" | "tarte" | "glace" | "nettoyant" | "creme">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
   // Saisie non bloquante : le filtrage de la longue liste suit la frappe sans la figer.
   const deferredSearch = useDeferredValue(search);
@@ -571,7 +571,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
   };
 
-  const isWeeklyCat = category === "tarte" || category === "glace" || category === "nettoyant";
+  const isWeeklyCat = category === "tarte" || category === "glace" || category === "nettoyant" || category === "creme";
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
   // Un seul chargement pour toutes les catégories : le filtre Alim./Emb. est
   // appliqué côté client pour un basculement instantané (pas de refetch).
@@ -758,6 +758,69 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         if (!cancelled) {
           toast.error("Erreur de chargement des sorties");
           setWeeklyRows([]);
+        }
+      } finally {
+        if (!cancelled) setWeeklyLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [variant, category, isWeeklyCat, mode, day, month, start, end]);
+
+  // Stock restant : catégories hebdo (crème fraîche, tartes, glaces, nettoyants)
+  // Même principe que alimentaire/emballage : SI + Entrées - Sorties = Restant.
+  const [stockWeeklyRows, setStockWeeklyRows] = useState<Array<{ article: string; stockInitial: number; entrees: number; sorties: number; stockRestant: number }>>([]);
+  useEffect(() => {
+    if (variant !== "stock" || !isWeeklyCat) {
+      setStockWeeklyRows([]);
+      return;
+    }
+    let cancelled = false;
+    setWeeklyLoading(true);
+    (async () => {
+      try {
+        const list =
+          category === "tarte" ? TARTE_ARTICLES
+          : category === "nettoyant" ? NETTOYANT_ARTICLES
+          : category === "glace" ? GLACE_ARTICLES.filter((a) => a !== CHANTILLY_WEEKLY_ARTICLE)
+          : [CHANTILLY_WEEKLY_ARTICLE];
+        const ficheType = "Mouvement glaces & tartes";
+        const wr = weekRangeFilter(mode, day, month, start, end);
+        const data = await cached(
+          `st_weekly_stock_${category}_${wr.from ?? "all"}`,
+          ["weekly_tracking"],
+          () =>
+            fetchAllRows<WeeklyTrackingOrderRecord>(() => {
+              let q = supabase
+                .from("weekly_tracking")
+                .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
+                .eq("fiche_type", ficheType)
+                .in("article", list as unknown as string[]);
+              if (wr.from) q = q.gte("week_start", wr.from);
+              return q;
+            }),
+        );
+        if (cancelled) return;
+        const isInSelectedPeriod = (date: string) => {
+          if (mode === "day") return day ? date === day : true;
+          if (mode === "month") return month ? date.startsWith(month) : true;
+          if (mode === "period") {
+            if (start && date < start) return false;
+            if (end && date > end) return false;
+            return true;
+          }
+          return true;
+        };
+        const rows = (list as readonly string[])
+          .map((article) => ({
+            article,
+            ...buildWeeklyAggregateTotals(data || [], [article], isInSelectedPeriod, false),
+          }))
+          .filter((r) => r.stockInitial !== 0 || r.entrees !== 0 || r.sorties !== 0 || r.stockRestant !== 0);
+        setStockWeeklyRows(rows);
+      } catch {
+        if (!cancelled) {
+          toast.error("Erreur de chargement du stock hebdomadaire");
+          setStockWeeklyRows([]);
         }
       } finally {
         if (!cancelled) setWeeklyLoading(false);
@@ -1425,7 +1488,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             <div className="flex rounded-md border overflow-hidden">
               {(variant === "order"
                 ? (["alimentaire", "emballage", "tarte", "glace", "nettoyant"] as const)
-                : (["all", "alimentaire", "emballage"] as const)
+                : (["all", "alimentaire", "emballage", "creme", "tarte", "glace", "nettoyant"] as const)
               ).map((cat) => (
                 <button
                   key={cat}
@@ -1436,7 +1499,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       : "bg-card text-muted-foreground hover:bg-muted"
                   }`}
                 >
-                  {cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : cat === "emballage" ? "Emballage" : cat === "tarte" ? "Tartes" : cat === "nettoyant" ? "Nettoyants" : "Glaces"}
+                  {cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : cat === "emballage" ? "Emballage" : cat === "creme" ? "Crème fraîche" : cat === "tarte" ? "Tartes" : cat === "nettoyant" ? "Nettoyants" : "Glaces"}
                 </button>
               ))}
             </div>
@@ -1496,7 +1559,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       </div>
       {(loading || periodLoading || weeklyLoading) ? (
         <p className="text-center text-muted-foreground py-8">Chargement...</p>
-      ) : isWeeklyCat ? (
+      ) : isWeeklyCat && variant === "order" ? (
         <div className="bg-card rounded-lg border overflow-x-auto max-w-full">
           <table className="weekly-sticky-table text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", overflow: "visible" }}>
             <thead className="bg-muted sticky top-0 z-30">
@@ -1592,6 +1655,45 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             </tbody>
           </table>
           {weeklyRows.length === 0 && (
+            <p className="text-center text-muted-foreground py-8">Aucune donnée</p>
+          )}
+        </div>
+      ) : isWeeklyCat ? (
+        <div className="bg-card rounded-lg border overflow-x-auto max-w-full">
+          <table className="weekly-sticky-table text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", overflow: "visible" }}>
+            <thead className="bg-muted sticky top-0 z-30">
+              <tr className="border-b bg-muted/50">
+                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Article</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Restant</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stockWeeklyRows
+                .filter((r) => r.article.toLowerCase().includes(search.toLowerCase()))
+                .map((r, rowI) => (
+                  <tr key={r.article} className={cn("border-b last:border-0 hover:bg-muted/30 transition-colors", rowI % 2 === 1 && "bg-muted/30")}>
+                    <td className="p-3 text-sm font-medium weekly-sticky-column border-r bg-card w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>{r.article}</td>
+                    <td className="p-3 text-right font-mono text-sm text-primary font-semibold">{r.stockInitial}</td>
+                    <td className="p-3 text-right font-mono text-sm text-success">{r.entrees}</td>
+                    <td className="p-3 text-right font-mono text-sm text-accent-foreground">{r.sorties}</td>
+                    <td className={`p-3 text-right font-mono text-sm font-semibold ${r.stockRestant < 0 ? "text-destructive" : ""}`}>{r.stockRestant}</td>
+                  </tr>
+                ))}
+              {stockWeeklyRows.length > 0 && (
+                <tr className="border-t-2 bg-muted/40 font-semibold">
+                  <td className="p-3 text-sm weekly-sticky-column border-r bg-muted w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>TOTAL</td>
+                  <td className="p-3 text-right font-mono text-sm text-primary">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.stockInitial, 0))}</td>
+                  <td className="p-3 text-right font-mono text-sm text-success">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.entrees, 0))}</td>
+                  <td className="p-3 text-right font-mono text-sm text-accent-foreground">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.sorties, 0))}</td>
+                  <td className="p-3 text-right font-mono text-sm">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.stockRestant, 0))}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+          {stockWeeklyRows.length === 0 && (
             <p className="text-center text-muted-foreground py-8">Aucune donnée</p>
           )}
         </div>
