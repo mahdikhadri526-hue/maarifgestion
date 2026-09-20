@@ -1499,7 +1499,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       : "bg-card text-muted-foreground hover:bg-muted"
                   }`}
                 >
-                  {cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : cat === "emballage" ? "Emballage" : cat === "tarte" ? "Tartes" : cat === "nettoyant" ? "Nettoyants" : "Glaces"}
+                  {cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : cat === "emballage" ? "Emballage" : cat === "creme" ? "Crème fraîche" : cat === "tarte" ? "Tartes" : cat === "nettoyant" ? "Nettoyants" : "Glaces"}
                 </button>
               ))}
             </div>
