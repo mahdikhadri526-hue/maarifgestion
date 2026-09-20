@@ -337,7 +337,7 @@ const monthEndISO = (month: string) => {
 };
 
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
-  const [category, setCategory] = useState<Category | "all" | "tarte" | "glace" | "nettoyant">(variant === "order" ? "alimentaire" : "all");
+  const [category, setCategory] = useState<Category | "all" | "tarte" | "glace" | "nettoyant" | "creme">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
   // Saisie non bloquante : le filtrage de la longue liste suit la frappe sans la figer.
   const deferredSearch = useDeferredValue(search);
@@ -571,7 +571,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
   };
 
-  const isWeeklyCat = category === "tarte" || category === "glace" || category === "nettoyant";
+  const isWeeklyCat = category === "tarte" || category === "glace" || category === "nettoyant" || category === "creme";
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
   // Un seul chargement pour toutes les catégories : le filtre Alim./Emb. est
   // appliqué côté client pour un basculement instantané (pas de refetch).
