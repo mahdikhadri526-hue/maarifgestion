@@ -810,12 +810,26 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           }
           return true;
         };
+        // Le stock restant doit refléter le dernier SI saisi dans le suivi hebdo
+        // (les écarts de saisie ne doivent pas s'accumuler) : on borne les données
+        // à la fin de la période puis on prend le stock réel (matchAll = true).
+        const periodEnd =
+          mode === "day" ? (day || "") :
+          mode === "month" ? (month ? monthEndISO(month) : "") :
+          mode === "period" ? (end || "") : "";
+        const bounded = (data || []).filter((r) => {
+          if (!periodEnd) return true;
+          const dayIdx = DAYS.indexOf(r.day_of_week as typeof DAYS[number]);
+          if (dayIdx < 0 || !r.week_start) return false;
+          return trackingDate(r.week_start, dayIdx) <= periodEnd;
+        });
         const rows = (list as readonly string[])
           .map((article) => ({
             article,
-            ...buildWeeklyAggregateTotals(data || [], [article], isInSelectedPeriod, false),
+            ...buildWeeklyAggregateTotals(bounded, [article], isInSelectedPeriod, true),
           }))
           .filter((r) => r.stockInitial !== 0 || r.entrees !== 0 || r.sorties !== 0 || r.stockRestant !== 0);
+
         setStockWeeklyRows(rows);
       } catch {
         if (!cancelled) {
