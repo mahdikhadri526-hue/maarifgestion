@@ -781,8 +781,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         const list =
           category === "tarte" ? TARTE_ARTICLES
           : category === "nettoyant" ? NETTOYANT_ARTICLES
-          : category === "glace" ? GLACE_ARTICLES.filter((a) => a !== "Crème fraîche (mousse fouettée)")
-          : [CREME_ARTICLE];
+          : category === "glace" ? GLACE_ARTICLES.filter((a) => a !== CHANTILLY_WEEKLY_ARTICLE)
+          : [CHANTILLY_WEEKLY_ARTICLE];
         const ficheType = "Mouvement glaces & tartes";
         const wr = weekRangeFilter(mode, day, month, start, end);
         const data = await cached(
