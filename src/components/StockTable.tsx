@@ -570,7 +570,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
   };
 
-  const isWeeklyCat = category === "tarte" || category === "glace";
+  const isWeeklyCat = category === "tarte" || category === "glace" || category === "nettoyant";
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
   // Un seul chargement pour toutes les catégories : le filtre Alim./Emb. est
   // appliqué côté client pour un basculement instantané (pas de refetch).
