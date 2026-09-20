@@ -766,6 +766,69 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     return () => { cancelled = true; };
   }, [variant, category, isWeeklyCat, mode, day, month, start, end]);
 
+  // Stock restant : catégories hebdo (crème fraîche, tartes, glaces, nettoyants)
+  // Même principe que alimentaire/emballage : SI + Entrées - Sorties = Restant.
+  const [stockWeeklyRows, setStockWeeklyRows] = useState<Array<{ article: string; stockInitial: number; entrees: number; sorties: number; stockRestant: number }>>([]);
+  useEffect(() => {
+    if (variant !== "stock" || !isWeeklyCat) {
+      setStockWeeklyRows([]);
+      return;
+    }
+    let cancelled = false;
+    setWeeklyLoading(true);
+    (async () => {
+      try {
+        const list =
+          category === "tarte" ? TARTE_ARTICLES
+          : category === "nettoyant" ? NETTOYANT_ARTICLES
+          : category === "glace" ? GLACE_ARTICLES
+          : ALL_WEEKLY_ARTICLES;
+        const ficheType = category === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
+        const wr = weekRangeFilter(mode, day, month, start, end);
+        const data = await cached(
+          `st_weekly_stock_${category}_${wr.from ?? "all"}`,
+          ["weekly_tracking"],
+          () =>
+            fetchAllRows<WeeklyTrackingOrderRecord>(() => {
+              let q = supabase
+                .from("weekly_tracking")
+                .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
+                .eq("fiche_type", ficheType)
+                .in("article", list as unknown as string[]);
+              if (wr.from) q = q.gte("week_start", wr.from);
+              return q;
+            }),
+        );
+        if (cancelled) return;
+        const isInSelectedPeriod = (date: string) => {
+          if (mode === "day") return day ? date === day : true;
+          if (mode === "month") return month ? date.startsWith(month) : true;
+          if (mode === "period") {
+            if (start && date < start) return false;
+            if (end && date > end) return false;
+            return true;
+          }
+          return true;
+        };
+        const rows = (list as readonly string[])
+          .map((article) => ({
+            article,
+            ...buildWeeklyAggregateTotals(data || [], [article], isInSelectedPeriod, false),
+          }))
+          .filter((r) => r.stockInitial !== 0 || r.entrees !== 0 || r.sorties !== 0 || r.stockRestant !== 0);
+        setStockWeeklyRows(rows);
+      } catch {
+        if (!cancelled) {
+          toast.error("Erreur de chargement du stock hebdomadaire");
+          setStockWeeklyRows([]);
+        }
+      } finally {
+        if (!cancelled) setWeeklyLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [variant, category, isWeeklyCat, mode, day, month, start, end]);
+
   // Load weekly_tracking data for MACARON aggregate row in Stock Restant
   useEffect(() => {
     if (variant !== "stock" || category !== "all") {
