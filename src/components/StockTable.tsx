@@ -721,7 +721,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     setWeeklyLoading(true);
     (async () => {
       try {
-        const list = category === "tarte" ? TARTE_ARTICLES : GLACE_ARTICLES;
+        const list =
+          category === "tarte" ? TARTE_ARTICLES
+          : category === "nettoyant" ? NETTOYANT_ARTICLES
+          : GLACE_ARTICLES;
+        const ficheType = category === "nettoyant"
+          ? "Mouvement produits nettoyants"
+          : "Mouvement glaces & tartes";
         const wr = weekRangeFilter(mode, day, month, start, end);
         const data = await cached(
           `st_weekly_orders_${category}_${wr.from ?? "all"}`,
@@ -731,7 +737,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               let q = supabase
                 .from("weekly_tracking")
                 .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
-                .eq("fiche_type", "Mouvement glaces & tartes")
+                .eq("fiche_type", ficheType)
                 .in("article", list as unknown as string[]);
               if (wr.from) q = q.gte("week_start", wr.from);
               return q;
