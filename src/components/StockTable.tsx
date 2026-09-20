@@ -39,7 +39,7 @@ import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/lib/db";
 import { cn, formatDateFR } from "@/lib/utils";
 import { downloadStructuredPdf } from "@/lib/printExport";
-import { WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES } from "@/lib/weeklyArticles";
+import { WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES, WEEKLY_ALL_ARTICLES as ALL_WEEKLY_ARTICLES } from "@/lib/weeklyArticles";
 
 const TARTE_ARTICLES = [
   "Tarte 6", "Tarte 8", "Tarte 10", "Tte Sp.", "Tte.Sp 8", "Tte Mac.", "Tte Sor.",
