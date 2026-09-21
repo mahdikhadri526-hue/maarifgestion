@@ -15,9 +15,9 @@ export function isPreviewHost(): boolean {
   return false;
 }
 
-export function isTechEnabled(email?: string | null): boolean {
-  if (isPreviewHost()) return true;
-  return !!email && TECH_ACCOUNT_EMAILS.includes(email.trim().toLowerCase());
+export function isTechEnabled(_email?: string | null): boolean {
+  // Masqué sur les domaines publiés pour tous les comptes (pas de « go »).
+  return isPreviewHost();
 }
 
 /** @deprecated préférer isTechEnabled(user?.email) */
