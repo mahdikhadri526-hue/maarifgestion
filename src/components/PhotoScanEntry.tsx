@@ -52,7 +52,10 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
     try {
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
-      const buf = await file.arrayBuffer();
+      // Les photos de téléphone font plusieurs Mo : on les réduit avant envoi,
+      // c'est ce qui rendait l'analyse très lente.
+      const compressed = await compressImage(file);
+      const buf = await compressed.blob.arrayBuffer();
       const bytes = new Uint8Array(buf);
       let binary = "";
       const chunk = 0x8000;
@@ -61,7 +64,7 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
       }
       const base64 = btoa(binary);
       const { data, error } = await supabase.functions.invoke("scan-stock-entry", {
-        body: { imageBase64: base64, mimeType: file.type, articles },
+        body: { imageBase64: base64, mimeType: compressed.mimeType, articles },
       });
       if (error) throw error;
       const detected: ScannedEntry[] = (data?.entries || []).map((e: any) => ({
@@ -302,6 +305,38 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
       </Dialog>
     </>
   );
+}
+
+/**
+ * Réduit la photo (max 1280 px, JPEG qualité 0,7) avant l'envoi à l'analyse.
+ * Une photo de téléphone de 4 Mo tombe ainsi à ~200 Ko : l'upload et l'analyse
+ * sont nettement plus rapides sans perte de lisibilité du texte.
+ */
+async function compressImage(
+  file: File,
+  maxSide = 1280,
+  quality = 0.7,
+): Promise<{ blob: Blob; mimeType: string }> {
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+    const w = Math.round(bitmap.width * scale);
+    const h = Math.round(bitmap.height * scale);
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("no ctx");
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    bitmap.close?.();
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob(resolve, "image/jpeg", quality),
+    );
+    if (!blob) throw new Error("no blob");
+    return { blob, mimeType: "image/jpeg" };
+  } catch {
+    return { blob: file, mimeType: file.type || "image/jpeg" };
+  }
 }
 
 function matchArticle(detected: string | null | undefined, list: string[]): string | null {
