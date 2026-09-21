@@ -52,7 +52,10 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
     try {
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
-      const buf = await file.arrayBuffer();
+      // Les photos de téléphone font plusieurs Mo : on les réduit avant envoi,
+      // c'est ce qui rendait l'analyse très lente.
+      const compressed = await compressImage(file);
+      const buf = await compressed.blob.arrayBuffer();
       const bytes = new Uint8Array(buf);
       let binary = "";
       const chunk = 0x8000;
