@@ -220,12 +220,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setPdvLoading(false);
   }, []);
 
-  const loadRoleAndPerms = useCallback(async (uid: string) => {
-    const [{ data: roles }, { data: perms }, { data: userPdvs }] = await Promise.all([
+  const loadRoleAndPerms = useCallback(async (uid: string, attempt = 0) => {
+    const [
+      { data: roles, error: rolesErr },
+      { data: perms, error: permsErr },
+      { data: userPdvs, error: pdvsErr },
+    ] = await Promise.all([
       supabase.from("user_roles").select("role").eq("user_id", uid),
       supabase.from("user_permissions").select("permission_key, allowed").eq("user_id", uid),
       supabase.from("user_pdvs").select("pdv_id").eq("user_id", uid),
     ]);
+
+    // Jeton expiré / session invalide : les requêtes reviennent en erreur ou
+    // vides. On réessaie une fois après rafraîchissement, sinon on déconnecte
+    // proprement au lieu d'afficher « Aucune permission ».
+    const failed = !!(rolesErr || permsErr || pdvsErr);
+    const empty = !failed && (roles?.length ?? 0) === 0 && (perms?.length ?? 0) === 0;
+    if ((failed || empty) && attempt < 1) {
+      const { data: refreshed } = await supabase.auth.refreshSession();
+      const { data: checked } = await supabase.auth.getUser();
+      if (!refreshed?.session && !checked?.user) {
+        await supabase.auth.signOut();
+        return;
+      }
+      return loadRoleAndPerms(uid, attempt + 1);
+    }
+    if (failed) {
+      const { data: checked } = await supabase.auth.getUser();
+      if (!checked?.user) {
+        await supabase.auth.signOut();
+        return;
+      }
+    }
+
     let r: AppRole | null = null;
     if (roles && roles.length > 0) {
       r = ROLE_ORDER.find((o) => roles.some((x: any) => x.role === o)) ?? (roles[0].role as AppRole);
