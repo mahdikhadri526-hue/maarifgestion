@@ -64,7 +64,7 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
       }
       const base64 = btoa(binary);
       const { data, error } = await supabase.functions.invoke("scan-stock-entry", {
-        body: { imageBase64: base64, mimeType: file.type, articles },
+        body: { imageBase64: base64, mimeType: compressed.mimeType, articles },
       });
       if (error) throw error;
       const detected: ScannedEntry[] = (data?.entries || []).map((e: any) => ({
