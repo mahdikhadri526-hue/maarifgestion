@@ -256,9 +256,9 @@ const Index = () => {
             {tab === "ecarts" && <EcartModule />}
             {tab === "pep" && <PepModule />}
             {TECH_ENABLED && tab === "tech" && <TechModule />}
-            {tab === "pointage" && <AttendanceModule />}
-            {tab === "rh" && <HrModule />}
-            {tab === "planning" && <PlanningModule />}
+            {ATTENDANCE_ENABLED && tab === "pointage" && <AttendanceModule />}
+            {ATTENDANCE_ENABLED && tab === "rh" && <HrModule />}
+            {ATTENDANCE_ENABLED && tab === "planning" && <PlanningModule />}
           </Suspense>
         )}
       </main>

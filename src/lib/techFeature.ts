@@ -1,7 +1,8 @@
 /**
- * Module « Suivi Technique » : visible en aperçu (preview / localhost) et,
- * sur les domaines publiés, uniquement pour le compte du responsable technique.
- * Masqué pour tous les autres comptes tant que le signal « go » n'a pas été donné.
+ * Modules « Suivi Technique », « Pointage », « RH » et « Planning » :
+ * visibles uniquement en aperçu (preview / localhost).
+ * Masqués pour tous les comptes sur les domaines publiés
+ * tant que le signal « go » n'a pas été donné.
  */
 export const TECH_ACCOUNT_EMAILS = ["gestion-technique@oliveri.com"];
 
