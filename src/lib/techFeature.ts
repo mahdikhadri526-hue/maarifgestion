@@ -1,7 +1,8 @@
 /**
- * Module « Suivi Technique » : visible en aperçu (preview / localhost) et,
- * sur les domaines publiés, uniquement pour le compte du responsable technique.
- * Masqué pour tous les autres comptes tant que le signal « go » n'a pas été donné.
+ * Modules « Suivi Technique », « Pointage », « RH » et « Planning » :
+ * visibles uniquement en aperçu (preview / localhost).
+ * Masqués pour tous les comptes sur les domaines publiés
+ * tant que le signal « go » n'a pas été donné.
  */
 export const TECH_ACCOUNT_EMAILS = ["gestion-technique@oliveri.com"];
 
@@ -14,9 +15,9 @@ export function isPreviewHost(): boolean {
   return false;
 }
 
-export function isTechEnabled(email?: string | null): boolean {
-  if (isPreviewHost()) return true;
-  return !!email && TECH_ACCOUNT_EMAILS.includes(email.trim().toLowerCase());
+export function isTechEnabled(_email?: string | null): boolean {
+  // Masqué sur les domaines publiés pour tous les comptes (pas de « go »).
+  return isPreviewHost();
 }
 
 /** @deprecated préférer isTechEnabled(user?.email) */
