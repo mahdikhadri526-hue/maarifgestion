@@ -297,6 +297,9 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
                             {r.direction === "recu" ? <ArrowDownLeft className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
                             {r.direction === "recu" ? "Reçu" : "Envoyé"}
                           </span>
+                          {r.is_return && (
+                            <span className="ml-1 rounded-full bg-warning/15 text-warning px-1.5 py-0.5 text-[10px] font-semibold align-middle">Retour</span>
+                          )}
                         </td>
                         <td className="p-2 whitespace-nowrap">{formatDateFR(r.transfer_date)}</td>
                         <td className="p-2">{r.article ?? "—"}</td>
@@ -305,7 +308,23 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
                         <td className="p-2">{r.location ?? "—"}</td>
                         <td className="p-2">{r.performed_by ?? "—"}</td>
                         <td className="p-2">{r.notes ?? "—"}</td>
-                        <td className="p-2 text-right">
+                        <td className="p-2 text-right whitespace-nowrap">
+                          {!r.is_return && (
+                            returnedIds.has(r.id) ? (
+                              <span className="mr-1 text-[10px] text-muted-foreground">Retourné</span>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="mr-1 h-7 px-2 text-xs"
+                                onClick={() => handleReturn(r)}
+                                title={r.direction === "recu" ? "Renvoyer ce transfert reçu" : "Enregistrer le retour de ce transfert envoyé"}
+                              >
+                                <Undo2 className="h-3.5 w-3.5 mr-1" />
+                                Retour
+                              </Button>
+                            )
+                          )}
                           <Button variant="ghost" size="sm" onClick={() => handleDelete(r.id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
