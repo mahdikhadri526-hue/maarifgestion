@@ -106,6 +106,11 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0], "fr"));
   }, [rows]);
 
+  const returnedIds = useMemo(
+    () => new Set(rows.filter((r) => r.return_of_id).map((r) => r.return_of_id as string)),
+    [rows],
+  );
+
   const reset = () => {
     setArticle("");
     setQuantity("");
