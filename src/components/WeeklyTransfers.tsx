@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowDownLeft, ArrowUpRight, Plus, Trash2, ChevronDown } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Plus, Trash2, ChevronDown, Undo2 } from "lucide-react";
 import { cn, formatDateFR } from "@/lib/utils";
 import { useOperators } from "@/lib/roster";
 
@@ -29,6 +29,8 @@ interface TransferRow {
   location: string | null;
   performed_by: string | null;
   notes: string | null;
+  is_return?: boolean | null;
+  return_of_id?: string | null;
 }
 
 interface Props {
@@ -63,7 +65,7 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
     setLoading(true);
     const { data, error } = await supabase
       .from("weekly_transfers")
-      .select("id,fiche_type,week_start,transfer_date,direction,article,quantity,lot_number,location,performed_by,notes")
+      .select("id,fiche_type,week_start,transfer_date,direction,article,quantity,lot_number,location,performed_by,notes,is_return,return_of_id")
       .eq("fiche_type", ficheKey)
       .order("transfer_date", { ascending: false })
       .order("created_at", { ascending: false });
@@ -104,6 +106,11 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
     return Array.from(m.entries()).sort((a, b) => a[0].localeCompare(b[0], "fr"));
   }, [rows]);
 
+  const returnedIds = useMemo(
+    () => new Set(rows.filter((r) => r.return_of_id).map((r) => r.return_of_id as string)),
+    [rows],
+  );
+
   const reset = () => {
     setArticle("");
     setQuantity("");
@@ -136,6 +143,34 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
     }
     toast.success(direction === "recu" ? "Transfert reçu enregistré" : "Transfert envoyé enregistré");
     reset();
+    load();
+  };
+
+  // Retour d'un transfert déjà effectué : crée le mouvement inverse
+  const handleReturn = async (r: TransferRow) => {
+    const who = performedBy || r.performed_by;
+    if (!who) return toast.error("Choisissez d'abord qui effectue le retour");
+    const reverse: Direction = r.direction === "recu" ? "envoye" : "recu";
+    const { error } = await supabase.from("weekly_transfers").insert({
+      fiche_type: ficheKey,
+      week_start: weekStart,
+      transfer_date: todayIso(),
+      direction: reverse,
+      article: r.article,
+      quantity: r.quantity,
+      lot_number: r.lot_number,
+      location: r.location,
+      performed_by: who,
+      notes: `Retour du transfert du ${formatDateFR(r.transfer_date)}${r.notes ? ` — ${r.notes}` : ""}`,
+      is_return: true,
+      return_of_id: r.id,
+    } as any);
+    if (error) {
+      toast.error("Retour impossible");
+      console.error(error);
+      return;
+    }
+    toast.success(reverse === "envoye" ? "Retour envoyé enregistré" : "Retour reçu enregistré");
     load();
   };
 
@@ -267,6 +302,9 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
                             {r.direction === "recu" ? <ArrowDownLeft className="h-3.5 w-3.5" /> : <ArrowUpRight className="h-3.5 w-3.5" />}
                             {r.direction === "recu" ? "Reçu" : "Envoyé"}
                           </span>
+                          {r.is_return && (
+                            <span className="ml-1 rounded-full bg-warning/15 text-warning px-1.5 py-0.5 text-[10px] font-semibold align-middle">Retour</span>
+                          )}
                         </td>
                         <td className="p-2 whitespace-nowrap">{formatDateFR(r.transfer_date)}</td>
                         <td className="p-2">{r.article ?? "—"}</td>
@@ -275,7 +313,23 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
                         <td className="p-2">{r.location ?? "—"}</td>
                         <td className="p-2">{r.performed_by ?? "—"}</td>
                         <td className="p-2">{r.notes ?? "—"}</td>
-                        <td className="p-2 text-right">
+                        <td className="p-2 text-right whitespace-nowrap">
+                          {!r.is_return && (
+                            returnedIds.has(r.id) ? (
+                              <span className="mr-1 text-[10px] text-muted-foreground">Retourné</span>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="mr-1 h-7 px-2 text-xs"
+                                onClick={() => handleReturn(r)}
+                                title={r.direction === "recu" ? "Renvoyer ce transfert reçu" : "Enregistrer le retour de ce transfert envoyé"}
+                              >
+                                <Undo2 className="h-3.5 w-3.5 mr-1" />
+                                Retour
+                              </Button>
+                            )
+                          )}
                           <Button variant="ghost" size="sm" onClick={() => handleDelete(r.id)}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>

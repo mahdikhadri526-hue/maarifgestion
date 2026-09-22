@@ -2308,12 +2308,14 @@ export type Database = {
           direction: string
           fiche_type: string
           id: string
+          is_return: boolean
           location: string | null
           lot_number: string | null
           notes: string | null
           pdv_id: string
           performed_by: string | null
           quantity: number | null
+          return_of_id: string | null
           transfer_date: string
           updated_at: string
           week_start: string
@@ -2324,12 +2326,14 @@ export type Database = {
           direction: string
           fiche_type: string
           id?: string
+          is_return?: boolean
           location?: string | null
           lot_number?: string | null
           notes?: string | null
           pdv_id: string
           performed_by?: string | null
           quantity?: number | null
+          return_of_id?: string | null
           transfer_date: string
           updated_at?: string
           week_start: string
@@ -2340,12 +2344,14 @@ export type Database = {
           direction?: string
           fiche_type?: string
           id?: string
+          is_return?: boolean
           location?: string | null
           lot_number?: string | null
           notes?: string | null
           pdv_id?: string
           performed_by?: string | null
           quantity?: number | null
+          return_of_id?: string | null
           transfer_date?: string
           updated_at?: string
           week_start?: string
@@ -2356,6 +2362,13 @@ export type Database = {
             columns: ["pdv_id"]
             isOneToOne: false
             referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weekly_transfers_return_of_id_fkey"
+            columns: ["return_of_id"]
+            isOneToOne: false
+            referencedRelation: "weekly_transfers"
             referencedColumns: ["id"]
           },
         ]
