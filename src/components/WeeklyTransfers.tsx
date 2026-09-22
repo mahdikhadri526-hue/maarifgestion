@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowDownLeft, ArrowUpRight, Plus, Trash2, ChevronDown, Undo2 } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Plus, ChevronDown, Undo2 } from "lucide-react";
 import { cn, formatDateFR } from "@/lib/utils";
 import { useOperators } from "@/lib/roster";
 
@@ -174,14 +174,6 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
     load();
   };
 
-  const handleDelete = async (id: string) => {
-    const { error } = await supabase.from("weekly_transfers").delete().eq("id", id);
-    if (error) {
-      toast.error("Suppression impossible");
-      return;
-    }
-    setRows((prev) => prev.filter((r) => r.id !== id));
-  };
 
   return (
     <div className="mt-3 no-print">
@@ -330,9 +322,6 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
                               </Button>
                             )
                           )}
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(r.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
                         </td>
                       </tr>
                     ))}
