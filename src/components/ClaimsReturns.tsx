@@ -21,7 +21,6 @@ import {
   CLAIM_TYPES,
   ClaimEntry,
   ClaimKind,
-  deleteClaim,
   getClaims,
 } from "@/lib/claimsData";
 
@@ -265,7 +264,7 @@ export function ClaimsReturns() {
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={isClaim ? 9 : 7} className="border p-4 text-center text-muted-foreground">
+                <td colSpan={isClaim ? 8 : 6} className="border p-4 text-center text-muted-foreground">
                   Aucune fiche enregistrée
                 </td>
               </tr>
