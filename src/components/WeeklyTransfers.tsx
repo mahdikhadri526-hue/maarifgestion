@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowDownLeft, ArrowUpRight, Plus, Trash2, ChevronDown } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, Plus, Trash2, ChevronDown, Undo2 } from "lucide-react";
 import { cn, formatDateFR } from "@/lib/utils";
 import { useOperators } from "@/lib/roster";
 
@@ -29,6 +29,8 @@ interface TransferRow {
   location: string | null;
   performed_by: string | null;
   notes: string | null;
+  is_return?: boolean | null;
+  return_of_id?: string | null;
 }
 
 interface Props {
