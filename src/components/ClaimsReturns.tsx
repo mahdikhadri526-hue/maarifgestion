@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MessageSquareWarning, Printer, Trash2 } from "lucide-react";
+import { MessageSquareWarning, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { useManagers } from "@/lib/roster";
 import { formatDateFR } from "@/lib/utils";
@@ -21,7 +21,6 @@ import {
   CLAIM_TYPES,
   ClaimEntry,
   ClaimKind,
-  deleteClaim,
   getClaims,
 } from "@/lib/claimsData";
 
@@ -94,16 +93,6 @@ export function ClaimsReturns() {
       toast.error("Erreur", { description: e.message });
     } finally {
       setSaving(false);
-    }
-  };
-
-  const remove = async (id: string) => {
-    try {
-      await deleteClaim(id);
-      setRows((r) => r.filter((x) => x.id !== id));
-      toast.success("Supprimé");
-    } catch (e: any) {
-      toast.error("Erreur", { description: e.message });
     }
   };
 
@@ -270,13 +259,12 @@ export function ClaimsReturns() {
               <th className="border p-2">Produit</th>
               <th className="border p-2">Description</th>
               <th className="border p-2">Action corrective</th>
-              <th className="border p-2 w-[50px]"></th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={isClaim ? 9 : 7} className="border p-4 text-center text-muted-foreground">
+                <td colSpan={isClaim ? 8 : 6} className="border p-4 text-center text-muted-foreground">
                   Aucune fiche enregistrée
                 </td>
               </tr>
@@ -291,11 +279,6 @@ export function ClaimsReturns() {
                 <td className="border p-2">{r.produit ?? "—"}</td>
                 <td className="border p-2">{r.description ?? "—"}</td>
                 <td className="border p-2">{r.actionCorrective ?? "—"}</td>
-                <td className="border p-1 text-center">
-                  <Button variant="ghost" size="icon" onClick={() => remove(r.id)}>
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
-                </td>
               </tr>
             ))}
           </tbody>
