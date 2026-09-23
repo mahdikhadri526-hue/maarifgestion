@@ -17,13 +17,8 @@ import { RosterManagement } from "@/components/roster/RosterManagement";
 
 const PROTECTED_EMAILS = ["gestionmaarif1@gmail.com"];
 
-const passwordError = (password: string) => {
-  if (password.length < 8) return "Le mot de passe doit contenir au moins 8 caractères.";
-  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
-    return "Utilisez au moins une minuscule, une majuscule, un chiffre et un symbole.";
-  }
-  return null;
-};
+const passwordError = (password: string) =>
+  password.length < 6 ? "Le mot de passe doit contenir au moins 6 caractères." : null;
 
 const friendlyAdminError = (message: string) => {
   const normalized = message.toLowerCase();
@@ -493,9 +488,9 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
               <CardContent className="grid gap-2 sm:grid-cols-5">
                 <Input placeholder="Email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
                 <Input
-                  placeholder="Mot de passe sécurisé"
+                  placeholder="Mot de passe"
                   type="password"
-                  minLength={8}
+                  minLength={6}
                   autoComplete="new-password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -613,14 +608,14 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
           <Input
             placeholder="Nouveau mot de passe"
             type="password"
-            minLength={8}
+            minLength={6}
             autoComplete="new-password"
             value={pwdValue}
             onChange={(e) => setPwdValue(e.target.value)}
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setPwdTarget(null)}>Annuler</Button>
-            <Button onClick={changePassword} disabled={busy || pwdValue.length < 8}>Enregistrer</Button>
+            <Button onClick={changePassword} disabled={busy || pwdValue.length < 6}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
