@@ -7,11 +7,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, Pdv } from "@/contexts/AuthContext";
 
+const HIDDEN_PDVS = ["admin mohammedia", "mohammedia", "miramar", "mansouria"];
+const HIDDEN_ACCOUNTS = ["oliverimohammedia2016", "oliverimohammedia2026", "gestion-mohammedia", "gestion-miramar", "gestion-mansouria"];
+
 export function PdvSelector() {
   const { pdvs, pdvLoading, selectPdv, signOut, user } = useAuth();
   const [pending, setPending] = useState<Pdv | null>(null);
   const [code, setCode] = useState("");
   const [checking, setChecking] = useState(false);
+
+  const emailPrefix = (user?.email ?? "").toLowerCase().split("@")[0];
+  const isHiddenAccount = HIDDEN_ACCOUNTS.includes(emailPrefix);
+  const visiblePdvs = isHiddenAccount
+    ? pdvs
+    : pdvs.filter((p) => !HIDDEN_PDVS.includes(p.name.trim().toLowerCase()));
 
   const submitCode = async () => {
     if (!pending || !code.trim()) return;
@@ -87,12 +96,12 @@ export function PdvSelector() {
         <CardContent className="space-y-2">
           {pdvLoading ? (
             <p className="text-sm text-muted-foreground">Chargement…</p>
-          ) : pdvs.length === 0 ? (
+          ) : visiblePdvs.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Aucun point de vente disponible. Contactez un administrateur.
             </p>
           ) : (
-            pdvs.map((p) => (
+            visiblePdvs.map((p) => (
               <Button
                 key={p.id}
                 variant="outline"
