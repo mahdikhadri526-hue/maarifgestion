@@ -88,6 +88,25 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
     onChanged?.();
   };
 
+  const addPdv = async () => {
+    if (!newCode.trim() || !newName.trim()) {
+      toast.error("Code et nom requis");
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from("pdvs").insert({
+      code: newCode.trim(),
+      name: newName.trim(),
+      access_code: newAccessCode.trim() || "1975",
+      default_role: "operator",
+    } as any);
+    setSaving(false);
+    if (error) { toast.error("Erreur : " + error.message); return; }
+    toast.success("Point de vente ajouté");
+    setNewCode(""); setNewName(""); setNewAccessCode("");
+    reload();
+  };
+
   const setPdvRole = async (id: string, role: AppRole) => {
     const { error } = await supabase.from("pdvs").update({ default_role: role } as any).eq("id", id);
     if (error) { toast.error("Erreur : " + error.message); return; }
