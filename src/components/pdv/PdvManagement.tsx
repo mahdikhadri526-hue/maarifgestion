@@ -57,6 +57,10 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
   const [pdvRoles, setPdvRoles] = useState<Record<string, AppRole>>({});
   const [pdvPerms, setPdvPerms] = useState<Record<string, Set<string>>>({});
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
+  const [newCode, setNewCode] = useState("");
+  const [newName, setNewName] = useState("");
+  const [newAccessCode, setNewAccessCode] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const loadRights = async () => {
     const [{ data: rows }, { data: perms }] = await Promise.all([
