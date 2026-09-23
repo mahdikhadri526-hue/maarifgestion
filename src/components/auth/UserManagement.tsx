@@ -141,7 +141,13 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       supabase.from("user_permissions").select("user_id, permission_key, allowed"),
       supabase.from("user_pdvs").select("user_id, pdv_id"),
     ]);
-    setUsers(profs ?? []);
+    // Comptes masqués de l'affichage (restent actifs avec leurs permissions).
+    const HIDDEN_ACCOUNTS = ["oliverimohammedia2016", "gestion-mohammedia", "gestion-miramar", "gestion-mansouria"];
+    setUsers(
+      (profs ?? []).filter(
+        (p: any) => !HIDDEN_ACCOUNTS.includes(((p.email ?? "").toLowerCase().split("@")[0])),
+      ),
+    );
     const upMap: Record<string, string[]> = {};
     ((allUserPdvs ?? []) as any[]).forEach((r) => {
       (upMap[r.user_id] ??= []).push(r.pdv_id);
