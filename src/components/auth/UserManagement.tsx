@@ -17,6 +17,25 @@ import { RosterManagement } from "@/components/roster/RosterManagement";
 
 const PROTECTED_EMAILS = ["gestionmaarif1@gmail.com"];
 
+const passwordError = (password: string) => {
+  if (password.length < 8) return "Le mot de passe doit contenir au moins 8 caractères.";
+  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+    return "Utilisez au moins une minuscule, une majuscule, un chiffre et un symbole.";
+  }
+  return null;
+};
+
+const friendlyAdminError = (message: string) => {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("known to be weak") || normalized.includes("easy to guess")) {
+    return "Ce mot de passe est trop courant ou facile à deviner. Choisissez-en un autre, unique pour ce compte.";
+  }
+  if (normalized.includes("invalid format") && normalized.includes("email")) {
+    return "L’adresse email n’est pas valide. Vérifiez les espaces, le @ et le nom de domaine.";
+  }
+  return message;
+};
+
 const ROLE_LABELS: Record<AppRole, string> = {
   admin: "Admin",
   regional_admin: "Admin régional",
@@ -88,18 +107,35 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
 
   const callAdmin = async (payload: Record<string, unknown>) => {
     setBusy(true);
-    const { data, error } = await supabase.functions.invoke("admin-users", { body: payload });
-    setBusy(false);
-    if (error) {
-      const msg = (data as any)?.error ?? error.message;
-      toast.error("Erreur : " + msg);
+    try {
+      const { data, error } = await supabase.functions.invoke("admin-users", { body: payload });
+      if (error) {
+        let message = (data as { error?: string } | null)?.error ?? error.message;
+        const response = (error as { context?: Response }).context;
+        if (response) {
+          try {
+            const body = await response.clone().json() as { error?: string };
+            message = body.error ?? message;
+          } catch {
+            // La réponse n'est pas au format JSON : conserver le message d'origine.
+          }
+        }
+        toast.error(friendlyAdminError(message));
+        return false;
+      }
+      const responseError = (data as { error?: string } | null)?.error;
+      if (responseError) {
+        toast.error(friendlyAdminError(responseError));
+        return false;
+      }
+      return true;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Impossible de joindre le service utilisateurs.";
+      toast.error(friendlyAdminError(message));
       return false;
+    } finally {
+      setBusy(false);
     }
-    if ((data as any)?.error) {
-      toast.error("Erreur : " + (data as any).error);
-      return false;
-    }
-    return true;
   };
 
   const load = async () => {
@@ -200,8 +236,13 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
 
 
   const createUser = async () => {
-    if (!newEmail.trim() || newPassword.length < 6) {
-      toast.error("Email et mot de passe (6 caractères minimum) requis");
+    if (!newEmail.trim()) {
+      toast.error("L’adresse email est requise.");
+      return;
+    }
+    const validationError = passwordError(newPassword);
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
     const ok = await callAdmin({
@@ -227,6 +268,11 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
 
   const changePassword = async () => {
     if (!pwdTarget) return;
+    const validationError = passwordError(pwdValue);
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
     const ok = await callAdmin({ action: "password", user_id: pwdTarget.user_id, password: pwdValue });
     if (!ok) return;
     toast.success("Mot de passe mis à jour");
@@ -446,7 +492,14 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
               </CardHeader>
               <CardContent className="grid gap-2 sm:grid-cols-5">
                 <Input placeholder="Email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} />
-                <Input placeholder="Mot de passe" type="text" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                <Input
+                  placeholder="Mot de passe sécurisé"
+                  type="password"
+                  minLength={8}
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
                 <Select value={newRole} onValueChange={(v) => setNewRole(v as AppRole)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -559,12 +612,15 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
           </DialogHeader>
           <Input
             placeholder="Nouveau mot de passe"
+            type="password"
+            minLength={8}
+            autoComplete="new-password"
             value={pwdValue}
             onChange={(e) => setPwdValue(e.target.value)}
           />
           <DialogFooter>
             <Button variant="outline" onClick={() => setPwdTarget(null)}>Annuler</Button>
-            <Button onClick={changePassword} disabled={busy || pwdValue.length < 6}>Enregistrer</Button>
+            <Button onClick={changePassword} disabled={busy || pwdValue.length < 8}>Enregistrer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

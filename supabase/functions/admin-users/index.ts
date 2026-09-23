@@ -8,6 +8,25 @@ const corsHeaders = {
 
 const PROTECTED_EMAILS = ["gestionmaarif1@gmail.com"];
 
+const validatePassword = (password: string) => {
+  if (password.length < 8) return "Le mot de passe doit contenir au moins 8 caractères.";
+  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+    return "Le mot de passe doit contenir une minuscule, une majuscule, un chiffre et un symbole.";
+  }
+  return null;
+};
+
+const authErrorMessage = (message: string) => {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("known to be weak") || normalized.includes("easy to guess")) {
+    return "Ce mot de passe est trop courant ou facile à deviner. Choisissez-en un autre, unique pour ce compte.";
+  }
+  if (normalized.includes("invalid format") && normalized.includes("email")) {
+    return "L’adresse email n’est pas valide. Vérifiez les espaces, le @ et le nom de domaine.";
+  }
+  return message;
+};
+
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
     status,
@@ -50,7 +69,9 @@ Deno.serve(async (req) => {
       const pdvId = body.pdv_id ? String(body.pdv_id) : null;
       const role = String(body.role ?? "viewer");
       const pdvIds: string[] = Array.isArray(body.pdv_ids) ? body.pdv_ids.map(String) : [];
-      if (!email || password.length < 6) return json({ error: "Email et mot de passe (6+ caractères) requis" }, 400);
+      if (!email) return json({ error: "L’adresse email est requise." }, 400);
+      const passwordValidationError = validatePassword(password);
+      if (passwordValidationError) return json({ error: passwordValidationError }, 400);
       if (isProtected(email)) return json({ error: "Ce compte est protégé" }, 403);
 
       if (role === "regional_admin") {
@@ -62,7 +83,7 @@ Deno.serve(async (req) => {
       const { data, error } = await admin.auth.admin.createUser({
         email, password, email_confirm: true,
       });
-      if (error) return json({ error: error.message }, 400);
+      if (error) return json({ error: authErrorMessage(error.message) }, 400);
       const newId = data.user!.id;
 
       await admin.from("user_roles").delete().eq("user_id", newId);
@@ -90,11 +111,13 @@ Deno.serve(async (req) => {
     if (action === "password") {
       const userId = String(body.user_id ?? "");
       const password = String(body.password ?? "");
-      if (!userId || password.length < 6) return json({ error: "Mot de passe de 6 caractères minimum" }, 400);
+      if (!userId) return json({ error: "Utilisateur manquant" }, 400);
+      const passwordValidationError = validatePassword(password);
+      if (passwordValidationError) return json({ error: passwordValidationError }, 400);
       const email = await getTargetEmail(userId);
       if (isProtected(email)) return json({ error: "Ce compte est protégé" }, 403);
       const { error } = await admin.auth.admin.updateUserById(userId, { password });
-      if (error) return json({ error: error.message }, 400);
+      if (error) return json({ error: authErrorMessage(error.message) }, 400);
       return json({ ok: true });
     }
 
