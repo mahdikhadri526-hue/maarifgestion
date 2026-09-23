@@ -140,8 +140,8 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   const setUserRole = async (userId: string, role: AppRole) => {
     if (role === "regional_admin") {
       const others = Object.entries(roles).filter(([id, r]) => r === "regional_admin" && id !== userId);
-      if (others.length >= 2) {
-        toast.error("Limite atteinte : 2 comptes Admin régional maximum");
+      if (others.length >= 10) {
+        toast.error("Limite atteinte : 10 comptes Admin régional maximum");
         return;
       }
     }
