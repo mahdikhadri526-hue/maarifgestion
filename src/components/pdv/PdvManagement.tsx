@@ -172,11 +172,14 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
     }
   };
 
+  const HIDDEN_PDVS = ["admin mohammedia", "mohammedia", "miramar", "mansouria"];
+  const visiblePdvs = pdvs.filter((p) => !HIDDEN_PDVS.includes(p.name.trim().toLowerCase()));
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-base flex items-center gap-2">
-          <Building2 className="h-4 w-4 text-primary" /> Points de vente ({pdvs.length})
+          <Building2 className="h-4 w-4 text-primary" /> Points de vente ({visiblePdvs.length})
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -205,7 +208,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
             </Button>
           </div>
         )}
-        {pdvs.map((p) => (
+        {visiblePdvs.map((p) => (
           <div key={p.id} className="flex items-center gap-2 p-2 border rounded-lg flex-wrap">
             <Badge variant="secondary" className="shrink-0">{p.code}</Badge>
             <Input
