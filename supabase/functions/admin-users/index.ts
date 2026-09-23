@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       if (role === "regional_admin") {
         const { data: existing } = await admin.from("user_roles").select("user_id").eq("role", "regional_admin");
         const count = new Set((existing ?? []).map((r: any) => r.user_id)).size;
-        if (count >= 2) return json({ error: "Limite atteinte : 2 comptes Admin régional maximum" }, 400);
+        if (count >= 10) return json({ error: "Limite atteinte : 10 comptes Admin régional maximum" }, 400);
       }
 
       const { data, error } = await admin.auth.admin.createUser({
