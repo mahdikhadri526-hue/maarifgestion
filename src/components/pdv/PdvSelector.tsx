@@ -96,12 +96,12 @@ export function PdvSelector() {
         <CardContent className="space-y-2">
           {pdvLoading ? (
             <p className="text-sm text-muted-foreground">Chargement…</p>
-          ) : pdvs.length === 0 ? (
+          ) : visiblePdvs.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               Aucun point de vente disponible. Contactez un administrateur.
             </p>
           ) : (
-            pdvs.map((p) => (
+            visiblePdvs.map((p) => (
               <Button
                 key={p.id}
                 variant="outline"
