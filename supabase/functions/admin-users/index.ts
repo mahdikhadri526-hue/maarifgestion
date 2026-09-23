@@ -9,10 +9,7 @@ const corsHeaders = {
 const PROTECTED_EMAILS = ["gestionmaarif1@gmail.com"];
 
 const validatePassword = (password: string) => {
-  if (password.length < 8) return "Le mot de passe doit contenir au moins 8 caractères.";
-  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
-    return "Le mot de passe doit contenir une minuscule, une majuscule, un chiffre et un symbole.";
-  }
+  if (password.length < 6) return "Le mot de passe doit contenir au moins 6 caractères.";
   return null;
 };
 
