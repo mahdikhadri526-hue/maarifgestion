@@ -45,7 +45,7 @@ const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
 };
 
 export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
-  const { pdvs, refreshPdvs, pdvId, isAdmin, isRegionalAdmin, permissions, can } = useAuth();
+  const { pdvs, refreshPdvs, pdvId, isAdmin, isRegionalAdmin, permissions, can, user } = useAuth();
   const canEditPerms = isAdmin || isRegionalAdmin;
   // Chaque compte ne voit que les permissions qu'il détient lui-même.
   const visibleGroups = isAdmin
@@ -173,7 +173,11 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
   };
 
   const HIDDEN_PDVS = ["admin mohammedia", "mohammedia", "miramar", "mansouria"];
-  const visiblePdvs = pdvs.filter((p) => !HIDDEN_PDVS.includes(p.name.trim().toLowerCase()));
+  const HIDDEN_ACCOUNTS = ["oliverimohammedia2016", "oliverimohammedia2026", "gestion-mohammedia", "gestion-miramar", "gestion-mansouria"];
+  const meHidden = HIDDEN_ACCOUNTS.includes((user?.email ?? "").toLowerCase().split("@")[0]);
+  const visiblePdvs = meHidden
+    ? pdvs
+    : pdvs.filter((p) => !HIDDEN_PDVS.includes(p.name.trim().toLowerCase()));
 
   return (
     <Card>
