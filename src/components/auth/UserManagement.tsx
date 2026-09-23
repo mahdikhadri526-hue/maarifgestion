@@ -143,10 +143,14 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
     ]);
     // Comptes masqués de l'affichage (restent actifs avec leurs permissions).
     const HIDDEN_ACCOUNTS = ["oliverimohammedia2016", "oliverimohammedia2026", "gestion-mohammedia", "gestion-miramar", "gestion-mansouria"];
+    const mePrefix = (currentUser?.email ?? "").toLowerCase().split("@")[0];
+    const meHidden = HIDDEN_ACCOUNTS.includes(mePrefix);
     setUsers(
-      (profs ?? []).filter(
-        (p: any) => !HIDDEN_ACCOUNTS.includes(((p.email ?? "").toLowerCase().split("@")[0])),
-      ),
+      meHidden
+        ? (profs ?? [])
+        : (profs ?? []).filter(
+            (p: any) => !HIDDEN_ACCOUNTS.includes(((p.email ?? "").toLowerCase().split("@")[0])),
+          ),
     );
     const upMap: Record<string, string[]> = {};
     ((allUserPdvs ?? []) as any[]).forEach((r) => {
