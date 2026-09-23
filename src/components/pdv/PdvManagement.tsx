@@ -208,7 +208,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
             </Button>
           </div>
         )}
-        {pdvs.map((p) => (
+        {visiblePdvs.map((p) => (
           <div key={p.id} className="flex items-center gap-2 p-2 border rounded-lg flex-wrap">
             <Badge variant="secondary" className="shrink-0">{p.code}</Badge>
             <Input
