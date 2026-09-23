@@ -180,6 +180,31 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {isAdmin && (
+          <div className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30 flex-wrap">
+            <Input
+              placeholder="Code (ex : PDV3)"
+              value={newCode}
+              onChange={(e) => setNewCode(e.target.value)}
+              className="h-8 w-32"
+            />
+            <Input
+              placeholder="Nom du point de vente"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              className="h-8 flex-1 min-w-[140px]"
+            />
+            <Input
+              placeholder="Code d'accès (défaut : 1975)"
+              value={newAccessCode}
+              onChange={(e) => setNewAccessCode(e.target.value)}
+              className="h-8 w-48"
+            />
+            <Button size="sm" onClick={addPdv} disabled={saving} className="shrink-0">
+              <Plus className="h-4 w-4 mr-1" /> Ajouter
+            </Button>
+          </div>
+        )}
         {pdvs.map((p) => (
           <div key={p.id} className="flex items-center gap-2 p-2 border rounded-lg flex-wrap">
             <Badge variant="secondary" className="shrink-0">{p.code}</Badge>
