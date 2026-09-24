@@ -42,13 +42,34 @@ const Index = () => {
   const [showStock, setShowStock] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAnomalies, setShowAnomalies] = useState(false);
-  const [kiosk, setKiosk] = useState(true);
+  const [kiosk, setKiosk] = useState(false);
 
   // Charge le catalogue produits personnalisé (ajouts / modifications / suppressions)
   useEffect(() => {
     void loadProductCatalog().then(() => setRefreshKey((k) => k + 1));
   }, []);
   const { can, isAdmin, isRegionalAdmin, user } = useAuth();
+
+  // Mode kiosque automatique : 2 secondes après la connexion (désactivé à la déconnexion)
+  useEffect(() => {
+    if (!user) {
+      setKiosk(false);
+      return;
+    }
+    const t = setTimeout(() => setKiosk(true), 2000);
+    return () => clearTimeout(t);
+  }, [user]);
+
+  // Le navigateur exige un geste de l'utilisateur : le vrai plein écran
+  // s'enclenche au premier toucher/clic une fois le kiosque actif.
+  useEffect(() => {
+    if (!kiosk) return;
+    const enter = () => {
+      try { void document.documentElement.requestFullscreen?.().catch(() => undefined); } catch { /* indisponible */ }
+    };
+    window.addEventListener("pointerdown", enter, { once: true });
+    return () => window.removeEventListener("pointerdown", enter);
+  }, [kiosk]);
   const TECH_ENABLED = isTechEnabled(user?.email);
 
   const refresh = () => setRefreshKey((k) => k + 1);
