@@ -106,7 +106,7 @@ export function PdvSelector() {
                 key={p.id}
                 variant="outline"
                 className="w-full justify-start h-auto py-3"
-                onClick={() => setPending(p)}
+                onClick={() => selectPdv(p.id)}
               >
                 <Building2 className="h-4 w-4 mr-3 text-primary" />
                 <span className="text-left">

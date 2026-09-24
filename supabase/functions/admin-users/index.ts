@@ -45,11 +45,19 @@ Deno.serve(async (req) => {
   const admin = createClient(url, service, { auth: { persistSession: false } });
 
   const { data: isAdminData } = await admin.rpc("is_admin", { _user_id: user.id });
-  if (!isAdminData) return json({ error: "Accès réservé à l'administrateur" }, 403);
+  const { data: isRegionalData } = await admin.rpc("is_regional_admin", { _user_id: user.id });
 
   let body: any;
   try { body = await req.json(); } catch { return json({ error: "Requête invalide" }, 400); }
   const action = body?.action as string;
+
+  // Admin régional : uniquement le changement de mot de passe (hors comptes admin).
+  const regionalPassword = !isAdminData && isRegionalData && action === "password";
+  if (!isAdminData && !regionalPassword) return json({ error: "Accès réservé à l'administrateur" }, 403);
+  if (regionalPassword) {
+    const { data: targetIsAdmin } = await admin.rpc("is_admin", { _user_id: String(body.user_id ?? "") });
+    if (targetIsAdmin) return json({ error: "Impossible de modifier le mot de passe d'un administrateur" }, 403);
+  }
 
   const isProtected = (email?: string | null) =>
     !!email && PROTECTED_EMAILS.includes(email.toLowerCase());
@@ -112,7 +120,6 @@ Deno.serve(async (req) => {
       const passwordValidationError = validatePassword(password);
       if (passwordValidationError) return json({ error: passwordValidationError }, 400);
       const email = await getTargetEmail(userId);
-      if (isProtected(email)) return json({ error: "Ce compte est protégé" }, 403);
       const { error } = await admin.auth.admin.updateUserById(userId, { password });
       if (error) return json({ error: authErrorMessage(error.message) }, 400);
       return json({ ok: true });
