@@ -94,7 +94,7 @@ const Index = () => {
               <img src={logo} alt="Oliveri Logo" className="w-full h-full object-cover" />
             </div>
             <div className="flex-1">
-              <h1 className="text-lg font-bold tracking-tight">Gestion de Stock Maarif</h1>
+              <h1 className="text-lg font-bold tracking-tight">Gestion Oliveri</h1>
               <p className="text-xs text-sidebar-foreground/60">Suivi des entrées, sorties et stock restant</p>
             </div>
             <KioskToggle active={kiosk} onChange={setKiosk} />
