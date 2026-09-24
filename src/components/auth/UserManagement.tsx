@@ -78,7 +78,7 @@ const ROLE_PRESETS: Record<AppRole, string[]> = {
 };
 
 export function UserManagement({ onBack }: { onBack: () => void }) {
-  const { user: currentUser, multiPdvEnabled, pdvs, isAdmin, can } = useAuth();
+  const { user: currentUser, multiPdvEnabled, pdvs, isAdmin, isRegionalAdmin, can } = useAuth();
   const [users, setUsers] = useState<ProfileRow[]>([]);
   const [roles, setRoles] = useState<Record<string, AppRole | null>>({});
   const [perms, setPerms] = useState<Record<string, Set<string>>>({});
@@ -174,7 +174,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   };
 
   useEffect(() => {
-    if (isAdmin) load();
+    if (isAdmin || isRegionalAdmin) load();
     else setLoading(false);
   }, []);
 
@@ -471,6 +471,36 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
         <div className="space-y-4">
           {multiPdvEnabled && <PdvManagement />}
           {can("manage_roster") && <RosterManagement />}
+          {isRegionalAdmin && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <KeyRound className="h-4 w-4 text-primary" /> Mots de passe des utilisateurs de mes PDV
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                {loading ? (
+                  <p className="text-sm text-muted-foreground">Chargement…</p>
+                ) : users.filter((u) => u.user_id !== currentUser?.id).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Aucun utilisateur.</p>
+                ) : (
+                  users.filter((u) => u.user_id !== currentUser?.id).map((u) => (
+                    <div key={u.user_id} className="flex items-center justify-between gap-2 rounded-md border p-2">
+                      <div className="min-w-0">
+                        <div className="text-sm font-medium truncate">{u.display_name || u.email}</div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {u.email}{(userPdvs[u.user_id] ?? []).length > 0 && " — " + (userPdvs[u.user_id] ?? []).map((id) => pdvs.find((p) => p.id === id)?.name ?? "—").join(" · ")}
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={() => { setPwdTarget(u); setPwdValue(""); }} disabled={busy}>
+                        <KeyRound className="h-4 w-4 mr-1" /> Mot de passe
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       )}
 
