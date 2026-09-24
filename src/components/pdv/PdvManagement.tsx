@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Building2, Trash2, Settings2, Lock, Plus } from "lucide-react";
+import { Building2, Trash2, Settings2, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,10 +57,6 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
   const [pdvRoles, setPdvRoles] = useState<Record<string, AppRole>>({});
   const [pdvPerms, setPdvPerms] = useState<Record<string, Set<string>>>({});
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
-  const [newCode, setNewCode] = useState("");
-  const [newName, setNewName] = useState("");
-  const [newAccessCode, setNewAccessCode] = useState("");
-  const [saving, setSaving] = useState(false);
 
   const loadRights = async () => {
     const [{ data: rows }, { data: perms }] = await Promise.all([
@@ -88,24 +84,6 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
     onChanged?.();
   };
 
-  const addPdv = async () => {
-    if (!newCode.trim() || !newName.trim()) {
-      toast.error("Code et nom requis");
-      return;
-    }
-    setSaving(true);
-    const { error } = await supabase.from("pdvs").insert({
-      code: newCode.trim(),
-      name: newName.trim(),
-      access_code: newAccessCode.trim() || "1975",
-      default_role: "operator",
-    } as any);
-    setSaving(false);
-    if (error) { toast.error("Erreur : " + error.message); return; }
-    toast.success("Point de vente ajouté");
-    setNewCode(""); setNewName(""); setNewAccessCode("");
-    reload();
-  };
 
   const setPdvRole = async (id: string, role: AppRole) => {
     const { error } = await supabase.from("pdvs").update({ default_role: role } as any).eq("id", id);
@@ -187,31 +165,6 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {isAdmin && (
-          <div className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30 flex-wrap">
-            <Input
-              placeholder="Code (ex : PDV3)"
-              value={newCode}
-              onChange={(e) => setNewCode(e.target.value)}
-              className="h-8 w-32"
-            />
-            <Input
-              placeholder="Nom du point de vente"
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              className="h-8 flex-1 min-w-[140px]"
-            />
-            <Input
-              placeholder="Code d'accès (défaut : 1975)"
-              value={newAccessCode}
-              onChange={(e) => setNewAccessCode(e.target.value)}
-              className="h-8 w-48"
-            />
-            <Button size="sm" onClick={addPdv} disabled={saving} className="shrink-0">
-              <Plus className="h-4 w-4 mr-1" /> Ajouter
-            </Button>
-          </div>
-        )}
         {visiblePdvs.map((p) => (
           <div key={p.id} className="flex items-center gap-2 p-2 border rounded-lg flex-wrap">
             <Badge variant="secondary" className="shrink-0">{p.code}</Badge>
