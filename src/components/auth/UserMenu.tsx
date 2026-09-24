@@ -41,7 +41,7 @@ export function UserMenu({ onOpenAdmin, onOpenAnomalies }: { onOpenAdmin: () => 
             {isAdmin ? "Gestion des utilisateurs" : "Permissions de mes PDV"}
           </DropdownMenuItem>
         )}
-        {(isAdmin || isRegionalAdmin || can("view_anomalies")) && onOpenAnomalies && (
+        {(isAdmin || can("view_anomalies")) && onOpenAnomalies && (
           <DropdownMenuItem onClick={onOpenAnomalies}>
             <AlertTriangle className="h-4 w-4 mr-2" /> Centre des anomalies
           </DropdownMenuItem>
