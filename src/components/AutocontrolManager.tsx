@@ -187,6 +187,68 @@ async function fetchLatestGlaceLot(article: string): Promise<string | null> {
   return lot && lot.trim().length > 0 ? lot : null;
 }
 
+function uniqueLots(rows: { lot_number: string | null }[] | null, limit = 3): string[] {
+  const out: string[] = [];
+  for (const r of rows ?? []) {
+    const lot = (r.lot_number ?? "").trim();
+    if (lot && !out.includes(lot)) out.push(lot);
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
+async function fetchRecentGlaceLots(article: string): Promise<string[]> {
+  const { data } = await supabase
+    .from("weekly_tracking")
+    .select("lot_number, week_start, created_at")
+    .eq("fiche_type", "Mouvement glaces & tartes")
+    .eq("article", article)
+    .not("lot_number", "is", null)
+    .order("week_start", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(40);
+  return uniqueLots(data as any);
+}
+
+async function fetchRecentProductLots(productId: string): Promise<string[]> {
+  const { data } = await supabase
+    .from("lot_entries")
+    .select("lot_number, entry_date, created_at")
+    .eq("product_id", productId)
+    .order("entry_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(20);
+  return uniqueLots(data as any);
+}
+
+function LotPicker({
+  value,
+  options,
+  onChange,
+  placeholder,
+}: {
+  value: string;
+  options: string[];
+  onChange: (v: string) => void;
+  placeholder?: string;
+}) {
+  const opts = Array.from(new Set([...options, ...(value ? [value] : [])]));
+  return (
+    <Select value={value} onValueChange={onChange} disabled={opts.length === 0}>
+      <SelectTrigger>
+        <SelectValue placeholder={opts.length === 0 ? "Aucun lot dispo" : placeholder ?? "N° de lot"} />
+      </SelectTrigger>
+      <SelectContent>
+        {opts.map((l) => (
+          <SelectItem key={l} value={l}>
+            {l}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}
+
 const initialPanacheExtra = (): CtgExtraData => ({
   matieresPremieres: PANACHE_MATIERES.map((name) => ({ name, lot: "" })),
   managerControl: {
@@ -803,6 +865,39 @@ export function AutocontrolManager() {
       .join("|"),
   ]);
 
+  // Choix parmi les 3 derniers N° de lot pour chaque case auto-remplie
+  const [lotChoices, setLotChoices] = useState<Record<string, string[]>>({});
+  const ctgKey = (ingName: string): string | null => {
+    const pattern = CTG_INGREDIENT_PRODUCT_PATTERN[ingName];
+    if (!pattern) return null;
+    const prod = getProducts("alimentaire").find((p) => pattern.test(p.name));
+    return prod ? `p:${prod.id}` : null;
+  };
+  useEffect(() => {
+    const keys = new Set<string>();
+    if (isPanache) Object.values(PANACHE_FLAVOR_ARTICLE).forEach((a) => keys.add(`g:${a}`));
+    if (isDecoration) {
+      Object.values(DECORATION_TARTE_ARTICLE).forEach((a) => keys.add(`g:${a}`));
+      keys.add("g:Demis");
+    }
+    if (isCtg) (form.extraData?.ingredients ?? []).forEach((i) => {
+      const k = ctgKey(i.name);
+      if (k) keys.add(k);
+    });
+    const missing = [...keys].filter((k) => !(k in lotChoices));
+    if (missing.length === 0) return;
+    let cancelled = false;
+    Promise.all(
+      missing.map(async (k) => [k, k.startsWith("g:") ? await fetchRecentGlaceLots(k.slice(2)) : await fetchRecentProductLots(k.slice(2))] as const),
+    ).then((pairs) => {
+      if (!cancelled) setLotChoices((s) => ({ ...s, ...Object.fromEntries(pairs) }));
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPanache, isDecoration, isCtg, form.extraData?.ingredients?.map((i) => i.name).join("|")]);
+
   // Auto-remplissage de la DLC pour la fiche principale (Panaché, Oranges/Bigarreaux confits)
   useEffect(() => {
     const auto = computeAutoDlc(form.ficheType, form.article, form.controlDate);
@@ -1254,27 +1349,25 @@ export function AutocontrolManager() {
                           </div>
                           <div>
                             <label className="text-xs text-muted-foreground">N° de lot *</label>
-                            <Input
+                            <LotPicker
                               value={row.lotNumber}
-                              maxLength={120}
-                              readOnly
-                              tabIndex={-1}
-                              className="bg-muted/50 cursor-not-allowed"
+                              options={lotChoices[`g:${DECORATION_TARTE_ARTICLE[name] ?? ""}`] ?? []}
                               placeholder="Auto (Mouvement tarte)"
-                              onChange={() => {}}
+                              onChange={(v) =>
+                                setDecoProducts((s) => ({ ...s, [name]: { ...s[name], lotNumber: v } }))
+                              }
                             />
                           </div>
                           {name === "Tarte 12" && (
                             <div className="sm:col-span-2">
                               <label className="text-xs text-muted-foreground">N° de lot Demi</label>
-                              <Input
+                              <LotPicker
                                 value={row.lotNumberDemi ?? ""}
-                                maxLength={120}
-                                readOnly
-                                tabIndex={-1}
-                                className="bg-muted/50 cursor-not-allowed"
+                                options={lotChoices["g:Demis"] ?? []}
                                 placeholder="Auto (Demis – Mouvement tarte)"
-                                onChange={() => {}}
+                                onChange={(v) =>
+                                  setDecoProducts((s) => ({ ...s, [name]: { ...s[name], lotNumberDemi: v } }))
+                                }
                               />
                             </div>
                           )}
@@ -1375,15 +1468,20 @@ export function AutocontrolManager() {
                     <div className="col-span-6 text-sm font-medium px-2 py-2 bg-muted/40 rounded">
                       {mat.name}
                     </div>
-                    <Input
-                      placeholder="N° de lot"
-                      value={mat.lot}
-                      maxLength={120}
-                      readOnly
-                      tabIndex={-1}
-                      className="col-span-6 bg-muted/50 cursor-not-allowed"
-                      onChange={() => {}}
-                    />
+                    <div className="col-span-6">
+                      <LotPicker
+                        value={mat.lot}
+                        options={lotChoices[`g:${PANACHE_FLAVOR_ARTICLE[mat.name] ?? ""}`] ?? []}
+                        placeholder="N° de lot"
+                        onChange={(v) =>
+                          setForm((f) => {
+                            const arr = [...f.extraData!.matieresPremieres!];
+                            arr[idx] = { ...arr[idx], lot: v };
+                            return { ...f, extraData: { ...f.extraData!, matieresPremieres: arr } };
+                          })
+                        }
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1425,15 +1523,20 @@ export function AutocontrolManager() {
                         })
                       }
                     />
-                    <Input
-                      placeholder="N° lot"
-                      value={ing.lot}
-                      maxLength={120}
-                      readOnly
-                      tabIndex={-1}
-                      className="col-span-4 bg-muted/50 cursor-not-allowed"
-                      onChange={() => {}}
-                    />
+                    <div className="col-span-4">
+                      <LotPicker
+                        value={ing.lot}
+                        options={lotChoices[ctgKey(ing.name) ?? ""] ?? []}
+                        placeholder="N° lot"
+                        onChange={(v) =>
+                          setForm((f) => {
+                            const arr = [...f.extraData!.ingredients];
+                            arr[idx] = { ...arr[idx], lot: v };
+                            return { ...f, extraData: { ...f.extraData!, ingredients: arr } };
+                          })
+                        }
+                      />
+                    </div>
                   </div>
                 ))}
               </div>
