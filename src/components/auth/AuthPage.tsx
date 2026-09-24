@@ -56,7 +56,7 @@ export function AuthPage() {
           <div className="mx-auto w-20 h-20 rounded-full overflow-hidden shadow-lg">
             <img src={logo} alt="Logo" className="w-full h-full object-cover" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight">Gestion de Stock Maarif</h1>
+          <h1 className="text-xl font-bold tracking-tight">Gestion Oliveri</h1>
           <p className="text-sm text-muted-foreground">Connectez-vous à votre espace</p>
         </div>
 
