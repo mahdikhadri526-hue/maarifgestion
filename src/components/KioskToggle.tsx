@@ -34,7 +34,11 @@ export function KioskToggle({ active, onChange }: { active: boolean; onChange: (
         variant="ghost"
         size="sm"
         className={active ? "fixed top-2 right-2 z-50" : ""}
-        onClick={() => setOpen(true)}
+        onClick={async () => {
+          if (active) return setOpen(true);
+          try { await document.documentElement.requestFullscreen?.(); } catch { /* indisponible */ }
+          onChange(true);
+        }}
         aria-label={active ? "Quitter le mode kiosque" : "Mode kiosque"}
       >
         {active ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
