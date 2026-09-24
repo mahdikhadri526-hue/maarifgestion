@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { useManagers } from "@/lib/roster";
 import { cn, formatDateFR } from "@/lib/utils";
 import { printStructuredPdf } from "@/lib/printExport";
-import { GLACE_PARFUMS, fetchGlaceFifoLots } from "@/lib/glaceLotFifo";
+import { GLACE_PARFUMS, fetchGlaceFifoLots, fetchGlaceRecentLots } from "@/lib/glaceLotFifo";
 
 const SLOTS = ["08h00", "10h00", "12h00", "14h00", "16h00", "18h00", "20h00", "22h00", "00h00"];
 const MAX_LINES = 12;
@@ -65,6 +65,7 @@ export function GlaceStuffControl() {
   const [loading, setLoading] = useState(false);
   const managerOptions = useManagers();
   const [fifoLots, setFifoLots] = useState<Record<string, string>>({});
+  const [recentLots, setRecentLots] = useState<Record<string, string[]>>({});
   const [lineCounts, setLineCounts] = useState<Record<string, number>>({});
 
   const linesOf = useCallback(
@@ -76,6 +77,9 @@ export function GlaceStuffControl() {
     let active = true;
     fetchGlaceFifoLots().then((m) => {
       if (active) setFifoLots(m);
+    });
+    fetchGlaceRecentLots(3).then((m) => {
+      if (active) setRecentLots(m);
     });
     return () => {
       active = false;
@@ -367,12 +371,31 @@ export function GlaceStuffControl() {
                       </Select>
                     </td>
                     <td className="border p-1">
-                      <Input
-                        className="h-8 text-xs bg-muted/50"
-                        readOnly
-                        placeholder={r.parfum ? "Aucun lot dispo" : "Choisir un parfum"}
-                        value={r.lot_number}
-                      />
+                      {(() => {
+                        const opts = Array.from(
+                          new Set([...(recentLots[r.parfum] ?? []), ...(r.lot_number ? [r.lot_number] : [])]),
+                        );
+                        return (
+                          <Select
+                            value={r.lot_number}
+                            disabled={blocked || !r.parfum || opts.length === 0}
+                            onValueChange={(v) => update(slot, l, { lot_number: v })}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue
+                                placeholder={r.parfum ? "Aucun lot dispo" : "Choisir un parfum"}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {opts.map((lot) => (
+                                <SelectItem key={lot} value={lot}>
+                                  {lot}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        );
+                      })()}
                     </td>
                     <td className="border p-1">
                       <div className="flex gap-1 justify-center">

@@ -121,3 +121,34 @@ export async function fetchGlaceFifoLots(): Promise<Record<string, string>> {
 
   return result;
 }
+
+/** Trois derniers n° de lot distincts saisis par parfum (plus récent en premier). */
+export async function fetchGlaceRecentLots(limit = 3): Promise<Record<string, string[]>> {
+  let data: any[];
+  try {
+    data = await fetchAllRows<any>(() =>
+      supabase
+        .from("weekly_tracking")
+        .select("article, week_start, day_of_week, row_index, lot_number")
+        .eq("fiche_type", FICHE)
+        .in("article", GLACE_PARFUMS)
+        .not("lot_number", "is", null),
+    );
+  } catch {
+    return {};
+  }
+  const sorted = [...data].sort(
+    (a, b) =>
+      `${b.week_start}`.localeCompare(`${a.week_start}`) ||
+      DAYS.indexOf(b.day_of_week) - DAYS.indexOf(a.day_of_week) ||
+      (b.row_index ?? 0) - (a.row_index ?? 0),
+  );
+  const out: Record<string, string[]> = {};
+  for (const r of sorted) {
+    const lot = (r.lot_number ?? "").toString().trim();
+    if (!lot || !r.article) continue;
+    const list = (out[r.article] ??= []);
+    if (list.length < limit && !list.includes(lot)) list.push(lot);
+  }
+  return out;
+}
