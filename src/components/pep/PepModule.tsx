@@ -79,16 +79,20 @@ export function PepModule({ initialView = "day" }: { initialView?: View }) {
     try {
       // Une erreur de génération ne doit pas empêcher la lecture des tâches
       // déjà enregistrées et donc bloquer tout l'Agenda PEP.
-      try {
-        await ensurePlanning();
-      } catch (planningError) {
+      const planning = ensurePlanning().catch((planningError) => {
         console.warn("Planification PEP temporairement indisponible", planningError);
-      }
+      });
+      // Tâches, fériés et reports ne dépendent pas de la planification :
+      // on les charge en parallèle pendant qu'elle tourne.
+      const tasksP = getPepTasks();
+      const holP = getPepHolidays();
+      const postsP = getPostponements();
+      await planning;
       const [t, h, o, p] = await Promise.all([
-        getPepTasks(),
-        getPepHolidays(),
+        tasksP,
+        holP,
         getOccurrences(addDays(today, -400), addDays(today, 120)),
-        getPostponements(),
+        postsP,
       ]);
       setTasks(t);
       setHolidays(h);

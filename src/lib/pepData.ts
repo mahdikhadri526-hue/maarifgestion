@@ -337,7 +337,25 @@ function balancedDate(iso: string, holidays: Set<string>, load: Map<string, numb
  * Génère les occurrences manquantes jusqu'à l'horizon donné.
  * Idempotent : la contrainte (task_id, original_due_date) empêche les doublons.
  */
-export async function ensurePlanning(horizonDays = 75): Promise<void> {
+const planningRuns = new Map<string, { at: number; promise: Promise<void> }>();
+const PLANNING_TTL = 10 * 60 * 1000;
+
+/** Planification dédupliquée : une seule exécution par PDV et par jour (10 min). */
+export function ensurePlanning(horizonDays = 75, force = false): Promise<void> {
+  let pdv = "none";
+  try { pdv = requireCurrentPdvId(); } catch { /* ignore */ }
+  const key = `${pdv}|${todayISO()}|${horizonDays}`;
+  const hit = planningRuns.get(key);
+  if (!force && hit && Date.now() - hit.at < PLANNING_TTL) return hit.promise;
+  const promise = runPlanning(horizonDays).catch((e) => {
+    planningRuns.delete(key);
+    throw e;
+  });
+  planningRuns.set(key, { at: Date.now(), promise });
+  return promise;
+}
+
+async function runPlanning(horizonDays: number): Promise<void> {
   const today = todayISO();
   const from = addDays(today, -30);
   const to = addDays(today, horizonDays);
@@ -577,12 +595,12 @@ export async function saveTask(task: Partial<PepTask> & { name: string; frequenc
           .in("status", ["todo", "in_progress", "postponed"]);
         if (cleanupError) throw cleanupError;
       }
-      await ensurePlanning();
+      await ensurePlanning(75, true);
     }
   } else {
     const { error } = await supabase.from("pep_tasks" as any).insert(payload);
     if (error) throw error;
-    if (active) await ensurePlanning();
+    if (active) await ensurePlanning(75, true);
   }
 }
 
