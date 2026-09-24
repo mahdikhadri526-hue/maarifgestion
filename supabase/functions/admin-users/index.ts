@@ -54,6 +54,10 @@ Deno.serve(async (req) => {
   // Admin régional : uniquement le changement de mot de passe.
   const regionalPassword = !isAdminData && isRegionalData && action === "password";
   if (!isAdminData && !regionalPassword) return json({ error: "Accès réservé à l'administrateur" }, 403);
+  if (regionalPassword) {
+    const { data: shared } = await admin.rpc("shares_pdv", { _viewer: user.id, _target: String(body.user_id ?? "") });
+    if (!shared) return json({ error: "Cet utilisateur n'appartient pas à vos points de vente" }, 403);
+  }
 
   const isProtected = (email?: string | null) =>
     !!email && PROTECTED_EMAILS.includes(email.toLowerCase());

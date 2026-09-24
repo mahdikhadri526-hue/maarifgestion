@@ -2420,6 +2420,10 @@ export type Database = {
         Returns: boolean
       }
       is_regional_admin: { Args: { _user_id: string }; Returns: boolean }
+      shares_pdv: {
+        Args: { _target: string; _viewer: string }
+        Returns: boolean
+      }
       stock_movement_aggregates:
         | {
             Args: never
