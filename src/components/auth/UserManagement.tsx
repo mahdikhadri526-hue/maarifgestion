@@ -377,7 +377,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
               size="icon"
               title="Changer le mot de passe"
               onClick={() => { setPwdTarget(u); setPwdValue(""); }}
-              disabled={locked}
+              disabled={busy}
             >
               <KeyRound className="h-4 w-4" />
             </Button>
