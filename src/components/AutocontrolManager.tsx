@@ -15,6 +15,7 @@ import { MANAGERS } from "@/lib/managers";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { fetchFifoLotChoices } from "@/lib/glaceLotFifo";
 import { formatDateFR, formatMaybeDate, cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -173,6 +174,10 @@ async function fetchFifoLotForProduct(productId: string): Promise<string | null>
 }
 
 async function fetchLatestGlaceLot(article: string): Promise<string | null> {
+  const fifo = await fetchFifoLotChoices(article, 1);
+  return fifo[0] ?? null;
+}
+async function _unusedLatestGlaceLot(article: string): Promise<string | null> {
   const { data, error } = await supabase
     .from("weekly_tracking")
     .select("lot_number, week_start, day_of_week, created_at")
@@ -198,6 +203,9 @@ function uniqueLots(rows: { lot_number: string | null }[] | null, limit = 3): st
 }
 
 async function fetchRecentGlaceLots(article: string): Promise<string[]> {
+  return fetchFifoLotChoices(article, 3);
+}
+async function _unusedRecentGlaceLots(article: string): Promise<string[]> {
   const { data } = await supabase
     .from("weekly_tracking")
     .select("lot_number, week_start, created_at")
@@ -293,6 +301,11 @@ type CtgProductKey = "Cornet" | "Tulipe" | "Gaufrette";
 const CTG_PRODUCTS: CtgProductKey[] = ["Cornet", "Tulipe", "Gaufrette"];
 // Poids unitaire (kg) par produit CTG — utilisé pour calculer le % de perte
 // (poids total des pertes / poids total de la production) × 100
+const CONFIT_WEEKLY_ARTICLE: Record<string, string> = {
+  "Orange confit": "Org.Confit",
+  "Bigarreaux confits": "Bigarreaux",
+};
+const confitKey = (article: string) => `g:${CONFIT_WEEKLY_ARTICLE[article] ?? article}`;
 const CTG_UNIT_WEIGHT_KG: Record<string, number> = {
   Cornet: 0.007,
   Tulipe: 0.015,
@@ -800,6 +813,14 @@ export function AutocontrolManager() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCtg, form.extraData?.ingredients?.map((i) => i.name).join("|")]);
 
+  // N° de lot Panaché = date du jour (JJ.MM.AAAA)
+  useEffect(() => {
+    if (!isPanache || !form.controlDate) return;
+    const [y, m, d] = form.controlDate.slice(0, 10).split("-");
+    const lot = `${d}.${m}.${y}`;
+    if (form.lotNumber !== lot) setForm((f) => ({ ...f, lotNumber: lot }));
+  }, [isPanache, form.controlDate, form.lotNumber]);
+
   // Auto-remplissage des lots Panaché depuis Mouvement glaces (dernière saisie)
   useEffect(() => {
     if (!isPanache) return;
@@ -881,7 +902,7 @@ export function AutocontrolManager() {
   const [lotChoices, setLotChoices] = useState<Record<string, string[]>>({});
   useEffect(() => {
     if (!isConfit || form.lotNumber) return;
-    const first = lotChoices[`a:${form.article}`]?.[0];
+    const first = lotChoices[confitKey(form.article)]?.[0];
     if (first) setForm((f) => (f.lotNumber ? f : { ...f, lotNumber: first }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConfit, form.article, lotChoices]);
@@ -898,7 +919,7 @@ export function AutocontrolManager() {
       Object.values(DECORATION_TARTE_ARTICLE).forEach((a) => keys.add(`g:${a}`));
       keys.add("g:Demis");
     }
-    if (isConfit) keys.add(`a:${form.article}`);
+    if (isConfit) keys.add(confitKey(form.article));
     if (isCtg) (form.extraData?.ingredients ?? []).forEach((i) => {
       const k = ctgKey(i.name);
       if (k) keys.add(k);
@@ -1512,7 +1533,7 @@ export function AutocontrolManager() {
               <label className="text-xs font-medium text-muted-foreground">N° de lot avant découpe *</label>
               <LotPicker
                 value={form.lotNumber}
-                options={lotChoices[`a:${form.article}`] ?? []}
+                options={lotChoices[confitKey(form.article)] ?? []}
                 onChange={(v) => setForm((f) => ({ ...f, lotNumber: v }))}
                 placeholder="N° de lot avant découpe"
               />
@@ -1568,6 +1589,7 @@ export function AutocontrolManager() {
               <Input
                 value={form.lotNumber}
                 onChange={(e) => setForm((f) => ({ ...f, lotNumber: e.target.value }))}
+                readOnly={isPanache}
                 maxLength={120}
               />
             </div>
