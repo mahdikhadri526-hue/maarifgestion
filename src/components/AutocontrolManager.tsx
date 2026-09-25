@@ -813,6 +813,14 @@ export function AutocontrolManager() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isCtg, form.extraData?.ingredients?.map((i) => i.name).join("|")]);
 
+  // N° de lot Panaché = date du jour (JJ.MM.AAAA)
+  useEffect(() => {
+    if (!isPanache || !form.controlDate) return;
+    const [y, m, d] = form.controlDate.slice(0, 10).split("-");
+    const lot = `${d}.${m}.${y}`;
+    if (form.lotNumber !== lot) setForm((f) => ({ ...f, lotNumber: lot }));
+  }, [isPanache, form.controlDate, form.lotNumber]);
+
   // Auto-remplissage des lots Panaché depuis Mouvement glaces (dernière saisie)
   useEffect(() => {
     if (!isPanache) return;
@@ -1581,6 +1589,7 @@ export function AutocontrolManager() {
               <Input
                 value={form.lotNumber}
                 onChange={(e) => setForm((f) => ({ ...f, lotNumber: e.target.value }))}
+                readOnly={isPanache}
                 maxLength={120}
               />
             </div>
