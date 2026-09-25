@@ -879,6 +879,12 @@ export function AutocontrolManager() {
 
   // Choix parmi les 3 derniers N° de lot pour chaque case auto-remplie
   const [lotChoices, setLotChoices] = useState<Record<string, string[]>>({});
+  useEffect(() => {
+    if (!isConfit || form.lotNumber) return;
+    const first = lotChoices[`a:${form.article}`]?.[0];
+    if (first) setForm((f) => (f.lotNumber ? f : { ...f, lotNumber: first }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConfit, form.article, lotChoices]);
   const ctgKey = (ingName: string): string | null => {
     const pattern = CTG_INGREDIENT_PRODUCT_PATTERN[ingName];
     if (!pattern) return null;
