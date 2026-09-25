@@ -462,11 +462,21 @@ export function LotManager() {
                   </tr>
                 ) : (
                   (() => {
+                    const nameOf = (id: string) => products.find((p) => p.id === id)?.name || id;
                     const sorted = [...lots].sort((a, b) => {
-                      const aEmpty = a.remainingQuantity === 0 ? 1 : 0;
-                      const bEmpty = b.remainingQuantity === 0 ? 1 : 0;
+                      // 1) regrouper par produit (ordre alphabétique)
+                      const byName = nameOf(a.productId).localeCompare(nameOf(b.productId), "fr");
+                      if (byName !== 0) return byName;
+                      // 2) lots en stock d'abord, épuisés ensuite
+                      const aEmpty = a.remainingQuantity <= 0 ? 1 : 0;
+                      const bEmpty = b.remainingQuantity <= 0 ? 1 : 0;
                       if (aEmpty !== bEmpty) return aEmpty - bEmpty;
-                      return a.expiryDate.localeCompare(b.expiryDate);
+                      // 3) FIFO : DLC la plus proche, puis date d'entrée la plus ancienne
+                      if (aEmpty === 0) {
+                        return a.expiryDate.localeCompare(b.expiryDate) || a.entryDate.localeCompare(b.entryDate);
+                      }
+                      // Lots épuisés : les plus récents en premier
+                      return b.entryDate.localeCompare(a.entryDate) || b.expiryDate.localeCompare(a.expiryDate);
                     });
                     // Compte d'ordre FIFO par produit, uniquement parmi les lots non épuisés
                     const orderByLotId = new Map<string, number>();
