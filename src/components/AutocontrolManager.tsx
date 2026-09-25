@@ -221,6 +221,18 @@ async function fetchRecentProductLots(productId: string): Promise<string[]> {
   return uniqueLots(data as any);
 }
 
+async function fetchRecentAutocontrolLots(article: string): Promise<string[]> {
+  const { data } = await supabase
+    .from("autocontrols")
+    .select("lot_number, control_date, created_at")
+    .eq("article", article)
+    .not("lot_number", "is", null)
+    .order("control_date", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(40);
+  return uniqueLots(data as any);
+}
+
 function LotPicker({
   value,
   options,
@@ -880,6 +892,7 @@ export function AutocontrolManager() {
       Object.values(DECORATION_TARTE_ARTICLE).forEach((a) => keys.add(`g:${a}`));
       keys.add("g:Demis");
     }
+    if (isConfit) keys.add(`a:${form.article}`);
     if (isCtg) (form.extraData?.ingredients ?? []).forEach((i) => {
       const k = ctgKey(i.name);
       if (k) keys.add(k);
@@ -888,7 +901,7 @@ export function AutocontrolManager() {
     if (missing.length === 0) return;
     let cancelled = false;
     Promise.all(
-      missing.map(async (k) => [k, k.startsWith("g:") ? await fetchRecentGlaceLots(k.slice(2)) : await fetchRecentProductLots(k.slice(2))] as const),
+      missing.map(async (k) => [k, k.startsWith("g:") ? await fetchRecentGlaceLots(k.slice(2)) : k.startsWith("a:") ? await fetchRecentAutocontrolLots(k.slice(2)) : await fetchRecentProductLots(k.slice(2))] as const),
     ).then((pairs) => {
       if (!cancelled) setLotChoices((s) => ({ ...s, ...Object.fromEntries(pairs) }));
     });
@@ -896,7 +909,7 @@ export function AutocontrolManager() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPanache, isDecoration, isCtg, form.extraData?.ingredients?.map((i) => i.name).join("|")]);
+  }, [isPanache, isDecoration, isCtg, isConfit, form.article, form.extraData?.ingredients?.map((i) => i.name).join("|")]);
 
   // Auto-remplissage de la DLC pour la fiche principale (Panaché, Oranges/Bigarreaux confits)
   useEffect(() => {
@@ -1491,10 +1504,10 @@ export function AutocontrolManager() {
           {isConfit && (
             <div className="sm:col-span-2">
               <label className="text-xs font-medium text-muted-foreground">N° de lot avant découpe *</label>
-              <Input
+              <LotPicker
                 value={form.lotNumber}
-                onChange={(e) => setForm((f) => ({ ...f, lotNumber: e.target.value }))}
-                maxLength={120}
+                options={lotChoices[`a:${form.article}`] ?? []}
+                onChange={(v) => setForm((f) => ({ ...f, lotNumber: v }))}
                 placeholder="N° de lot avant découpe"
               />
             </div>
