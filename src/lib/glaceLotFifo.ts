@@ -152,3 +152,72 @@ export async function fetchGlaceRecentLots(limit = 3): Promise<Record<string, st
   }
   return out;
 }
+
+/**
+ * Lots par article, classés FIFO (plus ancien encore en stock en premier),
+ * complétés par les derniers lots saisis si besoin. Toute fiche « Mouvement glaces & tartes ».
+ */
+export async function fetchFifoLotChoices(article: string, limit = 3): Promise<string[]> {
+  let rows: any[];
+  try {
+    rows = await fetchAllRows<any>(() =>
+      supabase
+        .from("weekly_tracking")
+        .select("week_start, day_of_week, row_index, stock_initial, entrees, sorties, lot_number")
+        .eq("fiche_type", FICHE)
+        .eq("article", article),
+    );
+  } catch {
+    return [];
+  }
+  const cmp = (a: any, b: any) =>
+    `${a.week_start}`.localeCompare(`${b.week_start}`) ||
+    DAYS.indexOf(a.day_of_week) - DAYS.indexOf(b.day_of_week) ||
+    (a.row_index ?? 0) - (b.row_index ?? 0);
+  rows.sort(cmp);
+  const splitLots = (v: unknown) =>
+    (v ?? "").toString().split(/[\n;]+/).map((s) => s.trim()).filter((s) => s && s.toLowerCase() !== "null");
+
+  let batches: { lot: string; remaining: number }[] = [];
+  const keys = Array.from(new Set(rows.map((r) => `${r.week_start}|${r.day_of_week}`)));
+  for (const key of keys) {
+    const dayRows = rows.filter((r) => `${r.week_start}|${r.day_of_week}` === key);
+    const siRow = dayRows.find((r) => r.stock_initial != null && r.stock_initial !== "");
+    if (siRow) {
+      const target = num(siRow.stock_initial);
+      const total = batches.reduce((s, b) => s + b.remaining, 0);
+      if (total > target) {
+        let excess = total - target;
+        for (const b of batches) {
+          if (excess <= 0) break;
+          const take = Math.min(b.remaining, excess);
+          b.remaining -= take;
+          excess -= take;
+        }
+      } else if (total < target) batches.unshift({ lot: "", remaining: target - total });
+    }
+    for (const r of dayRows) {
+      const q = num(r.entrees);
+      if (q <= 0) continue;
+      const lots = splitLots(r.lot_number);
+      if (lots.length === 0) batches.push({ lot: "", remaining: q });
+      else lots.forEach((l) => batches.push({ lot: l, remaining: q / lots.length }));
+    }
+    let need = dayRows.reduce((s, r) => s + num(r.sorties), 0);
+    for (const b of batches) {
+      if (need <= 0) break;
+      const take = Math.min(b.remaining, need);
+      b.remaining -= take;
+      need -= take;
+    }
+    batches = batches.filter((b) => b.remaining > 1e-9);
+  }
+  const out: string[] = [];
+  for (const b of batches) if (b.lot && !out.includes(b.lot)) out.push(b.lot);
+  if (out.length < limit) {
+    for (let i = rows.length - 1; i >= 0 && out.length < limit; i--) {
+      for (const l of splitLots(rows[i].lot_number)) if (out.length < limit && !out.includes(l)) out.push(l);
+    }
+  }
+  return out.slice(0, limit);
+}
