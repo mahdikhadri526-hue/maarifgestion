@@ -1003,7 +1003,6 @@ export function AutocontrolManager() {
         const row = ctgProducts[p];
         const qty = Number(row.quantity);
         if (!Number.isFinite(qty) || qty <= 0) errors.push(`${p} : quantité obligatoire`);
-        if (!row.lotNumber.trim()) errors.push(`${p} : N° de lot obligatoire`);
       });
     }
 
@@ -1088,7 +1087,7 @@ export function AutocontrolManager() {
             controlDate: baseResult.data.controlDate,
             collaborateur: baseResult.data.collaborateur,
             article: p,
-            lotNumber: row.lotNumber.trim(),
+            lotNumber: (() => { const [y, m, d] = form.controlDate.slice(0, 10).split("-"); return `${d}.${m}.${y}`; })(),
             quantity: Number(row.quantity),
             dlc: row.dlc || null,
             visaManager: baseResult.data.visaManager,
@@ -1470,11 +1469,8 @@ export function AutocontrolManager() {
                           <div>
                             <label className="text-xs text-muted-foreground">N° de lot *</label>
                             <Input
-                              value={row.lotNumber}
-                              maxLength={120}
-                              onChange={(e) =>
-                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], lotNumber: e.target.value } }))
-                              }
+                              value={(() => { const [y, m, d] = form.controlDate.slice(0, 10).split("-"); return `${d}.${m}.${y}`; })()}
+                              readOnly
                             />
                           </div>
                           <div>
