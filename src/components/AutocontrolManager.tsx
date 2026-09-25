@@ -233,6 +233,66 @@ async function fetchRecentAutocontrolLots(article: string): Promise<string[]> {
   return uniqueLots(data as any);
 }
 
+/** Normalise une saisie de type date (2.5.26, 02/05/2026…) en JJ.MM.AAAA ; sinon renvoie la valeur telle quelle. */
+function normalizeDateLike(raw: string): string {
+  const v = (raw ?? "").trim();
+  const m = v.match(/^(\d{1,2})[./\-\s](\d{1,2})[./\-\s](\d{2}|\d{4})$/);
+  if (m) {
+    const y = m[3].length === 2 ? `20${m[3]}` : m[3];
+    return `${m[1].padStart(2, "0")}.${m[2].padStart(2, "0")}.${y}`;
+  }
+  const iso = v.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (iso) return `${iso[3]}.${iso[2]}.${iso[1]}`;
+  return v;
+}
+
+/** ISO (AAAA-MM-JJ) -> JJ.MM.AAAA */
+function isoToDisplay(iso: string): string {
+  const m = (iso ?? "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : iso ?? "";
+}
+
+/** JJ.MM.AAAA (ou variante courte) -> ISO ; "" si invalide. */
+function displayToIso(raw: string): string {
+  const n = normalizeDateLike(raw);
+  const m = n.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (!m) return "";
+  const d = new Date(`${m[3]}-${m[2]}-${m[1]}T00:00:00`);
+  if (isNaN(d.getTime()) || d.getDate() !== Number(m[1])) return "";
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+
+function DlcField({
+  value,
+  onChange,
+  disabled,
+  className,
+}: {
+  value: string;
+  onChange?: (iso: string) => void;
+  disabled?: boolean;
+  className?: string;
+}) {
+  const [text, setText] = useState(isoToDisplay(value));
+  useEffect(() => setText(isoToDisplay(value)), [value]);
+  return (
+    <Input
+      value={text}
+      placeholder="JJ.MM.AAAA"
+      inputMode="numeric"
+      readOnly={disabled}
+      disabled={disabled}
+      className={className}
+      onChange={(e) => setText(e.target.value)}
+      onBlur={() => {
+        const iso = displayToIso(text);
+        setText(iso ? isoToDisplay(iso) : text ? normalizeDateLike(text) : "");
+        onChange?.(iso);
+      }}
+    />
+  );
+}
+
 function LotPicker({
   value,
   options,
@@ -253,7 +313,7 @@ function LotPicker({
       <SelectContent>
         {opts.map((l) => (
           <SelectItem key={l} value={l}>
-            {l}
+            {normalizeDateLike(l)}
           </SelectItem>
         ))}
       </SelectContent>
@@ -563,7 +623,7 @@ export function AutocontrolManager() {
           fiche: entry.ficheType,
           collaborateur: entry.collaborateur,
           article: entry.article,
-          lot: entry.lotNumber ? formatMaybeDate(entry.lotNumber) : "—",
+          lot: entry.lotNumber ? normalizeDateLike(formatMaybeDate(entry.lotNumber)) : "—",
           quantite: entry.quantity ?? "—",
           dlc: entry.dlc ? formatDateFR(entry.dlc) : "—",
           visa: entry.visaManager?.trim() || "En attente",
@@ -691,7 +751,7 @@ export function AutocontrolManager() {
             date: formatDateFR(e.controlDate),
             collab: e.collaborateur,
             article: e.article,
-            lot: e.lotNumber ? formatMaybeDate(e.lotNumber) : "—",
+            lot: e.lotNumber ? normalizeDateLike(formatMaybeDate(e.lotNumber)) : "—",
             qte: e.quantity ?? "—",
             dlc: e.dlc ? formatDateFR(e.dlc) : "—",
             visa: e.visaManager?.trim() || "En attente",
@@ -1454,17 +1514,15 @@ export function AutocontrolManager() {
                               onChange={(e) =>
                                 setCtgProducts((s) => ({ ...s, [p]: { ...s[p], lotNumber: e.target.value } }))
                               }
+                              onBlur={(e) => {
+                                const v = normalizeDateLike(e.target.value);
+                                setCtgProducts((s) => ({ ...s, [p]: { ...s[p], lotNumber: v } }));
+                              }}
                             />
                           </div>
                           <div>
                             <label className="text-xs text-muted-foreground">DLC</label>
-                            <Input
-                              type="date"
-                              value={row.dlc}
-                              readOnly
-                              disabled
-                              className="bg-muted"
-                            />
+                            <DlcField value={row.dlc} disabled className="bg-muted" />
                           </div>
                         </div>
                       )}
@@ -1568,6 +1626,7 @@ export function AutocontrolManager() {
               <Input
                 value={form.lotNumber}
                 onChange={(e) => setForm((f) => ({ ...f, lotNumber: e.target.value }))}
+                onBlur={(e) => { const v = normalizeDateLike(e.target.value); setForm((f) => ({ ...f, lotNumber: v })); }}
                 maxLength={120}
               />
             </div>
@@ -1589,13 +1648,11 @@ export function AutocontrolManager() {
           {!isDecoration && !isCtg && !isPerte && (
             <div>
               <label className="text-xs font-medium text-muted-foreground">DLC</label>
-              <Input
-                type="date"
+              <DlcField
                 value={form.dlc}
-                readOnly={isAutoDlc}
                 disabled={isAutoDlc}
                 className={isAutoDlc ? "bg-muted" : undefined}
-                onChange={(e) => setForm((f) => ({ ...f, dlc: e.target.value }))}
+                onChange={(iso) => setForm((f) => ({ ...f, dlc: iso }))}
               />
             </div>
           )}
@@ -2185,7 +2242,7 @@ export function AutocontrolManager() {
                       <div>
                         <label className="text-xs text-muted-foreground">N° de lot *</label>
                         <Input
-                          value={editFields.lotNumber}
+                          value={normalizeDateLike(editFields.lotNumber)}
                           maxLength={120}
                           readOnly
                           disabled
@@ -2193,14 +2250,7 @@ export function AutocontrolManager() {
                       </div>
                       <div>
                         <label className="text-xs text-muted-foreground">DLC</label>
-                        <Input
-                          type="date"
-                          value={editFields.dlc}
-                          readOnly
-                          disabled
-                          className="bg-muted"
-                          onChange={(e) => setEditFields((f) => ({ ...f, dlc: e.target.value }))}
-                        />
+                        <DlcField value={editFields.dlc} disabled className="bg-muted" />
                       </div>
                     </div>
                   </div>
