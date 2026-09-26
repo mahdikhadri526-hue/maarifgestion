@@ -556,7 +556,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
                 <Select value={newPdv} onValueChange={setNewPdv}>
                   <SelectTrigger><SelectValue placeholder="Point de vente" /></SelectTrigger>
                   <SelectContent>
-                    {pdvs.map((p) => (
+                    {visiblePdvs.map((p) => (
                       <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -627,7 +627,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
           </DialogHeader>
           {pdvEditing && (
             <div className="space-y-1">
-              {pdvs.map((p) => {
+              {visiblePdvs.map((p) => {
                 const checked = (userPdvs[pdvEditing.user_id] ?? []).includes(p.id);
                 return (
                   <label key={p.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
