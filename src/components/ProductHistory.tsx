@@ -183,6 +183,8 @@ function SingleProductHistory({
   const products = getProducts();
   const product = products.find((p) => p.id === productId);
   const { map: mepMap, save: saveMep } = useMiseEnPlace();
+  const { can } = useAuth();
+  const canViewMep = can("view_mise_en_place");
 
   if (loading) return <p className="text-center text-muted-foreground py-8">Chargement...</p>;
 
