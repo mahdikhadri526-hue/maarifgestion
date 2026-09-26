@@ -438,12 +438,9 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
               >
                 <SelectTrigger className="h-9"><SelectValue placeholder="Point de vente" /></SelectTrigger>
                 <SelectContent>
-                  {pdvs.map((p) => (
+                  {visiblePdvs.map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                   ))}
-                </SelectContent>
-              </Select>
-            )}
           </div>
 
           <div className="space-y-1">
