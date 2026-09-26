@@ -376,6 +376,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   const canEditStock = can("edit_stock");
   const canEditRemaining = can("edit_remaining_stock") || can("edit_stock");
+  const canViewMep = can("view_mise_en_place");
 
   // Détails du calcul pour les articles agrégés (GLACE / TOPPINGS / NESPRESSO / MACARON)
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -1790,7 +1791,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 {showRefCols && (
                   <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Réf.</th>
                 )}
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
+                {canViewMep && (
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
+                )}
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total</th>
 
               </tr>
@@ -1927,14 +1930,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       })()}
                     </td>
                   )}
-                  <td className="p-3 text-right">
-                    <MiseEnPlaceInput
-                      value={mepMap[level.productId] ?? 0}
-                      onSave={(val) => saveMep(level.productId, val)}
-                    />
-                  </td>
+                  {canViewMep && (
+                    <td className="p-3 text-right">
+                      <MiseEnPlaceInput
+                        value={mepMap[level.productId] ?? 0}
+                        onSave={(val) => saveMep(level.productId, val)}
+                      />
+                    </td>
+                  )}
                   <td className="p-3 text-right font-mono text-sm font-bold text-primary">
-                    {roundStockQuantity((Number(v.stockRestant) || 0) + (mepMap[level.productId] ?? 0))}
+                    {roundStockQuantity((Number(v.stockRestant) || 0) + (canViewMep ? (mepMap[level.productId] ?? 0) : 0))}
                   </td>
                 </tr>
                 );
