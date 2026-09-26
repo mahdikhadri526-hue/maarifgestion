@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.jpeg";
 import { formatDateFR } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 type FilterMode = "all" | "day" | "month" | "period";
@@ -61,6 +62,8 @@ function AllProductsSummary({
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { map: mepMap, save: saveMep } = useMiseEnPlace();
+  const { can } = useAuth();
+  const canViewMep = can("view_mise_en_place");
 
   useEffect(() => {
     let cancelled = false;
