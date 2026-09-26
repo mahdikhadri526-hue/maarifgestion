@@ -441,6 +441,9 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
                   {visiblePdvs.map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
           <div className="space-y-1">
