@@ -126,13 +126,15 @@ function AllProductsSummary({
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté utilisée</th>
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Restant</th>
-            <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
+            {canViewMep && (
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
+            )}
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total</th>
           </tr>
         </thead>
         <tbody>
           {data.map((p) => {
-            const mep = mepMap[p.id] ?? 0;
+            const mep = canViewMep ? (mepMap[p.id] ?? 0) : 0;
             const total = (Number(p.stockRestant) || 0) + mep;
             return (
               <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
@@ -144,9 +146,11 @@ function AllProductsSummary({
                 <td className={`p-3 text-right font-mono text-sm font-semibold ${p.stockRestant < 0 ? "text-destructive" : ""}`}>
                   {p.stockRestant}
                 </td>
-                <td className="p-3 text-right">
-                  <MiseEnPlaceInput value={mep} onSave={(v) => saveMep(p.id, v)} />
-                </td>
+                {canViewMep && (
+                  <td className="p-3 text-right">
+                    <MiseEnPlaceInput value={mep} onSave={(v) => saveMep(p.id, v)} />
+                  </td>
+                )}
                 <td className={`p-3 text-right font-mono text-sm font-bold ${total < 0 ? "text-destructive" : "text-primary"}`}>
                   {total}
                 </td>
