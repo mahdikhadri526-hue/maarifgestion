@@ -26,7 +26,7 @@ export const ROLE_ORDER: AppRole[] = ["admin", "regional_admin", "manager", "ope
 // Liste complète des permissions, regroupées par tableau / module de l'application.
 export const PERMISSION_GROUPS: { title: string; keys: string[] }[] = [
   { title: "Tableau de bord & rapports", keys: ["view_dashboard", "view_reports"] },
-  { title: "Stock initial", keys: ["view_stock", "edit_stock", "delete_stock", "edit_remaining_stock"] },
+  { title: "Stock initial", keys: ["view_stock", "edit_stock", "delete_stock", "edit_remaining_stock", "view_mise_en_place"] },
   { title: "Mouvements", keys: ["view_movements", "edit_movements", "delete_movements"] },
   { title: "Réquisitions", keys: ["view_requisitions", "edit_requisitions", "delete_requisitions"] },
   { title: "Lots & DLC", keys: ["view_lots", "edit_lots", "delete_lots"] },
@@ -56,6 +56,7 @@ export const ALL_PERMISSIONS = [
   { key: "edit_stock", label: "Modifier le stock initial" },
   { key: "delete_stock", label: "Supprimer du stock initial" },
   { key: "edit_remaining_stock", label: "Modifier le stock restant" },
+  { key: "view_mise_en_place", label: "Voir le stock mise en place" },
   { key: "view_movements", label: "Voir les mouvements" },
   { key: "edit_movements", label: "Ajouter / modifier des mouvements" },
   { key: "delete_movements", label: "Supprimer des mouvements" },
