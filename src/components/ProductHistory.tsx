@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import logo from "@/assets/logo.jpeg";
 import { formatDateFR } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 
 type FilterMode = "all" | "day" | "month" | "period";
@@ -61,6 +62,8 @@ function AllProductsSummary({
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { map: mepMap, save: saveMep } = useMiseEnPlace();
+  const { can } = useAuth();
+  const canViewMep = can("view_mise_en_place");
 
   useEffect(() => {
     let cancelled = false;
@@ -123,13 +126,15 @@ function AllProductsSummary({
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Qté utilisée</th>
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Restant</th>
-            <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
+            {canViewMep && (
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
+            )}
             <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total</th>
           </tr>
         </thead>
         <tbody>
           {data.map((p) => {
-            const mep = mepMap[p.id] ?? 0;
+            const mep = canViewMep ? (mepMap[p.id] ?? 0) : 0;
             const total = (Number(p.stockRestant) || 0) + mep;
             return (
               <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
@@ -141,9 +146,11 @@ function AllProductsSummary({
                 <td className={`p-3 text-right font-mono text-sm font-semibold ${p.stockRestant < 0 ? "text-destructive" : ""}`}>
                   {p.stockRestant}
                 </td>
-                <td className="p-3 text-right">
-                  <MiseEnPlaceInput value={mep} onSave={(v) => saveMep(p.id, v)} />
-                </td>
+                {canViewMep && (
+                  <td className="p-3 text-right">
+                    <MiseEnPlaceInput value={mep} onSave={(v) => saveMep(p.id, v)} />
+                  </td>
+                )}
                 <td className={`p-3 text-right font-mono text-sm font-bold ${total < 0 ? "text-destructive" : "text-primary"}`}>
                   {total}
                 </td>
@@ -176,6 +183,8 @@ function SingleProductHistory({
   const products = getProducts();
   const product = products.find((p) => p.id === productId);
   const { map: mepMap, save: saveMep } = useMiseEnPlace();
+  const { can } = useAuth();
+  const canViewMep = can("view_mise_en_place");
 
   if (loading) return <p className="text-center text-muted-foreground py-8">Chargement...</p>;
 
@@ -206,7 +215,7 @@ function SingleProductHistory({
     }
   }
   const quantiteUtilisee = totals.sorties;
-  const mep = mepMap[productId] ?? 0;
+  const mep = canViewMep ? (mepMap[productId] ?? 0) : 0;
   const stockTotal = (Number(stockRestantFinal) || 0) + mep;
 
   return (
@@ -219,8 +228,12 @@ function SingleProductHistory({
           <div><div className="text-muted-foreground">Quantité utilisée</div><div className="font-mono font-semibold text-warning">{quantiteUtilisee}</div></div>
           <div><div className="text-muted-foreground">Stock Restant</div><div className={`font-mono font-semibold ${stockRestantFinal < 0 ? "text-destructive" : ""}`}>{stockRestantFinal}</div></div>
           <div>
-            <div className="text-muted-foreground">Stock mise en place</div>
-            <MiseEnPlaceInput value={mep} onSave={(v) => saveMep(productId, v)} />
+            {canViewMep && (
+              <div>
+                <div className="text-muted-foreground">Stock mise en place</div>
+                <MiseEnPlaceInput value={mep} onSave={(v) => saveMep(productId, v)} />
+              </div>
+            )}
           </div>
           <div><div className="text-muted-foreground">Stock total</div><div className={`font-mono font-bold ${stockTotal < 0 ? "text-destructive" : "text-primary"}`}>{stockTotal}</div></div>
         </div>
