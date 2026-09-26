@@ -97,6 +97,14 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   const [permSearch, setPermSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
 
+  // PDV masqués de la sélection (restent accessibles aux comptes masqués eux-mêmes).
+  const HIDDEN_PDVS = ["admin mohammedia", "mohammedia", "miramar", "mansouria"];
+  const meHiddenPdv = ["oliverimohammedia2016", "oliverimohammedia2026", "gestion-mohammedia", "gestion-miramar", "gestion-mansouria"]
+    .includes((currentUser?.email ?? "").toLowerCase().split("@")[0]);
+  const visiblePdvs = meHiddenPdv
+    ? pdvs
+    : pdvs.filter((p) => !HIDDEN_PDVS.includes(p.name.trim().toLowerCase()));
+
   const isProtected = (email?: string | null) =>
     !!email && PROTECTED_EMAILS.includes(email.toLowerCase());
 
@@ -430,7 +438,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
               >
                 <SelectTrigger className="h-9"><SelectValue placeholder="Point de vente" /></SelectTrigger>
                 <SelectContent>
-                  {pdvs.map((p) => (
+                  {visiblePdvs.map((p) => (
                     <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                   ))}
                 </SelectContent>
@@ -548,7 +556,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
                 <Select value={newPdv} onValueChange={setNewPdv}>
                   <SelectTrigger><SelectValue placeholder="Point de vente" /></SelectTrigger>
                   <SelectContent>
-                    {pdvs.map((p) => (
+                    {visiblePdvs.map((p) => (
                       <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -619,7 +627,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
           </DialogHeader>
           {pdvEditing && (
             <div className="space-y-1">
-              {pdvs.map((p) => {
+              {visiblePdvs.map((p) => {
                 const checked = (userPdvs[pdvEditing.user_id] ?? []).includes(p.id);
                 return (
                   <label key={p.id} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
