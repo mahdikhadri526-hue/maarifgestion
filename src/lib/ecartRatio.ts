@@ -79,6 +79,7 @@ export const VENTES_EMP: Item[] = [
   { name: "FRAISE MELBA EMP", gram: 280 },
   { name: "MACEDOINE DE FRUITS EMP", gram: 120 },
   { name: "AFFOGATO EMP", gram: 170 },
+  { name: "BASTA EMP", gram: 60 },
 ];
 
 /** Articles vendus — Surplace / Salle (feuille VENTES, lignes 51→84). */
