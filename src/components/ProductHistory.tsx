@@ -228,8 +228,12 @@ function SingleProductHistory({
           <div><div className="text-muted-foreground">Quantité utilisée</div><div className="font-mono font-semibold text-warning">{quantiteUtilisee}</div></div>
           <div><div className="text-muted-foreground">Stock Restant</div><div className={`font-mono font-semibold ${stockRestantFinal < 0 ? "text-destructive" : ""}`}>{stockRestantFinal}</div></div>
           <div>
-            <div className="text-muted-foreground">Stock mise en place</div>
-            <MiseEnPlaceInput value={mep} onSave={(v) => saveMep(productId, v)} />
+            {canViewMep && (
+              <div>
+                <div className="text-muted-foreground">Stock mise en place</div>
+                <MiseEnPlaceInput value={mep} onSave={(v) => saveMep(productId, v)} />
+              </div>
+            )}
           </div>
           <div><div className="text-muted-foreground">Stock total</div><div className={`font-mono font-bold ${stockTotal < 0 ? "text-destructive" : "text-primary"}`}>{stockTotal}</div></div>
         </div>
