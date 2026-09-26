@@ -215,7 +215,7 @@ function SingleProductHistory({
     }
   }
   const quantiteUtilisee = totals.sorties;
-  const mep = mepMap[productId] ?? 0;
+  const mep = canViewMep ? (mepMap[productId] ?? 0) : 0;
   const stockTotal = (Number(stockRestantFinal) || 0) + mep;
 
   return (
