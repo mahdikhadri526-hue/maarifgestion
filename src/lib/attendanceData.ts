@@ -134,11 +134,13 @@ export async function saveManualPunch(params: {
   date: string; // YYYY-MM-DD
   time: string; // HH:MM
   by: string;
+  managerName: string;
+  motif: string;
 }): Promise<void> {
   const [y, m, d] = params.date.split("-").map(Number);
   const [hh, mm] = params.time.split(":").map(Number);
   const at = new Date(y, m - 1, d, hh, mm, 0);
-  const label = `Manuel par ${params.by} le ${new Date().toLocaleString("fr-FR")}`.slice(0, 120);
+  const label = `Manuel par ${params.managerName} (${params.by}) — Motif : ${params.motif} — le ${new Date().toLocaleString("fr-FR")}`.slice(0, 200);
   const payload = {
     punched_at: at.toISOString(),
     punch_date: params.date,
