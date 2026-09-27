@@ -499,6 +499,10 @@ function JournalView({
       toast.error("Heure invalide");
       return;
     }
+    if (!managerName.trim() || !motif.trim()) {
+      toast.error("Nom du manager et motif obligatoires");
+      return;
+    }
     setSaving(true);
     try {
       await saveManualPunch({
@@ -510,6 +514,8 @@ function JournalView({
         date: edit.existing?.punch_date ?? todayISO(),
         time,
         by: user?.email ?? "manager",
+        managerName: managerName.trim(),
+        motif: motif.trim(),
       });
       toast.success("Pointage manuel enregistré");
       setEdit(null);
@@ -599,9 +605,23 @@ function JournalView({
               Pointage manuel — {edit?.agentName} ({edit ? PUNCH_LABELS[edit.type] : ""})
             </DialogTitle>
           </DialogHeader>
-          <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+          <div className="space-y-2">
+            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            <Input
+              placeholder="Nom du manager (obligatoire)"
+              value={managerName}
+              onChange={(e) => setManagerName(e.target.value)}
+              maxLength={80}
+            />
+            <Input
+              placeholder="Motif de la rectification (obligatoire)"
+              value={motif}
+              onChange={(e) => setMotif(e.target.value)}
+              maxLength={200}
+            />
+          </div>
           <p className="text-xs text-muted-foreground">
-            Ce pointage sera marqué « Manuel » avec votre nom sur le journal et tous les rapports RH.
+            Ce pointage sera marqué « Manuel » avec le nom du manager et le motif sur le journal et tous les rapports RH.
           </p>
           <Button onClick={save} disabled={saving}>
             Enregistrer
