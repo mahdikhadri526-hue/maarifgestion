@@ -660,7 +660,7 @@ function StartTimeInput({
   return (
     <Input
       inputMode="numeric"
-      placeholder={optional ? "facultatif" : "0800"}
+      placeholder=""
       maxLength={5}
       aria-label={label}
       className="h-6 min-w-0 flex-1 border-0 bg-transparent px-0 text-center font-mono !text-xs font-medium shadow-none focus-visible:ring-1"
