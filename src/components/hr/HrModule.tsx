@@ -1139,16 +1139,16 @@ function ReportsView({
               <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">PDV</th>
               <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">Journée</th>
               <th colSpan={5} className="p-2 text-center border-l border-b whitespace-nowrap">Pointages</th>
-              <th colSpan={4} className="p-2 text-center border-l border-b whitespace-nowrap">Temps &amp; écarts</th>
               <th colSpan={2} className="p-2 text-center border-l border-b whitespace-nowrap">Suivi</th>
+              <th colSpan={4} className="p-2 text-center border-l border-b whitespace-nowrap">Temps &amp; écarts</th>
             </tr>
             <tr className="bg-muted/70">
               {[
                 "Prévu", "Entrée", "Pause début", "Pause fin", "Sortie",
-                "Heures", "H. sup.", "Retard", "Retard pause",
                 "Statut", "Manuel",
+                "Heures", "H. sup.", "Retard", "Retard pause",
               ].map((h, i) => (
-                <th key={h} className={`p-2 whitespace-nowrap text-center ${i === 0 || i === 5 || i === 9 ? "border-l" : ""}`}>
+                <th key={h} className={`p-2 whitespace-nowrap text-center ${i === 0 || i === 5 || i === 7 ? "border-l" : ""}`}>
                   {h}
                 </th>
               ))}
@@ -1169,14 +1169,6 @@ function ReportsView({
                 <td className="p-2 whitespace-nowrap text-center">{r.pauseStart ?? "—"}</td>
                 <td className="p-2 whitespace-nowrap text-center">{r.pauseEnd ?? "—"}</td>
                 <td className="p-2 whitespace-nowrap text-center">{r.sortie ?? "—"}</td>
-                <td className="p-2 whitespace-nowrap text-center font-medium">{r.workedHours.toFixed(2)}</td>
-                <td className="p-2 whitespace-nowrap text-center">{r.overtimeHours > 0 ? r.overtimeHours.toFixed(2) : "—"}</td>
-                <td className={`p-2 whitespace-nowrap text-center ${r.lateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
-                  {r.lateMinutes > 0 ? formatMinutes(r.lateMinutes) : "—"}
-                </td>
-                <td className={`p-2 whitespace-nowrap text-center ${r.pauseLateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
-                  {r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "—"}
-                </td>
                 <td className="p-2 whitespace-nowrap text-center">
                   {r.absence ? (
                     <span className="text-destructive font-semibold">Absence à justifier</span>
@@ -1195,17 +1187,25 @@ function ReportsView({
                     "—"
                   )}
                 </td>
+                <td className="p-2 whitespace-nowrap text-center font-medium">{r.workedHours.toFixed(2)}</td>
+                <td className="p-2 whitespace-nowrap text-center">{r.overtimeHours > 0 ? r.overtimeHours.toFixed(2) : "—"}</td>
+                <td className={`p-2 whitespace-nowrap text-center ${r.lateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
+                  {r.lateMinutes > 0 ? formatMinutes(r.lateMinutes) : "—"}
+                </td>
+                <td className={`p-2 whitespace-nowrap text-center ${r.pauseLateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
+                  {r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "—"}
+                </td>
               </tr>
             ))}
           </tbody>
           <tfoot>
             <tr>
               <td colSpan={9} className="p-2 text-right font-semibold whitespace-nowrap">Totaux</td>
+              <td colSpan={2} />
               <td className="p-2 text-center font-semibold">{totals.worked.toFixed(2)}</td>
               <td className="p-2 text-center font-semibold">{totals.overtime.toFixed(2)}</td>
               <td className="p-2 text-center font-semibold">{formatMinutes(totals.late)}</td>
               <td className="p-2 text-center font-semibold">{formatMinutes(totals.pauseLate)}</td>
-              <td colSpan={2} />
             </tr>
           </tfoot>
         </table>
