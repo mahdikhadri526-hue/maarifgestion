@@ -200,6 +200,25 @@ export function PlanningGrid({
   const cell = (agentId: string, date: string) =>
     rows.find((r) => r.agent_id === agentId && r.work_date === date) ?? null;
 
+  /** Ligne de dates répétée au-dessus de chaque planning, même fond sombre que le cadre. */
+  const dateHeaderRow = (key: string) => (
+    <tr key={key} className="border-b border-sidebar-border">
+      <th className="sticky left-0 z-30 !bg-sidebar !px-4 !py-2 text-left text-[11px] font-bold uppercase text-sidebar-foreground border-r border-sidebar-border">
+        Collaborateur
+      </th>
+      {days.map((d, i) => {
+        const hol = holidayMap.get(d);
+        return (
+          <th key={d} className={`!px-2 !py-2 text-center border-b-2 ${i > 4 ? "!bg-sidebar border-muted-foreground/30" : "!bg-sidebar border-primary/60"}`}>
+            <span className={`block text-[11px] font-bold normal-case ${i > 4 ? "text-sidebar-foreground/70" : "text-sidebar-foreground"}`}>{DOW_LABELS[i]}</span>
+            <span className={`block text-[10px] font-semibold ${i > 4 ? "text-sidebar-foreground/60" : "text-sidebar-foreground/80"}`}>{formatFr(d).slice(0, 5)}</span>
+            {hol && <span className="mt-1 block truncate text-[9px] font-medium normal-case text-warning-foreground">Férié</span>}
+          </th>
+        );
+      })}
+    </tr>
+  );
+
   const initials = (name: string) =>
     name
       .trim()
@@ -373,64 +392,82 @@ export function PlanningGrid({
               {list.map((a) => (
                 <Fragment key={a.id}>
                 {a.id === firstMenageId && (
-                  <tr key={`sep-menage-${a.id}`}>
-                    <td
-                      colSpan={days.length + 1}
-                       className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
-                    >
-                      Ménage
-                    </td>
-                  </tr>
+                  <Fragment key={`sep-menage-${a.id}`}>
+                    <tr>
+                      <td
+                        colSpan={days.length + 1}
+                        className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
+                      >
+                        Ménage
+                      </td>
+                    </tr>
+                    {a.id !== list[0]?.id && dateHeaderRow(`dates-menage-${a.id}`)}
+                  </Fragment>
                 )}
                 {a.id === firstSecuriteId && (
-                  <tr key={`sep-securite-${a.id}`}>
-                    <td
-                      colSpan={days.length + 1}
-                       className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
-                    >
-                      Sécurité
-                    </td>
-                  </tr>
+                  <Fragment key={`sep-securite-${a.id}`}>
+                    <tr>
+                      <td
+                        colSpan={days.length + 1}
+                        className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
+                      >
+                        Sécurité
+                      </td>
+                    </tr>
+                    {a.id !== list[0]?.id && dateHeaderRow(`dates-securite-${a.id}`)}
+                  </Fragment>
                 )}
                 {a.id === firstManagerId && (
-                  <tr key={`sep-manager-${a.id}`}>
-                    <td
-                      colSpan={days.length + 1}
-                       className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
-                    >
-                      Managers — planning établi par la RH
-                    </td>
-                  </tr>
+                  <Fragment key={`sep-manager-${a.id}`}>
+                    <tr>
+                      <td
+                        colSpan={days.length + 1}
+                        className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
+                      >
+                        Managers — planning établi par la RH
+                      </td>
+                    </tr>
+                    {a.id !== list[0]?.id && dateHeaderRow(`dates-manager-${a.id}`)}
+                  </Fragment>
                 )}
                 {a.id === firstCaissierId && (
-                  <tr key={`sep-${a.id}`}>
-                    <td
-                      colSpan={days.length + 1}
-                       className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
-                    >
-                      Caissiers — planning établi par la RH{groupedCategories === true && " (lecture seule)"}
-                    </td>
-                  </tr>
+                  <Fragment key={`sep-caissier-${a.id}`}>
+                    <tr>
+                      <td
+                        colSpan={days.length + 1}
+                        className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
+                      >
+                        Caissiers — planning établi par la RH{groupedCategories === true && " (lecture seule)"}
+                      </td>
+                    </tr>
+                    {a.id !== list[0]?.id && dateHeaderRow(`dates-caissier-${a.id}`)}
+                  </Fragment>
                 )}
                 {a.id === firstRegularAgentId && (
-                  <tr key={`sep-agent-${a.id}`}>
-                    <td
-                      colSpan={days.length + 1}
-                       className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
-                    >
-                      Agents — lecture seule
-                    </td>
-                  </tr>
+                  <Fragment key={`sep-agent-${a.id}`}>
+                    <tr>
+                      <td
+                        colSpan={days.length + 1}
+                        className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
+                      >
+                        Agents — lecture seule
+                      </td>
+                    </tr>
+                    {a.id !== list[0]?.id && dateHeaderRow(`dates-agent-${a.id}`)}
+                  </Fragment>
                 )}
                 {a.id === firstTechId && (
-                  <tr key={`sep-tech-${a.id}`}>
-                    <td
-                      colSpan={days.length + 1}
-                       className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
-                    >
-                      Ménage & Sécurité — planning établi par le responsable technique (lecture seule)
-                    </td>
-                  </tr>
+                  <Fragment key={`sep-tech-${a.id}`}>
+                    <tr>
+                      <td
+                        colSpan={days.length + 1}
+                        className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
+                      >
+                        Ménage & Sécurité — planning établi par le responsable technique (lecture seule)
+                      </td>
+                    </tr>
+                    {a.id !== list[0]?.id && dateHeaderRow(`dates-tech-${a.id}`)}
+                  </Fragment>
                 )}
                 <tr key={a.id} className="group">
                   <td className="sticky left-0 z-20 !bg-card !px-3 !py-2 border-r-2 border-border group-hover:!bg-accent">
