@@ -497,11 +497,13 @@ export function PlanningGrid({
                                   }}
                                 >
                                   <option value="">PDV — période</option>
-                                  {pdvs.flatMap((p) => ([
-                                    <option key={`${p.id}-jour`} value={`${p.id}|jour`}>{p.name}</option>,
-                                    <option key={`${p.id}-matin`} value={`${p.id}|matin`}>{p.name} — Matin</option>,
-                                    <option key={`${p.id}-apres_midi`} value={`${p.id}|apres_midi`}>{p.name} — Après-midi</option>,
-                                  ]))}
+                                  {pdvs
+                                    .filter((p) => !readOnlyHiddenPdvs.has(norm(p.name)))
+                                    .flatMap((p) => ([
+                                      <option key={`${p.id}-jour`} value={`${p.id}|jour`}>{p.name}</option>,
+                                      <option key={`${p.id}-matin`} value={`${p.id}|matin`}>{p.name} — Matin</option>,
+                                      <option key={`${p.id}-apres_midi`} value={`${p.id}|apres_midi`}>{p.name} — Après-midi</option>,
+                                    ]))}
                                 </select>
                               )}
                               {needsPdvAndHours(a) && (
