@@ -26,13 +26,12 @@ import {
   type AttendancePunch,
   type PunchType,
 } from "@/lib/attendanceData";
+import { checkKioskPin } from "@/lib/kioskPin";
 
 type View = "pointage" | "agents" | "journal";
 
 const COOLDOWN_MS = 60_000;
 const SHOTS_REQUIRED = 3;
-
-const KIOSK_PIN = "1975";
 
 export function AttendanceModule({ onExit }: { onExit?: () => void }) {
   const { pdvId, can } = useAuth();
@@ -112,8 +111,8 @@ export function AttendanceModule({ onExit }: { onExit?: () => void }) {
     };
   }, [unlocked]);
 
-  const submitPin = () => {
-    if (pin !== KIOSK_PIN) {
+  const submitPin = async () => {
+    if (!(await checkKioskPin(pin))) {
       toast.error("Code incorrect");
       setPin("");
       return;

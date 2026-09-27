@@ -5,14 +5,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Maximize, Minimize } from "lucide-react";
 import { toast } from "sonner";
 
-const KIOSK_PIN = "1975";
+import { checkKioskPin } from "@/lib/kioskPin";
 
 export function KioskToggle({ active, onChange }: { active: boolean; onChange: (v: boolean) => void }) {
   const [open, setOpen] = useState(false);
   const [pin, setPin] = useState("");
 
   const submit = async () => {
-    if (pin !== KIOSK_PIN) {
+    if (!(await checkKioskPin(pin))) {
       toast.error("Code incorrect");
       setPin("");
       return;
