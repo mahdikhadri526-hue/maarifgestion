@@ -608,12 +608,18 @@ function JournalView({
           </DialogHeader>
           <div className="space-y-2">
             <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-            <Input
-              placeholder="Nom du manager (obligatoire)"
+            <select
+              className="border rounded px-2 py-1.5 text-sm bg-background"
               value={managerName}
               onChange={(e) => setManagerName(e.target.value)}
-              maxLength={80}
-            />
+            >
+              <option value="">Choisir un manager…</option>
+              {MANAGERS.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+            </select>
             <Input
               placeholder="Motif de la rectification (obligatoire)"
               value={motif}
