@@ -11,6 +11,7 @@ import { computeDescriptor, findBestMatch, loadFaceApi, MATCH_THRESHOLD, type Fa
 import {
   addPunch,
   deletePunch,
+  saveManualPunch,
   formatTime,
   getAgents,
   getPunches,
@@ -196,7 +197,7 @@ export function AttendanceModule({ onExit }: { onExit?: () => void }) {
 
       {!unlocked && <PunchView agents={agents} punches={punches} onDone={reload} />}
       {unlocked && view === "pointage" && <PunchView agents={agents} punches={punches} onDone={reload} />}
-      {unlocked && view === "journal" && <JournalView punches={punches} canManage={canManage} onChanged={reload} />}
+      {unlocked && view === "journal" && <JournalView punches={punches} agents={agents} canManage={canManage} onChanged={reload} />}
       {unlocked && view === "agents" && canManage && <AgentsView agents={agents} onChanged={reload} />}
 
       <Dialog open={pinOpen} onOpenChange={(o) => { setPinOpen(o); if (!o) setPin(""); }}>
@@ -422,33 +423,103 @@ function PunchView({
 
 function JournalView({
   punches,
+  agents,
   canManage,
   onChanged,
 }: {
   punches: AttendancePunch[];
+  agents: AttendanceAgent[];
   canManage: boolean;
   onChanged: () => Promise<void> | void;
 }) {
+  const { pdvId, user } = useAuth();
+  const [edit, setEdit] = useState<{
+    agentId: string | null;
+    agentName: string;
+    type: PunchType;
+    existing: AttendancePunch | null;
+  } | null>(null);
+  const [time, setTime] = useState("");
+  const [addAgent, setAddAgent] = useState("");
+  const [saving, setSaving] = useState(false);
+
   const byAgent = useMemo(() => {
     const map = new Map<string, AttendancePunch[]>();
     punches.forEach((p) => {
       const k = p.agent_id ?? p.agent_name;
       map.set(k, [...(map.get(k) ?? []), p]);
     });
-    return Array.from(map.entries()).map(([, list]) => ({
+    const rows = Array.from(map.entries()).map(([, list]) => ({
+      agentId: list[0].agent_id,
       name: list[0].agent_name,
       list: [...list].sort((a, b) => a.punched_at.localeCompare(b.punched_at)),
     }));
-  }, [punches]);
+    if (addAgent && !rows.some((r) => r.agentId === addAgent)) {
+      const a = agents.find((x) => x.id === addAgent);
+      if (a) rows.push({ agentId: a.id, name: a.full_name, list: [] });
+    }
+    return rows;
+  }, [punches, addAgent, agents]);
 
-  if (byAgent.length === 0) {
-    return <Card className="p-6 text-center text-sm text-muted-foreground">Aucun pointage aujourd'hui.</Card>;
-  }
+  const openEdit = (agentId: string | null, agentName: string, type: PunchType, existing: AttendancePunch | null) => {
+    setEdit({ agentId, agentName, type, existing });
+    setTime(existing ? formatTime(existing.punched_at) : formatTime(new Date().toISOString()));
+  };
+
+  const save = async () => {
+    if (!edit || !pdvId || !/^\d{2}:\d{2}$/.test(time)) {
+      toast.error("Heure invalide");
+      return;
+    }
+    setSaving(true);
+    try {
+      await saveManualPunch({
+        pdvId,
+        existingId: edit.existing?.id ?? null,
+        agentId: edit.agentId,
+        agentName: edit.agentName,
+        punchType: edit.type,
+        date: edit.existing?.punch_date ?? todayISO(),
+        time,
+        by: user?.email ?? "manager",
+      });
+      toast.success("Pointage manuel enregistré");
+      setEdit(null);
+      await onChanged();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Enregistrement impossible");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const activeAgents = agents.filter((a) => a.active && !byAgent.some((r) => r.agentId === a.id));
 
   return (
     <div className="space-y-3">
+      {canManage && (
+        <Card className="p-3 flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium">Ajouter un pointage manuel pour :</span>
+          <select
+            className="border rounded px-2 py-1 text-sm bg-background"
+            value=""
+            onChange={(e) => setAddAgent(e.target.value)}
+          >
+            <option value="">Choisir un employé…</option>
+            {activeAgents.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.full_name}
+              </option>
+            ))}
+          </select>
+          <span className="text-[11px] text-muted-foreground">Les pointages manuels sont signalés « Manuel » dans les rapports.</span>
+        </Card>
+      )}
+      {byAgent.length === 0 && (
+        <Card className="p-6 text-center text-sm text-muted-foreground">Aucun pointage aujourd'hui.</Card>
+      )}
       {byAgent.map((row) => (
-        <Card key={row.name} className="p-3">
+        <Card key={row.agentId ?? row.name} className="p-3">
           <div className="flex items-center justify-between gap-2 mb-2">
             <p className="font-semibold">{row.name}</p>
             <Badge variant="secondary">{workedHours(row.list).toFixed(2)} h</Badge>
@@ -456,20 +527,36 @@ function JournalView({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {PUNCH_ORDER.map((t) => {
               const p = row.list.find((x) => x.punch_type === t);
+              const manual = p?.method === "manual";
               return (
-                <div key={t} className="rounded border p-2 text-center">
+                <div key={t} className={`rounded border p-2 text-center ${manual ? "border-warning bg-warning/10" : ""}`}>
                   <p className="text-[11px] text-muted-foreground">{PUNCH_LABELS[t]}</p>
                   <p className="text-sm font-semibold">{p ? formatTime(p.punched_at) : "—"}</p>
-                  {p && canManage && (
-                    <button
-                      className="text-[11px] text-destructive underline"
-                      onClick={async () => {
-                        await deletePunch(p.id);
-                        await onChanged();
-                      }}
-                    >
-                      supprimer
-                    </button>
+                  {manual && (
+                    <Badge variant="outline" className="text-[9px]" title={p?.device_label ?? ""}>
+                      Manuel
+                    </Badge>
+                  )}
+                  {canManage && (
+                    <div className="flex justify-center gap-2 mt-1">
+                      <button
+                        className="text-[11px] text-primary underline"
+                        onClick={() => openEdit(row.agentId, row.name, t, p ?? null)}
+                      >
+                        {p ? "modifier" : "ajouter"}
+                      </button>
+                      {p && (
+                        <button
+                          className="text-[11px] text-destructive underline"
+                          onClick={async () => {
+                            await deletePunch(p.id);
+                            await onChanged();
+                          }}
+                        >
+                          supprimer
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               );
@@ -477,6 +564,22 @@ function JournalView({
           </div>
         </Card>
       ))}
+      <Dialog open={!!edit} onOpenChange={(o) => !o && setEdit(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Pointage manuel — {edit?.agentName} ({edit ? PUNCH_LABELS[edit.type] : ""})
+            </DialogTitle>
+          </DialogHeader>
+          <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+          <p className="text-xs text-muted-foreground">
+            Ce pointage sera marqué « Manuel » avec votre nom sur le journal et tous les rapports RH.
+          </p>
+          <Button onClick={save} disabled={saving}>
+            Enregistrer
+          </Button>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
