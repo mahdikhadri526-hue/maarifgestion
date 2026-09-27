@@ -376,7 +376,7 @@ export function PlanningGrid({
                   <tr key={`sep-menage-${a.id}`}>
                     <td
                       colSpan={days.length + 1}
-                       className="sticky left-0 border-t border-primary/25 !bg-accent !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
+                       className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
                     >
                       Ménage
                     </td>
@@ -386,7 +386,7 @@ export function PlanningGrid({
                   <tr key={`sep-securite-${a.id}`}>
                     <td
                       colSpan={days.length + 1}
-                       className="sticky left-0 border-t border-primary/25 !bg-accent !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
+                       className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
                     >
                       Sécurité
                     </td>
@@ -396,7 +396,7 @@ export function PlanningGrid({
                   <tr key={`sep-manager-${a.id}`}>
                     <td
                       colSpan={days.length + 1}
-                       className="sticky left-0 border-t border-primary/25 !bg-accent !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
+                       className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
                     >
                       Managers — planning établi par la RH
                     </td>
@@ -406,7 +406,7 @@ export function PlanningGrid({
                   <tr key={`sep-${a.id}`}>
                     <td
                       colSpan={days.length + 1}
-                       className="sticky left-0 border-t border-primary/25 !bg-accent !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
+                       className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
                     >
                       Caissiers — planning établi par la RH{groupedCategories === true && " (lecture seule)"}
                     </td>
@@ -416,7 +416,7 @@ export function PlanningGrid({
                   <tr key={`sep-agent-${a.id}`}>
                     <td
                       colSpan={days.length + 1}
-                       className="sticky left-0 border-t border-primary/25 !bg-accent !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
+                       className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
                     >
                       Agents — lecture seule
                     </td>
@@ -426,7 +426,7 @@ export function PlanningGrid({
                   <tr key={`sep-tech-${a.id}`}>
                     <td
                       colSpan={days.length + 1}
-                       className="sticky left-0 border-t border-primary/25 !bg-accent !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-accent-foreground"
+                       className="sticky left-0 border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-[10px] font-bold uppercase tracking-wide text-sidebar-foreground"
                     >
                       Ménage & Sécurité — planning établi par le responsable technique (lecture seule)
                     </td>
