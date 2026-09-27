@@ -360,9 +360,9 @@ export function PlanningGrid({
                 {days.map((d, i) => {
                   const hol = holidayMap.get(d);
                   return (
-                    <th key={d} className={`!px-2 !py-2.5 text-center border-b-2 ${i > 4 ? "!bg-secondary border-muted-foreground/30" : "!bg-card border-primary/60"}`}>
-                      <span className="block text-[11px] font-bold normal-case text-foreground">{DOW_LABELS[i]}</span>
-                      <span className="block text-[10px] font-semibold text-muted-foreground">{formatFr(d).slice(0, 5)}</span>
+                    <th key={d} className={`!px-2 !py-2.5 text-center border-b-2 ${i > 4 ? "!bg-sidebar border-muted-foreground/30" : "!bg-sidebar border-primary/60"}`}>
+                      <span className={`block text-[11px] font-bold normal-case ${i > 4 ? "text-sidebar-foreground/70" : "text-sidebar-foreground"}`}>{DOW_LABELS[i]}</span>
+                      <span className={`block text-[10px] font-semibold ${i > 4 ? "text-sidebar-foreground/60" : "text-sidebar-foreground/80"}`}>{formatFr(d).slice(0, 5)}</span>
                       {hol && <span className="mt-1 block truncate text-[9px] font-medium normal-case text-warning-foreground">Férié</span>}
                     </th>
                   );
