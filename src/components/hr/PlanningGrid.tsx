@@ -132,7 +132,7 @@ export function PlanningGrid({
     const caissiers = pool.filter((a) => (a.staff_level ?? "agent") === "agent" && isCaissier(a));
     if (level === "manager") return [...base, ...caissiers];
     return base.filter((a) => !isCaissier(a));
-  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows, showReadOnly]);
+  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows, showReadOnly, readOnlyPdvId]);
   const firstCaissierId = useMemo(
     () => ((groupedCategories || (caissierMode === "bottom" && techMode !== "only")) ? list.find(isCaissier)?.id ?? null : null),
     [list, caissierMode, techMode, groupedCategories],
@@ -255,14 +255,29 @@ export function PlanningGrid({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {groupedCategories === "rh" && (
-            <Button
-              size="sm"
-              variant={showReadOnly ? "secondary" : "outline"}
-              className="h-8"
-              onClick={() => setShowReadOnly((v) => !v)}
-            >
-              {showReadOnly ? "Masquer les plannings en lecture seule" : "Afficher les plannings en lecture seule"}
-            </Button>
+            <>
+              <Button
+                size="sm"
+                variant={showReadOnly ? "secondary" : "outline"}
+                className="h-8"
+                onClick={() => setShowReadOnly((v) => !v)}
+              >
+                {showReadOnly ? "Masquer les plannings en lecture seule" : "Afficher les plannings en lecture seule"}
+              </Button>
+              {showReadOnly && (
+                <select
+                  aria-label="PDV des plannings en lecture seule"
+                  className="h-8 rounded-md border border-sidebar-border bg-sidebar-accent px-2 text-xs font-medium text-sidebar-foreground outline-none"
+                  value={readOnlyPdvId}
+                  onChange={(e) => setReadOnlyPdvId(e.target.value)}
+                >
+                  <option value="">Choisir le PDV…</option>
+                  {pdvs.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              )}
+            </>
           )}
           {showLevelToggle && (
           <div className="flex rounded-md border border-sidebar-border bg-sidebar-accent p-0.5">
