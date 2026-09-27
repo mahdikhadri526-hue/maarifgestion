@@ -1242,6 +1242,7 @@ export type Database = {
           end_time: string | null
           id: string
           pdv_id: string
+          role: string
           shift: string
           start_time: string
           updated_at: string
@@ -1252,6 +1253,7 @@ export type Database = {
           end_time?: string | null
           id?: string
           pdv_id: string
+          role?: string
           shift: string
           start_time: string
           updated_at?: string
@@ -1262,6 +1264,7 @@ export type Database = {
           end_time?: string | null
           id?: string
           pdv_id?: string
+          role?: string
           shift?: string
           start_time?: string
           updated_at?: string
