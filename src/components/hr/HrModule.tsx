@@ -30,8 +30,10 @@ import {
   saveShiftTime,
   shiftStartMap,
   SHIFT_LABELS,
+  SHIFT_ROLE_LABELS,
   WEEKDAYS,
   type PdvShiftTime,
+  type ShiftRole,
   type WorkShift,
   isoDate,
   POSTES,
@@ -1002,6 +1004,7 @@ function ReportsView({
               punches: dayPunches,
               schedule: sch,
               shiftStarts,
+              shiftRole: (a.poste ?? "").toLowerCase().includes("caissier") ? "caissier" : "manager",
               holidayLabel: holidayMap.get(date) ?? null,
             }),
           );
