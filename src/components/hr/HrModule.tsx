@@ -1145,10 +1145,10 @@ function ReportsView({
             <tr className="bg-muted/70">
               {[
                 "Prévu", "Entrée", "Pause début", "Pause fin", "Sortie",
-                "Heures", "H. sup.", "Retard", "Retard pause",
                 "Statut", "Manuel",
+                "Heures", "H. sup.", "Retard", "Retard pause",
               ].map((h, i) => (
-                <th key={h} className={`p-2 whitespace-nowrap text-center ${i === 0 || i === 5 || i === 9 ? "border-l" : ""}`}>
+                <th key={h} className={`p-2 whitespace-nowrap text-center ${i === 0 || i === 5 || i === 7 ? "border-l" : ""}`}>
                   {h}
                 </th>
               ))}
