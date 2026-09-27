@@ -84,6 +84,9 @@ export function PlanningGrid({
     () => new Set(["admin mohammedia", "mohammedia", "mansouria", "miramar"]),
     [],
   );
+  /** PDV internes exclus des listes de choix (Technique, Qualité). */
+  const isHiddenPdv = (p: { name: string }) =>
+    readOnlyHiddenPdvs.has(norm(p.name)) || /technique|qualite/.test(norm(p.name));
   const isCaissier = (a: HrAgent) => norm(a.poste) === "caissier";
   /** Postes planifiés par le responsable technique. */
   const isTechPoste = (a: HrAgent) => {
