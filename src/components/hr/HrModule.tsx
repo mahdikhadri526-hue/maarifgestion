@@ -1134,9 +1134,9 @@ function ReportsView({
         <table className="w-full text-xs font-semibold text-center [&_th]:border-2 [&_th]:border-black [&_th]:text-center [&_td]:border-2 [&_td]:border-black [&_td]:text-center">
           <thead className="bg-muted">
             <tr>
-              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">Date</th>
-              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">Employé</th>
-              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">PDV</th>
+              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom w-28 truncate sticky left-0 z-30 bg-muted">Date</th>
+              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom w-44 truncate sticky left-28 z-30 bg-muted">Employé</th>
+              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom w-36 truncate sticky left-[272px] z-30 bg-muted">PDV</th>
               <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">Journée</th>
               <th colSpan={5} className="p-2 text-center border-l border-b whitespace-nowrap">Pointages</th>
               <th colSpan={2} className="p-2 text-center border-l border-b whitespace-nowrap">Suivi</th>
@@ -1157,9 +1157,9 @@ function ReportsView({
           <tbody>
             {rows.map((r) => (
               <tr key={`${r.agentId}-${r.date}`} className="border-t">
-                <td className="p-2 whitespace-nowrap">{formatFr(r.date)}</td>
-                <td className="p-2 whitespace-nowrap">{r.agentName}</td>
-                <td className="p-2 whitespace-nowrap">{pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}</td>
+                <td className="p-2 w-28 truncate sticky left-0 z-20 bg-background">{formatFr(r.date)}</td>
+                <td className="p-2 w-44 truncate sticky left-28 z-20 bg-background">{r.agentName}</td>
+                <td className="p-2 w-36 truncate sticky left-[272px] z-20 bg-background">{pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}</td>
                 <td className="p-2 whitespace-nowrap">
                   {r.dayType ? DAY_TYPE_LABELS[r.dayType] : "—"}
                   {r.isHoliday && <Badge className="ml-1 text-[9px]">Férié</Badge>}
@@ -1200,7 +1200,8 @@ function ReportsView({
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={11} className="p-2 font-semibold whitespace-nowrap border-0 border-t-2 border-black">Totaux</td>
+              <td colSpan={3} className="p-2 font-semibold whitespace-nowrap sticky left-0 z-20 bg-background border-0 border-t-2 border-black">Totaux</td>
+              <td colSpan={8} className="p-2 border-0 border-t-2 border-black"></td>
               <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{totals.worked.toFixed(2)}</td>
               <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{totals.overtime.toFixed(2)}</td>
               <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{formatMinutes(totals.late)}</td>
