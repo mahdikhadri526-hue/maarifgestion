@@ -238,6 +238,13 @@ export async function deleteSchedule(id: string): Promise<void> {
 
 /* ------------------------------------------------------------ Horaires de shift par PDV */
 
+export type ShiftRole = "manager" | "caissier";
+
+export const SHIFT_ROLE_LABELS: Record<ShiftRole, string> = {
+  manager: "Managers",
+  caissier: "Caissiers",
+};
+
 export interface PdvShiftTime {
   id: string;
   pdv_id: string;
@@ -246,6 +253,7 @@ export interface PdvShiftTime {
   day_of_week: number;
   start_time: string;
   end_time: string | null;
+  role: ShiftRole;
 }
 
 export const SHIFT_LABELS: Record<WorkShift, string> = {
