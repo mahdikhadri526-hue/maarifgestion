@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { BarChart3, CalendarDays, ChevronLeft, ChevronRight, Clock, Download, Plus, RefreshCw, Sun, Trash2, Users } from "lucide-react";
+import { BarChart3, CalendarDays, CalendarIcon, ChevronLeft, ChevronRight, Clock, Download, Plus, RefreshCw, Sun, Trash2, Users } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useAuth } from "@/contexts/AuthContext";
 import type { AttendancePunch } from "@/lib/attendanceData";
 import {
