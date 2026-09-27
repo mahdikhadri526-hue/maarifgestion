@@ -472,20 +472,18 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
             </option>
           ))}
         </select>
-        <div>
-          <div className="relative">
-            <Input type="date" className="h-9" value={hire} onChange={(e) => setHire(e.target.value)} />
+        <div className="flex gap-2 items-center">
+          <div className="relative flex-1">
+            <Input type="date" className="h-9 w-full" value={hire} onChange={(e) => setHire(e.target.value)} />
             {!hire && (
               <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-3 text-sm text-muted-foreground">
                 Date d'embauche
               </span>
             )}
           </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => void add()} disabled={busy || !name.trim()}>
-              <Plus className="w-4 h-4" />
-            </Button>
-          </div>
+          <Button size="sm" onClick={() => void add()} disabled={busy || !name.trim()}>
+            <Plus className="w-4 h-4" />
+          </Button>
         </div>
       </Card>
 
