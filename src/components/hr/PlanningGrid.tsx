@@ -73,6 +73,8 @@ export function PlanningGrid({
   const [loading, setLoading] = useState(false);
   /** Mode RH : les lignes en lecture seule (agents, ménage, sécurité) sont masquées par défaut. */
   const [showReadOnly, setShowReadOnly] = useState(false);
+  /** PDV choisi pour afficher les plannings en lecture seule (mode RH). */
+  const [readOnlyPdvId, setReadOnlyPdvId] = useState<string>("");
 
   const days = useMemo(() => weekDays(start), [start]);
   const norm = (s: string | null | undefined) =>
