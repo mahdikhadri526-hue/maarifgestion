@@ -476,7 +476,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
           <div className="relative flex-1">
             <Input type="date" className="h-9 w-full" value={hire} onChange={(e) => setHire(e.target.value)} />
             {!hire && (
-              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center px-3 text-sm text-muted-foreground">
+              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center rounded bg-background px-3 text-sm text-muted-foreground">
                 Date d'embauche
               </span>
             )}
