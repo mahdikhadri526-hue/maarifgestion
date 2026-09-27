@@ -268,7 +268,7 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
               value={pdvSel}
               onChange={(e) => setPdvSel(e.target.value)}
             >
-              {pdvs.map((p) => (
+              {visiblePdvs.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
