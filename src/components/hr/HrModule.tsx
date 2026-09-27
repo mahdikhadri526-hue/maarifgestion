@@ -1200,7 +1200,7 @@ function ReportsView({
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={9} className="p-2 text-right font-semibold whitespace-nowrap">Totaux</td>
+              <td colSpan={9} className="p-2 font-semibold whitespace-nowrap">Totaux</td>
               <td colSpan={2} />
               <td className="p-2 text-center font-semibold">{totals.worked.toFixed(2)}</td>
               <td className="p-2 text-center font-semibold">{totals.overtime.toFixed(2)}</td>
