@@ -212,7 +212,7 @@ export function AttendanceModule({ onExit }: { onExit?: () => void }) {
             <Button variant="ghost" size="sm" onClick={() => openPin("unlock")}>
               <Lock className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={() => openPin("fullscreen")}>
+            <Button variant="ghost" size="sm" onClick={activateFullscreen}>
               <Maximize className="w-4 h-4 mr-1" /> Plein écran
             </Button>
           </>
