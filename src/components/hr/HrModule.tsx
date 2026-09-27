@@ -1131,16 +1131,19 @@ function ReportsView({
       )}
 
       <div className="overflow-x-auto border-4 border-black">
-        <table className="w-full text-xs font-semibold text-center [&_th]:border-2 [&_th]:border-black [&_th]:text-center [&_td]:border-2 [&_td]:border-black [&_td]:text-center">
+        <table
+          className="hr-sticky-table text-xs font-semibold text-center [&_th]:border-b-2 [&_th]:border-r-2 [&_th]:border-black [&_th]:text-center [&_td]:border-b-2 [&_td]:border-r-2 [&_td]:border-black [&_td]:text-center"
+          style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%" }}
+        >
           <thead className="bg-muted">
             <tr>
-              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">Date</th>
-              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">Employé</th>
-              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">PDV</th>
+              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom w-[112px] min-w-[112px] max-w-[112px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Date</th>
+              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom w-[176px] min-w-[176px] max-w-[176px]" style={{ position: "sticky", left: 112, zIndex: 45 }}>Employé</th>
+              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom w-[160px] min-w-[160px] max-w-[160px]" style={{ position: "sticky", left: 288, zIndex: 45 }}>PDV</th>
               <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">Journée</th>
-              <th colSpan={5} className="p-2 text-center border-l border-b whitespace-nowrap">Pointages</th>
-              <th colSpan={2} className="p-2 text-center border-l border-b whitespace-nowrap">Suivi</th>
-              <th colSpan={4} className="p-2 text-center border-l border-b whitespace-nowrap">Temps &amp; écarts</th>
+              <th colSpan={5} className="p-2 text-center whitespace-nowrap">Pointages</th>
+              <th colSpan={2} className="p-2 text-center whitespace-nowrap">Suivi</th>
+              <th colSpan={4} className="p-2 text-center whitespace-nowrap">Temps &amp; écarts</th>
             </tr>
             <tr className="bg-muted/70">
               {[
@@ -1148,7 +1151,7 @@ function ReportsView({
                 "Statut", "Pointage manuel",
                 "Heures", "H. sup.", "Retard", "Retard pause",
               ].map((h, i) => (
-                <th key={h} className={`p-2 whitespace-nowrap text-center ${i === 0 || i === 5 || i === 7 ? "border-l" : ""}`}>
+                <th key={h} className="p-2 whitespace-nowrap text-center">
                   {h}
                 </th>
               ))}
@@ -1157,9 +1160,9 @@ function ReportsView({
           <tbody>
             {rows.map((r) => (
               <tr key={`${r.agentId}-${r.date}`} className="border-t">
-                <td className="p-2 whitespace-nowrap">{formatFr(r.date)}</td>
-                <td className="p-2 whitespace-nowrap">{r.agentName}</td>
-                <td className="p-2 whitespace-nowrap">{pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}</td>
+                <td className="hr-sticky-col p-2 w-[112px] min-w-[112px] max-w-[112px] truncate" style={{ position: "sticky", left: 0, zIndex: 25 }}>{formatFr(r.date)}</td>
+                <td className="hr-sticky-col p-2 w-[176px] min-w-[176px] max-w-[176px] truncate" style={{ position: "sticky", left: 112, zIndex: 25 }} title={r.agentName}>{r.agentName}</td>
+                <td className="hr-sticky-col p-2 w-[160px] min-w-[160px] max-w-[160px] truncate" style={{ position: "sticky", left: 288, zIndex: 25 }} title={pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}>{pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}</td>
                 <td className="p-2 whitespace-nowrap">
                   {r.dayType ? DAY_TYPE_LABELS[r.dayType] : "—"}
                   {r.isHoliday && <Badge className="ml-1 text-[9px]">Férié</Badge>}
@@ -1200,11 +1203,12 @@ function ReportsView({
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={11} className="p-2 font-semibold whitespace-nowrap border-0 border-t-2 border-black">Totaux</td>
-              <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{totals.worked.toFixed(2)}</td>
-              <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{totals.overtime.toFixed(2)}</td>
-              <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{formatMinutes(totals.late)}</td>
-              <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{formatMinutes(totals.pauseLate)}</td>
+              <td colSpan={3} className="hr-sticky-col p-2 font-semibold whitespace-nowrap" style={{ position: "sticky", left: 0, zIndex: 25, borderWidth: 0 }}>Totaux</td>
+              <td colSpan={8} className="p-2" style={{ borderWidth: 0 }}></td>
+              <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{totals.worked.toFixed(2)}</td>
+              <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{totals.overtime.toFixed(2)}</td>
+              <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{formatMinutes(totals.late)}</td>
+              <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{formatMinutes(totals.pauseLate)}</td>
             </tr>
           </tfoot>
         </table>
