@@ -105,7 +105,12 @@ export function PlanningGrid({
       const managers = actives.filter((a) => (a.staff_level ?? "agent") !== "agent");
       if (groupedCategories === "rh") {
         const editable = [...managers, ...caissiers];
-        return showReadOnly ? [...editable, ...regular, ...technical] : editable;
+        if (!showReadOnly) return editable;
+        // Les lignes en lecture seule sont limitées au PDV choisi.
+        const roPdv = readOnlyPdvId || planningPdvId || "";
+        const inPdv = (a: HrAgent) =>
+          !roPdv || rows.some((r) => r.agent_id === a.id && r.pdv_id === roPdv) || (!a.multi_pdv && a.pdv_id === roPdv);
+        return [...editable, ...regular.filter(inPdv), ...technical.filter(inPdv)];
       }
       return [...regular, ...caissiers, ...technical];
     }
