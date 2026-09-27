@@ -24,6 +24,7 @@ export interface AttendanceAgent {
   descriptors: number[][];
   active: boolean;
   notes: string | null;
+  staff_level: string;
 }
 
 export interface AttendancePunch {

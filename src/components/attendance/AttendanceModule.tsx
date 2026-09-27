@@ -7,7 +7,6 @@ import { Camera, CameraOff, UserPlus, RefreshCw, ScanFace, Users, ListChecks, Lo
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import { MANAGERS } from "@/lib/managers";
 import { computeDescriptor, findBestMatch, loadFaceApi, MATCH_THRESHOLD, type FaceCandidate } from "@/lib/faceRecognition";
 import {
   addPunch,
@@ -469,6 +468,11 @@ function JournalView({
   const [motif, setMotif] = useState("");
   const [addAgent, setAddAgent] = useState("");
   const [saving, setSaving] = useState(false);
+  const managers = useMemo(
+    () => agents.filter((a) => a.staff_level === "manager").map((a) => a.full_name).sort((x, y) => x.localeCompare(y, "fr")),
+    [agents]
+  );
+
 
   const byAgent = useMemo(() => {
     const map = new Map<string, AttendancePunch[]>();
@@ -614,7 +618,7 @@ function JournalView({
               onChange={(e) => setManagerName(e.target.value)}
             >
               <option value="">Choisir un manager…</option>
-              {MANAGERS.map((m) => (
+              {managers.map((m) => (
                 <option key={m} value={m}>
                   {m}
                 </option>
