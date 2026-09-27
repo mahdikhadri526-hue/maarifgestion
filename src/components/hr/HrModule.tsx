@@ -986,6 +986,7 @@ function ReportsView({
       "Retard": r.lateMinutes > 0 ? formatMinutes(r.lateMinutes) : "",
       "Retard pause": r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "",
       Présence: r.present ? "Présent" : r.absence ? "Absence à justifier" : "—",
+      "Pointage manuel": r.manualTypes.length ? `Oui (${r.manualTypes.join(", ")})` : "",
     }));
     downloadCsv(`rapport-rh-${from}_${to}.csv`, toCsv(data));
   };
@@ -1068,7 +1069,7 @@ function ReportsView({
         <table className="w-full text-xs border rounded">
           <thead className="bg-muted">
             <tr>
-              {["Date", "Employé", "Journée", "Prévu", "Entrée", "Pause", "Sortie", "Heures", "H. sup.", "Retard", "Retard pause", "Statut"].map((h) => (
+              {["Date", "Employé", "Journée", "Prévu", "Entrée", "Pause", "Sortie", "Heures", "H. sup.", "Retard", "Retard pause", "Statut", "Manuel"].map((h) => (
                 <th key={h} className="p-2 text-left whitespace-nowrap">
                   {h}
                 </th>
@@ -1105,6 +1106,15 @@ function ReportsView({
                     "Présent"
                   ) : (
                     DAY_TYPE_LABELS[(r.dayType ?? "repos") as DayType]
+                  )}
+                </td>
+                <td className="p-2 whitespace-nowrap">
+                  {r.manualTypes.length > 0 ? (
+                    <Badge variant="outline" className="text-[10px] border-warning text-warning" title={r.manualTypes.join(", ")}>
+                      Manuel ({r.manualTypes.length})
+                    </Badge>
+                  ) : (
+                    "—"
                   )}
                 </td>
               </tr>
