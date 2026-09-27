@@ -1137,9 +1137,9 @@ function ReportsView({
         >
           <thead className="bg-muted">
             <tr>
-              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom bg-muted w-[112px] min-w-[112px] max-w-[112px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Date</th>
-              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom bg-muted w-[176px] min-w-[176px] max-w-[176px]" style={{ position: "sticky", left: 112, zIndex: 45 }}>Employé</th>
-              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom bg-muted w-[160px] min-w-[160px] max-w-[160px]" style={{ position: "sticky", left: 288, zIndex: 45 }}>PDV</th>
+              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom w-[112px] min-w-[112px] max-w-[112px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Date</th>
+              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom w-[176px] min-w-[176px] max-w-[176px]" style={{ position: "sticky", left: 112, zIndex: 45 }}>Employé</th>
+              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom w-[160px] min-w-[160px] max-w-[160px]" style={{ position: "sticky", left: 288, zIndex: 45 }}>PDV</th>
               <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">Journée</th>
               <th colSpan={5} className="p-2 text-center whitespace-nowrap">Pointages</th>
               <th colSpan={2} className="p-2 text-center whitespace-nowrap">Suivi</th>
@@ -1160,9 +1160,9 @@ function ReportsView({
           <tbody>
             {rows.map((r) => (
               <tr key={`${r.agentId}-${r.date}`} className="border-t">
-                <td className="hr-sticky-col p-2 w-[112px] min-w-[112px] max-w-[112px] truncate bg-inherit" style={{ position: "sticky", left: 0, zIndex: 25, background: "inherit" }}>{formatFr(r.date)}</td>
-                <td className="hr-sticky-col p-2 w-[176px] min-w-[176px] max-w-[176px] truncate bg-inherit" style={{ position: "sticky", left: 112, zIndex: 25, background: "inherit" }} title={r.agentName}>{r.agentName}</td>
-                <td className="hr-sticky-col p-2 w-[160px] min-w-[160px] max-w-[160px] truncate bg-inherit" style={{ position: "sticky", left: 288, zIndex: 25, background: "inherit" }} title={pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}>{pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}</td>
+                <td className="hr-sticky-col p-2 w-[112px] min-w-[112px] max-w-[112px] truncate" style={{ position: "sticky", left: 0, zIndex: 25 }}>{formatFr(r.date)}</td>
+                <td className="hr-sticky-col p-2 w-[176px] min-w-[176px] max-w-[176px] truncate" style={{ position: "sticky", left: 112, zIndex: 25 }} title={r.agentName}>{r.agentName}</td>
+                <td className="hr-sticky-col p-2 w-[160px] min-w-[160px] max-w-[160px] truncate" style={{ position: "sticky", left: 288, zIndex: 25 }} title={pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}>{pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}</td>
                 <td className="p-2 whitespace-nowrap">
                   {r.dayType ? DAY_TYPE_LABELS[r.dayType] : "—"}
                   {r.isHoliday && <Badge className="ml-1 text-[9px]">Férié</Badge>}
@@ -1203,7 +1203,7 @@ function ReportsView({
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={3} className="hr-sticky-col p-2 font-semibold whitespace-nowrap bg-muted/60" style={{ position: "sticky", left: 0, zIndex: 25, borderWidth: 0, background: "hsl(var(--muted) / 0.6)" }}>Totaux</td>
+              <td colSpan={3} className="hr-sticky-col p-2 font-semibold whitespace-nowrap" style={{ position: "sticky", left: 0, zIndex: 25, borderWidth: 0 }}>Totaux</td>
               <td colSpan={8} className="p-2" style={{ borderWidth: 0 }}></td>
               <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{totals.worked.toFixed(2)}</td>
               <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{totals.overtime.toFixed(2)}</td>

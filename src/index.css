@@ -162,6 +162,26 @@
     z-index: 45;
   }
 
+  .hr-sticky-table thead .hr-sticky-col {
+    background-color: hsl(var(--muted)) !important;
+  }
+
+  .hr-sticky-table tbody .hr-sticky-col {
+    background-color: hsl(var(--background)) !important;
+  }
+
+  .hr-sticky-table tbody tr:nth-child(even) .hr-sticky-col {
+    background-color: color-mix(in srgb, hsl(var(--muted)) 40%, hsl(var(--background))) !important;
+  }
+
+  .hr-sticky-table tbody tr:hover .hr-sticky-col {
+    background-color: color-mix(in srgb, hsl(var(--accent)) 70%, hsl(var(--background))) !important;
+  }
+
+  .hr-sticky-table tfoot .hr-sticky-col {
+    background-color: color-mix(in srgb, hsl(var(--muted)) 60%, hsl(var(--background))) !important;
+  }
+
   /* Finition pro des cartes du dashboard */
   .rounded-lg.border.bg-card {
     @apply shadow-sm hover:shadow-md transition-shadow duration-200;
