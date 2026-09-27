@@ -40,7 +40,7 @@ export function AttendanceModule({ onExit }: { onExit?: () => void }) {
   const [pinOpen, setPinOpen] = useState(false);
   const [pin, setPin] = useState("");
   const [pinAction, setPinAction] = useState<"unlock" | "fullscreen" | "exit">("unlock");
-  const [fullscreen, setFullscreen] = useState(false);
+  const [fullscreen, setFullscreen] = useState(true);
   const [view, setView] = useState<View>("pointage");
   const [agents, setAgents] = useState<AttendanceAgent[]>([]);
   const [punches, setPunches] = useState<AttendancePunch[]>([]);
@@ -63,6 +63,22 @@ export function AttendanceModule({ onExit }: { onExit?: () => void }) {
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  // Le plein écran navigateur exige un geste de l'utilisateur : il s'enclenche
+  // au premier toucher/clic une fois la vue plein écran active.
+  useEffect(() => {
+    if (!fullscreen) return;
+    const enter = () => {
+      if (document.fullscreenElement) return;
+      try {
+        void document.documentElement.requestFullscreen?.().catch(() => undefined);
+      } catch {
+        /* indisponible */
+      }
+    };
+    window.addEventListener("pointerdown", enter, { once: true });
+    return () => window.removeEventListener("pointerdown", enter);
+  }, [fullscreen]);
 
   const submitPin = () => {
     if (pin !== KIOSK_PIN) {
