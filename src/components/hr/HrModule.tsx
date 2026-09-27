@@ -1200,12 +1200,12 @@ function ReportsView({
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={9} className="p-2 font-semibold whitespace-nowrap">Totaux</td>
-              <td colSpan={2} />
-              <td className="p-2 text-center font-semibold">{totals.worked.toFixed(2)}</td>
-              <td className="p-2 text-center font-semibold">{totals.overtime.toFixed(2)}</td>
-              <td className="p-2 text-center font-semibold">{formatMinutes(totals.late)}</td>
-              <td className="p-2 text-center font-semibold">{formatMinutes(totals.pauseLate)}</td>
+              <td colSpan={9} className="p-2 font-semibold whitespace-nowrap border-0 border-t-2 border-black">Totaux</td>
+              <td colSpan={2} className="border-0 border-t-2 border-black" />
+              <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{totals.worked.toFixed(2)}</td>
+              <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{totals.overtime.toFixed(2)}</td>
+              <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{formatMinutes(totals.late)}</td>
+              <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{formatMinutes(totals.pauseLate)}</td>
             </tr>
           </tfoot>
         </table>
