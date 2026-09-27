@@ -1169,14 +1169,6 @@ function ReportsView({
                 <td className="p-2 whitespace-nowrap text-center">{r.pauseStart ?? "—"}</td>
                 <td className="p-2 whitespace-nowrap text-center">{r.pauseEnd ?? "—"}</td>
                 <td className="p-2 whitespace-nowrap text-center">{r.sortie ?? "—"}</td>
-                <td className="p-2 whitespace-nowrap text-center font-medium">{r.workedHours.toFixed(2)}</td>
-                <td className="p-2 whitespace-nowrap text-center">{r.overtimeHours > 0 ? r.overtimeHours.toFixed(2) : "—"}</td>
-                <td className={`p-2 whitespace-nowrap text-center ${r.lateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
-                  {r.lateMinutes > 0 ? formatMinutes(r.lateMinutes) : "—"}
-                </td>
-                <td className={`p-2 whitespace-nowrap text-center ${r.pauseLateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
-                  {r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "—"}
-                </td>
                 <td className="p-2 whitespace-nowrap text-center">
                   {r.absence ? (
                     <span className="text-destructive font-semibold">Absence à justifier</span>
@@ -1194,6 +1186,14 @@ function ReportsView({
                   ) : (
                     "—"
                   )}
+                </td>
+                <td className="p-2 whitespace-nowrap text-center font-medium">{r.workedHours.toFixed(2)}</td>
+                <td className="p-2 whitespace-nowrap text-center">{r.overtimeHours > 0 ? r.overtimeHours.toFixed(2) : "—"}</td>
+                <td className={`p-2 whitespace-nowrap text-center ${r.lateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
+                  {r.lateMinutes > 0 ? formatMinutes(r.lateMinutes) : "—"}
+                </td>
+                <td className={`p-2 whitespace-nowrap text-center ${r.pauseLateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
+                  {r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "—"}
                 </td>
               </tr>
             ))}
