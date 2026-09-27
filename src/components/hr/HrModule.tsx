@@ -1131,13 +1131,13 @@ function ReportsView({
       )}
 
       <div className="overflow-x-auto border-4 border-black">
-        <table className="w-full text-xs font-semibold [&_th]:border-2 [&_th]:border-black [&_td]:border-2 [&_td]:border-black">
+        <table className="w-full text-xs font-semibold text-center [&_th]:border-2 [&_th]:border-black [&_th]:text-center [&_td]:border-2 [&_td]:border-black [&_td]:text-center">
           <thead className="bg-muted">
             <tr>
-              <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">Date</th>
-              <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">Employé</th>
-              <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">PDV</th>
-              <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">Journée</th>
+              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">Date</th>
+              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">Employé</th>
+              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">PDV</th>
+              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">Journée</th>
               <th colSpan={5} className="p-2 text-center border-l border-b whitespace-nowrap">Pointages</th>
               <th colSpan={2} className="p-2 text-center border-l border-b whitespace-nowrap">Suivi</th>
               <th colSpan={4} className="p-2 text-center border-l border-b whitespace-nowrap">Temps &amp; écarts</th>
@@ -1200,7 +1200,7 @@ function ReportsView({
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={9} className="p-2 text-right font-semibold whitespace-nowrap">Totaux</td>
+              <td colSpan={9} className="p-2 font-semibold whitespace-nowrap">Totaux</td>
               <td colSpan={2} />
               <td className="p-2 text-center font-semibold">{totals.worked.toFixed(2)}</td>
               <td className="p-2 text-center font-semibold">{totals.overtime.toFixed(2)}</td>
