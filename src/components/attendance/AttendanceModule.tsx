@@ -464,6 +464,8 @@ function JournalView({
     existing: AttendancePunch | null;
   } | null>(null);
   const [time, setTime] = useState("");
+  const [managerName, setManagerName] = useState("");
+  const [motif, setMotif] = useState("");
   const [addAgent, setAddAgent] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -488,6 +490,8 @@ function JournalView({
   const openEdit = (agentId: string | null, agentName: string, type: PunchType, existing: AttendancePunch | null) => {
     setEdit({ agentId, agentName, type, existing });
     setTime(existing ? formatTime(existing.punched_at) : formatTime(new Date().toISOString()));
+    setManagerName("");
+    setMotif("");
   };
 
   const save = async () => {
