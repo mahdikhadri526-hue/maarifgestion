@@ -41,6 +41,8 @@ export interface DayResult {
   pauseLateMinutes: number;
   present: boolean;
   absence: boolean;
+  /** Types de pointage saisis/modifiés manuellement par un manager. */
+  manualTypes: PunchType[];
 }
 
 function hhmm(ts: number | null): string | null {
@@ -118,6 +120,7 @@ export function computeDay(params: {
     pauseLateMinutes,
     present,
     absence,
+    manualTypes: punches.filter((x) => x.method === "manual").map((x) => x.punch_type as PunchType),
   };
 }
 

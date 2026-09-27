@@ -124,6 +124,41 @@ export async function addPunch(params: {
   if (error) throw error;
 }
 
+/** Ajout ou modification manuelle d'un pointage par un manager (tracé : method = "manual"). */
+export async function saveManualPunch(params: {
+  pdvId: string;
+  existingId?: string | null;
+  agentId: string | null;
+  agentName: string;
+  punchType: PunchType;
+  date: string; // YYYY-MM-DD
+  time: string; // HH:MM
+  by: string;
+}): Promise<void> {
+  const [y, m, d] = params.date.split("-").map(Number);
+  const [hh, mm] = params.time.split(":").map(Number);
+  const at = new Date(y, m - 1, d, hh, mm, 0);
+  const label = `Manuel par ${params.by} le ${new Date().toLocaleString("fr-FR")}`.slice(0, 120);
+  const payload = {
+    punched_at: at.toISOString(),
+    punch_date: params.date,
+    method: "manual",
+    device_label: label,
+  };
+  const q = params.existingId
+    ? supabase.from("attendance_punches" as any).update(payload).eq("id", params.existingId)
+    : supabase.from("attendance_punches" as any).insert({
+        ...payload,
+        pdv_id: params.pdvId,
+        agent_id: params.agentId,
+        agent_name: params.agentName,
+        punch_type: params.punchType,
+        match_score: null,
+      });
+  const { error } = await q;
+  if (error) throw error;
+}
+
 export async function deletePunch(id: string): Promise<void> {
   const { error } = await supabase.from("attendance_punches" as any).delete().eq("id", id);
   if (error) throw error;
