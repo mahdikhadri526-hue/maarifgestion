@@ -264,6 +264,20 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
             Heure de début (et fin facultative) du matin et de l'après-midi pour chaque jour de la semaine — utilisée
             pour calculer le retard des managers, caissiers, ménage et sécurité.
           </p>
+          <div className="mt-2 inline-flex rounded-md border bg-muted/40 p-0.5">
+            {(Object.keys(SHIFT_ROLE_LABELS) as ShiftRole[]).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRole(r)}
+                className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                  role === r ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {SHIFT_ROLE_LABELS[r]}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex items-end gap-2">
           <div>
@@ -316,7 +330,7 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
               <tr key={d.value} className="border-t">
                 <td className="p-2 whitespace-nowrap font-medium">{d.label}</td>
                 {shifts.map((sh) => {
-                  const key = `${pdvSel}|${sh}|${d.value}`;
+                  const key = `${pdvSel}|${role}|${sh}|${d.value}`;
                   const v = draft[key] ?? { start: "", end: "" };
                   return (
                     <Fragment key={sh}>
@@ -344,7 +358,7 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
                 <td className="p-2">
                   {canEdit &&
                     shifts.map((sh) => {
-                      const key = `${pdvSel}|${sh}|${d.value}`;
+                      const key = `${pdvSel}|${role}|${sh}|${d.value}`;
                       return busy === key ? (
                         <span key={sh} className="text-xs text-muted-foreground">
                           …
