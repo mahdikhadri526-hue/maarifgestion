@@ -453,9 +453,10 @@ export function PlanningGrid({
                             <span className="block text-[10px] font-semibold">
                               {type ? DAY_TYPE_LABELS[type] : "—"}
                             </span>
-                            {type === "travail" && needsAssignment(a) && c?.work_shift && (
+                            {type === "travail" && needsAssignment(a) && c?.pdv_id && (
                               <span className="mt-1 block border-t border-current/15 pt-1 text-[9px] font-medium">
-                                {pdvs.find((p) => p.id === c.pdv_id)?.name ?? "PDV"} — {shiftLabel(c.work_shift)}
+                                {pdvs.find((p) => p.id === c.pdv_id)?.name ?? "PDV"}
+                                {c.work_shift ? ` — ${shiftLabel(c.work_shift)}` : ""}
                               </span>
                             )}
                             {type === "travail" && !needsAssignment(a) && (
@@ -488,15 +489,16 @@ export function PlanningGrid({
                                 <select
                                   aria-label={`Affectation de ${a.full_name} le ${formatFr(d)}`}
                                   className="mt-0.5 h-6 w-full cursor-pointer border-t border-current/15 bg-transparent text-center text-[9px] font-medium outline-none"
-                                  value={c?.work_shift ? `${c.pdv_id}|${c.work_shift}` : ""}
+                                  value={c?.pdv_id ? `${c.pdv_id}|${c.work_shift ?? "jour"}` : ""}
                                   onChange={(e) => {
                                     const [selectedPdvId, selectedShift] = e.target.value.split("|");
-                                    if (!selectedPdvId || (selectedShift !== "matin" && selectedShift !== "apres_midi")) return;
-                                    void update(a, d, { pdv_id: selectedPdvId, work_shift: selectedShift });
+                                    if (!selectedPdvId || (selectedShift !== "jour" && selectedShift !== "matin" && selectedShift !== "apres_midi")) return;
+                                    void update(a, d, { pdv_id: selectedPdvId, work_shift: selectedShift === "jour" ? null : selectedShift });
                                   }}
                                 >
                                   <option value="">PDV — période</option>
                                   {pdvs.flatMap((p) => ([
+                                    <option key={`${p.id}-jour`} value={`${p.id}|jour`}>{p.name}</option>,
                                     <option key={`${p.id}-matin`} value={`${p.id}|matin`}>{p.name} — Matin</option>,
                                     <option key={`${p.id}-apres_midi`} value={`${p.id}|apres_midi`}>{p.name} — Après-midi</option>,
                                   ]))}
