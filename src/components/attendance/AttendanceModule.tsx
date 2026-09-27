@@ -46,10 +46,6 @@ export function AttendanceModule({ onExit }: { onExit?: () => void }) {
   const [agents, setAgents] = useState<AttendanceAgent[]>([]);
   const [punches, setPunches] = useState<AttendancePunch[]>([]);
   const [loading, setLoading] = useState(true);
-  const managers = useMemo(
-    () => agents.filter((a) => a.staff_level === "manager").map((a) => a.full_name).sort((x, y) => x.localeCompare(y, "fr")),
-    [agents]
-  );
 
   const reload = useCallback(async () => {
     if (!pdvId) return;
@@ -472,6 +468,11 @@ function JournalView({
   const [motif, setMotif] = useState("");
   const [addAgent, setAddAgent] = useState("");
   const [saving, setSaving] = useState(false);
+  const managers = useMemo(
+    () => agents.filter((a) => a.staff_level === "manager").map((a) => a.full_name).sort((x, y) => x.localeCompare(y, "fr")),
+    [agents]
+  );
+
 
   const byAgent = useMemo(() => {
     const map = new Map<string, AttendancePunch[]>();
