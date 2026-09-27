@@ -277,7 +277,11 @@ const Index = () => {
             {tab === "ecarts" && <EcartModule />}
             {tab === "pep" && <PepModule />}
             {TECH_ENABLED && tab === "tech" && <TechModule />}
-            {ATTENDANCE_ENABLED && tab === "pointage" && <AttendanceModule />}
+            {ATTENDANCE_ENABLED && tab === "pointage" && (
+              <div className="fixed inset-0 z-50 bg-background overflow-y-auto p-4">
+                <AttendanceModule onExit={() => setTab("dashboard")} />
+              </div>
+            )}
             {ATTENDANCE_ENABLED && tab === "rh" && <HrModule />}
             {ATTENDANCE_ENABLED && tab === "planning" && <PlanningModule />}
           </Suspense>
