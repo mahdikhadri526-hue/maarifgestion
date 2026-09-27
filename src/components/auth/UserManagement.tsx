@@ -572,7 +572,9 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       )}
 
       {isAdmin && (
-        <Tabs defaultValue="users" className="space-y-4">
+        <>
+          <KioskPinSettings />
+          <Tabs defaultValue="users" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="users" className="gap-2">
               <Users className="h-4 w-4" /> Utilisateurs
