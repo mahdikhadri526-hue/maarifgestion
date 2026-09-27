@@ -79,6 +79,11 @@ export function PlanningGrid({
   const days = useMemo(() => weekDays(start), [start]);
   const norm = (s: string | null | undefined) =>
     (s ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  /** PDV exclus de la liste des plannings en lecture seule (mode RH). */
+  const readOnlyHiddenPdvs = useMemo(
+    () => new Set(["admin mohammedia", "mohammedia", "mansouria", "miramar"]),
+    [],
+  );
   const isCaissier = (a: HrAgent) => norm(a.poste) === "caissier";
   /** Postes planifiés par le responsable technique. */
   const isTechPoste = (a: HrAgent) => {
@@ -258,7 +263,7 @@ export function PlanningGrid({
             <>
               <Button
                 size="sm"
-                variant={showReadOnly ? "secondary" : "outline"}
+                variant="secondary"
                 className="h-8"
                 onClick={() => setShowReadOnly((v) => !v)}
               >
@@ -272,9 +277,11 @@ export function PlanningGrid({
                   onChange={(e) => setReadOnlyPdvId(e.target.value)}
                 >
                   <option value="">Choisir le PDV…</option>
-                  {pdvs.map((p) => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
+                  {pdvs
+                    .filter((p) => !readOnlyHiddenPdvs.has(norm(p.name)))
+                    .map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
                 </select>
               )}
             </>
