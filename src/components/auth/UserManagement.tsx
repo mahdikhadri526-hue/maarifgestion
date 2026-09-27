@@ -678,6 +678,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
             <RosterManagement />
           </TabsContent>
         </Tabs>
+        </>
       )}
 
 
