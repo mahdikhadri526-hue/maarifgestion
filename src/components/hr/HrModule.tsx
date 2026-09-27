@@ -474,12 +474,12 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
             </option>
           ))}
         </select>
-        <div className="flex gap-2 items-end">
+        <div className="flex gap-2 items-end min-w-0">
           <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="outline"
-                className="h-9 flex-1 justify-start gap-2 font-normal"
+                className="h-9 min-w-0 flex-1 justify-start gap-2 font-normal px-3 [&>span]:truncate"
               >
                 <CalendarIcon className="h-4 w-4 text-primary" />
                 {hire ? hire.split("-").reverse().join("/") : "Date d'embauche"}
