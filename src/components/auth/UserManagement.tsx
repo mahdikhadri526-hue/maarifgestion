@@ -8,12 +8,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ShieldCheck, Settings2, UserPlus, Trash2, KeyRound, Search, Store, Users, ListChecks } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Settings2, UserPlus, Trash2, KeyRound, Search, Store, Users, ListChecks, Lock } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ALL_PERMISSIONS, PERMISSION_GROUPS, AppRole, useAuth } from "@/contexts/AuthContext";
 import { PdvManagement } from "@/components/pdv/PdvManagement";
 import { RosterManagement } from "@/components/roster/RosterManagement";
+import { setKioskPin } from "@/lib/kioskPin";
 
 const PROTECTED_EMAILS = ["gestionmaarif1@gmail.com"];
 
@@ -76,6 +77,64 @@ const ROLE_PRESETS: Record<AppRole, string[]> = {
   ],
   viewer: ["view_dashboard"],
 };
+
+function KioskPinSettings() {
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const save = async () => {
+    if (!/^\d{4,8}$/.test(newPin)) {
+      toast.error("Le code doit contenir entre 4 et 8 chiffres.");
+      return;
+    }
+    if (newPin !== confirmPin) {
+      toast.error("Les deux codes ne correspondent pas.");
+      return;
+    }
+    setSaving(true);
+    const ok = await setKioskPin(newPin);
+    setSaving(false);
+    if (ok) {
+      toast.success("Code du pointage modifié.");
+      setNewPin("");
+      setConfirmPin("");
+    } else {
+      toast.error("Impossible de modifier le code.");
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Lock className="h-4 w-4 text-primary" /> Code du pointage / mode kiosque
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-2 sm:grid-cols-3">
+        <Input
+          type="password"
+          inputMode="numeric"
+          maxLength={8}
+          placeholder="Nouveau code"
+          value={newPin}
+          onChange={(e) => setNewPin(e.target.value.replace(/\D/g, ""))}
+        />
+        <Input
+          type="password"
+          inputMode="numeric"
+          maxLength={8}
+          placeholder="Confirmer le code"
+          value={confirmPin}
+          onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ""))}
+        />
+        <Button onClick={() => void save()} disabled={saving || !newPin}>
+          Enregistrer le code
+        </Button>
+      </CardContent>
+    </Card>
+  );
+}
 
 export function UserManagement({ onBack }: { onBack: () => void }) {
   const { user: currentUser, multiPdvEnabled, pdvs, isAdmin, isRegionalAdmin, can } = useAuth();
