@@ -1145,7 +1145,7 @@ function ReportsView({
             <tr className="bg-muted/70">
               {[
                 "Prévu", "Entrée", "Pause début", "Pause fin", "Sortie",
-                "Statut", "Manuel",
+                "Statut", "Pointage manuel",
                 "Heures", "H. sup.", "Retard", "Retard pause",
               ].map((h, i) => (
                 <th key={h} className={`p-2 whitespace-nowrap text-center ${i === 0 || i === 5 || i === 7 ? "border-l" : ""}`}>
