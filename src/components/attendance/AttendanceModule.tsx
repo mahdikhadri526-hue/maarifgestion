@@ -7,6 +7,7 @@ import { Camera, CameraOff, UserPlus, RefreshCw, ScanFace, Users, ListChecks, Lo
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { MANAGERS } from "@/lib/managers";
 import { computeDescriptor, findBestMatch, loadFaceApi, MATCH_THRESHOLD, type FaceCandidate } from "@/lib/faceRecognition";
 import {
   addPunch,
