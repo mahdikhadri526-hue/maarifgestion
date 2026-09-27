@@ -185,9 +185,20 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
     void load();
   }, [load]);
 
+  const normPdv = (s: string | null | undefined) =>
+    (s ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  /** PDV masqués dans « Horaires shifts » (identiques à la liste de Planning). */
+  const hiddenShiftPdvs = useMemo(
+    () => new Set(["admin mohammedia", "mohammedia", "mansouria", "miramar"]),
+    [],
+  );
+  const visiblePdvs = useMemo(() => pdvs.filter((p) => !hiddenShiftPdvs.has(normPdv(p.name))), [pdvs, hiddenShiftPdvs]);
+
   useEffect(() => {
-    if (!pdvSel && pdvs.length) setPdvSel(pdvs[0].id);
-  }, [pdvs, pdvSel]);
+    if ((!pdvSel || hiddenShiftPdvs.has(normPdv(pdvs.find((p) => p.id === pdvSel)?.name))) && visiblePdvs.length) {
+      setPdvSel(visiblePdvs[0].id);
+    }
+  }, [pdvs, pdvSel, visiblePdvs, hiddenShiftPdvs]);
 
   const shifts: WorkShift[] = ["matin", "apres_midi"];
 
@@ -257,7 +268,7 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
               value={pdvSel}
               onChange={(e) => setPdvSel(e.target.value)}
             >
-              {pdvs.map((p) => (
+              {visiblePdvs.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
