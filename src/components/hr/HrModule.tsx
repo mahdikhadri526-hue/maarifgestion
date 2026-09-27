@@ -1131,16 +1131,19 @@ function ReportsView({
       )}
 
       <div className="overflow-x-auto border-4 border-black">
-        <table className="w-full text-xs font-semibold text-center [&_th]:border-2 [&_th]:border-black [&_th]:text-center [&_td]:border-2 [&_td]:border-black [&_td]:text-center">
+        <table
+          className="hr-sticky-table text-xs font-semibold text-center [&_th]:border-b-2 [&_th]:border-r-2 [&_th]:border-black [&_th]:text-center [&_td]:border-b-2 [&_td]:border-r-2 [&_td]:border-black [&_td]:text-center"
+          style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%" }}
+        >
           <thead className="bg-muted">
             <tr>
-              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom w-28 truncate sticky left-0 z-30 bg-muted">Date</th>
-              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom w-44 truncate sticky left-28 z-30 bg-muted">Employé</th>
-              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom w-36 truncate sticky left-[272px] z-30 bg-muted">PDV</th>
+              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom bg-muted w-[112px] min-w-[112px] max-w-[112px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Date</th>
+              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom bg-muted w-[176px] min-w-[176px] max-w-[176px]" style={{ position: "sticky", left: 112, zIndex: 45 }}>Employé</th>
+              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom bg-muted w-[160px] min-w-[160px] max-w-[160px]" style={{ position: "sticky", left: 288, zIndex: 45 }}>PDV</th>
               <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">Journée</th>
-              <th colSpan={5} className="p-2 text-center border-l border-b whitespace-nowrap">Pointages</th>
-              <th colSpan={2} className="p-2 text-center border-l border-b whitespace-nowrap">Suivi</th>
-              <th colSpan={4} className="p-2 text-center border-l border-b whitespace-nowrap">Temps &amp; écarts</th>
+              <th colSpan={5} className="p-2 text-center whitespace-nowrap">Pointages</th>
+              <th colSpan={2} className="p-2 text-center whitespace-nowrap">Suivi</th>
+              <th colSpan={4} className="p-2 text-center whitespace-nowrap">Temps &amp; écarts</th>
             </tr>
             <tr className="bg-muted/70">
               {[
@@ -1148,7 +1151,7 @@ function ReportsView({
                 "Statut", "Pointage manuel",
                 "Heures", "H. sup.", "Retard", "Retard pause",
               ].map((h, i) => (
-                <th key={h} className={`p-2 whitespace-nowrap text-center ${i === 0 || i === 5 || i === 7 ? "border-l" : ""}`}>
+                <th key={h} className="p-2 whitespace-nowrap text-center">
                   {h}
                 </th>
               ))}
@@ -1157,9 +1160,9 @@ function ReportsView({
           <tbody>
             {rows.map((r) => (
               <tr key={`${r.agentId}-${r.date}`} className="border-t">
-                <td className="p-2 w-28 truncate sticky left-0 z-20 bg-background">{formatFr(r.date)}</td>
-                <td className="p-2 w-44 truncate sticky left-28 z-20 bg-background">{r.agentName}</td>
-                <td className="p-2 w-36 truncate sticky left-[272px] z-20 bg-background">{pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}</td>
+                <td className="hr-sticky-col p-2 w-[112px] min-w-[112px] max-w-[112px] truncate bg-inherit" style={{ position: "sticky", left: 0, zIndex: 25, background: "inherit" }}>{formatFr(r.date)}</td>
+                <td className="hr-sticky-col p-2 w-[176px] min-w-[176px] max-w-[176px] truncate bg-inherit" style={{ position: "sticky", left: 112, zIndex: 25, background: "inherit" }} title={r.agentName}>{r.agentName}</td>
+                <td className="hr-sticky-col p-2 w-[160px] min-w-[160px] max-w-[160px] truncate bg-inherit" style={{ position: "sticky", left: 288, zIndex: 25, background: "inherit" }} title={pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}>{pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}</td>
                 <td className="p-2 whitespace-nowrap">
                   {r.dayType ? DAY_TYPE_LABELS[r.dayType] : "—"}
                   {r.isHoliday && <Badge className="ml-1 text-[9px]">Férié</Badge>}

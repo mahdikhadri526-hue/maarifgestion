@@ -143,6 +143,25 @@
     z-index: 45 !important;
   }
 
+  /* Tableau des rapports RH : colonnes Date / Employé / PDV figées */
+  .hr-sticky-table {
+    width: max-content !important;
+    min-width: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    overflow: visible !important;
+  }
+
+  .hr-sticky-table .hr-sticky-col {
+    position: sticky !important;
+    z-index: 25;
+    box-shadow: 2px 0 4px -2px hsl(var(--border));
+  }
+
+  .hr-sticky-table .hr-sticky-head {
+    z-index: 45;
+  }
+
   /* Finition pro des cartes du dashboard */
   .rounded-lg.border.bg-card {
     @apply shadow-sm hover:shadow-md transition-shadow duration-200;
