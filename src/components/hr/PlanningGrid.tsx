@@ -71,6 +71,8 @@ export function PlanningGrid({
   const [level, setLevel] = useState<"agent" | "manager">(showLevelToggle && isRh ? "manager" : "agent");
   const [rows, setRows] = useState<HrSchedule[]>([]);
   const [loading, setLoading] = useState(false);
+  /** Mode RH : les lignes en lecture seule (agents, ménage, sécurité) sont masquées par défaut. */
+  const [showReadOnly, setShowReadOnly] = useState(false);
 
   const days = useMemo(() => weekDays(start), [start]);
   const norm = (s: string | null | undefined) =>
@@ -99,9 +101,11 @@ export function PlanningGrid({
       const caissiers = agentRows.filter((a) => isCaissier(a) && isPlannedHere(a));
       const technical = agentRows.filter((a) => isTechPoste(a) && isPlannedHere(a));
       const managers = actives.filter((a) => (a.staff_level ?? "agent") !== "agent");
-      return groupedCategories === "rh"
-        ? [...managers, ...caissiers, ...regular, ...technical]
-        : [...regular, ...caissiers, ...technical];
+      if (groupedCategories === "rh") {
+        const editable = [...managers, ...caissiers];
+        return showReadOnly ? [...editable, ...regular, ...technical] : editable;
+      }
+      return [...regular, ...caissiers, ...technical];
     }
     if (techMode === "only") {
       const technical = actives.filter(isTechPoste);
@@ -121,7 +125,7 @@ export function PlanningGrid({
     const caissiers = pool.filter((a) => (a.staff_level ?? "agent") === "agent" && isCaissier(a));
     if (level === "manager") return [...base, ...caissiers];
     return base.filter((a) => !isCaissier(a));
-  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows]);
+  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows, showReadOnly]);
   const firstCaissierId = useMemo(
     () => ((groupedCategories || (caissierMode === "bottom" && techMode !== "only")) ? list.find(isCaissier)?.id ?? null : null),
     [list, caissierMode, techMode, groupedCategories],
@@ -243,6 +247,16 @@ export function PlanningGrid({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {groupedCategories === "rh" && (
+            <Button
+              size="sm"
+              variant={showReadOnly ? "secondary" : "outline"}
+              className="h-8"
+              onClick={() => setShowReadOnly((v) => !v)}
+            >
+              {showReadOnly ? "Masquer les plannings en lecture seule" : "Afficher les plannings en lecture seule"}
+            </Button>
+          )}
           {showLevelToggle && (
           <div className="flex rounded-md border border-sidebar-border bg-sidebar-accent p-0.5">
             {isRh && (
