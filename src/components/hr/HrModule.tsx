@@ -1134,8 +1134,21 @@ function ReportsView({
         <table className="w-full text-xs border rounded">
           <thead className="bg-muted">
             <tr>
-              {["Date", "Employé", "Journée", "Prévu", "Entrée", "Pause", "Sortie", "Heures", "H. sup.", "Retard", "Retard pause", "Statut", "Manuel"].map((h) => (
-                <th key={h} className="p-2 text-left whitespace-nowrap">
+              <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">Date</th>
+              <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">Employé</th>
+              <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">PDV</th>
+              <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">Journée</th>
+              <th colSpan={5} className="p-2 text-center border-l border-b whitespace-nowrap">Pointages</th>
+              <th colSpan={4} className="p-2 text-center border-l border-b whitespace-nowrap">Temps &amp; écarts</th>
+              <th colSpan={2} className="p-2 text-center border-l border-b whitespace-nowrap">Suivi</th>
+            </tr>
+            <tr className="bg-muted/70">
+              {[
+                "Prévu", "Entrée", "Pause début", "Pause fin", "Sortie",
+                "Heures", "H. sup.", "Retard", "Retard pause",
+                "Statut", "Manuel",
+              ].map((h, i) => (
+                <th key={h} className={`p-2 whitespace-nowrap text-center ${i === 0 || i === 5 || i === 9 ? "border-l" : ""}`}>
                   {h}
                 </th>
               ))}
@@ -1146,25 +1159,25 @@ function ReportsView({
               <tr key={`${r.agentId}-${r.date}`} className="border-t">
                 <td className="p-2 whitespace-nowrap">{formatFr(r.date)}</td>
                 <td className="p-2 whitespace-nowrap">{r.agentName}</td>
+                <td className="p-2 whitespace-nowrap">{pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}</td>
                 <td className="p-2 whitespace-nowrap">
                   {r.dayType ? DAY_TYPE_LABELS[r.dayType] : "—"}
                   {r.isHoliday && <Badge className="ml-1 text-[9px]">Férié</Badge>}
                 </td>
-                <td className="p-2 whitespace-nowrap">{r.plannedStart ?? "—"}</td>
-                <td className="p-2 whitespace-nowrap">{r.entree ?? "—"}</td>
-                <td className="p-2 whitespace-nowrap">
-                  {r.pauseStart ?? "—"} / {r.pauseEnd ?? "—"}
-                </td>
-                <td className="p-2 whitespace-nowrap">{r.sortie ?? "—"}</td>
-                <td className="p-2 whitespace-nowrap">{r.workedHours.toFixed(2)}</td>
-                <td className="p-2 whitespace-nowrap">{r.overtimeHours > 0 ? r.overtimeHours.toFixed(2) : "—"}</td>
-                <td className={`p-2 whitespace-nowrap ${r.lateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
+                <td className="p-2 whitespace-nowrap text-center">{r.plannedStart ?? "—"}</td>
+                <td className="p-2 whitespace-nowrap text-center">{r.entree ?? "—"}</td>
+                <td className="p-2 whitespace-nowrap text-center">{r.pauseStart ?? "—"}</td>
+                <td className="p-2 whitespace-nowrap text-center">{r.pauseEnd ?? "—"}</td>
+                <td className="p-2 whitespace-nowrap text-center">{r.sortie ?? "—"}</td>
+                <td className="p-2 whitespace-nowrap text-center font-medium">{r.workedHours.toFixed(2)}</td>
+                <td className="p-2 whitespace-nowrap text-center">{r.overtimeHours > 0 ? r.overtimeHours.toFixed(2) : "—"}</td>
+                <td className={`p-2 whitespace-nowrap text-center ${r.lateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
                   {r.lateMinutes > 0 ? formatMinutes(r.lateMinutes) : "—"}
                 </td>
-                <td className={`p-2 whitespace-nowrap ${r.pauseLateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
+                <td className={`p-2 whitespace-nowrap text-center ${r.pauseLateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
                   {r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "—"}
                 </td>
-                <td className="p-2 whitespace-nowrap">
+                <td className="p-2 whitespace-nowrap text-center">
                   {r.absence ? (
                     <span className="text-destructive font-semibold">Absence à justifier</span>
                   ) : r.present ? (
@@ -1173,7 +1186,7 @@ function ReportsView({
                     DAY_TYPE_LABELS[(r.dayType ?? "repos") as DayType]
                   )}
                 </td>
-                <td className="p-2 whitespace-nowrap">
+                <td className="p-2 whitespace-nowrap text-center">
                   {r.manualTypes.length > 0 ? (
                     <Badge variant="outline" className="text-[10px] border-warning text-warning" title={r.manualTypes.join(", ")}>
                       Manuel ({r.manualTypes.length})
@@ -1185,6 +1198,16 @@ function ReportsView({
               </tr>
             ))}
           </tbody>
+          <tfoot>
+            <tr>
+              <td colSpan={9} className="p-2 text-right font-semibold whitespace-nowrap">Totaux</td>
+              <td className="p-2 text-center font-semibold">{totals.worked.toFixed(2)}</td>
+              <td className="p-2 text-center font-semibold">{totals.overtime.toFixed(2)}</td>
+              <td className="p-2 text-center font-semibold">{formatMinutes(totals.late)}</td>
+              <td className="p-2 text-center font-semibold">{formatMinutes(totals.pauseLate)}</td>
+              <td colSpan={2} />
+            </tr>
+          </tfoot>
         </table>
         {rows.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-6">
