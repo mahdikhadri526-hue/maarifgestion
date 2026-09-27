@@ -517,9 +517,11 @@ export function PlanningGrid({
                                   }}
                                 >
                                   <option value="">PDV…</option>
-                                  {pdvs.map((p) => (
-                                    <option key={p.id} value={p.id}>{p.name}</option>
-                                  ))}
+                                  {pdvs
+                                    .filter((p) => !readOnlyHiddenPdvs.has(norm(p.name)))
+                                    .map((p) => (
+                                      <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
                                 </select>
                               )}
                               {!needsAssignment(a) && (
