@@ -113,7 +113,7 @@ export function AttendanceModule({ onExit }: { onExit?: () => void }) {
         >
           <X className="w-4 h-4" />
         </Button>
-        <div className="w-full max-w-2xl">
+        <div className="w-full flex-1 flex flex-col min-h-0">
           <PunchView agents={agents} punches={punches} onDone={reload} />
         </div>
         <Dialog open={pinOpen} onOpenChange={(o) => { setPinOpen(o); if (!o) setPin(""); }}>
@@ -365,38 +365,33 @@ function PunchView({
   }, [on, ready, pdvId, candidates, doneFor, onDone, videoRef, stop]);
 
   return (
-    <div className="space-y-4">
-      <Card className="p-4 space-y-3">
-        {!on && (
-          <div className="flex justify-center gap-2">
-            <Button onClick={() => void handleStart()} className="w-full max-w-lg text-base py-5">
-              <Camera className="w-5 h-5 mr-1" /> Démarrer le pointage
-            </Button>
-          </div>
-        )}
+    <div className="flex flex-col gap-3 min-h-[calc(100vh-2rem)]">
+      {!on && (
+        <Button onClick={() => void handleStart()} className="w-full text-base py-5 shrink-0">
+          <Camera className="w-5 h-5 mr-1" /> Démarrer le pointage
+        </Button>
+      )}
 
-        <div className="relative rounded-lg overflow-hidden bg-muted aspect-[3/4] w-full max-w-lg mx-auto">
-          <video ref={videoRef} playsInline muted className="w-full h-full object-cover scale-x-[-1]" />
+      <Card className="p-3 flex-1 flex flex-col min-h-[60vh]">
+        <div className="relative rounded-lg overflow-hidden bg-muted flex-1 min-h-0">
+          <video ref={videoRef} playsInline muted className="absolute inset-0 w-full h-full object-cover scale-x-[-1]" />
           {!on && (
             <div className="absolute inset-0 flex items-center justify-center text-sm text-muted-foreground">
               Caméra éteinte
             </div>
           )}
         </div>
-
-        <p className="text-center text-sm font-medium">{status}</p>
-        {error && <p className="text-center text-sm text-destructive">{error}</p>}
-
-
+        <p className="text-center text-sm font-medium mt-2 shrink-0">{status}</p>
+        {error && <p className="text-center text-sm text-destructive shrink-0">{error}</p>}
         {candidates.length === 0 && (
-          <p className="text-center text-xs text-muted-foreground">
+          <p className="text-center text-xs text-muted-foreground shrink-0">
             Aucun agent enrôlé sur ce point de vente. Ajoutez-les dans l'onglet « Agents ».
           </p>
         )}
       </Card>
 
       {last && (
-        <Card className="p-4 border-primary/40 bg-primary/5 text-center">
+        <Card className="p-4 border-primary/40 bg-primary/5 text-center shrink-0">
           <p className="text-lg font-bold">{last.name}</p>
           <p className="text-sm">
             {PUNCH_LABELS[last.type]} à <span className="font-semibold">{last.time}</span>
