@@ -1139,8 +1139,8 @@ function ReportsView({
               <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">PDV</th>
               <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">Journée</th>
               <th colSpan={5} className="p-2 text-center border-l border-b whitespace-nowrap">Pointages</th>
-              <th colSpan={4} className="p-2 text-center border-l border-b whitespace-nowrap">Temps &amp; écarts</th>
               <th colSpan={2} className="p-2 text-center border-l border-b whitespace-nowrap">Suivi</th>
+              <th colSpan={4} className="p-2 text-center border-l border-b whitespace-nowrap">Temps &amp; écarts</th>
             </tr>
             <tr className="bg-muted/70">
               {[
