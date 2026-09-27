@@ -81,6 +81,37 @@ export function AttendanceModule({ onExit }: { onExit?: () => void }) {
     return () => window.removeEventListener("pointerdown", enter);
   }, [fullscreen]);
 
+  // Activation du plein écran sans code (le code n'est exigé que pour quitter/déverrouiller)
+  const activateFullscreen = () => {
+    setFullscreen(true);
+    try {
+      void document.documentElement.requestFullscreen?.();
+    } catch {
+      /* plein écran navigateur non disponible */
+    }
+  };
+
+  // Verrouillage automatique de l'accès réservé après 10 s sans utilisation
+  useEffect(() => {
+    if (!unlocked) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const reset = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        setUnlocked(false);
+        setView("pointage");
+        toast.info("Accès réservé verrouillé (inactivité)");
+      }, 10_000);
+    };
+    reset();
+    const events = ["pointerdown", "keydown", "touchstart"] as const;
+    events.forEach((e) => window.addEventListener(e, reset));
+    return () => {
+      clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, reset));
+    };
+  }, [unlocked]);
+
   const submitPin = () => {
     if (pin !== KIOSK_PIN) {
       toast.error("Code incorrect");
@@ -89,14 +120,7 @@ export function AttendanceModule({ onExit }: { onExit?: () => void }) {
     }
     setPinOpen(false);
     setPin("");
-    if (pinAction === "fullscreen") {
-      setFullscreen(true);
-      try {
-        void document.documentElement.requestFullscreen?.();
-      } catch {
-        /* plein écran navigateur non disponible */
-      }
-    } else if (pinAction === "exit") {
+    if (pinAction === "exit") {
       setFullscreen(false);
       try {
         if (document.fullscreenElement) void document.exitFullscreen();
