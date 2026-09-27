@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { BarChart3, CalendarDays, ChevronLeft, ChevronRight, Clock, Download, Plus, RefreshCw, Sun, Trash2, Users } from "lucide-react";
+import { BarChart3, CalendarDays, CalendarIcon, ChevronLeft, ChevronRight, Clock, Download, Plus, RefreshCw, Sun, Trash2, Users } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 import { useAuth } from "@/contexts/AuthContext";
 import type { AttendancePunch } from "@/lib/attendanceData";
 import {
@@ -473,14 +475,32 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
           ))}
         </select>
         <div className="flex gap-2 items-center">
-          <div className="relative flex-1">
-            <Input type="date" className="h-9 w-full" value={hire} onChange={(e) => setHire(e.target.value)} />
-            {!hire && (
-              <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center rounded bg-background px-3 text-sm text-muted-foreground">
-                Date d'embauche
-              </span>
-            )}
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className="h-9 flex-1 justify-start gap-2 font-normal"
+              >
+                <CalendarIcon className="h-4 w-4 text-primary" />
+                {hire ? hire.split("-").reverse().join("/") : "Date d'embauche"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={hire ? new Date(hire) : undefined}
+                onSelect={(d) => {
+                  if (!d) return;
+                  const y = d.getFullYear();
+                  const m = String(d.getMonth() + 1).padStart(2, "0");
+                  const day = String(d.getDate()).padStart(2, "0");
+                  setHire(`${y}-${m}-${day}`);
+                }}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
           <Button size="sm" onClick={() => void add()} disabled={busy || !name.trim()}>
             <Plus className="w-4 h-4" />
           </Button>
