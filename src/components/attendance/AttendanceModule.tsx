@@ -112,8 +112,8 @@ export function AttendanceModule({ onExit }: { onExit?: () => void }) {
     };
   }, [unlocked]);
 
-  const submitPin = () => {
-    if (pin !== KIOSK_PIN) {
+  const submitPin = async () => {
+    if (!(await checkKioskPin(pin))) {
       toast.error("Code incorrect");
       setPin("");
       return;
