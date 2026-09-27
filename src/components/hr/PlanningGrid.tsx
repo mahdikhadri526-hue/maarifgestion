@@ -464,6 +464,7 @@ export function PlanningGrid({
                                 {needsPdvAndHours(a) && (
                                   <span className="block font-medium">
                                     {pdvs.find((p) => p.id === c?.pdv_id)?.name ?? "PDV"}
+                                    {c?.work_shift ? ` — ${shiftLabel(c.work_shift)}` : ""}
                                   </span>
                                 )}
                                 {c?.start_time || "--:--"} – {c?.end_time || "--:--"}
@@ -510,18 +511,21 @@ export function PlanningGrid({
                                 <select
                                   aria-label={`Point de vente de ${a.full_name} le ${formatFr(d)}`}
                                   className="mt-0.5 h-6 w-full cursor-pointer border-t border-current/15 bg-transparent text-center text-[9px] font-medium outline-none"
-                                  value={c?.pdv_id ?? ""}
+                                  value={c?.pdv_id ? `${c.pdv_id}|${c.work_shift ?? "jour"}` : ""}
                                   onChange={(e) => {
-                                    if (!e.target.value) return;
-                                    void update(a, d, { pdv_id: e.target.value, work_shift: null });
+                                    const [selectedPdvId, selectedShift] = e.target.value.split("|");
+                                    if (!selectedPdvId || (selectedShift !== "jour" && selectedShift !== "matin" && selectedShift !== "apres_midi")) return;
+                                    void update(a, d, { pdv_id: selectedPdvId, work_shift: selectedShift === "jour" ? null : selectedShift });
                                   }}
                                 >
-                                  <option value="">PDV…</option>
+                                  <option value="">PDV — période</option>
                                   {pdvs
                                     .filter((p) => !readOnlyHiddenPdvs.has(norm(p.name)))
-                                    .map((p) => (
-                                      <option key={p.id} value={p.id}>{p.name}</option>
-                                    ))}
+                                    .flatMap((p) => ([
+                                      <option key={`${p.id}-jour`} value={`${p.id}|jour`}>{p.name}</option>,
+                                      <option key={`${p.id}-matin`} value={`${p.id}|matin`}>{p.name} — Matin</option>,
+                                      <option key={`${p.id}-apres_midi`} value={`${p.id}|apres_midi`}>{p.name} — Après-midi</option>,
+                                    ]))}
                                 </select>
                               )}
                               {!needsAssignment(a) && (
