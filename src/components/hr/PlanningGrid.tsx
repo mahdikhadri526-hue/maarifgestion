@@ -79,6 +79,11 @@ export function PlanningGrid({
   const days = useMemo(() => weekDays(start), [start]);
   const norm = (s: string | null | undefined) =>
     (s ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  /** PDV exclus de la liste des plannings en lecture seule (mode RH). */
+  const readOnlyHiddenPdvs = useMemo(
+    () => new Set(["admin mohammedia", "mohammedia", "mansouria", "miramar"]),
+    [],
+  );
   const isCaissier = (a: HrAgent) => norm(a.poste) === "caissier";
   /** Postes planifiés par le responsable technique. */
   const isTechPoste = (a: HrAgent) => {
