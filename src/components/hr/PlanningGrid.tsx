@@ -84,6 +84,9 @@ export function PlanningGrid({
     () => new Set(["admin mohammedia", "mohammedia", "mansouria", "miramar"]),
     [],
   );
+  /** PDV internes exclus des listes de choix (Technique, Qualité). */
+  const isHiddenPdv = (p: { name: string }) =>
+    readOnlyHiddenPdvs.has(norm(p.name)) || /technique|qualite/.test(norm(p.name));
   const isCaissier = (a: HrAgent) => norm(a.poste) === "caissier";
   /** Postes planifiés par le responsable technique. */
   const isTechPoste = (a: HrAgent) => {
@@ -278,7 +281,7 @@ export function PlanningGrid({
                 >
                   <option value="">Choisir le PDV…</option>
                   {pdvs
-                    .filter((p) => !readOnlyHiddenPdvs.has(norm(p.name)))
+                    .filter((p) => !isHiddenPdv(p))
                     .map((p) => (
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
@@ -499,7 +502,7 @@ export function PlanningGrid({
                                 >
                                   <option value="">PDV — période</option>
                                   {pdvs
-                                    .filter((p) => !readOnlyHiddenPdvs.has(norm(p.name)))
+                                    .filter((p) => !isHiddenPdv(p))
                                     .flatMap((p) => ([
                                       <option key={`${p.id}-jour`} value={`${p.id}|jour`}>{p.name}</option>,
                                       <option key={`${p.id}-matin`} value={`${p.id}|matin`}>{p.name} — Matin</option>,
@@ -520,7 +523,7 @@ export function PlanningGrid({
                                 >
                                   <option value="">PDV — période</option>
                                   {pdvs
-                                    .filter((p) => !readOnlyHiddenPdvs.has(norm(p.name)))
+                                    .filter((p) => !isHiddenPdv(p))
                                     .flatMap((p) => ([
                                       <option key={`${p.id}-jour`} value={`${p.id}|jour`}>{p.name}</option>,
                                       <option key={`${p.id}-matin`} value={`${p.id}|matin`}>{p.name} — Matin</option>,
