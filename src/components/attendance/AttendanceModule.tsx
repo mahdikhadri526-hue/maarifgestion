@@ -617,7 +617,7 @@ function JournalView({
               onChange={(e) => setManagerName(e.target.value)}
             >
               <option value="">Choisir un manager…</option>
-              {MANAGERS.map((m) => (
+              {managers.map((m) => (
                 <option key={m} value={m}>
                   {m}
                 </option>
