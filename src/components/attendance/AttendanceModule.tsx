@@ -113,7 +113,7 @@ export function AttendanceModule({ onExit }: { onExit?: () => void }) {
         >
           <X className="w-4 h-4" />
         </Button>
-        <div className="w-full max-w-2xl">
+        <div className="w-full flex-1 flex flex-col min-h-0">
           <PunchView agents={agents} punches={punches} onDone={reload} />
         </div>
         <Dialog open={pinOpen} onOpenChange={(o) => { setPinOpen(o); if (!o) setPin(""); }}>
