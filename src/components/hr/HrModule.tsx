@@ -1130,8 +1130,8 @@ function ReportsView({
         </Card>
       )}
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs border-4 border-black rounded-sm font-semibold [&_th]:border-2 [&_th]:border-black [&_td]:border-2 [&_td]:border-black">
+      <div className="overflow-x-auto border-4 border-black">
+        <table className="w-full text-xs font-semibold [&_th]:border-2 [&_th]:border-black [&_td]:border-2 [&_td]:border-black">
           <thead className="bg-muted">
             <tr>
               <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">Date</th>
