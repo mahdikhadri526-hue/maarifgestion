@@ -33,7 +33,7 @@ const SHOTS_REQUIRED = 3;
 
 const KIOSK_PIN = "1975";
 
-export function AttendanceModule() {
+export function AttendanceModule({ onExit }: { onExit?: () => void }) {
   const { pdvId, can } = useAuth();
   const canManage = can("manage_attendance");
   const [unlocked, setUnlocked] = useState(false);
@@ -160,6 +160,11 @@ export function AttendanceModule() {
             <Button variant="ghost" size="sm" onClick={lock}>
               <Lock className="w-4 h-4 mr-1" /> Verrouiller
             </Button>
+            {onExit && (
+              <Button variant="ghost" size="sm" onClick={onExit}>
+                <X className="w-4 h-4 mr-1" /> Quitter
+              </Button>
+            )}
           </>
         ) : (
           <>
