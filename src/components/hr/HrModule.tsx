@@ -30,8 +30,10 @@ import {
   saveShiftTime,
   shiftStartMap,
   SHIFT_LABELS,
+  SHIFT_ROLE_LABELS,
   WEEKDAYS,
   type PdvShiftTime,
+  type ShiftRole,
   type WorkShift,
   isoDate,
   POSTES,
@@ -166,6 +168,7 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
   const [draft, setDraft] = useState<Record<string, { start: string; end: string }>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [pdvSel, setPdvSel] = useState<string>("");
+  const [role, setRole] = useState<ShiftRole>("manager");
 
   const load = useCallback(async () => {
     try {
@@ -173,7 +176,10 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
       setRows(data);
       const d: Record<string, { start: string; end: string }> = {};
       data.forEach((r) => {
-        d[`${r.pdv_id}|${r.shift}|${r.day_of_week}`] = { start: r.start_time ?? "", end: r.end_time ?? "" };
+        d[`${r.pdv_id}|${r.role ?? "manager"}|${r.shift}|${r.day_of_week}`] = {
+          start: r.start_time ?? "",
+          end: r.end_time ?? "",
+        };
       });
       setDraft(d);
     } catch (e: any) {
@@ -203,7 +209,7 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
   const shifts: WorkShift[] = ["matin", "apres_midi"];
 
   const save = async (pdv_id: string, shift: WorkShift, day_of_week: number) => {
-    const key = `${pdv_id}|${shift}|${day_of_week}`;
+    const key = `${pdv_id}|${role}|${shift}|${day_of_week}`;
     const v = draft[key];
     if (!v?.start) {
       toast.error("Indiquez l'heure de début");
@@ -211,7 +217,7 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
     }
     setBusy(key);
     try {
-      await saveShiftTime({ pdv_id, shift, day_of_week, start_time: v.start, end_time: v.end || null });
+      await saveShiftTime({ pdv_id, shift, day_of_week, start_time: v.start, end_time: v.end || null, role });
       toast.success("Horaire enregistré");
       await load();
     } catch (e: any) {
@@ -227,7 +233,7 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
     try {
       for (const sh of shifts) {
         for (const d of WEEKDAYS) {
-          const v = draft[`${pdvSel}|${sh}|${d.value}`];
+          const v = draft[`${pdvSel}|${role}|${sh}|${d.value}`];
           if (!v?.start) continue;
           await saveShiftTime({
             pdv_id: pdvSel,
@@ -235,6 +241,7 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
             day_of_week: d.value,
             start_time: v.start,
             end_time: v.end || null,
+            role,
           });
         }
       }
@@ -259,6 +266,20 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
             Heure de début (et fin facultative) du matin et de l'après-midi pour chaque jour de la semaine — utilisée
             pour calculer le retard des managers, caissiers, ménage et sécurité.
           </p>
+          <div className="mt-2 inline-flex rounded-md border bg-muted/40 p-0.5">
+            {(Object.keys(SHIFT_ROLE_LABELS) as ShiftRole[]).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRole(r)}
+                className={`rounded px-3 py-1 text-xs font-medium transition-colors ${
+                  role === r ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {SHIFT_ROLE_LABELS[r]}
+              </button>
+            ))}
+          </div>
         </div>
         <div className="flex items-end gap-2">
           <div>
@@ -311,7 +332,7 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
               <tr key={d.value} className="border-t">
                 <td className="p-2 whitespace-nowrap font-medium">{d.label}</td>
                 {shifts.map((sh) => {
-                  const key = `${pdvSel}|${sh}|${d.value}`;
+                  const key = `${pdvSel}|${role}|${sh}|${d.value}`;
                   const v = draft[key] ?? { start: "", end: "" };
                   return (
                     <Fragment key={sh}>
@@ -339,7 +360,7 @@ function ShiftTimesView({ canEdit }: { canEdit: boolean }) {
                 <td className="p-2">
                   {canEdit &&
                     shifts.map((sh) => {
-                      const key = `${pdvSel}|${sh}|${d.value}`;
+                      const key = `${pdvSel}|${role}|${sh}|${d.value}`;
                       return busy === key ? (
                         <span key={sh} className="text-xs text-muted-foreground">
                           …
@@ -983,6 +1004,7 @@ function ReportsView({
               punches: dayPunches,
               schedule: sch,
               shiftStarts,
+              shiftRole: (a.poste ?? "").toLowerCase().includes("caissier") ? "caissier" : "manager",
               holidayLabel: holidayMap.get(date) ?? null,
             }),
           );

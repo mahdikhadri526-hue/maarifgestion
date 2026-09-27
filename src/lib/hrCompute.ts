@@ -63,8 +63,10 @@ export function computeDay(params: {
   punches: AttendancePunch[];
   schedule: HrSchedule | null;
   holidayLabel?: string | null;
-  /** Heures de début de shift : clé `${pdv_id}|${shift}|${jour ISO}` → "HH:MM". */
+  /** Heures de début de shift : clé `${pdv_id}|${role}|${shift}|${jour ISO}` → "HH:MM". */
   shiftStarts?: Record<string, string>;
+  /** Rôle utilisé pour les horaires de shift : "manager" (défaut) ou "caissier". */
+  shiftRole?: "manager" | "caissier";
 }): DayResult {
   const { date, agentId, agentName, pdvId, punches, schedule } = params;
   const dayType = (schedule?.day_type as DayType | undefined) ?? null;
@@ -83,9 +85,16 @@ export function computeDay(params: {
   const worked = Math.max(0, workedMs) / 3_600_000;
 
   let lateMinutes = 0;
+  const shiftRole = params.shiftRole ?? "manager";
   const shiftStart =
     schedule?.work_shift && params.shiftStarts
-      ? params.shiftStarts[`${schedule.pdv_id ?? pdvId}|${schedule.work_shift}|${isoDayOfWeek(date)}`] ?? null
+      ? params.shiftStarts[
+          `${schedule.pdv_id ?? pdvId}|${shiftRole}|${schedule.work_shift}|${isoDayOfWeek(date)}`
+        ] ??
+        params.shiftStarts[
+          `${schedule.pdv_id ?? pdvId}|manager|${schedule.work_shift}|${isoDayOfWeek(date)}`
+        ] ??
+        null
       : null;
   const plannedStart = schedule?.start_time ?? shiftStart;
   const pm = toMinutes(plannedStart);

@@ -238,6 +238,13 @@ export async function deleteSchedule(id: string): Promise<void> {
 
 /* ------------------------------------------------------------ Horaires de shift par PDV */
 
+export type ShiftRole = "manager" | "caissier";
+
+export const SHIFT_ROLE_LABELS: Record<ShiftRole, string> = {
+  manager: "Managers",
+  caissier: "Caissiers",
+};
+
 export interface PdvShiftTime {
   id: string;
   pdv_id: string;
@@ -246,6 +253,7 @@ export interface PdvShiftTime {
   day_of_week: number;
   start_time: string;
   end_time: string | null;
+  role: ShiftRole;
 }
 
 export const SHIFT_LABELS: Record<WorkShift, string> = {
@@ -272,7 +280,7 @@ export function isoDayOfWeek(date: string): number {
 export async function getShiftTimes(): Promise<PdvShiftTime[]> {
   const { data, error } = await supabase
     .from("pdv_shift_times" as any)
-    .select("id, pdv_id, shift, day_of_week, start_time, end_time");
+    .select("id, pdv_id, shift, day_of_week, start_time, end_time, role");
   if (error) throw error;
   return (data ?? []) as unknown as PdvShiftTime[];
 }
@@ -283,18 +291,22 @@ export async function saveShiftTime(row: {
   day_of_week: number;
   start_time: string;
   end_time?: string | null;
+  role?: ShiftRole;
 }): Promise<void> {
   const { error } = await supabase
     .from("pdv_shift_times" as any)
-    .upsert({ ...row, end_time: row.end_time || null }, { onConflict: "pdv_id,shift,day_of_week" });
+    .upsert(
+      { ...row, role: row.role ?? "manager", end_time: row.end_time || null },
+      { onConflict: "pdv_id,shift,day_of_week,role" },
+    );
   if (error) throw error;
 }
 
-/** Clé `${pdv_id}|${shift}|${day_of_week}` → heure de début. */
+/** Clé `${pdv_id}|${role}|${shift}|${day_of_week}` → heure de début. */
 export function shiftStartMap(rows: PdvShiftTime[]): Record<string, string> {
   const out: Record<string, string> = {};
   rows.forEach((r) => {
-    out[`${r.pdv_id}|${r.shift}|${r.day_of_week}`] = r.start_time;
+    out[`${r.pdv_id}|${r.role ?? "manager"}|${r.shift}|${r.day_of_week}`] = r.start_time;
   });
   return out;
 }
