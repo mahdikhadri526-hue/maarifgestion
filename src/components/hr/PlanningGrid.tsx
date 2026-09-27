@@ -507,7 +507,7 @@ export function PlanningGrid({
                                     {c?.work_shift ? ` — ${shiftLabel(c.work_shift)}` : ""}
                                   </span>
                                 )}
-                                {c?.start_time || "--:--"} – {c?.end_time || "--:--"}
+                                {!c?.work_shift && <span>{c?.start_time || "--:--"} – {c?.end_time || "--:--"}</span>}
                               </span>
                             )}
                           </div>
@@ -555,7 +555,12 @@ export function PlanningGrid({
                                   onChange={(e) => {
                                     const [selectedPdvId, selectedShift] = e.target.value.split("|");
                                     if (!selectedPdvId || (selectedShift !== "jour" && selectedShift !== "matin" && selectedShift !== "apres_midi")) return;
-                                    void update(a, d, { pdv_id: selectedPdvId, work_shift: selectedShift === "jour" ? null : selectedShift });
+                                    void update(a, d, {
+                                      pdv_id: selectedPdvId,
+                                      work_shift: selectedShift === "jour" ? null : selectedShift,
+                                      start_time: null,
+                                      end_time: null,
+                                    });
                                   }}
                                 >
                                   <option value="">PDV — période</option>
@@ -568,7 +573,7 @@ export function PlanningGrid({
                                     ]))}
                                 </select>
                               )}
-                              {!needsAssignment(a) && (
+                              {!needsAssignment(a) && !c?.work_shift && (
                                 <div className="mt-0.5 flex items-center gap-0.5 border-t border-current/15 pt-0.5">
                                   <StartTimeInput
                                     label={`Entrée prévue de ${a.full_name} le ${formatFr(d)}`}
