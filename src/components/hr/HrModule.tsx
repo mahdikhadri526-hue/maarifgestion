@@ -474,7 +474,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
             </option>
           ))}
         </select>
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-end">
           <Popover>
             <PopoverTrigger asChild>
               <Button
@@ -501,7 +501,12 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
               />
             </PopoverContent>
           </Popover>
-          <Button size="sm" onClick={() => void add()} disabled={busy || !name.trim()}>
+          <Button
+            className="h-9 w-9 shrink-0 p-0"
+            onClick={() => void add()}
+            disabled={busy || !name.trim()}
+            title="Ajouter l'employé"
+          >
             <Plus className="w-4 h-4" />
           </Button>
         </div>
