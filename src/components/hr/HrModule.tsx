@@ -1203,12 +1203,12 @@ function ReportsView({
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={3} className="p-2 font-semibold whitespace-nowrap sticky left-0 z-20 bg-background border-0 border-t-2 border-black">Totaux</td>
-              <td colSpan={8} className="p-2 border-0 border-t-2 border-black"></td>
-              <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{totals.worked.toFixed(2)}</td>
-              <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{totals.overtime.toFixed(2)}</td>
-              <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{formatMinutes(totals.late)}</td>
-              <td className="p-2 text-center font-semibold border-0 border-t-2 border-black">{formatMinutes(totals.pauseLate)}</td>
+              <td colSpan={3} className="hr-sticky-col p-2 font-semibold whitespace-nowrap bg-muted/60" style={{ position: "sticky", left: 0, zIndex: 25, borderWidth: 0, background: "hsl(var(--muted) / 0.6)" }}>Totaux</td>
+              <td colSpan={8} className="p-2" style={{ borderWidth: 0 }}></td>
+              <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{totals.worked.toFixed(2)}</td>
+              <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{totals.overtime.toFixed(2)}</td>
+              <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{formatMinutes(totals.late)}</td>
+              <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{formatMinutes(totals.pauseLate)}</td>
             </tr>
           </tfoot>
         </table>
