@@ -1131,7 +1131,7 @@ function ReportsView({
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-xs border rounded font-semibold [&_th]:border [&_th]:border-border/70 [&_td]:border [&_td]:border-border/70">
+        <table className="w-full text-xs border-2 rounded font-semibold [&_th]:border-2 [&_th]:border-border [&_td]:border-2 [&_td]:border-border">
           <thead className="bg-muted">
             <tr>
               <th rowSpan={2} className="p-2 text-left whitespace-nowrap align-bottom">Date</th>
