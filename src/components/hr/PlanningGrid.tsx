@@ -535,6 +535,7 @@ export function PlanningGrid({
                                 <div className="mt-0.5 flex items-center gap-0.5 border-t border-current/15 pt-0.5">
                                   <StartTimeInput
                                     label={`Entrée prévue de ${a.full_name} le ${formatFr(d)}`}
+                                    optional={needsPdvAndHours(a)}
                                     value={c?.start_time ?? ""}
                                     onCommit={(v) =>
                                       void update(a, d, { start_time: v, end_time: addEightHours(v) })
@@ -599,10 +600,12 @@ function StartTimeInput({
   label,
   value,
   onCommit,
+  optional = false,
 }: {
   label: string;
   value: string;
   onCommit: (v: string) => void;
+  optional?: boolean;
 }) {
   const [draft, setDraft] = useState<string | null>(null);
   const shown = draft ?? (value ? value.slice(0, 5) : "");
@@ -615,7 +618,7 @@ function StartTimeInput({
   return (
     <Input
       inputMode="numeric"
-      placeholder="0800"
+      placeholder={optional ? "facultatif" : "0800"}
       maxLength={5}
       aria-label={label}
       className="h-6 min-w-0 flex-1 border-0 bg-transparent px-0 text-center font-mono !text-xs font-medium shadow-none focus-visible:ring-1"
