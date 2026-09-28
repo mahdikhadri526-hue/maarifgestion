@@ -518,30 +518,71 @@ export function PlanningGrid({
                           </div>
                         ) : (
                           <div className={`min-h-[58px] rounded-md border px-1.5 py-1 ${cellTone(type)}`}>
-                            <select
-                              aria-label={`${a.full_name}, ${DOW_LABELS[i]} ${formatFr(d)}`}
-                              className="h-6 w-full cursor-pointer bg-transparent text-center text-[10px] font-semibold outline-none"
-                              value={type ?? ""}
-                              onChange={(e) => {
-                                if (e.target.value === "__more") {
-                                  setMoreCells((prev) => new Set(prev).add(`${a.id}|${d}`));
-                                  return;
-                                }
-                                void update(a, d, { day_type: e.target.value as DayType });
-                              }}
-                            >
-                              <option value="">+ Planifier</option>
-                              {DAY_TYPES.map((t) => (
-                                <option key={t} value={t}>{DAY_TYPE_LABELS[t]}</option>
-                              ))}
-                              {moreCells.has(`${a.id}|${d}`) || (type && EXTRA_DAY_TYPES.includes(type)) ? (
-                                EXTRA_DAY_TYPES.map((t) => (
-                                  <option key={t} value={t}>{DAY_TYPE_LABELS[t]}</option>
-                                ))
-                              ) : (
-                                <option value="__more">Plus…</option>
-                              )}
-                            </select>
+                            {(() => {
+                              const cellKey = `${a.id}|${d}`;
+                              const isOpen = openCell === cellKey;
+                              const showExtra = moreCells.has(cellKey) || (type && EXTRA_DAY_TYPES.includes(type));
+                              const pick = (t: DayType) => {
+                                setOpenCell(null);
+                                void update(a, d, { day_type: t });
+                              };
+                              return (
+                                <div className="relative">
+                                  <button
+                                    type="button"
+                                    aria-label={`${a.full_name}, ${DOW_LABELS[i]} ${formatFr(d)}`}
+                                    className="h-6 w-full cursor-pointer bg-transparent text-center text-[10px] font-semibold outline-none"
+                                    onClick={() => setOpenCell(isOpen ? null : cellKey)}
+                                  >
+                                    {type ? DAY_TYPE_LABELS[type] : "+ Planifier"}
+                                  </button>
+                                  {isOpen && (
+                                    <>
+                                      <div className="fixed inset-0 z-40" onClick={() => setOpenCell(null)} />
+                                      <div className="absolute left-1/2 top-full z-50 mt-0.5 w-32 -translate-x-1/2 rounded-md border border-border bg-popover py-1 text-left shadow-lg">
+                                        <button
+                                          type="button"
+                                          className="block w-full px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:bg-accent"
+                                          onClick={() => { setOpenCell(null); void update(a, d, { day_type: null as unknown as DayType }); }}
+                                        >
+                                          + Planifier
+                                        </button>
+                                        {DAY_TYPES.map((t) => (
+                                          <button
+                                            key={t}
+                                            type="button"
+                                            className="block w-full px-2 py-1 text-[10px] font-semibold hover:bg-accent"
+                                            onClick={() => pick(t)}
+                                          >
+                                            {DAY_TYPE_LABELS[t]}
+                                          </button>
+                                        ))}
+                                        {showExtra ? (
+                                          EXTRA_DAY_TYPES.map((t) => (
+                                            <button
+                                              key={t}
+                                              type="button"
+                                              className="block w-full px-2 py-1 text-[10px] font-semibold hover:bg-accent"
+                                              onClick={() => pick(t)}
+                                            >
+                                              {DAY_TYPE_LABELS[t]}
+                                            </button>
+                                          ))
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            className="block w-full px-2 py-1 text-[10px] font-semibold text-primary hover:bg-accent"
+                                            onClick={() => setMoreCells((prev) => new Set(prev).add(cellKey))}
+                                          >
+                                            Plus…
+                                          </button>
+                                        )}
+                                      </div>
+                                    </>
+                                  )}
+                                </div>
+                              );
+                            })()}
                             {type === "travail" && (
                               <>
                               {needsAssignment(a) && (
