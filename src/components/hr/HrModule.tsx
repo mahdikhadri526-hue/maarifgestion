@@ -1020,6 +1020,7 @@ function ReportsView({
   };
 
   const [showManual, setShowManual] = useState(false);
+  const [showStatut, setShowStatut] = useState(false);
 
   const totals = useMemo(() => {
     return rows.reduce(
@@ -1101,6 +1102,13 @@ function ReportsView({
           </Button>
           <Button
             size="sm"
+            variant={showStatut ? "secondary" : "outline"}
+            onClick={() => setShowStatut((v) => !v)}
+          >
+            Statut
+          </Button>
+          <Button
+            size="sm"
             variant={showManual ? "secondary" : "outline"}
             onClick={() => setShowManual((v) => !v)}
           >
@@ -1151,19 +1159,21 @@ function ReportsView({
               <th rowSpan={2} className="hr-sticky-col hr-sticky-head px-3 py-3 whitespace-nowrap align-middle w-[160px] min-w-[160px] max-w-[160px]" style={{ position: "sticky", left: 288, zIndex: 45 }}>PDV</th>
               <th rowSpan={2} className="px-3 py-3 whitespace-nowrap align-middle">Journée</th>
               <th colSpan={5} className="px-3 py-2.5 whitespace-nowrap border-l border-primary-foreground/25">Pointages</th>
-              <th colSpan={showManual ? 2 : 1} className="px-3 py-2.5 whitespace-nowrap border-l border-primary-foreground/25">Suivi</th>
+              {((showStatut ? 1 : 0) + (showManual ? 1 : 0)) > 0 && (
+                <th colSpan={(showStatut ? 1 : 0) + (showManual ? 1 : 0)} className="px-3 py-2.5 whitespace-nowrap border-l border-primary-foreground/25">Suivi</th>
+              )}
               <th colSpan={4} className="px-3 py-2.5 whitespace-nowrap border-l border-primary-foreground/25">Temps &amp; écarts</th>
             </tr>
             <tr className="bg-accent text-accent-foreground">
               {[
                 "Prévu", "Entrée", "Pause début", "Pause fin", "Sortie",
-                "Statut",
+                ...(showStatut ? ["Statut"] : []),
                 ...(showManual ? ["Pointage manuel"] : []),
                 "Heures", "H. sup.", "Retard", "Retard pause",
-              ].map((h, i) => (
+              ].map((h) => (
                 <th
                   key={h}
-                  className={`px-3 py-2.5 whitespace-nowrap ${i === 0 || i === 5 || i === (showManual ? 7 : 6) ? "border-l-2 border-primary/25" : ""}`}
+                  className={`px-3 py-2.5 whitespace-nowrap ${h === "Prévu" || h === "Heures" || (showStatut && h === "Statut") || (!showStatut && showManual && h === "Pointage manuel") ? "border-l-2 border-primary/25" : ""}`}
                 >
                   {h}
                 </th>
@@ -1185,17 +1195,19 @@ function ReportsView({
                 <td className="px-3 py-2.5 whitespace-nowrap font-mono">{r.pauseStart ?? "—"}</td>
                 <td className="px-3 py-2.5 whitespace-nowrap font-mono">{r.pauseEnd ?? "—"}</td>
                 <td className="px-3 py-2.5 whitespace-nowrap font-mono">{r.sortie ?? "—"}</td>
-                <td className="hr-report-group-start px-3 py-2.5 whitespace-nowrap">
-                  {r.absence ? (
-                    <Badge variant="destructive">Absence à justifier</Badge>
-                  ) : r.present ? (
-                    <Badge variant="outline" className="border-success/30 bg-success/10 text-success">Présent</Badge>
-                  ) : (
-                    <Badge variant="secondary">{DAY_TYPE_LABELS[(r.dayType ?? "repos") as DayType]}</Badge>
-                  )}
-                </td>
+                {showStatut && (
+                  <td className="hr-report-group-start px-3 py-2.5 whitespace-nowrap">
+                    {r.absence ? (
+                      <Badge variant="destructive">Absence à justifier</Badge>
+                    ) : r.present ? (
+                      <Badge variant="outline" className="border-success/30 bg-success/10 text-success">Présent</Badge>
+                    ) : (
+                      <Badge variant="secondary">{DAY_TYPE_LABELS[(r.dayType ?? "repos") as DayType]}</Badge>
+                    )}
+                  </td>
+                )}
                 {showManual && (
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                <td className={`px-3 py-2.5 whitespace-nowrap ${!showStatut ? "hr-report-group-start" : ""}`}>
                     {r.manualTypes.length > 0 ? (
                       <Badge variant="outline" className="border-warning/40 bg-warning/10 text-warning-foreground" title={r.manualTypes.join(", ")}>
                         Manuel ({r.manualTypes.length})
@@ -1219,7 +1231,7 @@ function ReportsView({
           <tfoot className="border-t-2 border-primary/30 bg-accent font-semibold text-accent-foreground">
             <tr>
               <td colSpan={3} className="hr-sticky-col px-3 py-3 whitespace-nowrap uppercase" style={{ position: "sticky", left: 0, zIndex: 25 }}>Totaux</td>
-              <td colSpan={showManual ? 8 : 7} className="px-3 py-3"></td>
+              <td colSpan={6 + (showStatut ? 1 : 0) + (showManual ? 1 : 0)} className="px-3 py-3"></td>
               <td className="hr-report-group-start px-3 py-3 text-center font-mono">{totals.worked.toFixed(2)}</td>
               <td className="px-3 py-3 text-center font-mono">{totals.overtime.toFixed(2)}</td>
               <td className="px-3 py-3 text-center font-mono">{formatMinutes(totals.late)}</td>
