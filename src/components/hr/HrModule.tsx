@@ -1038,7 +1038,9 @@ function ReportsView({
       const holidayMap = new Map(holidays.map((h) => [h.holiday_date, h.label]));
       const targetAgents = agents.filter(
         (a) =>
-          ids.includes(a.pdv_id) &&
+          (ids.includes(a.pdv_id) ||
+            schedules.some((s) => s.agent_id === a.id) ||
+            (punches as AttendancePunch[]).some((p) => p.agent_id === a.id)) &&
           (agentId ? a.id === agentId : matchesName(a.full_name)),
       );
       const out: ReturnType<typeof computeDay>[] = [];
@@ -1061,7 +1063,8 @@ function ReportsView({
               date,
               agentId: a.id,
               agentName: a.full_name,
-              pdvId: a.pdv_id,
+              // PDV du jour : planning du jour, sinon PDV du pointage, sinon PDV actuel.
+              pdvId: sch?.pdv_id ?? dayPunches[0]?.pdv_id ?? a.pdv_id,
               punches: dayPunches,
               schedule: sch,
               shiftStarts,
