@@ -152,10 +152,29 @@
     overflow: visible !important;
   }
 
+  .hr-sticky-table th,
+  .hr-sticky-table td {
+    border-right: 1px solid hsl(var(--border) / 0.75);
+    border-bottom: 1px solid hsl(var(--border) / 0.75);
+  }
+
+  .hr-sticky-table th:last-child,
+  .hr-sticky-table td:last-child {
+    border-right: 0;
+  }
+
+  .hr-sticky-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .hr-sticky-table .hr-report-group-start {
+    border-left: 2px solid hsl(var(--primary) / 0.25);
+  }
+
   .hr-sticky-table .hr-sticky-col {
     position: sticky !important;
     z-index: 25;
-    box-shadow: 2px 0 4px -2px hsl(var(--border));
+    box-shadow: 3px 0 8px -5px hsl(var(--foreground) / 0.35);
   }
 
   .hr-sticky-table .hr-sticky-head {
@@ -163,7 +182,8 @@
   }
 
   .hr-sticky-table thead .hr-sticky-col {
-    background-color: hsl(var(--muted)) !important;
+    background-color: hsl(var(--primary)) !important;
+    color: hsl(var(--primary-foreground)) !important;
   }
 
   .hr-sticky-table tbody .hr-sticky-col {
@@ -179,7 +199,8 @@
   }
 
   .hr-sticky-table tfoot .hr-sticky-col {
-    background-color: color-mix(in srgb, hsl(var(--muted)) 60%, hsl(var(--background))) !important;
+    background-color: hsl(var(--accent)) !important;
+    color: hsl(var(--accent-foreground)) !important;
   }
 
   /* Finition pro des cartes du dashboard */
