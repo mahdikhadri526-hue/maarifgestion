@@ -584,7 +584,7 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
             >
               <option value="">Tous les PDV</option>
               <option value="__all__">Multi-PDV</option>
-              {pdvs.map((p) => (
+              {filterablePdvs.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
