@@ -229,6 +229,8 @@ export function PlanningGrid({
       .join("");
 
   const [moreCells, setMoreCells] = useState<Set<string>>(new Set());
+  /** Cellule dont le menu de type de jour est ouvert (`agentId|date`). */
+  const [openCell, setOpenCell] = useState<string | null>(null);
   const cellTone = (type: DayType | undefined) => {
     if (type && EXTRA_DAY_TYPES.includes(type)) return "border-destructive/40 bg-destructive/10 text-destructive shadow-sm";
     if (type === "travail") return "border-success/45 bg-success/15 text-success shadow-sm";
