@@ -543,7 +543,7 @@ export function PlanningGrid({
                                         <button
                                           type="button"
                                           className="block w-full px-2 py-1 text-[10px] font-semibold text-muted-foreground hover:bg-accent"
-                                          onClick={() => { setOpenCell(null); void update(a, d, { day_type: null as unknown as DayType }); }}
+                                          onClick={() => { setOpenCell(null); void update(a, d, { day_type: "" as DayType }); }}
                                         >
                                           + Planifier
                                         </button>
