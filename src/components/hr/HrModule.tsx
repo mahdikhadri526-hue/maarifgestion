@@ -395,9 +395,16 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
   const [busy, setBusy] = useState(false);
   const [showList, setShowList] = useState(false);
   const [search, setSearch] = useState("");
-  const filteredAgents = search.trim()
-    ? agents.filter((a) => a.full_name.toLowerCase().includes(search.trim().toLowerCase()))
-    : agents;
+  const [filterPdv, setFilterPdv] = useState("");
+  const [filterPoste, setFilterPoste] = useState("");
+  const filteredAgents = agents.filter((a) => {
+    if (search.trim() && !a.full_name.toLowerCase().includes(search.trim().toLowerCase())) return false;
+    if (filterPdv === "__all__") {
+      if (!a.multi_pdv) return false;
+    } else if (filterPdv && a.pdv_id !== filterPdv) return false;
+    if (filterPoste && (a.poste ?? "") !== filterPoste) return false;
+    return true;
+  });
 
   const save = async (id: string, patch: any) => {
     try {
