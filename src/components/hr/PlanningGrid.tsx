@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   DAY_TYPES,
+  EXTRA_DAY_TYPES,
   DAY_TYPE_LABELS,
   DOW_LABELS,
   formatFr,
@@ -227,7 +228,9 @@ export function PlanningGrid({
       .map((part) => part[0]?.toUpperCase() ?? "")
       .join("");
 
+  const [moreCells, setMoreCells] = useState<Set<string>>(new Set());
   const cellTone = (type: DayType | undefined) => {
+    if (type && EXTRA_DAY_TYPES.includes(type)) return "border-destructive/40 bg-destructive/10 text-destructive shadow-sm";
     if (type === "travail") return "border-success/45 bg-success/15 text-success shadow-sm";
     if (type === "repos") return "border-border bg-secondary text-secondary-foreground shadow-sm";
     if (type === "conge") return "border-warning/55 bg-warning/20 text-warning-foreground shadow-sm";
@@ -517,12 +520,25 @@ export function PlanningGrid({
                               aria-label={`${a.full_name}, ${DOW_LABELS[i]} ${formatFr(d)}`}
                               className="h-6 w-full cursor-pointer bg-transparent text-center text-[10px] font-semibold outline-none"
                               value={type ?? ""}
-                              onChange={(e) => void update(a, d, { day_type: e.target.value as DayType })}
+                              onChange={(e) => {
+                                if (e.target.value === "__more") {
+                                  setMoreCells((prev) => new Set(prev).add(`${a.id}|${d}`));
+                                  return;
+                                }
+                                void update(a, d, { day_type: e.target.value as DayType });
+                              }}
                             >
                               <option value="">+ Planifier</option>
                               {DAY_TYPES.map((t) => (
                                 <option key={t} value={t}>{DAY_TYPE_LABELS[t]}</option>
                               ))}
+                              {moreCells.has(`${a.id}|${d}`) || (type && EXTRA_DAY_TYPES.includes(type)) ? (
+                                EXTRA_DAY_TYPES.map((t) => (
+                                  <option key={t} value={t}>{DAY_TYPE_LABELS[t]}</option>
+                                ))
+                              ) : (
+                                <option value="__more">Plus…</option>
+                              )}
                             </select>
                             {type === "travail" && (
                               <>

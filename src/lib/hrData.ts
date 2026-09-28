@@ -2,14 +2,28 @@ import { supabase } from "@/integrations/supabase/client";
 
 /* ------------------------------------------------------------ Types & libellés */
 
-export type DayType = "travail" | "repos" | "conge" | "recuperation";
+export type DayType =
+  | "travail" | "repos" | "conge" | "recuperation"
+  | "maladie" | "accident_travail" | "conge_maternite" | "mariage" | "circoncision" | "naissance" | "deces";
 
 export const DAY_TYPE_LABELS: Record<DayType, string> = {
   travail: "Travail",
   repos: "Repos",
   conge: "Congé",
   recuperation: "Récupération",
+  maladie: "Maladie",
+  accident_travail: "AT",
+  conge_maternite: "Congé maternité",
+  mariage: "Mariage",
+  circoncision: "Circoncision",
+  naissance: "Naissance",
+  deces: "Décès",
 };
+
+/** Motifs supplémentaires affichés uniquement après un clic sur « Plus… ». */
+export const EXTRA_DAY_TYPES: DayType[] = [
+  "maladie", "accident_travail", "conge_maternite", "mariage", "circoncision", "naissance", "deces",
+];
 
 export const DAY_TYPES: DayType[] = ["travail", "repos", "conge", "recuperation"];
 
