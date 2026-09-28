@@ -1019,6 +1019,8 @@ function ReportsView({
     }
   };
 
+  const [showManual, setShowManual] = useState(false);
+
   const totals = useMemo(() => {
     return rows.reduce(
       (acc, r) => ({
@@ -1096,6 +1098,13 @@ function ReportsView({
           </Button>
           <Button size="sm" variant="outline" onClick={exportCsv} disabled={rows.length === 0}>
             <Download className="w-4 h-4 mr-1" /> Export
+          </Button>
+          <Button
+            size="sm"
+            variant={showManual ? "secondary" : "outline"}
+            onClick={() => setShowManual((v) => !v)}
+          >
+            Pointage manuel
           </Button>
           <Button
             size="sm"
