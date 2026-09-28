@@ -1207,7 +1207,7 @@ function ReportsView({
                   </td>
                 )}
                 {showManual && (
-                  <td className="px-3 py-2.5 whitespace-nowrap">
+                <td className={`px-3 py-2.5 whitespace-nowrap ${!showStatut ? "hr-report-group-start" : ""}`}>
                     {r.manualTypes.length > 0 ? (
                       <Badge variant="outline" className="border-warning/40 bg-warning/10 text-warning-foreground" title={r.manualTypes.join(", ")}>
                         Manuel ({r.manualTypes.length})
@@ -1231,7 +1231,7 @@ function ReportsView({
           <tfoot className="border-t-2 border-primary/30 bg-accent font-semibold text-accent-foreground">
             <tr>
               <td colSpan={3} className="hr-sticky-col px-3 py-3 whitespace-nowrap uppercase" style={{ position: "sticky", left: 0, zIndex: 25 }}>Totaux</td>
-              <td colSpan={showManual ? 8 : 7} className="px-3 py-3"></td>
+              <td colSpan={6 + (showStatut ? 1 : 0) + (showManual ? 1 : 0)} className="px-3 py-3"></td>
               <td className="hr-report-group-start px-3 py-3 text-center font-mono">{totals.worked.toFixed(2)}</td>
               <td className="px-3 py-3 text-center font-mono">{totals.overtime.toFixed(2)}</td>
               <td className="px-3 py-3 text-center font-mono">{formatMinutes(totals.late)}</td>
