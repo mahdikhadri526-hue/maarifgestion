@@ -1114,7 +1114,7 @@ function ReportsView({
             <DropdownMenuTrigger asChild>
               <Button size="sm" variant={showStatut || showManual || showHeures || showHSup || showRetard || showRetardPause ? "secondary" : "outline"}>
                 <ListFilter className="w-4 h-4 mr-1" />
-                Colonnes
+                Détails
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
