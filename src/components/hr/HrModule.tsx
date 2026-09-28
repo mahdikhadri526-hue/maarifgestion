@@ -395,9 +395,16 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
   const [busy, setBusy] = useState(false);
   const [showList, setShowList] = useState(false);
   const [search, setSearch] = useState("");
-  const filteredAgents = search.trim()
-    ? agents.filter((a) => a.full_name.toLowerCase().includes(search.trim().toLowerCase()))
-    : agents;
+  const [filterPdv, setFilterPdv] = useState("");
+  const [filterPoste, setFilterPoste] = useState("");
+  const filteredAgents = agents.filter((a) => {
+    if (search.trim() && !a.full_name.toLowerCase().includes(search.trim().toLowerCase())) return false;
+    if (filterPdv === "__all__") {
+      if (!a.multi_pdv) return false;
+    } else if (filterPdv && a.pdv_id !== filterPdv) return false;
+    if (filterPoste && (a.poste ?? "") !== filterPoste) return false;
+    return true;
+  });
 
   const save = async (id: string, patch: any) => {
     try {
@@ -547,17 +554,57 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
         </div>
       </Card>
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" size="sm" onClick={() => setShowList((v) => !v)}>
           {showList ? "Masquer" : "Afficher"} la liste des employés ({agents.length})
         </Button>
         {showList && (
-          <Input
-            className="h-9 max-w-[220px]"
-            placeholder="Rechercher par nom…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+          <>
+            <Input
+              className="h-9 max-w-[200px]"
+              placeholder="Filtrer par nom…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <select
+              className="h-9 rounded border bg-background px-2 text-sm"
+              value={filterPdv}
+              onChange={(e) => setFilterPdv(e.target.value)}
+            >
+              <option value="">Tous les PDV</option>
+              <option value="__all__">Multi-PDV</option>
+              {pdvs.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+            <select
+              className="h-9 rounded border bg-background px-2 text-sm"
+              value={filterPoste}
+              onChange={(e) => setFilterPoste(e.target.value)}
+            >
+              <option value="">Tous les postes</option>
+              {POSTES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+            {(search.trim() || filterPdv || filterPoste) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSearch("");
+                  setFilterPdv("");
+                  setFilterPoste("");
+                }}
+              >
+                Réinitialiser
+              </Button>
+            )}
+          </>
         )}
       </div>
 
