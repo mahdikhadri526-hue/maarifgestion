@@ -1130,28 +1130,31 @@ function ReportsView({
         </Card>
       )}
 
-      <div className="overflow-x-auto border-4 border-black">
+      <div className="overflow-x-auto rounded-md border border-border bg-card shadow-sm">
         <table
-          className="hr-sticky-table text-xs font-semibold text-center [&_th]:border-b-2 [&_th]:border-r-2 [&_th]:border-black [&_th]:text-center [&_td]:border-b-2 [&_td]:border-r-2 [&_td]:border-black [&_td]:text-center"
+          className="hr-sticky-table text-xs text-center [&_th]:text-center"
           style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%" }}
         >
-          <thead className="bg-muted">
-            <tr>
-              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom w-[112px] min-w-[112px] max-w-[112px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Date</th>
-              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom w-[176px] min-w-[176px] max-w-[176px]" style={{ position: "sticky", left: 112, zIndex: 45 }}>Employé</th>
-              <th rowSpan={2} className="hr-sticky-col hr-sticky-head p-2 whitespace-nowrap align-bottom w-[160px] min-w-[160px] max-w-[160px]" style={{ position: "sticky", left: 288, zIndex: 45 }}>PDV</th>
-              <th rowSpan={2} className="p-2 whitespace-nowrap align-bottom">Journée</th>
-              <th colSpan={5} className="p-2 text-center whitespace-nowrap">Pointages</th>
-              <th colSpan={2} className="p-2 text-center whitespace-nowrap">Suivi</th>
-              <th colSpan={4} className="p-2 text-center whitespace-nowrap">Temps &amp; écarts</th>
+          <thead>
+            <tr className="bg-primary text-primary-foreground">
+              <th rowSpan={2} className="hr-sticky-col hr-sticky-head px-3 py-3 whitespace-nowrap align-middle w-[112px] min-w-[112px] max-w-[112px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Date</th>
+              <th rowSpan={2} className="hr-sticky-col hr-sticky-head px-3 py-3 whitespace-nowrap align-middle w-[176px] min-w-[176px] max-w-[176px]" style={{ position: "sticky", left: 112, zIndex: 45 }}>Employé</th>
+              <th rowSpan={2} className="hr-sticky-col hr-sticky-head px-3 py-3 whitespace-nowrap align-middle w-[160px] min-w-[160px] max-w-[160px]" style={{ position: "sticky", left: 288, zIndex: 45 }}>PDV</th>
+              <th rowSpan={2} className="px-3 py-3 whitespace-nowrap align-middle">Journée</th>
+              <th colSpan={5} className="px-3 py-2.5 whitespace-nowrap border-l border-primary-foreground/25">Pointages</th>
+              <th colSpan={2} className="px-3 py-2.5 whitespace-nowrap border-l border-primary-foreground/25">Suivi</th>
+              <th colSpan={4} className="px-3 py-2.5 whitespace-nowrap border-l border-primary-foreground/25">Temps &amp; écarts</th>
             </tr>
-            <tr className="bg-muted/70">
+            <tr className="bg-accent text-accent-foreground">
               {[
                 "Prévu", "Entrée", "Pause début", "Pause fin", "Sortie",
                 "Statut", "Pointage manuel",
                 "Heures", "H. sup.", "Retard", "Retard pause",
               ].map((h, i) => (
-                <th key={h} className="p-2 whitespace-nowrap text-center">
+                <th
+                  key={h}
+                  className={`px-3 py-2.5 whitespace-nowrap ${i === 0 || i === 5 || i === 7 ? "border-l-2 border-primary/25" : ""}`}
+                >
                   {h}
                 </th>
               ))}
@@ -1159,56 +1162,56 @@ function ReportsView({
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={`${r.agentId}-${r.date}`} className="border-t">
-                <td className="hr-sticky-col p-2 w-[112px] min-w-[112px] max-w-[112px] truncate" style={{ position: "sticky", left: 0, zIndex: 25 }}>{formatFr(r.date)}</td>
-                <td className="hr-sticky-col p-2 w-[176px] min-w-[176px] max-w-[176px] truncate" style={{ position: "sticky", left: 112, zIndex: 25 }} title={r.agentName}>{r.agentName}</td>
-                <td className="hr-sticky-col p-2 w-[160px] min-w-[160px] max-w-[160px] truncate" style={{ position: "sticky", left: 288, zIndex: 25 }} title={pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}>{pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}</td>
-                <td className="p-2 whitespace-nowrap">
+              <tr key={`${r.agentId}-${r.date}`}>
+                <td className="hr-sticky-col px-3 py-2.5 w-[112px] min-w-[112px] max-w-[112px] truncate font-mono font-medium" style={{ position: "sticky", left: 0, zIndex: 25 }}>{formatFr(r.date)}</td>
+                <td className="hr-sticky-col px-3 py-2.5 w-[176px] min-w-[176px] max-w-[176px] truncate font-semibold" style={{ position: "sticky", left: 112, zIndex: 25 }} title={r.agentName}>{r.agentName}</td>
+                <td className="hr-sticky-col px-3 py-2.5 w-[160px] min-w-[160px] max-w-[160px] truncate font-medium" style={{ position: "sticky", left: 288, zIndex: 25 }} title={pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}>{pdvs.find((p) => p.id === r.pdvId)?.name ?? "—"}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap">
                   {r.dayType ? DAY_TYPE_LABELS[r.dayType] : "—"}
                   {r.isHoliday && <Badge className="ml-1 text-[9px]">Férié</Badge>}
                 </td>
-                <td className="p-2 whitespace-nowrap text-center">{r.plannedStart ?? "—"}</td>
-                <td className="p-2 whitespace-nowrap text-center">{r.entree ?? "—"}</td>
-                <td className="p-2 whitespace-nowrap text-center">{r.pauseStart ?? "—"}</td>
-                <td className="p-2 whitespace-nowrap text-center">{r.pauseEnd ?? "—"}</td>
-                <td className="p-2 whitespace-nowrap text-center">{r.sortie ?? "—"}</td>
-                <td className="p-2 whitespace-nowrap text-center">
+                <td className="hr-report-group-start px-3 py-2.5 whitespace-nowrap font-mono">{r.plannedStart ?? "—"}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap font-mono">{r.entree ?? "—"}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap font-mono">{r.pauseStart ?? "—"}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap font-mono">{r.pauseEnd ?? "—"}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap font-mono">{r.sortie ?? "—"}</td>
+                <td className="hr-report-group-start px-3 py-2.5 whitespace-nowrap">
                   {r.absence ? (
-                    <span className="text-destructive font-semibold">Absence à justifier</span>
+                    <Badge variant="destructive">Absence à justifier</Badge>
                   ) : r.present ? (
-                    "Présent"
+                    <Badge variant="outline" className="border-success/30 bg-success/10 text-success">Présent</Badge>
                   ) : (
-                    DAY_TYPE_LABELS[(r.dayType ?? "repos") as DayType]
+                    <Badge variant="secondary">{DAY_TYPE_LABELS[(r.dayType ?? "repos") as DayType]}</Badge>
                   )}
                 </td>
-                <td className="p-2 whitespace-nowrap text-center">
+                <td className="px-3 py-2.5 whitespace-nowrap">
                   {r.manualTypes.length > 0 ? (
-                    <Badge variant="outline" className="text-[10px] border-warning text-warning" title={r.manualTypes.join(", ")}>
+                    <Badge variant="outline" className="border-warning/40 bg-warning/10 text-warning-foreground" title={r.manualTypes.join(", ")}>
                       Manuel ({r.manualTypes.length})
                     </Badge>
                   ) : (
                     "—"
                   )}
                 </td>
-                <td className="p-2 whitespace-nowrap text-center font-medium">{r.workedHours.toFixed(2)}</td>
-                <td className="p-2 whitespace-nowrap text-center">{r.overtimeHours > 0 ? r.overtimeHours.toFixed(2) : "—"}</td>
-                <td className={`p-2 whitespace-nowrap text-center ${r.lateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
+                <td className="hr-report-group-start px-3 py-2.5 whitespace-nowrap font-mono font-semibold">{r.workedHours.toFixed(2)}</td>
+                <td className="px-3 py-2.5 whitespace-nowrap font-mono">{r.overtimeHours > 0 ? r.overtimeHours.toFixed(2) : "—"}</td>
+                <td className={`px-3 py-2.5 whitespace-nowrap font-mono ${r.lateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
                   {r.lateMinutes > 0 ? formatMinutes(r.lateMinutes) : "—"}
                 </td>
-                <td className={`p-2 whitespace-nowrap text-center ${r.pauseLateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
+                <td className={`px-3 py-2.5 whitespace-nowrap font-mono ${r.pauseLateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
                   {r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "—"}
                 </td>
               </tr>
             ))}
           </tbody>
-          <tfoot>
+          <tfoot className="border-t-2 border-primary/30 bg-accent font-semibold text-accent-foreground">
             <tr>
-              <td colSpan={3} className="hr-sticky-col p-2 font-semibold whitespace-nowrap" style={{ position: "sticky", left: 0, zIndex: 25, borderWidth: 0 }}>Totaux</td>
-              <td colSpan={8} className="p-2" style={{ borderWidth: 0 }}></td>
-              <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{totals.worked.toFixed(2)}</td>
-              <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{totals.overtime.toFixed(2)}</td>
-              <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{formatMinutes(totals.late)}</td>
-              <td className="p-2 text-center font-semibold" style={{ borderWidth: 0 }}>{formatMinutes(totals.pauseLate)}</td>
+              <td colSpan={3} className="hr-sticky-col px-3 py-3 whitespace-nowrap uppercase" style={{ position: "sticky", left: 0, zIndex: 25 }}>Totaux</td>
+              <td colSpan={8} className="px-3 py-3"></td>
+              <td className="hr-report-group-start px-3 py-3 text-center font-mono">{totals.worked.toFixed(2)}</td>
+              <td className="px-3 py-3 text-center font-mono">{totals.overtime.toFixed(2)}</td>
+              <td className="px-3 py-3 text-center font-mono">{formatMinutes(totals.late)}</td>
+              <td className="px-3 py-3 text-center font-mono">{formatMinutes(totals.pauseLate)}</td>
             </tr>
           </tfoot>
         </table>
