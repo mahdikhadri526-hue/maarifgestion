@@ -1130,7 +1130,7 @@ function ReportsView({
               <DropdownMenuLabel className="mt-1 border-t pt-2">Temps &amp; écarts</DropdownMenuLabel>
               <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
                 <Checkbox checked={showHeures} onCheckedChange={(v) => setShowHeures(v === true)} />
-                Heures
+                Heures travaillées
               </label>
               <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
                 <Checkbox checked={showHSup} onCheckedChange={(v) => setShowHSup(v === true)} />
