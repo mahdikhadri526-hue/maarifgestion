@@ -397,6 +397,17 @@ function AgentsHrView({ agents, onChanged }: { agents: HrAgent[]; onChanged: () 
   const [search, setSearch] = useState("");
   const [filterPdv, setFilterPdv] = useState("");
   const [filterPoste, setFilterPoste] = useState("");
+  /** PDV masqués dans les filtres (identiques à la liste de Planning). */
+  const hiddenFilterPdvs = useMemo(
+    () => new Set(["admin mohammedia", "mohammedia", "mansouria", "miramar"]),
+    [],
+  );
+  const normPdvName = (s: string | null | undefined) =>
+    (s ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const filterablePdvs = useMemo(
+    () => pdvs.filter((p) => !hiddenFilterPdvs.has(normPdvName(p.name))),
+    [pdvs, hiddenFilterPdvs],
+  );
   const filteredAgents = agents.filter((a) => {
     if (search.trim() && !a.full_name.toLowerCase().includes(search.trim().toLowerCase())) return false;
     if (filterPdv === "__all__") {
