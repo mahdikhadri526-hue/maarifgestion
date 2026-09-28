@@ -1020,6 +1020,7 @@ function ReportsView({
   };
 
   const [showManual, setShowManual] = useState(false);
+  const [showStatut, setShowStatut] = useState(false);
 
   const totals = useMemo(() => {
     return rows.reduce(
