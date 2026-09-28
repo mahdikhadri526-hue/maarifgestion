@@ -4,6 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ListFilter } from "lucide-react";
 import { BarChart3, CalendarDays, CalendarIcon, ChevronLeft, ChevronRight, Clock, Download, Plus, RefreshCw, Sun, Trash2, Users } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
@@ -1100,20 +1103,25 @@ function ReportsView({
           <Button size="sm" variant="outline" onClick={exportCsv} disabled={rows.length === 0}>
             <Download className="w-4 h-4 mr-1" /> Export
           </Button>
-          <Button
-            size="sm"
-            variant={showStatut ? "secondary" : "outline"}
-            onClick={() => setShowStatut((v) => !v)}
-          >
-            Statut
-          </Button>
-          <Button
-            size="sm"
-            variant={showManual ? "secondary" : "outline"}
-            onClick={() => setShowManual((v) => !v)}
-          >
-            Pointage manuel
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button size="sm" variant={showStatut || showManual ? "secondary" : "outline"}>
+                <ListFilter className="w-4 h-4 mr-1" />
+                Colonnes
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-48">
+              <DropdownMenuLabel>Afficher les colonnes</DropdownMenuLabel>
+              <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
+                <Checkbox checked={showStatut} onCheckedChange={(v) => setShowStatut(v === true)} />
+                Statut
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
+                <Checkbox checked={showManual} onCheckedChange={(v) => setShowManual(v === true)} />
+                Pointage manuel
+              </label>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             size="sm"
             variant="ghost"
