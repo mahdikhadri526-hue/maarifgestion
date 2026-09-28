@@ -1102,6 +1102,13 @@ function ReportsView({
           </Button>
           <Button
             size="sm"
+            variant={showStatut ? "secondary" : "outline"}
+            onClick={() => setShowStatut((v) => !v)}
+          >
+            Statut
+          </Button>
+          <Button
+            size="sm"
             variant={showManual ? "secondary" : "outline"}
             onClick={() => setShowManual((v) => !v)}
           >
