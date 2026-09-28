@@ -1024,6 +1024,13 @@ function ReportsView({
 
   const [showManual, setShowManual] = useState(false);
   const [showStatut, setShowStatut] = useState(false);
+  const [showHeures, setShowHeures] = useState(false);
+  const [showHSup, setShowHSup] = useState(false);
+  const [showRetard, setShowRetard] = useState(false);
+  const [showRetardPause, setShowRetardPause] = useState(false);
+  const suiviCols = [showStatut ? "Statut" : null, showManual ? "Pointage manuel" : null].filter(Boolean) as string[];
+  const ecartCols = [showHeures ? "Heures" : null, showHSup ? "H. sup." : null, showRetard ? "Retard" : null, showRetardPause ? "Retard pause" : null].filter(Boolean) as string[];
+  const groupStarts = new Set(["Prévu", suiviCols[0], ecartCols[0]].filter(Boolean) as string[]);
 
   const totals = useMemo(() => {
     return rows.reduce(
@@ -1105,13 +1112,13 @@ function ReportsView({
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" variant={showStatut || showManual ? "secondary" : "outline"}>
+              <Button size="sm" variant={showStatut || showManual || showHeures || showHSup || showRetard || showRetardPause ? "secondary" : "outline"}>
                 <ListFilter className="w-4 h-4 mr-1" />
                 Colonnes
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuLabel>Afficher les colonnes</DropdownMenuLabel>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuLabel>Suivi</DropdownMenuLabel>
               <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
                 <Checkbox checked={showStatut} onCheckedChange={(v) => setShowStatut(v === true)} />
                 Statut
@@ -1119,6 +1126,23 @@ function ReportsView({
               <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
                 <Checkbox checked={showManual} onCheckedChange={(v) => setShowManual(v === true)} />
                 Pointage manuel
+              </label>
+              <DropdownMenuLabel className="mt-1 border-t pt-2">Temps &amp; écarts</DropdownMenuLabel>
+              <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
+                <Checkbox checked={showHeures} onCheckedChange={(v) => setShowHeures(v === true)} />
+                Heures
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
+                <Checkbox checked={showHSup} onCheckedChange={(v) => setShowHSup(v === true)} />
+                H. sup.
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
+                <Checkbox checked={showRetard} onCheckedChange={(v) => setShowRetard(v === true)} />
+                Retard
+              </label>
+              <label className="flex cursor-pointer items-center gap-2 px-2 py-1.5 text-sm">
+                <Checkbox checked={showRetardPause} onCheckedChange={(v) => setShowRetardPause(v === true)} />
+                Retard pause
               </label>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -1170,18 +1194,19 @@ function ReportsView({
               {((showStatut ? 1 : 0) + (showManual ? 1 : 0)) > 0 && (
                 <th colSpan={(showStatut ? 1 : 0) + (showManual ? 1 : 0)} className="px-3 py-2.5 whitespace-nowrap border-l border-primary-foreground/25">Suivi</th>
               )}
-              <th colSpan={4} className="px-3 py-2.5 whitespace-nowrap border-l border-primary-foreground/25">Temps &amp; écarts</th>
+              {ecartCols.length > 0 && (
+                <th colSpan={ecartCols.length} className="px-3 py-2.5 whitespace-nowrap border-l border-primary-foreground/25">Temps &amp; écarts</th>
+              )}
             </tr>
             <tr className="bg-accent text-accent-foreground">
               {[
                 "Prévu", "Entrée", "Pause début", "Pause fin", "Sortie",
-                ...(showStatut ? ["Statut"] : []),
-                ...(showManual ? ["Pointage manuel"] : []),
-                "Heures", "H. sup.", "Retard", "Retard pause",
+                ...suiviCols,
+                ...ecartCols,
               ].map((h) => (
                 <th
                   key={h}
-                  className={`px-3 py-2.5 whitespace-nowrap ${h === "Prévu" || h === "Heures" || (showStatut && h === "Statut") || (!showStatut && showManual && h === "Pointage manuel") ? "border-l-2 border-primary/25" : ""}`}
+                  className={`px-3 py-2.5 whitespace-nowrap ${groupStarts.has(h) ? "border-l-2 border-primary/25" : ""}`}
                 >
                   {h}
                 </th>
@@ -1225,14 +1250,22 @@ function ReportsView({
                     )}
                   </td>
                 )}
-                <td className="hr-report-group-start px-3 py-2.5 whitespace-nowrap font-mono font-semibold">{r.workedHours.toFixed(2)}</td>
-                <td className="px-3 py-2.5 whitespace-nowrap font-mono">{r.overtimeHours > 0 ? r.overtimeHours.toFixed(2) : "—"}</td>
-                <td className={`px-3 py-2.5 whitespace-nowrap font-mono ${r.lateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
-                  {r.lateMinutes > 0 ? formatMinutes(r.lateMinutes) : "—"}
-                </td>
-                <td className={`px-3 py-2.5 whitespace-nowrap font-mono ${r.pauseLateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
-                  {r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "—"}
-                </td>
+                {showHeures && (
+                  <td className={`${ecartCols[0] === "Heures" ? "hr-report-group-start " : ""}px-3 py-2.5 whitespace-nowrap font-mono font-semibold`}>{r.workedHours.toFixed(2)}</td>
+                )}
+                {showHSup && (
+                  <td className={`${ecartCols[0] === "H. sup." ? "hr-report-group-start " : ""}px-3 py-2.5 whitespace-nowrap font-mono`}>{r.overtimeHours > 0 ? r.overtimeHours.toFixed(2) : "—"}</td>
+                )}
+                {showRetard && (
+                  <td className={`${ecartCols[0] === "Retard" ? "hr-report-group-start " : ""}px-3 py-2.5 whitespace-nowrap font-mono ${r.lateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
+                    {r.lateMinutes > 0 ? formatMinutes(r.lateMinutes) : "—"}
+                  </td>
+                )}
+                {showRetardPause && (
+                  <td className={`${ecartCols[0] === "Retard pause" ? "hr-report-group-start " : ""}px-3 py-2.5 whitespace-nowrap font-mono ${r.pauseLateMinutes > 0 ? "text-destructive font-semibold" : ""}`}>
+                    {r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "—"}
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
@@ -1240,10 +1273,10 @@ function ReportsView({
             <tr>
               <td colSpan={3} className="hr-sticky-col px-3 py-3 whitespace-nowrap uppercase" style={{ position: "sticky", left: 0, zIndex: 25 }}>Totaux</td>
               <td colSpan={6 + (showStatut ? 1 : 0) + (showManual ? 1 : 0)} className="px-3 py-3"></td>
-              <td className="hr-report-group-start px-3 py-3 text-center font-mono">{totals.worked.toFixed(2)}</td>
-              <td className="px-3 py-3 text-center font-mono">{totals.overtime.toFixed(2)}</td>
-              <td className="px-3 py-3 text-center font-mono">{formatMinutes(totals.late)}</td>
-              <td className="px-3 py-3 text-center font-mono">{formatMinutes(totals.pauseLate)}</td>
+              {showHeures && <td className={`${ecartCols[0] === "Heures" ? "hr-report-group-start " : ""}px-3 py-3 text-center font-mono`}>{totals.worked.toFixed(2)}</td>}
+              {showHSup && <td className={`${ecartCols[0] === "H. sup." ? "hr-report-group-start " : ""}px-3 py-3 text-center font-mono`}>{totals.overtime.toFixed(2)}</td>}
+              {showRetard && <td className={`${ecartCols[0] === "Retard" ? "hr-report-group-start " : ""}px-3 py-3 text-center font-mono`}>{formatMinutes(totals.late)}</td>}
+              {showRetardPause && <td className={`${ecartCols[0] === "Retard pause" ? "hr-report-group-start " : ""}px-3 py-3 text-center font-mono`}>{formatMinutes(totals.pauseLate)}</td>}
             </tr>
           </tfoot>
         </table>
