@@ -1029,7 +1029,7 @@ function ReportsView({
   const [showRetard, setShowRetard] = useState(false);
   const [showRetardPause, setShowRetardPause] = useState(false);
   const suiviCols = [showStatut ? "Statut" : null, showManual ? "Pointage manuel" : null].filter(Boolean) as string[];
-  const ecartCols = [showHeures ? "Heures" : null, showHSup ? "H. sup." : null, showRetard ? "Retard" : null, showRetardPause ? "Retard pause" : null].filter(Boolean) as string[];
+  const ecartCols = [showHeures ? "Heures travaillées" : null, showHSup ? "H. sup." : null, showRetard ? "Retard" : null, showRetardPause ? "Retard pause" : null].filter(Boolean) as string[];
   const groupStarts = new Set(["Prévu", suiviCols[0], ecartCols[0]].filter(Boolean) as string[]);
 
   const totals = useMemo(() => {
@@ -1251,7 +1251,7 @@ function ReportsView({
                   </td>
                 )}
                 {showHeures && (
-                  <td className={`${ecartCols[0] === "Heures" ? "hr-report-group-start " : ""}px-3 py-2.5 whitespace-nowrap font-mono font-semibold`}>{r.workedHours.toFixed(2)}</td>
+                  <td className={`${ecartCols[0] === "Heures travaillées" ? "hr-report-group-start " : ""}px-3 py-2.5 whitespace-nowrap font-mono font-semibold`}>{r.workedHours.toFixed(2)}</td>
                 )}
                 {showHSup && (
                   <td className={`${ecartCols[0] === "H. sup." ? "hr-report-group-start " : ""}px-3 py-2.5 whitespace-nowrap font-mono`}>{r.overtimeHours > 0 ? r.overtimeHours.toFixed(2) : "—"}</td>
@@ -1273,7 +1273,7 @@ function ReportsView({
             <tr>
               <td colSpan={3} className="hr-sticky-col px-3 py-3 whitespace-nowrap uppercase" style={{ position: "sticky", left: 0, zIndex: 25 }}>Totaux</td>
               <td colSpan={6 + (showStatut ? 1 : 0) + (showManual ? 1 : 0)} className="px-3 py-3"></td>
-              {showHeures && <td className={`${ecartCols[0] === "Heures" ? "hr-report-group-start " : ""}px-3 py-3 text-center font-mono`}>{totals.worked.toFixed(2)}</td>}
+              {showHeures && <td className={`${ecartCols[0] === "Heures travaillées" ? "hr-report-group-start " : ""}px-3 py-3 text-center font-mono`}>{totals.worked.toFixed(2)}</td>}
               {showHSup && <td className={`${ecartCols[0] === "H. sup." ? "hr-report-group-start " : ""}px-3 py-3 text-center font-mono`}>{totals.overtime.toFixed(2)}</td>}
               {showRetard && <td className={`${ecartCols[0] === "Retard" ? "hr-report-group-start " : ""}px-3 py-3 text-center font-mono`}>{formatMinutes(totals.late)}</td>}
               {showRetardPause && <td className={`${ecartCols[0] === "Retard pause" ? "hr-report-group-start " : ""}px-3 py-3 text-center font-mono`}>{formatMinutes(totals.pauseLate)}</td>}
