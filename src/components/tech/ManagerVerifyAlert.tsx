@@ -3,9 +3,16 @@ import { ArrowRight, BellRing, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getTechIssues, awaitingManager, fmtDateTimeFR, type TechIssue } from "@/lib/techData";
 
-/** Alerte tableau de bord (manager) : matériels réparés en attente de sa vérification. */
+import { TECH_ACCOUNT_EMAILS } from "@/lib/techFeature";
+import { useAuth } from "@/contexts/AuthContext";
+
+/** Alerte tableau de bord (manager) : matériels réparés en attente de sa vérification.
+ *  Masquée pour le compte technique (ne voit que les signalements des PDV). */
 export function ManagerVerifyAlert({ onOpen }: { onOpen: () => void }) {
+  const { user } = useAuth();
   const [awaiting, setAwaiting] = useState<TechIssue[]>([]);
+
+  const isTechAccount = TECH_ACCOUNT_EMAILS.includes((user?.email ?? "").toLowerCase());
 
   useEffect(() => {
     let cancelled = false;
@@ -25,6 +32,7 @@ export function ManagerVerifyAlert({ onOpen }: { onOpen: () => void }) {
     };
   }, []);
 
+  if (isTechAccount) return null;
   if (awaiting.length === 0) return null;
 
   return (
