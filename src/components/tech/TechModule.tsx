@@ -498,6 +498,22 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
   const today = todayISO();
   const late = !!issue.deadline && date.slice(0, 10) > issue.deadline;
 
+  // Nom du responsable technique rempli automatiquement avec l'utilisateur connecté.
+  useEffect(() => {
+    if (name.trim()) return;
+    void (async () => {
+      const uid = (await supabase.auth.getUser()).data.user?.id;
+      if (!uid) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name, email")
+        .eq("user_id", uid)
+        .maybeSingle();
+      const fallback = (await supabase.auth.getUser()).data.user?.email ?? "";
+      setName(((data as any)?.display_name || (data as any)?.email || fallback || "").trim());
+    })();
+  }, [name]);
+
   const addPhotos = async (files: FileList | null) => {
     if (!files) return;
     try {
