@@ -166,8 +166,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAdmin = role === "admin";
   const isRegionalAdmin = role === "regional_admin";
+  // Responsable technique (manage_tech, hors admin) : vue centralisée sur tous
+  // les PDV — il ne doit jamais avoir à choisir un point de vente.
+  const isTechCentral = !isAdmin && !isRegionalAdmin && permissions.has("manage_tech");
   const multiPdvEnabled =
-    ENABLE_MULTI_PDV || (MULTI_PDV_ADMIN_ONLY && (isAdmin || isRegionalAdmin));
+    (ENABLE_MULTI_PDV || (MULTI_PDV_ADMIN_ONLY && (isAdmin || isRegionalAdmin))) && !isTechCentral;
   const assignedPdvId = assignedPdvIds[0] ?? null;
 
   // Bascule automatique selon le compte : admin => multi-PDV,
