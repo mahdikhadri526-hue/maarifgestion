@@ -337,6 +337,10 @@ export function TechModule() {
                           <div>
                             <div className="flex items-center gap-1 font-semibold"><CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />Réparation validée par {i.tech_validated_by} le {fmtDateTimeFR(i.tech_validated_at)}{isTechLate(i) && <span className="text-destructive"> — après la deadline</span>}</div>
                             {i.action_done && <div>Action réalisée : {i.action_done}</div>}
+                            {i.parts_changed && <div>Pièces changées : {i.parts_changed}</div>}
+                            {(i.parts_price != null || i.service_price != null) && (
+                              <div>Coûts : pièces {i.parts_price != null ? `${i.parts_price} DH` : "—"} · prestation {i.service_price != null ? `${i.service_price} DH` : "—"}</div>
+                            )}
                             {i.tech_comment && <div>Commentaire : {i.tech_comment}</div>}
                             {techRepairPhotos(i).length > 0 && (
                               <div className="flex flex-wrap gap-2 mt-1">
@@ -625,6 +629,10 @@ export function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: Tech
           <div className="rounded-md border bg-muted/40 p-2 text-xs">
             <div>Réparé par <b>{issue.tech_validated_by}</b> le {fmtDateTimeFR(issue.tech_validated_at)}</div>
             {issue.action_done && <div>Action : {issue.action_done}</div>}
+            {issue.parts_changed && <div>Pièces changées : {issue.parts_changed}</div>}
+            {(issue.parts_price != null || issue.service_price != null) && (
+              <div>Coûts : pièces {issue.parts_price != null ? `${issue.parts_price} DH` : "—"} · prestation {issue.service_price != null ? `${issue.service_price} DH` : "—"}</div>
+            )}
           </div>
           <div>
             <Label className="text-xs">Manager vérificateur *</Label>
