@@ -100,6 +100,7 @@ export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
           <li key={"r" + i.id} className="flex items-start gap-2">
             <Clock className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
             <span className="flex-1">
+              {allPdvs && i.pdv_name ? <span className="font-semibold text-primary">[{i.pdv_name}] </span> : null}
               <span className="font-medium">{i.equipment}</span> — deadline dépassée ({i.deadline?.split("-").reverse().join(".")})
               {i.assigned_to ? <span className="text-muted-foreground"> · responsable : {i.assigned_to}</span> : null}
             </span>
@@ -111,6 +112,7 @@ export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
             <li key={"f" + e.id} className="flex items-start gap-2">
               <XCircle className="h-4 w-4 text-purple-700 shrink-0 mt-0.5" />
               <span className="flex-1">
+                {allPdvs && i?.pdv_name ? <span className="font-semibold text-primary">[{i.pdv_name}] </span> : null}
                 <span className="font-medium">{i?.equipment ?? "Matériel"}</span> — refusé par le manager {e.actor_name ?? ""} le {fmtDateTimeFR(e.created_at)}
                 {e.details?.comment ? <span className="text-muted-foreground"> · {String(e.details.comment)}</span> : null}
               </span>
