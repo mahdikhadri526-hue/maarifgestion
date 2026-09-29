@@ -63,6 +63,7 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
     if (!equipment.trim()) return toast({ title: "Matériel obligatoire", variant: "destructive" });
     if (!problem.trim()) return toast({ title: "Problème constaté obligatoire", variant: "destructive" });
     if (!manager.trim()) return toast({ title: "Manager signalant obligatoire", variant: "destructive" });
+    if (isTechCentral && !pdvId) return toast({ title: "Point de vente obligatoire", variant: "destructive" });
     setSaving(true);
     try {
       await reportTechIssue({
@@ -75,6 +76,7 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
         priority,
         source_task_id: defaults?.source_task_id ?? null,
         source_occurrence_id: defaults?.source_occurrence_id ?? null,
+        pdv_id: isTechCentral ? pdvId : null,
       });
       toast({ title: "Signalement transféré au Suivi Technique" });
       onReported?.();
@@ -93,6 +95,15 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
           <DialogTitle className="flex items-center gap-2"><Wrench className="h-4 w-4" />Signaler un problème matériel</DialogTitle>
         </DialogHeader>
         <div className="space-y-3">
+          {isTechCentral && (
+            <div>
+              <Label className="text-xs">Point de vente *</Label>
+              <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={pdvId} onChange={(e) => setPdvId(e.target.value)}>
+                <option value="">— Choisir le PDV —</option>
+                {pdvs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+          )}
           <div><Label className="text-xs">Matériel *</Label><Input value={equipment} onChange={(e) => setEquipment(e.target.value)} placeholder="Ex : Congélateur vitrine n°2" /></div>
           <div><Label className="text-xs">Emplacement</Label><Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ex : Salle, Chambre froide, Emporter…" /></div>
           <div><Label className="text-xs">Problème constaté *</Label><Textarea rows={3} value={problem} onChange={(e) => setProblem(e.target.value)} /></div>
