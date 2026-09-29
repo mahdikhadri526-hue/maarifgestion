@@ -32,6 +32,7 @@ export function ManagerVerifyAlert({ onOpen }: { onOpen: () => void }) {
     };
   }, []);
 
+  if (isTechAccount) return null;
   if (awaiting.length === 0) return null;
 
   return (
