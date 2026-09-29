@@ -50,6 +50,16 @@ export const PERMISSION_GROUPS: { title: string; keys: string[] }[] = [
   { title: "Administration", keys: ["manage_roster"] },
 ];
 
+// Groupes de modules non publiés : masqués des écrans de permissions sur le site en ligne.
+const UNPUBLISHED_GROUP_KEYS = ["view_attendance", "view_hr", "view_planning"];
+export function publishedPermissionGroups(): { title: string; keys: string[] }[] {
+  const h = typeof window !== "undefined" ? window.location.hostname : "";
+  const preview = h === "localhost" || h === "127.0.0.1" || h.includes("id-preview--") || h.includes("lovableproject.com");
+  if (preview) return PERMISSION_GROUPS;
+  return PERMISSION_GROUPS.filter((g) => !g.keys.some((k) => UNPUBLISHED_GROUP_KEYS.includes(k)));
+}
+
+
 export const ALL_PERMISSIONS = [
   { key: "view_dashboard", label: "Voir le tableau de bord" },
   { key: "view_stock", label: "Voir le stock initial" },
