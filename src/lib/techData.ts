@@ -177,6 +177,8 @@ export interface NewTechIssue {
   priority: TechPriority;
   source_task_id?: string | null;
   source_occurrence_id?: string | null;
+  /** PDV concerné (responsable technique : choisi dans le formulaire). */
+  pdv_id?: string | null;
 }
 
 export async function reportTechIssue(input: NewTechIssue): Promise<TechIssue> {
@@ -192,6 +194,7 @@ export async function reportTechIssue(input: NewTechIssue): Promise<TechIssue> {
     status: "a_traiter",
     source_task_id: input.source_task_id ?? null,
     source_occurrence_id: input.source_occurrence_id ?? null,
+    ...(input.pdv_id ? { pdv_id: input.pdv_id } : {}),
   };
   const { data, error } = await table().insert(payload).select("*").single();
   if (error) throw error;
