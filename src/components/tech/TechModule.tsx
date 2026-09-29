@@ -424,7 +424,8 @@ function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose
     }
     setSaving(true);
     try {
-      await updateTechIssue(issue.id, { status, assigned_to: assigned.trim() || null, deadline: deadline || null, tech_notes: notes.trim() || null, priority });
+      const assignedValue = assigned.trim() ? (assignedKind ? `${assignedKind} — ${assigned.trim()}` : assigned.trim()) : null;
+      await updateTechIssue(issue.id, { status, assigned_to: assignedValue, deadline: deadline || null, tech_notes: notes.trim() || null, priority });
       toast({ title: "Suivi enregistré" });
       onSaved();
       onClose();
