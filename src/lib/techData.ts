@@ -86,6 +86,9 @@ export interface TechIssue {
   repair_photo_url: string | null;
   action_done: string | null;
   tech_comment: string | null;
+  parts_changed: string | null;
+  parts_price: number | null;
+  service_price: number | null;
   tech_validated_by: string | null;
   tech_validated_at: string | null;
   manager_validated_by: string | null;
@@ -219,7 +222,7 @@ export async function updateTechIssue(
 /** Validation du responsable technique : réparation terminée. */
 export async function validateRepair(
   id: string,
-  input: { validated_by: string; action_done: string; tech_comment?: string | null; repairPhotoUrls?: string[]; repaired_at?: string | null },
+  input: { validated_by: string; action_done: string; tech_comment?: string | null; repairPhotoUrls?: string[]; repaired_at?: string | null; parts_changed?: string | null; parts_price?: number | null; service_price?: number | null },
 ): Promise<void> {
   const now = new Date().toISOString();
   const { error } = await rawTable()
@@ -227,6 +230,9 @@ export async function validateRepair(
       status: "repare",
       action_done: input.action_done.trim(),
       tech_comment: input.tech_comment?.trim() || null,
+      parts_changed: input.parts_changed?.trim() || null,
+      parts_price: input.parts_price ?? null,
+      service_price: input.service_price ?? null,
       repair_photo_url: serializePhotos(input.repairPhotoUrls ?? []),
       tech_validated_by: input.validated_by.trim(),
       tech_validated_at: now,
