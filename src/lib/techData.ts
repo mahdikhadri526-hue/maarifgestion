@@ -196,7 +196,9 @@ export async function reportTechIssue(input: NewTechIssue): Promise<TechIssue> {
     source_occurrence_id: input.source_occurrence_id ?? null,
     ...(input.pdv_id ? { pdv_id: input.pdv_id } : {}),
   };
-  const { data, error } = await table().insert(payload).select("*").single();
+  // PDV choisi explicitement : client brut (le client cloisonné écraserait pdv_id).
+  const target = input.pdv_id ? rawTable() : table();
+  const { data, error } = await target.insert(payload).select("*").single();
   if (error) throw error;
   return data as TechIssue;
 }
