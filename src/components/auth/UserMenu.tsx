@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function UserMenu({ onOpenAdmin, onOpenAnomalies }: { onOpenAdmin: () => void; onOpenAnomalies?: () => void }) {
   const { user, role, isAdmin, isRegionalAdmin, signOut, pdv, selectPdv, multiPdvEnabled, can } = useAuth();
+  const isTechCentral = !isAdmin && !isRegionalAdmin && can("manage_tech");
   if (!user) return null;
   return (
     <DropdownMenu>
@@ -25,7 +26,9 @@ export function UserMenu({ onOpenAdmin, onOpenAnomalies }: { onOpenAdmin: () => 
         <DropdownMenuLabel className="font-normal">
           <div className="text-sm font-medium">{user.email}</div>
           <div className="text-xs text-muted-foreground capitalize">Rôle : {role ?? "—"}</div>
-          {pdv && (
+          {isTechCentral ? (
+            <div className="text-xs text-muted-foreground">PDV : Tous les PDV</div>
+          ) : pdv && (
             <div className="text-xs text-muted-foreground">PDV : {pdv.name}</div>
           )}
         </DropdownMenuLabel>
