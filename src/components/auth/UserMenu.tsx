@@ -26,7 +26,9 @@ export function UserMenu({ onOpenAdmin, onOpenAnomalies }: { onOpenAdmin: () => 
         <DropdownMenuLabel className="font-normal">
           <div className="text-sm font-medium">{user.email}</div>
           <div className="text-xs text-muted-foreground capitalize">Rôle : {role ?? "—"}</div>
-          {pdv && (
+          {isTechCentral ? (
+            <div className="text-xs text-muted-foreground">PDV : Tous les PDV</div>
+          ) : pdv && (
             <div className="text-xs text-muted-foreground">PDV : {pdv.name}</div>
           )}
         </DropdownMenuLabel>
