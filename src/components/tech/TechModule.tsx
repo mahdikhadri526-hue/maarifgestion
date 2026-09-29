@@ -395,7 +395,14 @@ export function TechModule() {
 
 function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
   const [status, setStatus] = useState<TechStatus>(issue.status);
-  const [assigned, setAssigned] = useState(issue.assigned_to ?? "");
+  const parseKind = (v: string | null): { kind: "" | "Interne" | "Externe"; name: string } => {
+    if (!v) return { kind: "", name: "" };
+    const m = v.match(/^(Interne|Externe)\s*[—-]\s*(.*)$/);
+    return m ? { kind: m[1] as "Interne" | "Externe", name: m[2] } : { kind: "", name: v };
+  };
+  const parsed = parseKind(issue.assigned_to);
+  const [assignedKind, setAssignedKind] = useState<"" | "Interne" | "Externe">(parsed.kind);
+  const [assigned, setAssigned] = useState(parsed.name);
   const [deadline, setDeadline] = useState(issue.deadline ?? "");
   const [notes, setNotes] = useState(issue.tech_notes ?? "");
   const [priority, setPriority] = useState(issue.priority);
@@ -403,6 +410,9 @@ function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose
   const bothValidated = !!issue.tech_validated_at && !!issue.manager_validated_at;
 
   const save = async () => {
+    if ((status === "en_cours" || status === "repare") && !assignedKind) {
+      return toast({ title: "Type d'intervenant obligatoire", description: "Indiquez si l'intervenant est interne ou externe.", variant: "destructive" });
+    }
     if ((status === "en_cours" || status === "repare") && !assigned.trim()) {
       return toast({ title: "Nom de l'intervenant obligatoire", description: "Indiquez qui prend en charge l'intervention.", variant: "destructive" });
     }
@@ -414,7 +424,8 @@ function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose
     }
     setSaving(true);
     try {
-      await updateTechIssue(issue.id, { status, assigned_to: assigned.trim() || null, deadline: deadline || null, tech_notes: notes.trim() || null, priority });
+      const assignedValue = assigned.trim() ? (assignedKind ? `${assignedKind} — ${assigned.trim()}` : assigned.trim()) : null;
+      await updateTechIssue(issue.id, { status, assigned_to: assignedValue, deadline: deadline || null, tech_notes: notes.trim() || null, priority });
       toast({ title: "Suivi enregistré" });
       onSaved();
       onClose();
@@ -449,6 +460,14 @@ function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose
             <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={priority} onChange={(e) => setPriority(e.target.value as any)}>
               {TECH_PRIORITIES.map((p) => <option key={p.key} value={p.key}>{p.label}</option>)}
             </select>
+          </div>
+          <div>
+            <Label className="text-xs">Type d'intervenant {(status === "en_cours" || status === "repare") && <span className="text-destructive">*</span>}</Label>
+            <div className="flex gap-2 mt-1">
+              {(["Interne", "Externe"] as const).map((k) => (
+                <button key={k} type="button" onClick={() => setAssignedKind(k)} className={`flex-1 px-3 py-1.5 rounded-md text-sm border ${assignedKind === k ? "bg-primary text-primary-foreground border-transparent" : "bg-background"}`}>{k}</button>
+              ))}
+            </div>
           </div>
           <div>
             <Label className="text-xs">Intervenant (nom) {(status === "en_cours" || status === "repare") && <span className="text-destructive">*</span>}</Label>
