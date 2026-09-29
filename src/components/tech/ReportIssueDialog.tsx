@@ -100,7 +100,7 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
               <Label className="text-xs">Point de vente *</Label>
               <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={pdvId} onChange={(e) => setPdvId(e.target.value)}>
                 <option value="">— Choisir le PDV —</option>
-                {pdvs.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                {pdvs.filter((p) => !["admin mohammedia", "mohammedia", "mansouria", "miramar"].includes(p.name.trim().toLowerCase())).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
           )}
