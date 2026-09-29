@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function UserMenu({ onOpenAdmin, onOpenAnomalies }: { onOpenAdmin: () => void; onOpenAnomalies?: () => void }) {
   const { user, role, isAdmin, isRegionalAdmin, signOut, pdv, selectPdv, multiPdvEnabled, can } = useAuth();
+  const isTechCentral = !isAdmin && !isRegionalAdmin && can("manage_tech");
   if (!user) return null;
   return (
     <DropdownMenu>
