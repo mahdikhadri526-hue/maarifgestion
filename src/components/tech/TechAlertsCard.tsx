@@ -11,6 +11,8 @@ import {
   type TechIssue,
   type TechEvent,
 } from "@/lib/techData";
+import { TECH_ACCOUNT_EMAILS } from "@/lib/techFeature";
+import { useAuth } from "@/contexts/AuthContext";
 
 const todayISO = () => {
   const d = new Date();
@@ -23,6 +25,10 @@ const todayISO = () => {
 export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
   const [issues, setIssues] = useState<TechIssue[] | null>(null);
   const [refusals, setRefusals] = useState<TechEvent[]>([]);
+  const { user } = useAuth();
+  // Le responsable technique (gestion-technique@oliveri.com) voit les alertes
+  // de TOUS les PDV ; les autres comptes voient uniquement leur PDV courant.
+  const allPdvs = TECH_ACCOUNT_EMAILS.includes((user?.email ?? "").toLowerCase());
 
   useEffect(() => {
     let cancelled = false;
