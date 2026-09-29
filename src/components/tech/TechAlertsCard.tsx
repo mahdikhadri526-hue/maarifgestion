@@ -45,7 +45,7 @@ export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [allPdvs]);
 
   if (!issues) return null;
 
@@ -88,6 +88,7 @@ export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
           <li key={"n" + i.id} className="flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 text-orange-600 shrink-0 mt-0.5" />
             <span className="flex-1">
+              {allPdvs && i.pdv_name ? <span className="font-semibold text-primary">[{i.pdv_name}] </span> : null}
               <span className="font-medium">{i.equipment}</span>
               {i.location ? ` (${i.location})` : ""} — {i.problem}
               <span className="text-muted-foreground"> · signalé par {i.reported_by} le {fmtDateTimeFR(i.reported_at)}</span>
