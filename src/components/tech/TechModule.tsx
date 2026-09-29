@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useManagers } from "@/lib/roster";
 import { fileToCompressedDataUrl, fmtFR, todayISO } from "@/lib/pepData";
@@ -498,6 +499,22 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
   const today = todayISO();
   const late = !!issue.deadline && date.slice(0, 10) > issue.deadline;
 
+  // Nom du responsable technique rempli automatiquement avec l'utilisateur connecté.
+  useEffect(() => {
+    if (name.trim()) return;
+    void (async () => {
+      const uid = (await supabase.auth.getUser()).data.user?.id;
+      if (!uid) return;
+      const { data } = await supabase
+        .from("profiles")
+        .select("display_name, email")
+        .eq("user_id", uid)
+        .maybeSingle();
+      const fallback = (await supabase.auth.getUser()).data.user?.email ?? "";
+      setName(((data as any)?.display_name || (data as any)?.email || fallback || "").trim());
+    })();
+  }, [name]);
+
   const addPhotos = async (files: FileList | null) => {
     if (!files) return;
     try {
@@ -536,7 +553,7 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Valider la réparation — {issue.equipment}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div><Label className="text-xs">Responsable technique *</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Nom du technicien / prestataire" /></div>
+          {/* Nom du responsable technique enregistré automatiquement (champ masqué). */}
           <div><Label className="text-xs">Date de réparation *</Label><Input type="datetime-local" value={date} max={`${today}T23:59`} onChange={(e) => setDate(e.target.value)} />
             {late && <p className="text-[11px] text-destructive mt-1">Réparation après la deadline ({fmtFR(issue.deadline!)}) — sera comptée comme retard.</p>}
           </div>
