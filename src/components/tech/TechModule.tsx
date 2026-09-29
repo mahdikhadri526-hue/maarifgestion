@@ -462,6 +462,14 @@ function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose
             </select>
           </div>
           <div>
+            <Label className="text-xs">Type d'intervenant {(status === "en_cours" || status === "repare") && <span className="text-destructive">*</span>}</Label>
+            <div className="flex gap-2 mt-1">
+              {(["Interne", "Externe"] as const).map((k) => (
+                <button key={k} type="button" onClick={() => setAssignedKind(k)} className={`flex-1 px-3 py-1.5 rounded-md text-sm border ${assignedKind === k ? "bg-primary text-primary-foreground border-transparent" : "bg-background"}`}>{k}</button>
+              ))}
+            </div>
+          </div>
+          <div>
             <Label className="text-xs">Intervenant (nom) {(status === "en_cours" || status === "repare") && <span className="text-destructive">*</span>}</Label>
             <Input value={assigned} onChange={(e) => setAssigned(e.target.value)} placeholder="Nom du technicien / prestataire" />
             <p className="text-[11px] text-muted-foreground mt-1">Obligatoire dès la prise en charge de l'intervention.</p>
