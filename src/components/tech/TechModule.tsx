@@ -410,6 +410,9 @@ function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose
   const bothValidated = !!issue.tech_validated_at && !!issue.manager_validated_at;
 
   const save = async () => {
+    if ((status === "en_cours" || status === "repare") && !assignedKind) {
+      return toast({ title: "Type d'intervenant obligatoire", description: "Indiquez si l'intervenant est interne ou externe.", variant: "destructive" });
+    }
     if ((status === "en_cours" || status === "repare") && !assigned.trim()) {
       return toast({ title: "Nom de l'intervenant obligatoire", description: "Indiquez qui prend en charge l'intervention.", variant: "destructive" });
     }
