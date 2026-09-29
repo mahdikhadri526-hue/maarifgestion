@@ -552,7 +552,7 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader><DialogTitle>Valider la réparation — {issue.equipment}</DialogTitle></DialogHeader>
         <div className="space-y-3">
-          <div className="hidden"><input value={name} readOnly /></div>
+          {/* Nom du responsable technique enregistré automatiquement (champ masqué). */}
           <div><Label className="text-xs">Date de réparation *</Label><Input type="datetime-local" value={date} max={`${today}T23:59`} onChange={(e) => setDate(e.target.value)} />
             {late && <p className="text-[11px] text-destructive mt-1">Réparation après la deadline ({fmtFR(issue.deadline!)}) — sera comptée comme retard.</p>}
           </div>
