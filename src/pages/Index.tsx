@@ -230,7 +230,7 @@ const Index = () => {
               </div>
             </div>
 
-            {ENABLE_DASHBOARD_ORDER_TABLE && (
+            {ENABLE_DASHBOARD_ORDER_TABLE && !isTechAccount && (
             <div className="bg-card rounded-xl border shadow-sm p-4 mt-4">
               <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
