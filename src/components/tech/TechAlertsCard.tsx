@@ -34,7 +34,7 @@ export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
     let cancelled = false;
     (async () => {
       try {
-        const [list, events] = await Promise.all([getTechIssues(), getTechEvents()]);
+        const [list, events] = await Promise.all([getTechIssues(allPdvs), getTechEvents(undefined, allPdvs)]);
         if (cancelled) return;
         setIssues(list);
         setRefusals(events.filter((e) => e.event_type === "refus_manager"));
