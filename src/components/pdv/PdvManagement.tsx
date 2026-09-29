@@ -9,7 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
-import { ALL_PERMISSIONS, PERMISSION_GROUPS, AppRole, useAuth } from "@/contexts/AuthContext";
+import { ALL_PERMISSIONS, publishedPermissionGroups, AppRole, useAuth } from "@/contexts/AuthContext";
 
 const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
   admin: ALL_PERMISSIONS.map((p) => p.key),
@@ -49,8 +49,8 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
   const canEditPerms = isAdmin || isRegionalAdmin;
   // Chaque compte ne voit que les permissions qu'il détient lui-même.
   const visibleGroups = isAdmin
-    ? PERMISSION_GROUPS
-    : PERMISSION_GROUPS.map((g) => ({ ...g, keys: g.keys.filter((k) => can(k)) })).filter(
+    ? publishedPermissionGroups()
+    : publishedPermissionGroups().map((g) => ({ ...g, keys: g.keys.filter((k) => can(k)) })).filter(
         (g) => g.keys.length > 0,
       );
   const canTogglePerm = (_key: string) => isAdmin || isRegionalAdmin;
