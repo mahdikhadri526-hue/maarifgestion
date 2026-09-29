@@ -25,8 +25,11 @@ interface Props {
 }
 
 export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props) {
-  const { user } = useAuth();
+  const { user, pdvs, permissions, isAdmin } = useAuth();
   const managers = useManagers();
+  // Responsable technique (compte centralisé) : il choisit le PDV concerné.
+  const isTechCentral = !isAdmin && permissions.has("manage_tech");
+  const [pdvId, setPdvId] = useState("");
   const [equipment, setEquipment] = useState("");
   const [location, setLocation] = useState("");
   const [problem, setProblem] = useState("");
@@ -37,6 +40,7 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
 
   useEffect(() => {
     if (!open) return;
+    setPdvId("");
     setEquipment(defaults?.equipment ?? "");
     setLocation(defaults?.location ?? "");
     setProblem("");
