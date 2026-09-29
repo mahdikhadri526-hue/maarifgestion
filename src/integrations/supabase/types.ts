@@ -2069,6 +2069,8 @@ export type Database = {
           manager_comment: string | null
           manager_validated_at: string | null
           manager_validated_by: string | null
+          parts_changed: string | null
+          parts_price: number | null
           pdv_id: string
           photo_url: string | null
           priority: string
@@ -2078,6 +2080,7 @@ export type Database = {
           reported_at: string
           reported_by: string
           reported_by_user: string | null
+          service_price: number | null
           source_occurrence_id: string | null
           source_task_id: string | null
           status: string
@@ -2100,6 +2103,8 @@ export type Database = {
           manager_comment?: string | null
           manager_validated_at?: string | null
           manager_validated_by?: string | null
+          parts_changed?: string | null
+          parts_price?: number | null
           pdv_id: string
           photo_url?: string | null
           priority?: string
@@ -2109,6 +2114,7 @@ export type Database = {
           reported_at?: string
           reported_by: string
           reported_by_user?: string | null
+          service_price?: number | null
           source_occurrence_id?: string | null
           source_task_id?: string | null
           status?: string
@@ -2131,6 +2137,8 @@ export type Database = {
           manager_comment?: string | null
           manager_validated_at?: string | null
           manager_validated_by?: string | null
+          parts_changed?: string | null
+          parts_price?: number | null
           pdv_id?: string
           photo_url?: string | null
           priority?: string
@@ -2140,6 +2148,7 @@ export type Database = {
           reported_at?: string
           reported_by?: string
           reported_by_user?: string | null
+          service_price?: number | null
           source_occurrence_id?: string | null
           source_task_id?: string | null
           status?: string
