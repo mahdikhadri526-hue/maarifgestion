@@ -489,7 +489,7 @@ function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose
 }
 
 function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
-  const [name, setName] = useState(issue.assigned_to ?? "");
+  const [name, setName] = useState(issue.tech_validated_by ?? "");
   const [action, setAction] = useState(issue.action_done ?? "");
   const [comment, setComment] = useState(issue.tech_comment ?? "");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 16));
