@@ -186,7 +186,7 @@ export function TechModule() {
               <div className="flex items-center gap-2 font-semibold text-destructive"><AlertTriangle className="h-4 w-4" />Retard : {alerts.overdue.length} intervention(s) au-delà de la deadline</div>
               <ul className="mt-1 text-xs space-y-0.5">
                 {alerts.overdue.map((i) => (
-                  <li key={i.id}>• {central && i.pdv_name && <span className="font-medium">[{i.pdv_name}] </span>}<b>{i.equipment}</b> — deadline {fmtFR(i.deadline!)} ({Math.abs(daysToDeadline(i, today)!)} j de retard) · Responsable : {i.assigned_to || "non désigné"}</li>
+                  <li key={i.id}>• {central && i.pdv_name && <span className="font-medium">[{i.pdv_name}] </span>}<b>{i.equipment}</b> — deadline {fmtFR(i.deadline!)} ({Math.abs(daysToDeadline(i, today)!)} j de retard) · Intervenant : {i.assigned_to || "non désigné"}</li>
                 ))}
               </ul>
             </div>
@@ -297,7 +297,7 @@ export function TechModule() {
                     </p>
                     <p className="text-sm mt-1">{i.problem}</p>
                     <div className="text-xs text-muted-foreground mt-1 flex gap-3 flex-wrap">
-                      <span>Responsable : <b>{i.assigned_to || "—"}</b></span>
+                      <span>Intervenant : <b>{i.assigned_to || "—"}</b></span>
                       <span>Deadline : <b className={overdue ? "text-destructive" : ""}>{i.deadline ? fmtFR(i.deadline) : "—"}</b></span>
                       {i.taken_at && <span>Pris en charge : {fmtDateTimeFR(i.taken_at)}</span>}
                       {i.repaired_at && <span>Réparé : {fmtDateTimeFR(i.repaired_at)}</span>}
@@ -696,7 +696,7 @@ function ControlView({ issues, today }: { issues: TechIssue[]; today: string }) 
         <table className="min-w-full text-xs">
           <thead className="bg-muted/60">
             <tr>
-              {["Matériel", "Signalé", "Responsable", "Deadline", "Réparation (validation tech)", "Retard", "Vérification manager", "Statut"].map((h) => <th key={h} className="px-2 py-2 text-left font-semibold whitespace-nowrap">{h}</th>)}
+              {["Matériel", "Signalé", "Intervenant", "Deadline", "Réparation (validation tech)", "Retard", "Vérification manager", "Statut"].map((h) => <th key={h} className="px-2 py-2 text-left font-semibold whitespace-nowrap">{h}</th>)}
             </tr>
           </thead>
           <tbody>
