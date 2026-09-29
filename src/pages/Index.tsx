@@ -191,24 +191,24 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Pending autocontrol fiches (avant les ruptures) */}
-            <PendingAutocontrolAlerts onOpen={() => setTab("autocontrole")} />
+            {/* Fiches autocontrôle en attente — masquées pour le compte technique */}
+            {!isTechAccount && <PendingAutocontrolAlerts onOpen={() => setTab("autocontrole")} />}
 
             {/* Agenda PEP — uniquement les tâches du jour */}
-            {can("view_pep") && <PepTodayCard onOpen={() => setTab("pep")} />}
+            {!isTechAccount && can("view_pep") && <PepTodayCard onOpen={() => setTab("pep")} />}
 
             {/* Suivi Technique — signalements, retards, refus manager */}
             {TECH_ENABLED && can("view_tech") && <TechAlertsCard onOpen={() => setTab("tech")} />}
-            {TECH_ENABLED && can("view_pep") && <ManagerVerifyAlert onOpen={() => setTab("pep")} />}
+            {!isTechAccount && TECH_ENABLED && can("view_pep") && <ManagerVerifyAlert onOpen={() => setTab("pep")} />}
 
             {/* Stock Alerts */}
-            <StockOutAlerts />
+            {!isTechAccount && <StockOutAlerts />}
 
             {/* Stock minimum atteint */}
-            <LowStockAlerts />
+            {!isTechAccount && <LowStockAlerts />}
 
             {/* Expiry Alerts */}
-            <ExpiryAlerts />
+            {!isTechAccount && <ExpiryAlerts />}
 
             {/* Pro navigation buttons - access to all tables */}
             <div className="bg-card rounded-xl border shadow-sm p-4 mt-4">
