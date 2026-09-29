@@ -169,7 +169,7 @@ const isExcludedFromRupture = (name: string) =>
 export function StockOutAlerts() {
   const { data: levels, loading } = useStockLevels();
   const { state: placed, mark, unmark } = useOrderPlaced();
-  const { isAdmin } = useAuth();
+  const isAdmin = true; // Marquage "Commande passée" ouvert à tous les PDV
   if (loading || !levels) return null;
   const outOfStock = levels.filter((l) => l.stockRestant <= 0 && !isExcludedFromRupture(l.productName));
   if (outOfStock.length === 0) return null;
@@ -238,7 +238,7 @@ export function LowStockAlerts() {
   const { data: levels, loading } = useStockLevels();
   const [minStocks, setMinStocks] = useState<Record<string, number>>({});
   const { state: placed, mark, unmark } = useOrderPlaced();
-  const { isAdmin } = useAuth();
+  const isAdmin = true; // Marquage "Commande passée" ouvert à tous les PDV
 
   useEffect(() => {
     let active = true;
