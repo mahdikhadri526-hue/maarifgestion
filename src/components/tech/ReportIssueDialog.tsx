@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { useManagers } from "@/lib/roster";
+import { supabase } from "@/integrations/supabase/client";
 import { fileToCompressedDataUrl } from "@/lib/pepData";
 import { TECH_PRIORITIES, reportTechIssue, type TechPriority } from "@/lib/techData";
 
@@ -26,7 +26,8 @@ interface Props {
 
 export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props) {
   const { user, pdvs, permissions, isAdmin } = useAuth();
-  const managers = useManagers();
+  // Tous les managers créés par le RH (tous PDV confondus).
+  const [managers, setManagers] = useState<string[]>([]);
   // Responsable technique (compte centralisé) : il choisit le PDV concerné.
   const isTechCentral = !isAdmin && permissions.has("manage_tech");
   const [pdvId, setPdvId] = useState("");
@@ -48,6 +49,20 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
     setPriority("normale");
     setPhotos([]);
   }, [open, defaults?.equipment, defaults?.location]);
+
+  useEffect(() => {
+    if (!open) return;
+    void (async () => {
+      const { data } = await supabase
+        .from("attendance_agents" as any)
+        .select("full_name")
+        .eq("staff_level", "manager")
+        .eq("active", true);
+      const names = Array.from(new Set(((data ?? []) as any[]).map((r) => r.full_name as string)));
+      names.sort((a, b) => a.localeCompare(b, "fr"));
+      setManagers(names);
+    })();
+  }, [open]);
 
   const addPhotos = async (files: FileList | null) => {
     if (!files) return;
