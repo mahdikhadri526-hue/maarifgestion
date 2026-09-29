@@ -77,7 +77,7 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
   const submit = async () => {
     if (!equipment.trim()) return toast({ title: "Matériel obligatoire", variant: "destructive" });
     if (!problem.trim()) return toast({ title: "Problème constaté obligatoire", variant: "destructive" });
-    if (!manager.trim()) return toast({ title: "Manager signalant obligatoire", variant: "destructive" });
+    if (!isTechCentral && !manager.trim()) return toast({ title: "Manager signalant obligatoire", variant: "destructive" });
     if (isTechCentral && !pdvId) return toast({ title: "Point de vente obligatoire", variant: "destructive" });
     setSaving(true);
     try {
@@ -86,7 +86,7 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
         location,
         problem,
         photoUrls: photos,
-        reported_by: manager,
+        reported_by: isTechCentral ? "Responsable Technique" : manager,
         reported_by_user: user?.id ?? null,
         priority,
         source_task_id: defaults?.source_task_id ?? null,
@@ -122,13 +122,20 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
           <div><Label className="text-xs">Matériel *</Label><Input value={equipment} onChange={(e) => setEquipment(e.target.value)} placeholder="Ex : Congélateur vitrine n°2" /></div>
           <div><Label className="text-xs">Emplacement</Label><Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ex : Salle, Chambre froide, Emporter…" /></div>
           <div><Label className="text-xs">Problème constaté *</Label><Textarea rows={3} value={problem} onChange={(e) => setProblem(e.target.value)} /></div>
-          <div>
-            <Label className="text-xs">Manager signalant *</Label>
-            <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={manager} onChange={(e) => setManager(e.target.value)}>
-              <option value="">— Choisir —</option>
-              {managers.map((m) => <option key={m} value={m}>{m}</option>)}
-            </select>
-          </div>
+          {isTechCentral ? (
+            <div>
+              <Label className="text-xs">Signalé par</Label>
+              <Input value="Responsable Technique" disabled />
+            </div>
+          ) : (
+            <div>
+              <Label className="text-xs">Manager signalant *</Label>
+              <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={manager} onChange={(e) => setManager(e.target.value)}>
+                <option value="">— Choisir —</option>
+                {managers.map((m) => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          )}
           <div>
             <Label className="text-xs">Priorité *</Label>
             <div className="flex gap-2 flex-wrap mt-1">
