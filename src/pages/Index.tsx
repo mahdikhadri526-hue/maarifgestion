@@ -27,7 +27,7 @@ import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, Cl
 import { PepTodayCard } from "@/components/pep/PepTodayCard";
 import { TechAlertsCard } from "@/components/tech/TechAlertsCard";
 import { ManagerVerifyAlert } from "@/components/tech/ManagerVerifyAlert";
-import { isTechEnabled, isPreviewHost } from "@/lib/techFeature";
+import { isTechEnabled, isPreviewHost, TECH_ACCOUNT_EMAILS } from "@/lib/techFeature";
 import logo from "@/assets/logo.jpeg";
 import { ENABLE_DASHBOARD_ORDER_TABLE } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
@@ -71,6 +71,9 @@ const Index = () => {
     return () => window.removeEventListener("pointerdown", enter);
   }, [kiosk]);
   const TECH_ENABLED = isTechEnabled(user?.email);
+  // Le compte technique (gestion-technique@oliveri.com) : le tableau de bord
+  // affiche uniquement les signalisations des PDV — aucun élément stock/DLC/commande.
+  const isTechAccount = TECH_ACCOUNT_EMAILS.includes((user?.email ?? "").toLowerCase());
 
   const refresh = () => setRefreshKey((k) => k + 1);
 
@@ -188,24 +191,24 @@ const Index = () => {
               </div>
             </div>
 
-            {/* Pending autocontrol fiches (avant les ruptures) */}
-            <PendingAutocontrolAlerts onOpen={() => setTab("autocontrole")} />
+            {/* Fiches autocontrôle en attente — masquées pour le compte technique */}
+            {!isTechAccount && <PendingAutocontrolAlerts onOpen={() => setTab("autocontrole")} />}
 
             {/* Agenda PEP — uniquement les tâches du jour */}
-            {can("view_pep") && <PepTodayCard onOpen={() => setTab("pep")} />}
+            {!isTechAccount && can("view_pep") && <PepTodayCard onOpen={() => setTab("pep")} />}
 
             {/* Suivi Technique — signalements, retards, refus manager */}
             {TECH_ENABLED && can("view_tech") && <TechAlertsCard onOpen={() => setTab("tech")} />}
-            {TECH_ENABLED && can("view_pep") && <ManagerVerifyAlert onOpen={() => setTab("pep")} />}
+            {!isTechAccount && TECH_ENABLED && can("view_pep") && <ManagerVerifyAlert onOpen={() => setTab("pep")} />}
 
             {/* Stock Alerts */}
-            <StockOutAlerts />
+            {!isTechAccount && <StockOutAlerts />}
 
             {/* Stock minimum atteint */}
-            <LowStockAlerts />
+            {!isTechAccount && <LowStockAlerts />}
 
             {/* Expiry Alerts */}
-            <ExpiryAlerts />
+            {!isTechAccount && <ExpiryAlerts />}
 
             {/* Pro navigation buttons - access to all tables */}
             <div className="bg-card rounded-xl border shadow-sm p-4 mt-4">
@@ -227,7 +230,7 @@ const Index = () => {
               </div>
             </div>
 
-            {ENABLE_DASHBOARD_ORDER_TABLE && (
+            {ENABLE_DASHBOARD_ORDER_TABLE && !isTechAccount && (
             <div className="bg-card rounded-xl border shadow-sm p-4 mt-4">
               <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
