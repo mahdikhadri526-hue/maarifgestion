@@ -11,6 +11,8 @@ import {
   type TechIssue,
   type TechEvent,
 } from "@/lib/techData";
+import { TECH_ACCOUNT_EMAILS } from "@/lib/techFeature";
+import { useAuth } from "@/contexts/AuthContext";
 
 const todayISO = () => {
   const d = new Date();
@@ -23,12 +25,16 @@ const todayISO = () => {
 export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
   const [issues, setIssues] = useState<TechIssue[] | null>(null);
   const [refusals, setRefusals] = useState<TechEvent[]>([]);
+  const { user } = useAuth();
+  // Le responsable technique (gestion-technique@oliveri.com) voit les alertes
+  // de TOUS les PDV ; les autres comptes voient uniquement leur PDV courant.
+  const allPdvs = TECH_ACCOUNT_EMAILS.includes((user?.email ?? "").toLowerCase());
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [list, events] = await Promise.all([getTechIssues(), getTechEvents()]);
+        const [list, events] = await Promise.all([getTechIssues(allPdvs), getTechEvents(undefined, allPdvs)]);
         if (cancelled) return;
         setIssues(list);
         setRefusals(events.filter((e) => e.event_type === "refus_manager"));
@@ -39,7 +45,7 @@ export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [allPdvs]);
 
   if (!issues) return null;
 
@@ -82,6 +88,7 @@ export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
           <li key={"n" + i.id} className="flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 text-orange-600 shrink-0 mt-0.5" />
             <span className="flex-1">
+              {allPdvs && i.pdv_name ? <span className="font-semibold text-primary">[{i.pdv_name}] </span> : null}
               <span className="font-medium">{i.equipment}</span>
               {i.location ? ` (${i.location})` : ""} — {i.problem}
               <span className="text-muted-foreground"> · signalé par {i.reported_by} le {fmtDateTimeFR(i.reported_at)}</span>
@@ -93,6 +100,7 @@ export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
           <li key={"r" + i.id} className="flex items-start gap-2">
             <Clock className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
             <span className="flex-1">
+              {allPdvs && i.pdv_name ? <span className="font-semibold text-primary">[{i.pdv_name}] </span> : null}
               <span className="font-medium">{i.equipment}</span> — deadline dépassée ({i.deadline?.split("-").reverse().join(".")})
               {i.assigned_to ? <span className="text-muted-foreground"> · responsable : {i.assigned_to}</span> : null}
             </span>
@@ -104,6 +112,7 @@ export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
             <li key={"f" + e.id} className="flex items-start gap-2">
               <XCircle className="h-4 w-4 text-purple-700 shrink-0 mt-0.5" />
               <span className="flex-1">
+                {allPdvs && i?.pdv_name ? <span className="font-semibold text-primary">[{i.pdv_name}] </span> : null}
                 <span className="font-medium">{i?.equipment ?? "Matériel"}</span> — refusé par le manager {e.actor_name ?? ""} le {fmtDateTimeFR(e.created_at)}
                 {e.details?.comment ? <span className="text-muted-foreground"> · {String(e.details.comment)}</span> : null}
               </span>
