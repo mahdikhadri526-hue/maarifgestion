@@ -395,7 +395,14 @@ export function TechModule() {
 
 function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
   const [status, setStatus] = useState<TechStatus>(issue.status);
-  const [assigned, setAssigned] = useState(issue.assigned_to ?? "");
+  const parseKind = (v: string | null): { kind: "" | "Interne" | "Externe"; name: string } => {
+    if (!v) return { kind: "", name: "" };
+    const m = v.match(/^(Interne|Externe)\s*[—-]\s*(.*)$/);
+    return m ? { kind: m[1] as "Interne" | "Externe", name: m[2] } : { kind: "", name: v };
+  };
+  const parsed = parseKind(issue.assigned_to);
+  const [assignedKind, setAssignedKind] = useState<"" | "Interne" | "Externe">(parsed.kind);
+  const [assigned, setAssigned] = useState(parsed.name);
   const [deadline, setDeadline] = useState(issue.deadline ?? "");
   const [notes, setNotes] = useState(issue.tech_notes ?? "");
   const [priority, setPriority] = useState(issue.priority);
