@@ -492,6 +492,9 @@ function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose
 function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
   const [name, setName] = useState(issue.tech_validated_by ?? "");
   const [action, setAction] = useState(issue.action_done ?? "");
+  const [parts, setParts] = useState(issue.parts_changed ?? "");
+  const [partsPrice, setPartsPrice] = useState(issue.parts_price != null ? String(issue.parts_price) : "");
+  const [servicePrice, setServicePrice] = useState(issue.service_price != null ? String(issue.service_price) : "");
   const [comment, setComment] = useState(issue.tech_comment ?? "");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 16));
   const [photos, setPhotos] = useState<string[]>(techRepairPhotos(issue));
@@ -535,6 +538,9 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
         validated_by: name,
         action_done: action,
         tech_comment: comment,
+        parts_changed: parts,
+        parts_price: partsPrice.trim() ? Number(partsPrice.replace(",", ".")) : null,
+        service_price: servicePrice.trim() ? Number(servicePrice.replace(",", ".")) : null,
         repairPhotoUrls: photos,
         repaired_at: new Date(date).toISOString(),
       });
@@ -558,6 +564,11 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
             {late && <p className="text-[11px] text-destructive mt-1">Réparation après la deadline ({fmtFR(issue.deadline!)}) — sera comptée comme retard.</p>}
           </div>
           <div><Label className="text-xs">Action réalisée *</Label><Textarea rows={3} value={action} onChange={(e) => setAction(e.target.value)} placeholder="Ex : remplacement du thermostat, recharge gaz…" /></div>
+          <div><Label className="text-xs">Pièces changées</Label><Input value={parts} onChange={(e) => setParts(e.target.value)} placeholder="Ex : thermostat, joint de porte…" /></div>
+          <div className="grid grid-cols-2 gap-2">
+            <div><Label className="text-xs">Prix des pièces (DH)</Label><Input type="number" min="0" step="0.01" inputMode="decimal" value={partsPrice} onChange={(e) => setPartsPrice(e.target.value)} placeholder="0.00" /></div>
+            <div><Label className="text-xs">Prix de la prestation (DH)</Label><Input type="number" min="0" step="0.01" inputMode="decimal" value={servicePrice} onChange={(e) => setServicePrice(e.target.value)} placeholder="0.00" /></div>
+          </div>
           <div><Label className="text-xs">Commentaire du responsable technique</Label><Textarea rows={2} value={comment} onChange={(e) => setComment(e.target.value)} /></div>
           <div>
             <Label className="text-xs flex items-center gap-1"><Camera className="h-3.5 w-3.5" />Photo(s) après réparation <span className="font-normal text-muted-foreground">(facultatif)</span></Label>
