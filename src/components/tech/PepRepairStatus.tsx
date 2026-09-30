@@ -14,7 +14,7 @@ import {
   isOverdue,
 } from "@/lib/techData";
 import { formatDateFR } from "@/lib/utils";
-import { ManagerValidateDialog } from "./TechModule";
+import { ManagerValidateDialog, formatIssueTotal } from "./TechModule";
 
 const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 };
 
