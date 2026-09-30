@@ -18,6 +18,12 @@ function shiftWeek(week: string, deltaWeeks: number): string {
   return weekStartOf(date);
 }
 
+function weekToDate(week: string): Date {
+  const [y, m, d] = week.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
+
 function formatWeekLabel(week: string): string {
   const [y, m, d] = week.split("-").map(Number);
   const start = new Date(y, m - 1, d);
