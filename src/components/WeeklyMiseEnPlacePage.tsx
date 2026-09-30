@@ -208,7 +208,7 @@ export function WeeklyMiseEnPlacePage() {
     const nespressoSources = levels.filter((l) => NESPRESSO_IDS.includes(l.productId));
     if (nespressoSources.length > 0) {
       list.push({
-        id: NESPRESSO_AGG_ID,
+        id: NESPRESSO_AGG_ID_CONST,
         name: "NESPRESSO (Total)",
       });
     }
