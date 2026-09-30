@@ -615,10 +615,24 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
 }
 
 export function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
-  const managers = useManagers();
+  // Managers créés par le RH (tous PDV confondus), comme dans « Signaler ».
+  const [managers, setManagers] = useState<string[]>([]);
   const [manager, setManager] = useState("");
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase
+        .from("attendance_agents" as any)
+        .select("full_name")
+        .eq("staff_level", "manager")
+        .eq("active", true);
+      const names = Array.from(new Set(((data ?? []) as any[]).map((r) => r.full_name as string)));
+      names.sort((a, b) => a.localeCompare(b, "fr"));
+      setManagers(names);
+    })();
+  }, []);
 
   const submit = async (ok: boolean) => {
     if (!manager.trim()) return toast({ title: "Manager obligatoire", variant: "destructive" });
@@ -638,10 +652,10 @@ export function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: Tech
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Vérification manager — {issue.equipment}</DialogTitle></DialogHeader>
-        <div className="space-y-3 text-sm">
-          <div className="rounded-md border bg-muted/40 p-2 text-xs">
+      <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto overflow-x-hidden">
+        <DialogHeader><DialogTitle className="break-words">Vérification manager — {issue.equipment}</DialogTitle></DialogHeader>
+        <div className="space-y-3 text-sm min-w-0">
+          <div className="rounded-md border bg-muted/40 p-2 text-xs break-words">
             <div>Réparé par <b>{issue.tech_validated_by}</b> le {fmtDateTimeFR(issue.tech_validated_at)}</div>
             {issue.action_done && <div>Action : {issue.action_done}</div>}
             {issue.parts_changed && <div>Pièces changées : {issue.parts_changed}</div>}
