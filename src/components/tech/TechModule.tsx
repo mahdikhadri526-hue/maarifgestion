@@ -336,7 +336,7 @@ export function TechModule() {
                             {i.action_done && <div>Action réalisée : {i.action_done}</div>}
                             {i.parts_changed && <div>Pièces changées : {i.parts_changed}</div>}
                             {(i.parts_price != null || i.service_price != null) && (
-                              <div>Coûts : pièces {i.parts_price != null ? `${i.parts_price} DH` : "—"} · prestation {i.service_price != null ? `${i.service_price} DH` : "—"}</div>
+                              <div>Coûts : pièces {i.parts_price != null ? `${i.parts_price} DH` : "—"} · prestation {i.service_price != null ? `${i.service_price} DH` : "—"} · total {formatIssueTotal(i)}{i.parts_price != null || i.service_price != null ? " DH" : ""}</div>
                             )}
                             {i.tech_comment && <div>Commentaire : {i.tech_comment}</div>}
                             {techRepairPhotos(i).length > 0 && (
