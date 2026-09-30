@@ -26,7 +26,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ChevronLeft, ChevronRight, CalendarDays, Search } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { ChevronLeft, ChevronRight, CalendarDays, Search, BellRing } from "lucide-react";
 import { toast } from "sonner";
 
 const NESPRESSO_IDS = ["ali-29", "ali-30", "ali-31", "ali-32"];
@@ -54,6 +55,21 @@ function formatWeekLabel(week: string): string {
   const fmt = (dt: Date) =>
     `${String(dt.getDate()).padStart(2, "0")}.${String(dt.getMonth() + 1).padStart(2, "0")}.${dt.getFullYear()}`;
   return `Semaine du ${fmt(start)} au ${fmt(end)}`;
+}
+
+// La semaine contenant le dernier jour du mois est saisie le lendemain de ce jour.
+function weeklyEntryDate(week: string): { due: string; monthEnd: boolean } {
+  const monday = weekToDate(week);
+  const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+  for (let offset = 0; offset < 7; offset++) {
+    const day = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + offset);
+    const lastDay = new Date(day.getFullYear(), day.getMonth() + 1, 0);
+    if (day.getDate() === lastDay.getDate()) {
+      const nextDay = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
+      return { due: formatISODate(nextDay), monthEnd: true };
+    }
+  }
+  return { due: formatISODate(monday), monthEnd: false };
 }
 
 type MepRow = { id: string; name: string };
@@ -225,12 +241,20 @@ export function WeeklyMiseEnPlacePage() {
   }, [levels, restants, search]);
 
   const getRestant = (id: string) => restants[id] ?? 0;
-  const monday = weekToDate(week);
-  const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
-  const isLastWeekOfMonth = sunday.getMonth() !== monday.getMonth();
+  const { due, monthEnd: isLastWeekOfMonth } = weeklyEntryDate(week);
+  const isInventoryDay = due === formatISODate(new Date());
 
   return (
     <div className="space-y-4">
+      {isInventoryDay && (
+        <Alert className="border-primary/40 bg-primary/5">
+          <BellRing className="h-4 w-4" />
+          <AlertTitle>Aujourd’hui : inventaire de mise en place</AlertTitle>
+          <AlertDescription>
+            Saisissez les quantités de mise en place pour {formatWeekLabel(week).toLowerCase()}.
+          </AlertDescription>
+        </Alert>
+      )}
       <div className="flex flex-col gap-3">
         <div>
           <h2 className="text-lg font-semibold">Mise en place hebdomadaire</h2>
