@@ -245,6 +245,27 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     d.setDate(d.getDate() + days);
     setMepWeek(weekStartOf(d));
   };
+  // Jours de comptage : chaque lundi, sauf la semaine qui chevauche la fin du
+  // mois — là le comptage se fait le lendemain du dernier jour du mois.
+  const isInventoryDay = (d: Date) => {
+    const dow = (d.getDay() + 6) % 7; // 0 = lundi
+    if (dow === 0) {
+      for (let i = 0; i < 7; i++) {
+        const x = new Date(d);
+        x.setDate(x.getDate() + i);
+        const next = new Date(x);
+        next.setDate(next.getDate() + 1);
+        if (next.getDate() === 1 && x.getDay() !== 0) return false; // fin de mois (hors dimanche) dans la semaine
+      }
+      return true;
+    }
+    if (d.getDate() === 1) {
+      const prev = new Date(d);
+      prev.setDate(prev.getDate() - 1);
+      return prev.getDay() !== 0; // lendemain de fin de mois, sauf si c'était un dimanche
+    }
+    return false;
+  };
 
   // Détails du calcul pour les articles agrégés (GLACE / TOPPINGS / NESPRESSO / MACARON)
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -1461,7 +1482,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     defaultMonth={mepWeekStartDate}
                     modifiers={{
                       week: { from: mepWeekStartDate, to: mepWeekEndDate },
-                      inventory: mepInventoryDay,
+                      inventory: isInventoryDay,
                     }}
                     modifiersClassNames={{
                       week: "bg-primary/15 rounded-none",
