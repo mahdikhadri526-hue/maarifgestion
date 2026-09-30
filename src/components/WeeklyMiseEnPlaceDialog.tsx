@@ -139,6 +139,18 @@ export function WeeklyMiseEnPlaceDialog({
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
+        {(() => {
+          const monday = weekToDate(week);
+          const sunday = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + 6);
+          const isLastWeekOfMonth = sunday.getMonth() !== monday.getMonth();
+          return (
+            <p className="text-xs text-muted-foreground text-center">
+              {isLastWeekOfMonth
+                ? "Dernière semaine du mois : saisie à faire le lendemain de la fin du mois."
+                : "Saisie à faire le lundi de chaque semaine."}
+            </p>
+          );
+        })()}
         {loading || stockLoading ? (
           <p className="text-center text-muted-foreground py-6">Chargement...</p>
         ) : (
