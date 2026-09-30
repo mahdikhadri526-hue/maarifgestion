@@ -52,17 +52,15 @@ export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
   const today = todayISO();
   const nouveaux = issues.filter((i) => i.status === "a_traiter");
   // Le compte technique ne voit que les notifications de signalisation
-  // (nouveaux signalements) : retards et refus manager restent côté PDV.
+  // (nouveaux signalements) et les refus manager ; les retards restent côté PDV.
   const retards = allPdvs ? [] : issues.filter((i) => isOverdue(i, today));
-  const openIds = allPdvs ? new Set<string>() : new Set(issues.filter((i) => i.status !== "cloture").map((i) => i.id));
+  const openIds = new Set(issues.filter((i) => i.status !== "cloture").map((i) => i.id));
   const refusSeen = new Set<string>();
-  const refus = allPdvs
-    ? []
-    : refusals.filter((e) => {
-        if (!openIds.has(e.issue_id) || refusSeen.has(e.issue_id)) return false;
-        refusSeen.add(e.issue_id);
-        return true;
-      });
+  const refus = refusals.filter((e) => {
+    if (!openIds.has(e.issue_id) || refusSeen.has(e.issue_id)) return false;
+    refusSeen.add(e.issue_id);
+    return true;
+  });
 
   if (nouveaux.length === 0 && retards.length === 0 && refus.length === 0) return null;
 
@@ -81,10 +79,10 @@ export function TechAlertsCard({ onOpen }: { onOpen: () => void }) {
         </Button>
       </div>
 
-      <div className={`grid ${allPdvs ? "grid-cols-1" : "grid-cols-3"} gap-2 mb-3`}>
+      <div className={`grid ${allPdvs ? "grid-cols-2" : "grid-cols-3"} gap-2 mb-3`}>
         <Stat color="text-orange-600" bg="bg-orange-50 border-orange-200" label="🟠 Signalements à traiter" value={nouveaux.length} />
         {!allPdvs && <Stat color="text-red-600" bg="bg-red-50 border-red-200" label="🔴 Retards de traitement" value={retards.length} />}
-        {!allPdvs && <Stat color="text-purple-700" bg="bg-purple-50 border-purple-200" label="⛔ Refus manager" value={refus.length} />}
+        <Stat color="text-purple-700" bg="bg-purple-50 border-purple-200" label="⛔ Refus manager" value={refus.length} />
       </div>
 
       <ul className="space-y-1.5 text-sm">
