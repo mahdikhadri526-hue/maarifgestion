@@ -241,7 +241,7 @@ export function WeeklyMiseEnPlacePage() {
   }, [levels, restants, search]);
 
   const getRestant = (id: string) => restants[id] ?? 0;
-  const { due, monthEnd: isLastWeekOfMonth } = weeklyEntryDate(week);
+  const { monthEnd: isLastWeekOfMonth } = weeklyEntryDate(week);
   const today = new Date();
   const todayISO = formatISODate(today);
   const currentWeek = weekStartOf(today);
