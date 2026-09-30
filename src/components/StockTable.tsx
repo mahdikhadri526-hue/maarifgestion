@@ -1,5 +1,13 @@
 import { useState, useEffect, useDeferredValue, useMemo, useRef } from "react";
-import { WeeklyMiseEnPlaceDialog } from "@/components/WeeklyMiseEnPlaceDialog";
+import {
+  MACARON_ARTICLES, MACARON_AGG_ID, SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID,
+  NESPRESSO_AGG_ID_CONST, NUTELLA_NESTLE_AGG_ID, THE_AROMATISE_AGG_ID,
+  SIROP_CHOCOLAT_ALI_ID, NUTELLA_ALI_ID, NESTLE_CARAMEL_ALI_ID,
+  SIROP_CARAMEL_WEEKLY_ARTICLE, CHANTILLY_WEEKLY_ARTICLE, AMANDES_WEEKLY_ARTICLE,
+  EXTRA_AGG_IDS, isReadOnlyAggId, DAYS,
+  buildWeeklyAggregateTotals, formatISODate, numericValue, parseISODate, trackingDate,
+  type WeeklyTrackingOrderRecord,
+} from "@/lib/stockWeeklyAggregates";
 import {
   Category,
   UnitType,
@@ -53,26 +61,6 @@ const TARTE_ARTICLES = [
   "Amandes.Top", "Noix.Top", "Tulipes", "Cornet", "Gaufrette",
   "Orange fruits", "Citron fruits", "POMME fruits", "POIRE fruits", "Ananas fruits", "Kiwi fruits",
 ];
-const MACARON_ARTICLES = [
-  "Mac.Chocolat P", "Mac.Pistache P", "Mac.Caramel P", "Mac.Cfé P", "Mac.Mng P", "Mac.Cit P",
-  "Mac.Chocolat N", "Mac.Pistache N", "Mac.Caramel N", "Mac.Cfé N", "Mac.Mng N", "Mac.Cit N",
-];
-const MACARON_AGG_ID = "__macaron_agg__";
-const SIROP_AGG_ID = "__sirop_agg__";
-const CHANTILLY_AGG_ID = "__chantilly_agg__";
-const AMANDES_AGG_ID = "__amandes_agg__";
-const NESPRESSO_AGG_ID_CONST = "__nespresso_agg__";
-const NUTELLA_NESTLE_AGG_ID = "__nutella_nestle_agg__";
-const THE_AROMATISE_AGG_ID = "__the_aromatise_agg__";
-const SIROP_CHOCOLAT_ALI_ID = "ali-9";
-const NUTELLA_ALI_ID = "ali-21";
-const NESTLE_CARAMEL_ALI_ID = "ali-15";
-const SIROP_CARAMEL_WEEKLY_ARTICLE = "Sirop.Crml";
-const CHANTILLY_WEEKLY_ARTICLE = "Crème fraîche (mousse fouettée)";
-const AMANDES_WEEKLY_ARTICLE = "Amd.Crml";
-const EXTRA_AGG_IDS = [SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID, NUTELLA_NESTLE_AGG_ID, THE_AROMATISE_AGG_ID];
-const isReadOnlyAggId = (id: string) =>
-  id === NESPRESSO_AGG_ID_CONST || id === MACARON_AGG_ID || EXTRA_AGG_IDS.includes(id);
 const GLACE_ARTICLES = [
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
   "Parfait", "Fraise", "Framboise", "Orange", "Mangue", "Citron", "Pêche",
@@ -82,47 +70,10 @@ const GLACE_ARTICLES = [
 
 const UNITS: UnitType[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU"];
 const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre", PAQUET: "Paquet", COLIS: "Colis", ROULEAU: "Rouleau" };
-const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
-
-type WeeklyTrackingOrderRecord = {
-  article: string | null;
-  sorties: number | string | null;
-  entrees: number | string | null;
-  stock_initial: number | string | null;
-  day_of_week: string;
-  week_start: string;
-};
-
-function parseISODate(iso: string) {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, (m || 1) - 1, d || 1);
-}
-
 // Arrondit toujours à la valeur supérieure au multiple de 5 (2 → 5, 11 → 15).
 function ceilTo5(n: number) {
   if (!isFinite(n) || n <= 0) return 0;
   return Math.ceil(n / 5) * 5;
-}
-
-function formatISODate(date: Date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function trackingDate(weekStart: string, dayIdx: number) {
-  const date = parseISODate(weekStart);
-  // Les anciennes fiches ont parfois un week_start au dimanche : on les corrige
-  // ici pour que Commande lise toujours les mêmes dates que le suivi hebdo.
-  date.setDate(date.getDate() + dayIdx + (date.getDay() === 0 ? 1 : 0));
-  return formatISODate(date);
-}
-
-function numericValue(value: unknown) {
-  if (value === "" || value == null) return 0;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
 }
 
 // Décale une date ISO de n jours (utilisé pour borner week_start côté serveur).
