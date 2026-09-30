@@ -29,15 +29,25 @@ export function WeeklyMiseEnPlaceDialog({
   open,
   onOpenChange,
   products,
+  onWeekChange,
+  stockLoading,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   products: Array<{ id: string; name: string; stockRestant: number }>;
+  onWeekChange?: (week: string, isCurrent: boolean) => void;
+  stockLoading?: boolean;
 }) {
   const [week, setWeek] = useState(() => weekStartOf(new Date()));
   const [values, setValues] = useState<Record<string, number>>({});
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    onWeekChange?.(week, week === weekStartOf(new Date()));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, week]);
 
   useEffect(() => {
     if (!open) return;
@@ -90,7 +100,7 @@ export function WeeklyMiseEnPlaceDialog({
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>
-        {loading ? (
+        {loading || stockLoading ? (
           <p className="text-center text-muted-foreground py-6">Chargement...</p>
         ) : (
           <div className="rounded-lg border overflow-auto min-h-0 max-w-full">
