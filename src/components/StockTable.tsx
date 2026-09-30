@@ -190,7 +190,7 @@ const monthEndISO = (month: string) => {
   return formatISODate(new Date(year, monthNumber, 0));
 };
 
-export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
+export function StockTable({ variant = "stock", onOpenWeeklyMep }: { variant?: "stock" | "order"; onOpenWeeklyMep?: () => void } = {}) {
   const [category, setCategory] = useState<Category | "all" | "tarte" | "glace" | "nettoyant" | "creme">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
   // Saisie non bloquante : le filtrage de la longue liste suit la frappe sans la figer.
@@ -214,8 +214,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const { can, isAdmin } = useAuth();
   const operatorOptions = useOperators();
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
-  const [mepWeeklyOpen, setMepWeeklyOpen] = useState(false);
-  const mepSavedFilter = useRef<{ mode: FilterMode; start: string; end: string } | null>(null);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustData, setAdjustData] = useState<{
     productId: string;
@@ -1423,8 +1421,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 {showRefCols ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
                 {showRefCols ? "Masquer colonnes Réf." : "Afficher colonnes Réf."}
               </Button>
-              {canViewMep && (
-                <Button size="sm" variant="outline" onClick={() => setMepWeeklyOpen(true)}>
+              {canViewMep && onOpenWeeklyMep && (
+                <Button size="sm" variant="outline" onClick={onOpenWeeklyMep}>
                   <CalendarDays className="h-4 w-4 mr-1" />
                   Mise en place hebdomadaire
                 </Button>
@@ -2081,28 +2079,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         </DialogFooter>
       </DialogContent>
       </Dialog>
-      <WeeklyMiseEnPlaceDialog
-        open={mepWeeklyOpen}
-        onOpenChange={(v) => {
-          if (v) {
-            mepSavedFilter.current = { mode, start, end };
-          } else if (mepSavedFilter.current) {
-            const s = mepSavedFilter.current;
-            setMode(s.mode); setStart(s.start); setEnd(s.end);
-            mepSavedFilter.current = null;
-          }
-          setMepWeeklyOpen(v);
-        }}
-        onWeekChange={(week, isCurrent) => {
-          if (isCurrent) { setMode("all"); return; }
-          const [y, m, d] = week.split("-").map(Number);
-          const e = new Date(y, m - 1, d + 6);
-          const endIso = `${e.getFullYear()}-${String(e.getMonth() + 1).padStart(2, "0")}-${String(e.getDate()).padStart(2, "0")}`;
-          setStart(week); setEnd(endIso); setMode("period" as FilterMode);
-        }}
-        stockLoading={periodLoading}
-        products={filtered.map((l) => ({ id: l.productId, name: l.productName, stockRestant: getRowValues(l).stockRestant }))}
-      />
     </>
   );
 }
