@@ -234,16 +234,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   // Semaine sélectionnée pour la colonne « Stock mise en place » (lundi ISO).
   const [mepWeek, setMepWeek] = useState<string>(() => weekStartOf());
   const { map: mepMap, save: saveMep } = useMiseEnPlace(mepWeek);
-  const mepWeekStartDate = parseISODate(mepWeek);
-  const mepWeekEndDate = (() => { const d = parseISODate(mepWeek); d.setDate(d.getDate() + 6); return d; })();
   const mepInventoryDay = inventoryDayOfWeek(mepWeek);
   // Saisie déverrouillée uniquement le jour du comptage de la semaine affichée.
   const mepEditable = todayISO() === formatISODate(mepInventoryDay);
-  const shiftMepWeek = (days: number) => {
-    const d = parseISODate(mepWeek);
-    d.setDate(d.getDate() + days);
-    setMepWeek(weekStartOf(d));
-  };
   // Jours de comptage : chaque lundi, sauf la semaine qui chevauche la fin du
   // mois — là le comptage se fait le lendemain du dernier jour du mois.
   const isInventoryDay = (d: Date) => {
