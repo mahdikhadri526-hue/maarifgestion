@@ -379,7 +379,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   const canEditStock = can("edit_stock");
   const canEditRemaining = can("edit_remaining_stock") || can("edit_stock");
-  const canViewMep = can("view_mise_en_place");
+  const canViewMep = can("view_mise_en_place") || can("edit_remaining_stock");
 
   // Détails du calcul pour les articles agrégés (GLACE / TOPPINGS / NESPRESSO / MACARON)
   const [detailsOpen, setDetailsOpen] = useState(false);
