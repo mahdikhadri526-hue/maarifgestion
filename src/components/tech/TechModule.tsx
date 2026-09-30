@@ -232,7 +232,6 @@ export function TechModule() {
       </div>
 
       <div className="flex gap-2 flex-wrap text-xs">
-        <Button size="sm" variant={view === "dossiers" && filter === "all" ? "default" : "outline"} onClick={() => { setView("dossiers"); setFilter("all"); }}>Historique</Button>
         <Button size="sm" variant={view === "planning" ? "default" : "outline"} onClick={() => setView(view === "planning" ? "dossiers" : "planning")}>
           <ClipboardList className="h-4 w-4 mr-1" />Planning Ménage & Sécurité
         </Button>
