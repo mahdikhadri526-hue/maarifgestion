@@ -84,7 +84,7 @@ const Index = () => {
     { id: "mouvements" as Tab, label: "Mouvements", icon: PlusCircle, perm: "edit_movements" },
     { id: "historique" as Tab, label: "Historique Mouvements", icon: History, perm: "view_movements" },
     { id: "produit" as Tab, label: "Stock Restant", icon: FileText, perm: "view_reports" },
-    { id: "mep-weekly" as Tab, label: "Mise en place hebdo", icon: CalendarDays, perm: "view_mise_en_place" },
+    { id: "mep-weekly" as Tab, label: "Inventaire hebdo", icon: CalendarDays, perm: "view_mise_en_place" },
     { id: "lots" as Tab, label: "Lots / DLC", icon: Boxes, perm: "view_lots" },
     { id: "requisition" as Tab, label: "Réquisition", icon: ClipboardList, perm: "view_requisitions" },
     { id: "autocontrole" as Tab, label: "Autocontrôle", icon: ClipboardCheck, perm: "view_autocontrol" },
