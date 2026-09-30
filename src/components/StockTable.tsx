@@ -34,7 +34,7 @@ import { fetchAllRows } from "@/lib/supabasePaginate";
 import { cached } from "@/lib/requestCache";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Save, History, Trash2, FileDown, Eye, EyeOff, CalendarDays } from "lucide-react";
+import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
 import { getOperators } from "@/lib/operators";
 import { useOperators } from "@/lib/roster";
 import { toast } from "sonner";
@@ -190,7 +190,7 @@ const monthEndISO = (month: string) => {
   return formatISODate(new Date(year, monthNumber, 0));
 };
 
-export function StockTable({ variant = "stock", onOpenWeeklyMep }: { variant?: "stock" | "order"; onOpenWeeklyMep?: () => void } = {}) {
+export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
   const [category, setCategory] = useState<Category | "all" | "tarte" | "glace" | "nettoyant" | "creme">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
   // Saisie non bloquante : le filtrage de la longue liste suit la frappe sans la figer.
@@ -229,7 +229,6 @@ export function StockTable({ variant = "stock", onOpenWeeklyMep }: { variant?: "
 
   const canEditStock = can("edit_stock");
   const canEditRemaining = can("edit_remaining_stock") || can("edit_stock");
-  const canViewMep = can("view_mise_en_place") || can("edit_remaining_stock");
 
   // Détails du calcul pour les articles agrégés (GLACE / TOPPINGS / NESPRESSO / MACARON)
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -1421,12 +1420,6 @@ export function StockTable({ variant = "stock", onOpenWeeklyMep }: { variant?: "
                 {showRefCols ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
                 {showRefCols ? "Masquer colonnes Réf." : "Afficher colonnes Réf."}
               </Button>
-              {canViewMep && onOpenWeeklyMep && (
-                <Button size="sm" variant="outline" onClick={onOpenWeeklyMep}>
-                  <CalendarDays className="h-4 w-4 mr-1" />
-                  Inventaire hebdomadaire
-                </Button>
-              )}
             </div>
           )}
         </div>
