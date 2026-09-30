@@ -3,7 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { weekStartOf } from "@/lib/miseEnPlaceData";
 import { roundStockQuantity } from "@/lib/stockData";
@@ -95,7 +97,28 @@ export function WeeklyMiseEnPlaceDialog({
           <Button size="sm" variant="outline" onClick={() => setWeek((w) => shiftWeek(w, -1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm font-semibold text-center flex-1">{formatWeekLabel(week)}</span>
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="flex-1 justify-center gap-2 font-semibold">
+                <CalendarDays className="h-4 w-4" />
+                {formatWeekLabel(week)}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar
+                mode="single"
+                selected={weekToDate(week)}
+                defaultMonth={weekToDate(week)}
+                onSelect={(d) => {
+                  if (d) {
+                    setWeek(weekStartOf(d));
+                    setPickerOpen(false);
+                  }
+                }}
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
           <Button size="sm" variant="outline" onClick={() => setWeek((w) => shiftWeek(w, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
