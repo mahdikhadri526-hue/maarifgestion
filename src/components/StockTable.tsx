@@ -1,5 +1,5 @@
 import { useState, useEffect, useDeferredValue, useMemo } from "react";
-import { useMiseEnPlace, MiseEnPlaceInput, MepWeekPicker } from "@/components/MiseEnPlaceCell";
+import { useMiseEnPlace, MiseEnPlaceInput } from "@/components/MiseEnPlaceCell";
 import {
   Category,
   UnitType,
@@ -344,7 +344,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   // Le stock restant courant est la vue principale : elle utilise directement
   // les agrégats rapides. Les commandes conservent leur filtre mensuel.
-  const { map: mepMap, saved: mepSaved, save: saveMep } = useMiseEnPlace();
+  const { map: mepMap, save: saveMep } = useMiseEnPlace();
   const [mode, setMode] = useState<FilterMode>(variant === "stock" ? "all" : "month");
   const [day, setDay] = useState<string>(todayISO());
   const [month, setMonth] = useState<string>(currentMonthISO());
@@ -1770,7 +1770,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         </div>
       ) : (
         <>
-        {canViewMep && <div className="mb-3"><MepWeekPicker /></div>}
         <div className="overflow-x-auto max-w-full">
           <table className="stock-sticky-table text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", overflow: "visible" }}>
             <thead>
@@ -1936,7 +1935,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     <td className="p-3 text-right">
                       <MiseEnPlaceInput
                         value={mepMap[level.productId] ?? 0}
-                        carried={level.productId in mepMap && !mepSaved[level.productId]}
                         onSave={(val) => saveMep(level.productId, val)}
                       />
                     </td>
