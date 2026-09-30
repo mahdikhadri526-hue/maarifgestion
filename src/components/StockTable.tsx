@@ -1,5 +1,5 @@
 import { useState, useEffect, useDeferredValue, useMemo, useRef } from "react";
-import { useMiseEnPlace, MiseEnPlaceInput } from "@/components/MiseEnPlaceCell";
+import { useMiseEnPlace } from "@/components/MiseEnPlaceCell";
 import { WeeklyMiseEnPlaceDialog } from "@/components/WeeklyMiseEnPlaceDialog";
 import {
   Category,
@@ -345,7 +345,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   // Le stock restant courant est la vue principale : elle utilise directement
   // les agrégats rapides. Les commandes conservent leur filtre mensuel.
-  const { map: mepMap, save: saveMep } = useMiseEnPlace();
+  const { map: mepMap } = useMiseEnPlace();
   const [mode, setMode] = useState<FilterMode>(variant === "stock" ? "all" : "month");
   const [day, setDay] = useState<string>(todayISO());
   const [month, setMonth] = useState<string>(currentMonthISO());
