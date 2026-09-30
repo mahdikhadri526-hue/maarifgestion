@@ -615,10 +615,24 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
 }
 
 export function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
-  const managers = useManagers();
+  // Managers créés par le RH (tous PDV confondus), comme dans « Signaler ».
+  const [managers, setManagers] = useState<string[]>([]);
   const [manager, setManager] = useState("");
   const [comment, setComment] = useState("");
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    void (async () => {
+      const { data } = await supabase
+        .from("attendance_agents" as any)
+        .select("full_name")
+        .eq("staff_level", "manager")
+        .eq("active", true);
+      const names = Array.from(new Set(((data ?? []) as any[]).map((r) => r.full_name as string)));
+      names.sort((a, b) => a.localeCompare(b, "fr"));
+      setManagers(names);
+    })();
+  }, []);
 
   const submit = async (ok: boolean) => {
     if (!manager.trim()) return toast({ title: "Manager obligatoire", variant: "destructive" });
@@ -638,10 +652,10 @@ export function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: Tech
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader><DialogTitle>Vérification manager — {issue.equipment}</DialogTitle></DialogHeader>
-        <div className="space-y-3 text-sm">
-          <div className="rounded-md border bg-muted/40 p-2 text-xs">
+      <DialogContent className="max-w-md w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto overflow-x-hidden">
+        <DialogHeader><DialogTitle className="break-words">Vérification manager — {issue.equipment}</DialogTitle></DialogHeader>
+        <div className="space-y-3 text-sm min-w-0">
+          <div className="rounded-md border bg-muted/40 p-2 text-xs break-words">
             <div>Réparé par <b>{issue.tech_validated_by}</b> le {fmtDateTimeFR(issue.tech_validated_at)}</div>
             {issue.action_done && <div>Action : {issue.action_done}</div>}
             {issue.parts_changed && <div>Pièces changées : {issue.parts_changed}</div>}
@@ -651,12 +665,12 @@ export function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: Tech
           </div>
           <div>
             <Label className="text-xs">Manager vérificateur *</Label>
-            <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={manager} onChange={(e) => setManager(e.target.value)}>
+            <select className="w-full max-w-full h-9 rounded-md border bg-background px-2 text-sm" value={manager} onChange={(e) => setManager(e.target.value)}>
               <option value="">— Choisir —</option>
               {managers.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
-          <div><Label className="text-xs">Commentaire</Label><Textarea rows={2} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Obligatoire en cas de refus" /></div>
+          <div><Label className="text-xs">Commentaire</Label><Textarea className="max-w-full" rows={2} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Obligatoire en cas de refus" /></div>
           <p className="text-[11px] text-muted-foreground">Nom, date et heure enregistrés automatiquement. La validation clôture le dossier ; le refus le renvoie « En cours ».</p>
         </div>
         <DialogFooter className="gap-2">
