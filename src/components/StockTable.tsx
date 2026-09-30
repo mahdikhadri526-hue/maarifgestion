@@ -1670,12 +1670,15 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 )}
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties total</th>
 
               </tr>
             </thead>
             <tbody>
               {filtered.map((level) => {
                 const v = getRowValues(level);
+                const stockTotal = (Number(v.stockRestant) || 0) + (mepMap[level.productId] ?? 0);
+                const sortiesTotal = roundStockQuantity((Number(v.stockInitial) || 0) + (Number(v.entrees) || 0) - stockTotal);
                 return (
                 <tr key={level.productId} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                   isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
@@ -1817,6 +1820,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   </td>
                   <td className="p-3 text-right font-mono text-sm font-bold text-primary">
                     {roundStockQuantity((Number(v.stockRestant) || 0) + (mepMap[level.productId] ?? 0))}
+                  </td>
+                  <td className="p-3 text-right font-mono text-sm font-bold">
+                    <span className={sortiesTotal < 0 ? "text-destructive" : "text-accent-foreground"}>
+                      {sortiesTotal}
+                    </span>
                   </td>
                 </tr>
                 );
