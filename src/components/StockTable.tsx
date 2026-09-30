@@ -34,8 +34,12 @@ import { fetchAllRows } from "@/lib/supabasePaginate";
 import { cached } from "@/lib/requestCache";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
+import { Search, Save, History, Trash2, FileDown, Eye, EyeOff, CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMiseEnPlace, MiseEnPlaceInput } from "@/components/MiseEnPlaceCell";
+import { weekStartOf, inventoryDayOfWeek } from "@/lib/miseEnPlaceData";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { fr } from "date-fns/locale";
 import { getOperators } from "@/lib/operators";
 import { useOperators } from "@/lib/roster";
 import { toast } from "sonner";
@@ -230,7 +234,17 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   const canEditStock = can("edit_stock");
   const canEditRemaining = can("edit_remaining_stock") || can("edit_stock");
-  const { map: mepMap, save: saveMep } = useMiseEnPlace();
+  // Semaine sélectionnée pour la colonne « Stock mise en place » (lundi ISO).
+  const [mepWeek, setMepWeek] = useState<string>(() => weekStartOf());
+  const { map: mepMap, save: saveMep } = useMiseEnPlace(mepWeek);
+  const mepWeekStartDate = parseISODate(mepWeek);
+  const mepWeekEndDate = (() => { const d = parseISODate(mepWeek); d.setDate(d.getDate() + 6); return d; })();
+  const mepInventoryDay = inventoryDayOfWeek(mepWeek);
+  const shiftMepWeek = (days: number) => {
+    const d = parseISODate(mepWeek);
+    d.setDate(d.getDate() + days);
+    setMepWeek(weekStartOf(d));
+  };
 
   // Détails du calcul pour les articles agrégés (GLACE / TOPPINGS / NESPRESSO / MACARON)
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -1422,6 +1436,53 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 {showRefCols ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
                 {showRefCols ? "Masquer colonnes Réf." : "Afficher colonnes Réf."}
               </Button>
+            </div>
+          )}
+          {variant !== "order" && (
+            <div className="flex flex-wrap items-center gap-2 mt-1 rounded-md border bg-muted/30 px-2 py-1.5">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place — semaine :</span>
+              <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => shiftMepWeek(-7)} aria-label="Semaine précédente">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="justify-start text-left font-normal">
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    {mepWeekStartDate.toLocaleDateString("fr-FR")} → {mepWeekEndDate.toLocaleDateString("fr-FR")}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    locale={fr}
+                    weekStartsOn={1}
+                    selected={mepWeekStartDate}
+                    onSelect={(d) => { if (d) setMepWeek(weekStartOf(d)); }}
+                    defaultMonth={mepWeekStartDate}
+                    modifiers={{
+                      week: { from: mepWeekStartDate, to: mepWeekEndDate },
+                      inventory: mepInventoryDay,
+                    }}
+                    modifiersClassNames={{
+                      week: "bg-primary/15 rounded-none",
+                      inventory: "bg-primary text-primary-foreground font-bold rounded-full",
+                    }}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                  <p className="px-3 pb-3 text-xs text-muted-foreground">
+                    Jour d'inventaire : {mepInventoryDay.toLocaleDateString("fr-FR")}
+                  </p>
+                </PopoverContent>
+              </Popover>
+              <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => shiftMepWeek(7)} aria-label="Semaine suivante">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              {mepWeek !== weekStartOf() && (
+                <Button size="sm" variant="ghost" onClick={() => setMepWeek(weekStartOf())}>
+                  Semaine actuelle
+                </Button>
+              )}
             </div>
           )}
         </div>

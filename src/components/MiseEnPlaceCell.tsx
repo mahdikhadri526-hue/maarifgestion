@@ -1,27 +1,42 @@
 import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { getMiseEnPlaceStocks, setMiseEnPlaceStock } from "@/lib/miseEnPlaceData";
+import {
+  getMiseEnPlaceStocks,
+  setMiseEnPlaceStock,
+  getMiseEnPlaceStocksForWeek,
+  setMiseEnPlaceStockForWeek,
+  weekStartOf,
+} from "@/lib/miseEnPlaceData";
 
-export function useMiseEnPlace() {
+/**
+ * Charge les valeurs de mise en place.
+ * - Semaine courante (ou aucune) : valeur unique historique (comportement d'origine).
+ * - Autre semaine : valeurs enregistrées pour cette semaine (week_start = lundi).
+ */
+export function useMiseEnPlace(weekStart?: string) {
   const [map, setMap] = useState<Record<string, number>>({});
+  const currentWeek = weekStartOf();
+  const isCurrent = !weekStart || weekStart === currentWeek;
 
   useEffect(() => {
     let cancelled = false;
-    getMiseEnPlaceStocks()
+    const loader = isCurrent ? getMiseEnPlaceStocks() : getMiseEnPlaceStocksForWeek(weekStart!);
+    loader
       .then((r) => { if (!cancelled) setMap(r); })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, []);
+  }, [weekStart, isCurrent]);
 
   const save = useCallback(async (productId: string, value: number) => {
     setMap((prev) => ({ ...prev, [productId]: value }));
     try {
-      await setMiseEnPlaceStock(productId, value);
+      if (isCurrent) await setMiseEnPlaceStock(productId, value);
+      else await setMiseEnPlaceStockForWeek(productId, value, weekStart!);
     } catch (e: any) {
       toast.error(e?.message || "Enregistrement impossible");
     }
-  }, []);
+  }, [isCurrent, weekStart]);
 
   return { map, save };
 }
