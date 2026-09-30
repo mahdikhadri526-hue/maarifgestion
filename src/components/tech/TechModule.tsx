@@ -673,10 +673,10 @@ export function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: Tech
           <div><Label className="text-xs">Commentaire</Label><Textarea className="max-w-full" rows={2} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Obligatoire en cas de refus" /></div>
           <p className="text-[11px] text-muted-foreground">Nom, date et heure enregistrés automatiquement. La validation clôture le dossier ; le refus le renvoie « En cours ».</p>
         </div>
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={onClose} disabled={saving}>Annuler</Button>
-          <Button variant="destructive" onClick={() => void submit(false)} disabled={saving}>Ne fonctionne pas</Button>
-          <Button onClick={() => void submit(true)} disabled={saving}>{saving ? "…" : "Fonctionne correctement — Clôturer"}</Button>
+        <DialogFooter className="flex-col gap-2 sm:flex-col">
+          <Button className="w-full" onClick={() => void submit(true)} disabled={saving}>{saving ? "…" : "Fonctionne correctement — Clôturer"}</Button>
+          <Button className="w-full" variant="destructive" onClick={() => void submit(false)} disabled={saving}>Ne fonctionne pas</Button>
+          <Button className="w-full" variant="outline" onClick={onClose} disabled={saving}>Annuler</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
