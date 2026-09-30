@@ -216,7 +216,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const { can, isAdmin } = useAuth();
   const operatorOptions = useOperators();
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
-  const [showMepCols, setShowMepCols] = useState<boolean>(true);
+  const [showMepCols, setShowMepCols] = useState<boolean>(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustData, setAdjustData] = useState<{
     productId: string;
