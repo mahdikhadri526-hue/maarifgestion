@@ -1174,6 +1174,44 @@ export type Database = {
           },
         ]
       }
+      mise_en_place_weekly: {
+        Row: {
+          created_at: string
+          id: string
+          pdv_id: string
+          product_id: string
+          quantity: number
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          pdv_id: string
+          product_id: string
+          quantity?: number
+          updated_at?: string
+          week_start?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          pdv_id?: string
+          product_id?: string
+          quantity?: number
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "mise_en_place_weekly_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_placed_products: {
         Row: {
           marked_at: string
