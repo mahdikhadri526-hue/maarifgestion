@@ -240,6 +240,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const mepWeekStartDate = parseISODate(mepWeek);
   const mepWeekEndDate = (() => { const d = parseISODate(mepWeek); d.setDate(d.getDate() + 6); return d; })();
   const mepInventoryDay = inventoryDayOfWeek(mepWeek);
+  // Saisie déverrouillée uniquement le jour du comptage de la semaine affichée.
+  const mepEditable = todayISO() === formatISODate(mepInventoryDay);
   const shiftMepWeek = (days: number) => {
     const d = parseISODate(mepWeek);
     d.setDate(d.getDate() + days);
@@ -1866,7 +1868,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     </td>
                   )}
                   <td className="p-3 text-right font-mono text-sm">
-                    {canEditRemaining && !isReadOnlyAggId(level.productId) ? (
+                    {canEditRemaining && mepEditable && !isReadOnlyAggId(level.productId) ? (
                       <MiseEnPlaceInput
                         value={mepMap[level.productId] ?? 0}
                         onSave={(n) => saveMep(level.productId, n)}
