@@ -287,7 +287,6 @@ export function WeeklyMiseEnPlacePage() {
                 <Calendar
                   mode="single"
                   weekStartsOn={1}
-                  showWeekNumber
                   selected={weekToDate(week)}
                   defaultMonth={weekToDate(week)}
                   modifiers={{
