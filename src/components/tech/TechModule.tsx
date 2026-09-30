@@ -336,7 +336,7 @@ export function TechModule() {
                             {i.action_done && <div>Action réalisée : {i.action_done}</div>}
                             {i.parts_changed && <div>Pièces changées : {i.parts_changed}</div>}
                             {(i.parts_price != null || i.service_price != null) && (
-                              <div>Coûts : pièces {i.parts_price != null ? `${i.parts_price} DH` : "—"} · prestation {i.service_price != null ? `${i.service_price} DH` : "—"}</div>
+                              <div>Coûts : pièces {i.parts_price != null ? `${i.parts_price} DH` : "—"} · prestation {i.service_price != null ? `${i.service_price} DH` : "—"} · total {formatIssueTotal(i)}{i.parts_price != null || i.service_price != null ? " DH" : ""}</div>
                             )}
                             {i.tech_comment && <div>Commentaire : {i.tech_comment}</div>}
                             {techRepairPhotos(i).length > 0 && (
@@ -387,6 +387,14 @@ export function TechModule() {
       </Dialog>
     </div>
   );
+}
+
+// Coût total réparation d'une fiche : prix des pièces + prix de la prestation.
+function formatIssueTotal(i: { parts_price: number | null; service_price: number | null }): string {
+  const p = i.parts_price != null ? Number(i.parts_price) : null;
+  const s = i.service_price != null ? Number(i.service_price) : null;
+  if (p == null && s == null) return "—";
+  return `${((p ?? 0) + (s ?? 0)).toFixed(2)}`;
 }
 
 function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
@@ -490,6 +498,17 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
   const [parts, setParts] = useState(issue.parts_changed ?? "");
   const [partsPrice, setPartsPrice] = useState(issue.parts_price != null ? String(issue.parts_price) : "");
   const [servicePrice, setServicePrice] = useState(issue.service_price != null ? String(issue.service_price) : "");
+  // Coût total réparation calculé automatiquement : prix des pièces + prix de la prestation.
+  const totalCost = useMemo(() => {
+    const p = partsPrice.trim() ? Number(partsPrice.replace(",", ".")) : null;
+    const s = servicePrice.trim() ? Number(servicePrice.replace(",", ".")) : null;
+    const pValid = p != null && !Number.isNaN(p);
+    const sValid = s != null && !Number.isNaN(s);
+    if (pValid && sValid) return p! + s!;
+    if (pValid) return p!;
+    if (sValid) return s!;
+    return null;
+  }, [partsPrice, servicePrice]);
   const [comment, setComment] = useState(issue.tech_comment ?? "");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 16));
   const [photos, setPhotos] = useState<string[]>(techRepairPhotos(issue));
@@ -564,6 +583,11 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
             <div><Label className="text-xs">Prix des pièces (DH)</Label><Input type="number" min="0" step="0.01" inputMode="decimal" value={partsPrice} onChange={(e) => setPartsPrice(e.target.value)} placeholder="0.00" /></div>
             <div><Label className="text-xs">Prix de la prestation (DH)</Label><Input type="number" min="0" step="0.01" inputMode="decimal" value={servicePrice} onChange={(e) => setServicePrice(e.target.value)} placeholder="0.00" /></div>
           </div>
+          <div>
+            <Label className="text-xs">Coût total réparation (DH)</Label>
+            <Input readOnly value={totalCost != null ? `${totalCost.toFixed(2)} DH` : "—"} className="font-semibold bg-muted" />
+            <p className="text-[10px] text-muted-foreground mt-1">Calculé automatiquement : prix des pièces + prix de la prestation.</p>
+          </div>
           <div><Label className="text-xs">Commentaire du responsable technique</Label><Textarea rows={2} value={comment} onChange={(e) => setComment(e.target.value)} /></div>
           <div>
             <Label className="text-xs flex items-center gap-1"><Camera className="h-3.5 w-3.5" />Photo(s) après réparation <span className="font-normal text-muted-foreground">(facultatif)</span></Label>
@@ -622,7 +646,7 @@ export function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: Tech
             {issue.action_done && <div>Action : {issue.action_done}</div>}
             {issue.parts_changed && <div>Pièces changées : {issue.parts_changed}</div>}
             {(issue.parts_price != null || issue.service_price != null) && (
-              <div>Coûts : pièces {issue.parts_price != null ? `${issue.parts_price} DH` : "—"} · prestation {issue.service_price != null ? `${issue.service_price} DH` : "—"}</div>
+              <div>Coûts : pièces {issue.parts_price != null ? `${issue.parts_price} DH` : "—"} · prestation {issue.service_price != null ? `${issue.service_price} DH` : "—"} · total {formatIssueTotal(issue)}{issue.parts_price != null || issue.service_price != null ? " DH" : ""}</div>
             )}
           </div>
           <div>
