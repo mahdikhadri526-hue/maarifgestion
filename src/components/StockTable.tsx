@@ -1448,7 +1448,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <PopoverTrigger asChild>
                   <Button variant="outline" size="sm" className="justify-start text-left font-normal">
                     <CalendarIcon className="h-4 w-4 mr-2" />
-                    {formatDateFR(mepWeekStartDate)} → {formatDateFR(mepWeekEndDate)}
+                    {mepWeekStartDate.toLocaleDateString("fr-FR")} → {mepWeekEndDate.toLocaleDateString("fr-FR")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -1471,7 +1471,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     className={cn("p-3 pointer-events-auto")}
                   />
                   <p className="px-3 pb-3 text-xs text-muted-foreground">
-                    Jour d'inventaire : {formatDateFR(mepInventoryDay)}
+                    Jour d'inventaire : {mepInventoryDay.toLocaleDateString("fr-FR")}
                   </p>
                 </PopoverContent>
               </Popover>
