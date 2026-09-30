@@ -63,7 +63,7 @@ function AllProductsSummary({
   const [loading, setLoading] = useState(true);
   const { map: mepMap, save: saveMep } = useMiseEnPlace();
   const { can } = useAuth();
-  const canViewMep = can("view_mise_en_place");
+  const canViewMep = can("view_mise_en_place") || can("edit_remaining_stock");
 
   useEffect(() => {
     let cancelled = false;
@@ -184,7 +184,7 @@ function SingleProductHistory({
   const product = products.find((p) => p.id === productId);
   const { map: mepMap, save: saveMep } = useMiseEnPlace();
   const { can } = useAuth();
-  const canViewMep = can("view_mise_en_place");
+  const canViewMep = can("view_mise_en_place") || can("edit_remaining_stock");
 
   if (loading) return <p className="text-center text-muted-foreground py-8">Chargement...</p>;
 
