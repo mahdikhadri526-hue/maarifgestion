@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Bell, Camera, CheckCircle2, ClipboardList, Plus, Repeat, Trash2, Wrench } from "lucide-react";
+import { AlertTriangle, Bell, Camera, CheckCircle2, ClipboardList, Plus, Repeat, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,6 @@ import {
   isManagerRefused,
   awaitingManager,
   daysToDeadline,
-  deleteTechIssue,
   describeEvent,
   fmtDateTimeFR,
   getManagerRefusals,
