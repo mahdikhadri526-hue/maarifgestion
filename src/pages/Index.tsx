@@ -34,7 +34,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { KioskToggle } from "@/components/KioskToggle";
 
-type Tab = "dashboard" | "rh" | "planning" | "stock-initial" | "mouvements" | "historique" | "produit" | "mep-weekly" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "pep" | "tech" | "pointage";
+type Tab = "dashboard" | "rh" | "planning" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "pep" | "tech" | "pointage";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
