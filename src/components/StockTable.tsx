@@ -1801,9 +1801,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 {showRefCols && (
                   <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Réf.</th>
                 )}
-                {canViewMep && (
-                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
-                )}
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total</th>
 
               </tr>
@@ -1938,14 +1935,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
                         return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
                       })()}
-                    </td>
-                  )}
-                  {canViewMep && (
-                    <td className="p-3 text-right">
-                      <MiseEnPlaceInput
-                        value={mepMap[level.productId] ?? 0}
-                        onSave={(val) => saveMep(level.productId, val)}
-                      />
                     </td>
                   )}
                   <td className="p-3 text-right font-mono text-sm font-bold text-primary">
