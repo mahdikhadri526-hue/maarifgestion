@@ -1,5 +1,6 @@
 import { useState, useEffect, useDeferredValue, useMemo } from "react";
 import { useMiseEnPlace, MiseEnPlaceInput } from "@/components/MiseEnPlaceCell";
+import { WeeklyMiseEnPlaceDialog } from "@/components/WeeklyMiseEnPlaceDialog";
 import {
   Category,
   UnitType,
@@ -26,7 +27,7 @@ import { fetchAllRows } from "@/lib/supabasePaginate";
 import { cached } from "@/lib/requestCache";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
+import { Search, Save, History, Trash2, FileDown, Eye, EyeOff, CalendarDays } from "lucide-react";
 import { getOperators } from "@/lib/operators";
 import { useOperators } from "@/lib/roster";
 import { toast } from "sonner";
@@ -361,6 +362,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const { can, isAdmin } = useAuth();
   const operatorOptions = useOperators();
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
+  const [mepWeeklyOpen, setMepWeeklyOpen] = useState(false);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustData, setAdjustData] = useState<{
     productId: string;
@@ -1568,6 +1570,12 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 {showRefCols ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
                 {showRefCols ? "Masquer colonnes Réf." : "Afficher colonnes Réf."}
               </Button>
+              {canViewMep && (
+                <Button size="sm" variant="outline" onClick={() => setMepWeeklyOpen(true)}>
+                  <CalendarDays className="h-4 w-4 mr-1" />
+                  Mise en place hebdomadaire
+                </Button>
+              )}
             </div>
           )}
         </div>
