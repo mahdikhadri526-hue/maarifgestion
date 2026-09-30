@@ -44,6 +44,7 @@ export function WeeklyMiseEnPlaceDialog({
   const [values, setValues] = useState<Record<string, number>>({});
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
