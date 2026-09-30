@@ -94,6 +94,9 @@ export function PepRepairStatus({ refreshKey = 0 }: { refreshKey?: number }) {
                   Réparé par {i.tech_validated_by ?? "—"} le {fmtDateTimeFR(i.tech_validated_at)}
                   {i.action_done ? ` · ${i.action_done}` : ""}
                 </div>
+                {(i.parts_price != null || i.service_price != null) && (
+                  <div className="text-[10px]">Coûts : pièces {i.parts_price != null ? `${i.parts_price} DH` : "—"} · prestation {i.service_price != null ? `${i.service_price} DH` : "—"} · total {formatIssueTotal(i)} DH</div>
+                )}
               </div>
               <Button size="sm" onClick={() => setValidating(i)}>Vérifier le matériel</Button>
             </div>
