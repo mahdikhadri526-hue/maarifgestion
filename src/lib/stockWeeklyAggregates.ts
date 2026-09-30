@@ -1,5 +1,5 @@
 // Helpers partagés entre le tableau « Stock restant » (StockTable) et la page
-// « Mise en place hebdomadaire » (WeeklyMiseEnPlacePage) : mêmes constantes,
+// Agrégats hebdomadaires partagés (StockTable) : mêmes constantes,
 // même calcul d'agrégats, pour que les deux vues restent cohérentes.
 import { roundStockQuantity } from "@/lib/stockData";
 
