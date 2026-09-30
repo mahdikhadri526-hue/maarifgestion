@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { weekStartOf } from "@/lib/miseEnPlaceData";
+import { roundStockQuantity } from "@/lib/stockData";
 import { getWeeklyMep, setWeeklyMep } from "@/lib/weeklyMiseEnPlaceData";
 
 function shiftWeek(week: string, deltaWeeks: number): string {
@@ -31,7 +32,7 @@ export function WeeklyMiseEnPlaceDialog({
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
-  products: Array<{ id: string; name: string }>;
+  products: Array<{ id: string; name: string; stockRestant: number }>;
 }) {
   const [week, setWeek] = useState(() => weekStartOf(new Date()));
   const [values, setValues] = useState<Record<string, number>>({});
@@ -73,11 +74,11 @@ export function WeeklyMiseEnPlaceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Mise en place hebdomadaire</DialogTitle>
           <DialogDescription>
-            Une valeur par produit et par semaine. Si la semaine n'a pas encore de saisie, la dernière valeur connue est reprise.
+            La mise en place est saisie par semaine ; le stock restant est affiché sans être modifié.
           </DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-between gap-2">
@@ -92,12 +93,14 @@ export function WeeklyMiseEnPlaceDialog({
         {loading ? (
           <p className="text-center text-muted-foreground py-6">Chargement...</p>
         ) : (
-          <div className="rounded-lg border overflow-x-auto max-w-full">
-            <table className="w-full text-sm">
+          <div className="rounded-lg border overflow-auto min-h-0 max-w-full">
+            <table className="w-full min-w-[650px] text-sm">
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
-                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valeur</th>
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock restant</th>
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total</th>
                   <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Saisie</th>
                 </tr>
               </thead>
@@ -105,8 +108,12 @@ export function WeeklyMiseEnPlaceDialog({
                 {products.map((p) => (
                   <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3 text-sm font-medium">{p.name}</td>
+                    <td className="p-3 text-right font-mono">{roundStockQuantity(p.stockRestant)}</td>
                     <td className="p-3 text-right">
                       <WeeklyMepInput value={values[p.id] ?? 0} onSave={(v) => save(p.id, v)} />
+                    </td>
+                    <td className="p-3 text-right font-mono font-semibold text-primary">
+                      {roundStockQuantity(p.stockRestant + (values[p.id] ?? 0))}
                     </td>
                     <td className="p-3 text-right">
                       {saved[p.id] ? (
