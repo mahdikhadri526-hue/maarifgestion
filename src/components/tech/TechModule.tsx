@@ -638,7 +638,7 @@ export function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: Tech
             {issue.action_done && <div>Action : {issue.action_done}</div>}
             {issue.parts_changed && <div>Pièces changées : {issue.parts_changed}</div>}
             {(issue.parts_price != null || issue.service_price != null) && (
-              <div>Coûts : pièces {issue.parts_price != null ? `${issue.parts_price} DH` : "—"} · prestation {issue.service_price != null ? `${issue.service_price} DH` : "—"}</div>
+              <div>Coûts : pièces {issue.parts_price != null ? `${issue.parts_price} DH` : "—"} · prestation {issue.service_price != null ? `${issue.service_price} DH` : "—"} · total {formatIssueTotal(issue)}{issue.parts_price != null || issue.service_price != null ? " DH" : ""}</div>
             )}
           </div>
           <div>
