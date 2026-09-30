@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Bell, Camera, CheckCircle2, ClipboardList, History, Plus, Repeat, Trash2, Wrench } from "lucide-react";
+import { AlertTriangle, Bell, Camera, CheckCircle2, ClipboardList, Plus, Repeat, Trash2, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -70,7 +70,6 @@ export function TechModule() {
   const [reportOpen, setReportOpen] = useState(false);
   const [editing, setEditing] = useState<TechIssue | null>(null);
   const [repairing, setRepairing] = useState<TechIssue | null>(null);
-  const [historyOf, setHistoryOf] = useState<TechIssue | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const today = todayISO();
   // Planning Ménage & Sécurité : établi par le responsable technique.
@@ -365,7 +364,6 @@ export function TechModule() {
                     {/* Le bouton « Suivi » est masqué : la saisie se fait via
                         « Prendre en charge », « Valider la réparation » et les
                         validations du manager. */}
-                    <Button size="sm" variant="ghost" onClick={() => setHistoryOf(i)}><History className="h-4 w-4 mr-1" />Historique</Button>
                     {canManage && (
                       <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => {
                         if (!confirm("Supprimer ce signalement ?")) return;
@@ -385,8 +383,6 @@ export function TechModule() {
       {editing && <FollowUpDialog issue={editing} onClose={() => setEditing(null)} onSaved={load} />}
       {repairing && <RepairDialog issue={repairing} onClose={() => setRepairing(null)} onSaved={load} />}
       
-      {historyOf && <HistoryDialog issue={historyOf} onClose={() => setHistoryOf(null)} />}
-
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Photo</DialogTitle></DialogHeader>
