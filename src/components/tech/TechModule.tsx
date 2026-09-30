@@ -490,6 +490,17 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
   const [parts, setParts] = useState(issue.parts_changed ?? "");
   const [partsPrice, setPartsPrice] = useState(issue.parts_price != null ? String(issue.parts_price) : "");
   const [servicePrice, setServicePrice] = useState(issue.service_price != null ? String(issue.service_price) : "");
+  // Coût total réparation calculé automatiquement : prix des pièces + prix de la prestation.
+  const totalCost = useMemo(() => {
+    const p = partsPrice.trim() ? Number(partsPrice.replace(",", ".")) : null;
+    const s = servicePrice.trim() ? Number(servicePrice.replace(",", ".")) : null;
+    const pValid = p != null && !Number.isNaN(p);
+    const sValid = s != null && !Number.isNaN(s);
+    if (pValid && sValid) return p! + s!;
+    if (pValid) return p!;
+    if (sValid) return s!;
+    return null;
+  }, [partsPrice, servicePrice]);
   const [comment, setComment] = useState(issue.tech_comment ?? "");
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 16));
   const [photos, setPhotos] = useState<string[]>(techRepairPhotos(issue));
