@@ -1424,7 +1424,7 @@ export function StockTable({ variant = "stock", onOpenWeeklyMep }: { variant?: "
               {canViewMep && onOpenWeeklyMep && (
                 <Button size="sm" variant="outline" onClick={onOpenWeeklyMep}>
                   <CalendarDays className="h-4 w-4 mr-1" />
-                  Mise en place hebdomadaire
+                  Inventaire hebdomadaire
                 </Button>
               )}
             </div>

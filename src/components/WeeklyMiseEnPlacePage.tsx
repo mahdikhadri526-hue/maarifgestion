@@ -265,7 +265,7 @@ export function WeeklyMiseEnPlacePage() {
       )}
       <div className="flex flex-col gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Mise en place hebdomadaire</h2>
+          <h2 className="text-lg font-semibold">Inventaire hebdomadaire</h2>
           <p className="text-xs text-muted-foreground">
             La mise en place est saisie par semaine ; le stock restant est affiché sans être modifié.
           </p>
