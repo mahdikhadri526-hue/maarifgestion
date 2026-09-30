@@ -665,12 +665,12 @@ export function ManagerValidateDialog({ issue, onClose, onSaved }: { issue: Tech
           </div>
           <div>
             <Label className="text-xs">Manager vérificateur *</Label>
-            <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={manager} onChange={(e) => setManager(e.target.value)}>
+            <select className="w-full max-w-full h-9 rounded-md border bg-background px-2 text-sm" value={manager} onChange={(e) => setManager(e.target.value)}>
               <option value="">— Choisir —</option>
               {managers.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
-          <div><Label className="text-xs">Commentaire</Label><Textarea rows={2} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Obligatoire en cas de refus" /></div>
+          <div><Label className="text-xs">Commentaire</Label><Textarea className="max-w-full" rows={2} value={comment} onChange={(e) => setComment(e.target.value)} placeholder="Obligatoire en cas de refus" /></div>
           <p className="text-[11px] text-muted-foreground">Nom, date et heure enregistrés automatiquement. La validation clôture le dossier ; le refus le renvoie « En cours ».</p>
         </div>
         <DialogFooter className="gap-2">
