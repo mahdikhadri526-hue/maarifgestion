@@ -216,6 +216,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const { can, isAdmin } = useAuth();
   const operatorOptions = useOperators();
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
+  const [showMepCols, setShowMepCols] = useState<boolean>(true);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustData, setAdjustData] = useState<{
     productId: string;
@@ -1431,6 +1432,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 {showRefCols ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
                 {showRefCols ? "Masquer colonnes Réf." : "Afficher colonnes Réf."}
               </Button>
+              <Button size="sm" variant="outline" onClick={() => setShowMepCols((s) => !s)}>
+                {showMepCols ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
+                {showMepCols ? "Masquer mise en place / total" : "Afficher mise en place / total"}
+              </Button>
             </div>
           )}
           {variant !== "order" && (
@@ -1668,9 +1673,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 {showRefCols && (
                   <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Réf.</th>
                 )}
+                {showMepCols && (
+                  <>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties total</th>
+                  </>
+                )}
 
               </tr>
             </thead>
@@ -1808,6 +1817,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       })()}
                     </td>
                   )}
+                  {showMepCols && (
+                    <>
                   <td className="p-3 text-right font-mono text-sm">
                     {canEditRemaining && mepEditable && !isReadOnlyAggId(level.productId) ? (
                       <MiseEnPlaceInput
@@ -1826,6 +1837,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       {sortiesTotal}
                     </span>
                   </td>
+                    </>
+                  )}
                 </tr>
                 );
               })}
