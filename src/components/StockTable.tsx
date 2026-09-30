@@ -34,8 +34,12 @@ import { fetchAllRows } from "@/lib/supabasePaginate";
 import { cached } from "@/lib/requestCache";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
+import { Search, Save, History, Trash2, FileDown, Eye, EyeOff, CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { useMiseEnPlace, MiseEnPlaceInput } from "@/components/MiseEnPlaceCell";
+import { weekStartOf, inventoryDayOfWeek } from "@/lib/miseEnPlaceData";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { fr } from "date-fns/locale";
 import { getOperators } from "@/lib/operators";
 import { useOperators } from "@/lib/roster";
 import { toast } from "sonner";
@@ -230,7 +234,17 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   const canEditStock = can("edit_stock");
   const canEditRemaining = can("edit_remaining_stock") || can("edit_stock");
-  const { map: mepMap, save: saveMep } = useMiseEnPlace();
+  // Semaine sélectionnée pour la colonne « Stock mise en place » (lundi ISO).
+  const [mepWeek, setMepWeek] = useState<string>(() => weekStartOf());
+  const { map: mepMap, save: saveMep } = useMiseEnPlace(mepWeek);
+  const mepWeekStartDate = parseISODate(mepWeek);
+  const mepWeekEndDate = (() => { const d = parseISODate(mepWeek); d.setDate(d.getDate() + 6); return d; })();
+  const mepInventoryDay = inventoryDayOfWeek(mepWeek);
+  const shiftMepWeek = (days: number) => {
+    const d = parseISODate(mepWeek);
+    d.setDate(d.getDate() + days);
+    setMepWeek(weekStartOf(d));
+  };
 
   // Détails du calcul pour les articles agrégés (GLACE / TOPPINGS / NESPRESSO / MACARON)
   const [detailsOpen, setDetailsOpen] = useState(false);
