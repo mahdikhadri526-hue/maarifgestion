@@ -14,7 +14,7 @@ import {
   isOverdue,
 } from "@/lib/techData";
 import { formatDateFR } from "@/lib/utils";
-import { ManagerValidateDialog } from "./TechModule";
+import { ManagerValidateDialog, formatIssueTotal } from "./TechModule";
 
 const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 };
 
@@ -94,6 +94,9 @@ export function PepRepairStatus({ refreshKey = 0 }: { refreshKey?: number }) {
                   Réparé par {i.tech_validated_by ?? "—"} le {fmtDateTimeFR(i.tech_validated_at)}
                   {i.action_done ? ` · ${i.action_done}` : ""}
                 </div>
+                {(i.parts_price != null || i.service_price != null) && (
+                  <div className="text-[10px]">Coûts : pièces {i.parts_price != null ? `${i.parts_price} DH` : "—"} · prestation {i.service_price != null ? `${i.service_price} DH` : "—"} · total {formatIssueTotal(i)} DH</div>
+                )}
               </div>
               <Button size="sm" onClick={() => setValidating(i)}>Vérifier le matériel</Button>
             </div>
@@ -145,6 +148,9 @@ export function PepRepairStatus({ refreshKey = 0 }: { refreshKey?: number }) {
                       <div>
                         <div className="truncate" title={i.action_done ?? ""}>{i.action_done}</div>
                         <div className="text-[10px] text-muted-foreground">{i.tech_validated_by} · {fmtDateTimeFR(i.tech_validated_at)}</div>
+                        {(i.parts_price != null || i.service_price != null) && (
+                          <div className="text-[10px]">Pièces {i.parts_price != null ? `${i.parts_price} DH` : "—"} · Prestation {i.service_price != null ? `${i.service_price} DH` : "—"} · Total {formatIssueTotal(i)} DH</div>
+                        )}
                       </div>
                     ) : "—"}
                   </td>

@@ -390,7 +390,7 @@ export function TechModule() {
 }
 
 // Coût total réparation d'une fiche : prix des pièces + prix de la prestation.
-function formatIssueTotal(i: { parts_price: number | null; service_price: number | null }): string {
+export function formatIssueTotal(i: { parts_price: number | null; service_price: number | null }): string {
   const p = i.parts_price != null ? Number(i.parts_price) : null;
   const s = i.service_price != null ? Number(i.service_price) : null;
   if (p == null && s == null) return "—";
