@@ -1,5 +1,4 @@
 import { useState, useEffect, useDeferredValue, useMemo, useRef } from "react";
-import { useMiseEnPlace } from "@/components/MiseEnPlaceCell";
 import { WeeklyMiseEnPlaceDialog } from "@/components/WeeklyMiseEnPlaceDialog";
 import {
   Category,
