@@ -564,6 +564,11 @@ function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: 
             <div><Label className="text-xs">Prix des pièces (DH)</Label><Input type="number" min="0" step="0.01" inputMode="decimal" value={partsPrice} onChange={(e) => setPartsPrice(e.target.value)} placeholder="0.00" /></div>
             <div><Label className="text-xs">Prix de la prestation (DH)</Label><Input type="number" min="0" step="0.01" inputMode="decimal" value={servicePrice} onChange={(e) => setServicePrice(e.target.value)} placeholder="0.00" /></div>
           </div>
+          <div>
+            <Label className="text-xs">Coût total réparation (DH)</Label>
+            <Input readOnly value={totalCost != null ? `${totalCost.toFixed(2)} DH` : "—"} className="font-semibold bg-muted" />
+            <p className="text-[10px] text-muted-foreground mt-1">Calculé automatiquement : prix des pièces + prix de la prestation.</p>
+          </div>
           <div><Label className="text-xs">Commentaire du responsable technique</Label><Textarea rows={2} value={comment} onChange={(e) => setComment(e.target.value)} /></div>
           <div>
             <Label className="text-xs flex items-center gap-1"><Camera className="h-3.5 w-3.5" />Photo(s) après réparation <span className="font-normal text-muted-foreground">(facultatif)</span></Label>
