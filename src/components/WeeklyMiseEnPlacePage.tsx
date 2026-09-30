@@ -355,7 +355,6 @@ export function WeeklyMiseEnPlacePage() {
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock restant</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Saisie</th>
               </tr>
             </thead>
             <tbody>
@@ -370,15 +369,6 @@ export function WeeklyMiseEnPlacePage() {
                     </td>
                     <td className="p-3 text-right font-mono font-semibold text-primary">
                       {roundStockQuantity(restant + (values[p.id] ?? 0))}
-                    </td>
-                    <td className="p-3 text-right">
-                      {saved[p.id] ? (
-                        <Badge variant="secondary">Cette semaine</Badge>
-                      ) : values[p.id] !== undefined ? (
-                        <Badge variant="outline">Reprise</Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
                     </td>
                   </tr>
                 );
