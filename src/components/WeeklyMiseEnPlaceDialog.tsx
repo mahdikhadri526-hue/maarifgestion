@@ -3,7 +3,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 import { weekStartOf } from "@/lib/miseEnPlaceData";
 import { roundStockQuantity } from "@/lib/stockData";
@@ -15,6 +17,12 @@ function shiftWeek(week: string, deltaWeeks: number): string {
   date.setDate(date.getDate() + deltaWeeks * 7);
   return weekStartOf(date);
 }
+
+function weekToDate(week: string): Date {
+  const [y, m, d] = week.split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+
 
 function formatWeekLabel(week: string): string {
   const [y, m, d] = week.split("-").map(Number);
@@ -42,6 +50,7 @@ export function WeeklyMiseEnPlaceDialog({
   const [values, setValues] = useState<Record<string, number>>({});
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -95,7 +104,28 @@ export function WeeklyMiseEnPlaceDialog({
           <Button size="sm" variant="outline" onClick={() => setWeek((w) => shiftWeek(w, -1))}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <span className="text-sm font-semibold text-center flex-1">{formatWeekLabel(week)}</span>
+          <Popover open={pickerOpen} onOpenChange={setPickerOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" size="sm" className="flex-1 justify-center gap-2 font-semibold">
+                <CalendarDays className="h-4 w-4" />
+                {formatWeekLabel(week)}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="center">
+              <Calendar
+                mode="single"
+                selected={weekToDate(week)}
+                defaultMonth={weekToDate(week)}
+                onSelect={(d) => {
+                  if (d) {
+                    setWeek(weekStartOf(d));
+                    setPickerOpen(false);
+                  }
+                }}
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
           <Button size="sm" variant="outline" onClick={() => setWeek((w) => shiftWeek(w, 1))}>
             <ChevronRight className="h-4 w-4" />
           </Button>
