@@ -148,6 +148,9 @@ export function PepRepairStatus({ refreshKey = 0 }: { refreshKey?: number }) {
                       <div>
                         <div className="truncate" title={i.action_done ?? ""}>{i.action_done}</div>
                         <div className="text-[10px] text-muted-foreground">{i.tech_validated_by} · {fmtDateTimeFR(i.tech_validated_at)}</div>
+                        {(i.parts_price != null || i.service_price != null) && (
+                          <div className="text-[10px]">Pièces {i.parts_price != null ? `${i.parts_price} DH` : "—"} · Prestation {i.service_price != null ? `${i.service_price} DH` : "—"} · Total {formatIssueTotal(i)} DH</div>
+                        )}
                       </div>
                     ) : "—"}
                   </td>
