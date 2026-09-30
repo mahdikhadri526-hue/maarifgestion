@@ -23,7 +23,6 @@ import { weekStartOf } from "@/lib/miseEnPlaceData";
 import { getWeeklyMep, setWeeklyMep } from "@/lib/weeklyMiseEnPlaceData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -348,14 +347,13 @@ export function WeeklyMiseEnPlacePage() {
         <p className="text-center text-muted-foreground py-6">Chargement...</p>
       ) : (
         <div className="rounded-lg border overflow-auto">
-          <table className="w-full min-w-[680px] text-sm">
+          <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock restant</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Saisie</th>
               </tr>
             </thead>
             <tbody>
@@ -370,15 +368,6 @@ export function WeeklyMiseEnPlacePage() {
                     </td>
                     <td className="p-3 text-right font-mono font-semibold text-primary">
                       {roundStockQuantity(restant + (values[p.id] ?? 0))}
-                    </td>
-                    <td className="p-3 text-right">
-                      {saved[p.id] ? (
-                        <Badge variant="secondary">Cette semaine</Badge>
-                      ) : values[p.id] !== undefined ? (
-                        <Badge variant="outline">Reprise</Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">—</span>
-                      )}
                     </td>
                   </tr>
                 );
