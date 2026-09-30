@@ -20,3 +20,4 @@ Ne PAS publier les modifications du jour tant que l'utilisateur n'a pas tapé le
 - [Traçabilité opérateur](mem://features/traceability) — Champ "Effectué par" obligatoire sur mouvements & réquisitions
 - [Design System et UI](mem://style/ui-design) — Marqueurs visuels (fonds ambrés réquisition), agencement du dashboard et branding
 - [Signal de publication](mem://preferences/publication-signal) — Mot-clé `go` requis avant toute publication
+- [Mise en place hebdomadaire](mem://features/mise-en-place-hebdo) — Saisie chaque lundi ; dernière semaine du mois saisie le lendemain de la fin du mois
