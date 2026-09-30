@@ -3,7 +3,6 @@ import { loadProductCatalog } from "@/lib/productCatalog";
 import { ExpiryAlerts, StockOutAlerts, LowStockAlerts, PendingAutocontrolAlerts } from "@/components/LotManagement";
 // Lazy-loaded heavy tab modules — réduit le bundle initial et accélère le premier affichage.
 const StockTable = lazy(() => import("@/components/StockTable").then((m) => ({ default: m.StockTable })));
-const WeeklyMiseEnPlacePage = lazy(() => import("@/components/WeeklyMiseEnPlacePage").then((m) => ({ default: m.WeeklyMiseEnPlacePage })));
 const MovementForm = lazy(() => import("@/components/MovementForm").then((m) => ({ default: m.MovementForm })));
 const MovementHistory = lazy(() => import("@/components/MovementHistory").then((m) => ({ default: m.MovementHistory })));
 const InitialStockForm = lazy(() => import("@/components/InitialStockForm").then((m) => ({ default: m.InitialStockForm })));
@@ -35,7 +34,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { KioskToggle } from "@/components/KioskToggle";
 
-type Tab = "dashboard" | "rh" | "planning" | "mise-en-place" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "pep" | "tech" | "pointage";
+type Tab = "dashboard" | "rh" | "planning" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "pep" | "tech" | "pointage";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -84,7 +83,6 @@ const Index = () => {
     { id: "mouvements" as Tab, label: "Mouvements", icon: PlusCircle, perm: "edit_movements" },
     { id: "historique" as Tab, label: "Historique Mouvements", icon: History, perm: "view_movements" },
     { id: "produit" as Tab, label: "Stock Restant", icon: FileText, perm: "view_reports" },
-    { id: "mise-en-place" as Tab, label: "Inventaire hebdomadaire", icon: PackageCheck, perm: "view_mise_en_place" },
     { id: "lots" as Tab, label: "Lots / DLC", icon: Boxes, perm: "view_lots" },
     { id: "requisition" as Tab, label: "Réquisition", icon: ClipboardList, perm: "view_requisitions" },
     { id: "autocontrole" as Tab, label: "Autocontrôle", icon: ClipboardCheck, perm: "view_autocontrol" },
@@ -270,7 +268,6 @@ const Index = () => {
             )}
             {tab === "historique" && <MovementHistory key={refreshKey} onMovementDeleted={refresh} />}
             {tab === "produit" && <StockTable />}
-            {tab === "mise-en-place" && <WeeklyMiseEnPlacePage />}
             {tab === "requisition" && <RequisitionForm onUpdated={refresh} />}
             {tab === "lots" && <LotManager />}
             {tab === "autocontrole" && <AutocontrolManager />}
