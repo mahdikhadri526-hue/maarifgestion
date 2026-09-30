@@ -1954,6 +1954,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             <p className="text-center text-muted-foreground py-8">Aucun produit trouvé</p>
           )}
         </div>
+        </>
       )}
 
       {variant === "order" && (
