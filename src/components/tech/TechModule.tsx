@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Bell, Camera, CheckCircle2, ClipboardList, Plus, Repeat, Trash2, Wrench } from "lucide-react";
+import { AlertTriangle, Bell, Camera, CheckCircle2, ClipboardList, Plus, Repeat, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,7 +24,6 @@ import {
   isManagerRefused,
   awaitingManager,
   daysToDeadline,
-  deleteTechIssue,
   describeEvent,
   fmtDateTimeFR,
   getManagerRefusals,
@@ -364,12 +363,9 @@ export function TechModule() {
                     {/* Le bouton « Suivi » est masqué : la saisie se fait via
                         « Prendre en charge », « Valider la réparation » et les
                         validations du manager. */}
-                    {canManage && (
-                      <Button size="sm" variant="ghost" className="text-destructive" onClick={async () => {
-                        if (!confirm("Supprimer ce signalement ?")) return;
-                        try { await deleteTechIssue(i.id); await load(); } catch (e: any) { toast({ title: "Erreur", description: e?.message, variant: "destructive" }); }
-                      }}><Trash2 className="h-4 w-4" /></Button>
-                    )}
+                    {/* Suppression désactivée : ni le responsable technique ni le manager
+                        ne peuvent supprimer une intervention. */}
+
                   </div>
                 </div>
               </div>
