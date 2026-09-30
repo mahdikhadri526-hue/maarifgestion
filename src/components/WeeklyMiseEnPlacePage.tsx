@@ -23,7 +23,6 @@ import { weekStartOf } from "@/lib/miseEnPlaceData";
 import { getWeeklyMep, setWeeklyMep } from "@/lib/weeklyMiseEnPlaceData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -348,7 +347,7 @@ export function WeeklyMiseEnPlacePage() {
         <p className="text-center text-muted-foreground py-6">Chargement...</p>
       ) : (
         <div className="rounded-lg border overflow-auto">
-          <table className="w-full min-w-[680px] text-sm">
+          <table className="w-full min-w-[560px] text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
