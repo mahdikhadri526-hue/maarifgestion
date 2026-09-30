@@ -74,7 +74,7 @@ export function WeeklyMiseEnPlaceDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[calc(100vw-2rem)] max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
+      <DialogContent onOpenAutoFocus={(event) => event.preventDefault()} className="w-[calc(100vw-2rem)] max-w-4xl max-h-[85vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>Mise en place hebdomadaire</DialogTitle>
           <DialogDescription>
