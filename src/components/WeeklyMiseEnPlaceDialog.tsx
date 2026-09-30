@@ -114,8 +114,17 @@ export function WeeklyMiseEnPlaceDialog({
             <PopoverContent className="w-auto p-0" align="center">
               <Calendar
                 mode="single"
+                weekStartsOn={1}
+                showWeekNumber
                 selected={weekToDate(week)}
                 defaultMonth={weekToDate(week)}
+                modifiers={{
+                  selectedWeek: {
+                    from: weekToDate(week),
+                    to: new Date(weekToDate(week).getFullYear(), weekToDate(week).getMonth(), weekToDate(week).getDate() + 6),
+                  },
+                }}
+                modifiersClassNames={{ selectedWeek: "bg-primary/15 rounded-none" }}
                 onSelect={(d) => {
                   if (d) {
                     setWeek(weekStartOf(d));
