@@ -2242,7 +2242,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       <WeeklyMiseEnPlaceDialog
         open={mepWeeklyOpen}
         onOpenChange={setMepWeeklyOpen}
-        products={filtered.map((l) => ({ id: l.productId, name: l.productName }))}
+        products={filtered.map((l) => ({ id: l.productId, name: l.productName, stockRestant: getRowValues(l).stockRestant }))}
       />
     </>
   );
