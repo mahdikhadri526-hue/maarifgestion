@@ -363,6 +363,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const operatorOptions = useOperators();
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
   const [mepWeeklyOpen, setMepWeeklyOpen] = useState(false);
+  const mepSavedFilter = useRef<{ mode: FilterMode; start: string; end: string } | null>(null);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustData, setAdjustData] = useState<{
     productId: string;
@@ -2241,7 +2242,24 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       </Dialog>
       <WeeklyMiseEnPlaceDialog
         open={mepWeeklyOpen}
-        onOpenChange={setMepWeeklyOpen}
+        onOpenChange={(v) => {
+          if (v) {
+            mepSavedFilter.current = { mode, start, end };
+          } else if (mepSavedFilter.current) {
+            const s = mepSavedFilter.current;
+            setMode(s.mode); setStart(s.start); setEnd(s.end);
+            mepSavedFilter.current = null;
+          }
+          setMepWeeklyOpen(v);
+        }}
+        onWeekChange={(week, isCurrent) => {
+          if (isCurrent) { setMode("all"); return; }
+          const [y, m, d] = week.split("-").map(Number);
+          const e = new Date(y, m - 1, d + 6);
+          const endIso = `${e.getFullYear()}-${String(e.getMonth() + 1).padStart(2, "0")}-${String(e.getDate()).padStart(2, "0")}`;
+          setStart(week); setEnd(endIso); setMode("period" as FilterMode);
+        }}
+        stockLoading={periodLoading}
         products={filtered.map((l) => ({ id: l.productId, name: l.productName, stockRestant: getRowValues(l).stockRestant }))}
       />
     </>
