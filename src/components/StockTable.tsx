@@ -345,7 +345,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   // Le stock restant courant est la vue principale : elle utilise directement
   // les agrégats rapides. Les commandes conservent leur filtre mensuel.
-  const { map: mepMap } = useMiseEnPlace();
   const [mode, setMode] = useState<FilterMode>(variant === "stock" ? "all" : "month");
   const [day, setDay] = useState<string>(todayISO());
   const [month, setMonth] = useState<string>(currentMonthISO());
@@ -1938,7 +1937,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     </td>
                   )}
                   <td className="p-3 text-right font-mono text-sm font-bold text-primary">
-                    {roundStockQuantity((Number(v.stockRestant) || 0) + (canViewMep ? (mepMap[level.productId] ?? 0) : 0))}
+                    {roundStockQuantity(Number(v.stockRestant) || 0)}
                   </td>
                 </tr>
                 );
