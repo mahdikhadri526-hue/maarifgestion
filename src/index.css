@@ -207,4 +207,13 @@
   .rounded-lg.border.bg-card {
     @apply shadow-sm hover:shadow-md transition-shadow duration-200;
   }
+
+  /* Jour d'inventaire sur le calendrier de la mise en place hebdo */
+  .mep-inventory-day {
+    @apply font-bold text-primary;
+    box-shadow: inset 0 0 0 2px hsl(var(--primary));
+  }
+  .mep-inventory-day:hover {
+    box-shadow: inset 0 0 0 2px hsl(var(--primary));
+  }
 }
