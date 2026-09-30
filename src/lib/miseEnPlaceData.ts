@@ -11,35 +11,36 @@ export function weekStartOf(d: Date = new Date()): string {
   return `${x.getFullYear()}-${m}-${dd}`;
 }
 
+// Semaine fixe utilisée pour la valeur unique du stock restant (comportement d'origine).
+const SINGLE_WEEK = "2000-01-03"; // un lundi
+
 /**
- * Mise en place de la semaine : valeur saisie pour cette semaine, sinon
- * la dernière valeur d'une semaine précédente.
+ * Mise en place : une seule valeur par produit (comportement d'origine).
+ * La table garde une colonne week_start ; on lit la dernière valeur connue
+ * et on écrit toujours sur la semaine fixe.
  */
-export async function getMiseEnPlaceStocks(week: string): Promise<{ values: Record<string, number>; saved: Record<string, boolean> }> {
+export async function getMiseEnPlaceStocks(): Promise<Record<string, number>> {
   const pdvId = requireCurrentPdvId();
   const { data, error } = await (supabase as any)
     .from("mise_en_place_stocks")
     .select("product_id, quantity, week_start")
     .eq("pdv_id", pdvId)
-    .lte("week_start", week)
     .order("week_start", { ascending: false });
   if (error) throw error;
-  const values: Record<string, number> = {};
-  const saved: Record<string, boolean> = {};
+  const map: Record<string, number> = {};
   for (const row of (data || []) as any[]) {
-    if (row.product_id in values) continue;
-    values[row.product_id] = Number(row.quantity) || 0;
-    saved[row.product_id] = row.week_start === week;
+    if (row.product_id in map) continue;
+    map[row.product_id] = Number(row.quantity) || 0;
   }
-  return { values, saved };
+  return map;
 }
 
-export async function setMiseEnPlaceStock(productId: string, quantity: number, week: string) {
+export async function setMiseEnPlaceStock(productId: string, quantity: number) {
   const pdvId = requireCurrentPdvId();
   const { error } = await (supabase as any)
     .from("mise_en_place_stocks")
     .upsert(
-      { pdv_id: pdvId, product_id: productId, quantity, week_start: week },
+      { pdv_id: pdvId, product_id: productId, quantity, week_start: SINGLE_WEEK },
       { onConflict: "pdv_id,product_id,week_start" }
     );
   if (error) throw error;
