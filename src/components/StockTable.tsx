@@ -1,5 +1,13 @@
 import { useState, useEffect, useDeferredValue, useMemo, useRef } from "react";
-import { WeeklyMiseEnPlaceDialog } from "@/components/WeeklyMiseEnPlaceDialog";
+import {
+  MACARON_ARTICLES, MACARON_AGG_ID, SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID,
+  NESPRESSO_AGG_ID_CONST, NUTELLA_NESTLE_AGG_ID, THE_AROMATISE_AGG_ID,
+  SIROP_CHOCOLAT_ALI_ID, NUTELLA_ALI_ID, NESTLE_CARAMEL_ALI_ID,
+  SIROP_CARAMEL_WEEKLY_ARTICLE, CHANTILLY_WEEKLY_ARTICLE, AMANDES_WEEKLY_ARTICLE,
+  EXTRA_AGG_IDS, isReadOnlyAggId, DAYS,
+  buildWeeklyAggregateTotals, formatISODate, numericValue, parseISODate, trackingDate,
+  type WeeklyTrackingOrderRecord,
+} from "@/lib/stockWeeklyAggregates";
 import {
   Category,
   UnitType,
@@ -53,26 +61,6 @@ const TARTE_ARTICLES = [
   "Amandes.Top", "Noix.Top", "Tulipes", "Cornet", "Gaufrette",
   "Orange fruits", "Citron fruits", "POMME fruits", "POIRE fruits", "Ananas fruits", "Kiwi fruits",
 ];
-const MACARON_ARTICLES = [
-  "Mac.Chocolat P", "Mac.Pistache P", "Mac.Caramel P", "Mac.Cfé P", "Mac.Mng P", "Mac.Cit P",
-  "Mac.Chocolat N", "Mac.Pistache N", "Mac.Caramel N", "Mac.Cfé N", "Mac.Mng N", "Mac.Cit N",
-];
-const MACARON_AGG_ID = "__macaron_agg__";
-const SIROP_AGG_ID = "__sirop_agg__";
-const CHANTILLY_AGG_ID = "__chantilly_agg__";
-const AMANDES_AGG_ID = "__amandes_agg__";
-const NESPRESSO_AGG_ID_CONST = "__nespresso_agg__";
-const NUTELLA_NESTLE_AGG_ID = "__nutella_nestle_agg__";
-const THE_AROMATISE_AGG_ID = "__the_aromatise_agg__";
-const SIROP_CHOCOLAT_ALI_ID = "ali-9";
-const NUTELLA_ALI_ID = "ali-21";
-const NESTLE_CARAMEL_ALI_ID = "ali-15";
-const SIROP_CARAMEL_WEEKLY_ARTICLE = "Sirop.Crml";
-const CHANTILLY_WEEKLY_ARTICLE = "Crème fraîche (mousse fouettée)";
-const AMANDES_WEEKLY_ARTICLE = "Amd.Crml";
-const EXTRA_AGG_IDS = [SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID, NUTELLA_NESTLE_AGG_ID, THE_AROMATISE_AGG_ID];
-const isReadOnlyAggId = (id: string) =>
-  id === NESPRESSO_AGG_ID_CONST || id === MACARON_AGG_ID || EXTRA_AGG_IDS.includes(id);
 const GLACE_ARTICLES = [
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
   "Parfait", "Fraise", "Framboise", "Orange", "Mangue", "Citron", "Pêche",
@@ -82,47 +70,10 @@ const GLACE_ARTICLES = [
 
 const UNITS: UnitType[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU"];
 const UNIT_LABELS: Record<UnitType, string> = { PIECE: "Pièce", KILO: "Kilo", LITRE: "Litre", PAQUET: "Paquet", COLIS: "Colis", ROULEAU: "Rouleau" };
-const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
-
-type WeeklyTrackingOrderRecord = {
-  article: string | null;
-  sorties: number | string | null;
-  entrees: number | string | null;
-  stock_initial: number | string | null;
-  day_of_week: string;
-  week_start: string;
-};
-
-function parseISODate(iso: string) {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, (m || 1) - 1, d || 1);
-}
-
 // Arrondit toujours à la valeur supérieure au multiple de 5 (2 → 5, 11 → 15).
 function ceilTo5(n: number) {
   if (!isFinite(n) || n <= 0) return 0;
   return Math.ceil(n / 5) * 5;
-}
-
-function formatISODate(date: Date) {
-  const y = date.getFullYear();
-  const m = String(date.getMonth() + 1).padStart(2, "0");
-  const d = String(date.getDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-
-function trackingDate(weekStart: string, dayIdx: number) {
-  const date = parseISODate(weekStart);
-  // Les anciennes fiches ont parfois un week_start au dimanche : on les corrige
-  // ici pour que Commande lise toujours les mêmes dates que le suivi hebdo.
-  date.setDate(date.getDate() + dayIdx + (date.getDay() === 0 ? 1 : 0));
-  return formatISODate(date);
-}
-
-function numericValue(value: unknown) {
-  if (value === "" || value == null) return 0;
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
 }
 
 // Décale une date ISO de n jours (utilisé pour borner week_start côté serveur).
@@ -230,103 +181,6 @@ function buildWeeklyOrderRows(
   }));
 }
 
-function buildWeeklyAggregateTotals(
-  records: WeeklyTrackingOrderRecord[],
-  articles: readonly string[],
-  isInSelectedPeriod: (date: string) => boolean,
-  matchAll: boolean,
-) {
-  type DayBucket = { si: number | null; entrees: number; explicitSorties: number };
-  const articleSet = new Set(articles);
-  const byArticle = new Map<string, Map<string, DayBucket>>();
-  const ensureBucket = (article: string, date: string) => {
-    if (!byArticle.has(article)) byArticle.set(article, new Map());
-    const days = byArticle.get(article)!;
-    if (!days.has(date)) days.set(date, { si: null, entrees: 0, explicitSorties: 0 });
-    return days.get(date)!;
-  };
-  records.forEach((r) => {
-    const article = (r.article ?? "").trim();
-    if (!articleSet.has(article)) return;
-    const dayIdx = DAYS.indexOf(r.day_of_week as typeof DAYS[number]);
-    if (dayIdx < 0 || !r.week_start) return;
-    const bucket = ensureBucket(article, trackingDate(r.week_start, dayIdx));
-    if (r.stock_initial !== "" && r.stock_initial != null) bucket.si = numericValue(r.stock_initial);
-    bucket.entrees += numericValue(r.entrees);
-    if (r.sorties !== "" && r.sorties != null) bucket.explicitSorties += numericValue(r.sorties);
-  });
-
-  let aggStockInitial = 0;
-  let aggEntrees = 0;
-  let aggSorties = 0;
-  let aggRestant = 0;
-
-  articles.forEach((article) => {
-    const days = byArticle.get(article);
-    if (!days) return;
-    const entries = Array.from(days.entries()).sort(([a], [b]) => a.localeCompare(b));
-    const closedDates = new Set<string>();
-    let prevSI: number | null = null;
-    let spanStart: string | null = null;
-    let pendingEntries = 0;
-    let totalSortiesArt = 0;
-    let latestStock = 0;
-    let stockInitialPeriod: number | null = null;
-    let lastSIBeforePeriod = 0;
-    let entreesPeriodArt = 0;
-
-    for (const [date, bucket] of entries) {
-      if (bucket.si != null) {
-        if (prevSI != null && spanStart) {
-          const sortie = Math.max(0, prevSI + pendingEntries - bucket.si);
-          if (isInSelectedPeriod(spanStart)) totalSortiesArt += sortie;
-          for (let d = parseISODate(spanStart); formatISODate(d) < date; d.setDate(d.getDate() + 1)) {
-            closedDates.add(formatISODate(d));
-          }
-        }
-        prevSI = bucket.si;
-        spanStart = date;
-        pendingEntries = bucket.entrees;
-        latestStock = bucket.si;
-        if (isInSelectedPeriod(date)) {
-          if (stockInitialPeriod === null) stockInitialPeriod = bucket.si;
-        } else {
-          lastSIBeforePeriod = bucket.si;
-        }
-      } else {
-        pendingEntries += bucket.entrees;
-      }
-      if (isInSelectedPeriod(date)) entreesPeriodArt += bucket.entrees;
-    }
-
-    entries.forEach(([date, bucket]) => {
-      if (bucket.explicitSorties > 0 && !closedDates.has(date) && isInSelectedPeriod(date)) {
-        totalSortiesArt += bucket.explicitSorties;
-      }
-    });
-
-    if (prevSI != null) {
-      const openExplicit = entries.reduce((sum, [date, bucket]) => (
-        !closedDates.has(date) && bucket.explicitSorties > 0 ? sum + bucket.explicitSorties : sum
-      ), 0);
-      latestStock = Math.max(0, prevSI + pendingEntries - openExplicit);
-    }
-
-    if (stockInitialPeriod === null) stockInitialPeriod = lastSIBeforePeriod;
-    aggStockInitial += stockInitialPeriod;
-    aggEntrees += entreesPeriodArt;
-    aggSorties += totalSortiesArt;
-    aggRestant += matchAll ? latestStock : (stockInitialPeriod + entreesPeriodArt - totalSortiesArt);
-  });
-
-  return {
-    stockInitial: roundStockQuantity(aggStockInitial),
-    entrees: roundStockQuantity(aggEntrees),
-    sorties: roundStockQuantity(aggSorties),
-    stockRestant: roundStockQuantity(aggRestant),
-  };
-}
-
 type FilterMode = "all" | "day" | "month" | "period";
 const todayISO = () => new Date().toISOString().split("T")[0];
 const currentMonthISO = () => new Date().toISOString().slice(0, 7);
@@ -336,7 +190,7 @@ const monthEndISO = (month: string) => {
   return formatISODate(new Date(year, monthNumber, 0));
 };
 
-export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
+export function StockTable({ variant = "stock", onOpenWeeklyMep }: { variant?: "stock" | "order"; onOpenWeeklyMep?: () => void } = {}) {
   const [category, setCategory] = useState<Category | "all" | "tarte" | "glace" | "nettoyant" | "creme">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
   // Saisie non bloquante : le filtrage de la longue liste suit la frappe sans la figer.
@@ -360,8 +214,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const { can, isAdmin } = useAuth();
   const operatorOptions = useOperators();
   const [showRefCols, setShowRefCols] = useState<boolean>(false);
-  const [mepWeeklyOpen, setMepWeeklyOpen] = useState(false);
-  const mepSavedFilter = useRef<{ mode: FilterMode; start: string; end: string } | null>(null);
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustData, setAdjustData] = useState<{
     productId: string;
@@ -1569,8 +1421,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 {showRefCols ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
                 {showRefCols ? "Masquer colonnes Réf." : "Afficher colonnes Réf."}
               </Button>
-              {canViewMep && (
-                <Button size="sm" variant="outline" onClick={() => setMepWeeklyOpen(true)}>
+              {canViewMep && onOpenWeeklyMep && (
+                <Button size="sm" variant="outline" onClick={onOpenWeeklyMep}>
                   <CalendarDays className="h-4 w-4 mr-1" />
                   Mise en place hebdomadaire
                 </Button>
@@ -2227,28 +2079,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         </DialogFooter>
       </DialogContent>
       </Dialog>
-      <WeeklyMiseEnPlaceDialog
-        open={mepWeeklyOpen}
-        onOpenChange={(v) => {
-          if (v) {
-            mepSavedFilter.current = { mode, start, end };
-          } else if (mepSavedFilter.current) {
-            const s = mepSavedFilter.current;
-            setMode(s.mode); setStart(s.start); setEnd(s.end);
-            mepSavedFilter.current = null;
-          }
-          setMepWeeklyOpen(v);
-        }}
-        onWeekChange={(week, isCurrent) => {
-          if (isCurrent) { setMode("all"); return; }
-          const [y, m, d] = week.split("-").map(Number);
-          const e = new Date(y, m - 1, d + 6);
-          const endIso = `${e.getFullYear()}-${String(e.getMonth() + 1).padStart(2, "0")}-${String(e.getDate()).padStart(2, "0")}`;
-          setStart(week); setEnd(endIso); setMode("period" as FilterMode);
-        }}
-        stockLoading={periodLoading}
-        products={filtered.map((l) => ({ id: l.productId, name: l.productName, stockRestant: getRowValues(l).stockRestant }))}
-      />
     </>
   );
 }
