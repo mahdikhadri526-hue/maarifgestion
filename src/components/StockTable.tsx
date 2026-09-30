@@ -1438,6 +1438,53 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               </Button>
             </div>
           )}
+          {variant !== "order" && (
+            <div className="flex flex-wrap items-center gap-2 mt-1 rounded-md border bg-muted/30 px-2 py-1.5">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place — semaine :</span>
+              <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => shiftMepWeek(-7)} aria-label="Semaine précédente">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="justify-start text-left font-normal">
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    {formatDateFR(mepWeekStartDate)} → {formatDateFR(mepWeekEndDate)}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    locale={fr}
+                    weekStartsOn={1}
+                    selected={mepWeekStartDate}
+                    onSelect={(d) => { if (d) setMepWeek(weekStartOf(d)); }}
+                    defaultMonth={mepWeekStartDate}
+                    modifiers={{
+                      week: { from: mepWeekStartDate, to: mepWeekEndDate },
+                      inventory: mepInventoryDay,
+                    }}
+                    modifiersClassNames={{
+                      week: "bg-primary/15 rounded-none",
+                      inventory: "bg-primary text-primary-foreground font-bold rounded-full",
+                    }}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                  <p className="px-3 pb-3 text-xs text-muted-foreground">
+                    Jour d'inventaire : {formatDateFR(mepInventoryDay)}
+                  </p>
+                </PopoverContent>
+              </Popover>
+              <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => shiftMepWeek(7)} aria-label="Semaine suivante">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              {mepWeek !== weekStartOf() && (
+                <Button size="sm" variant="ghost" onClick={() => setMepWeek(weekStartOf())}>
+                  Semaine actuelle
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </div>
       {(loading || periodLoading || weeklyLoading) ? (
