@@ -242,16 +242,25 @@ export function WeeklyMiseEnPlacePage() {
 
   const getRestant = (id: string) => restants[id] ?? 0;
   const { due, monthEnd: isLastWeekOfMonth } = weeklyEntryDate(week);
-  const isInventoryDay = due === formatISODate(new Date());
+  const today = new Date();
+  const todayISO = formatISODate(today);
+  const currentWeek = weekStartOf(today);
+  const previousWeek = shiftWeek(currentWeek, -1);
+  const inventoryWeek = [previousWeek, currentWeek].find((candidate) => weeklyEntryDate(candidate).due === todayISO);
 
   return (
     <div className="space-y-4">
-      {isInventoryDay && (
+      {inventoryWeek && (
         <Alert className="border-primary/40 bg-primary/5">
           <BellRing className="h-4 w-4" />
           <AlertTitle>Aujourd’hui : inventaire de mise en place</AlertTitle>
           <AlertDescription>
-            Saisissez les quantités de mise en place pour {formatWeekLabel(week).toLowerCase()}.
+            Saisissez les quantités de mise en place pour {formatWeekLabel(inventoryWeek).toLowerCase()}.
+            {week !== inventoryWeek && (
+              <Button variant="link" size="sm" className="h-auto px-0 ml-2" onClick={() => setWeek(inventoryWeek)}>
+                Voir cette semaine
+              </Button>
+            )}
           </AlertDescription>
         </Alert>
       )}
