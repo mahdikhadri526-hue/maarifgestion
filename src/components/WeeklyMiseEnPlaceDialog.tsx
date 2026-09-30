@@ -1,0 +1,152 @@
+import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
+import { weekStartOf } from "@/lib/miseEnPlaceData";
+import { getWeeklyMep, setWeeklyMep } from "@/lib/weeklyMiseEnPlaceData";
+
+function shiftWeek(week: string, deltaWeeks: number): string {
+  const [y, m, d] = week.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  date.setDate(date.getDate() + deltaWeeks * 7);
+  return weekStartOf(date);
+}
+
+function formatWeekLabel(week: string): string {
+  const [y, m, d] = week.split("-").map(Number);
+  const start = new Date(y, m - 1, d);
+  const end = new Date(y, m - 1, d + 6);
+  const fmt = (dt: Date) =>
+    `${String(dt.getDate()).padStart(2, "0")}.${String(dt.getMonth() + 1).padStart(2, "0")}.${dt.getFullYear()}`;
+  return `Semaine du ${fmt(start)} au ${fmt(end)}`;
+}
+
+export function WeeklyMiseEnPlaceDialog({
+  open,
+  onOpenChange,
+  products,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  products: Array<{ id: string; name: string }>;
+}) {
+  const [week, setWeek] = useState(() => weekStartOf(new Date()));
+  const [values, setValues] = useState<Record<string, number>>({});
+  const [saved, setSaved] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setLoading(true);
+    getWeeklyMep(week)
+      .then((r) => {
+        if (cancelled) return;
+        setValues(r.values);
+        setSaved(r.saved);
+      })
+      .catch((e) => {
+        if (!cancelled) toast.error(e?.message || "Chargement impossible");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, week]);
+
+  const save = async (productId: string, value: number) => {
+    const prev = values[productId];
+    setValues((p) => ({ ...p, [productId]: value }));
+    try {
+      await setWeeklyMep(productId, value, week);
+      setSaved((p) => ({ ...p, [productId]: true }));
+    } catch (e: any) {
+      setValues((p) => ({ ...p, [productId]: prev ?? 0 }));
+      toast.error(e?.message || "Enregistrement impossible");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Mise en place hebdomadaire</DialogTitle>
+          <DialogDescription>
+            Une valeur par produit et par semaine. Si la semaine n'a pas encore de saisie, la dernière valeur connue est reprise.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex items-center justify-between gap-2">
+          <Button size="sm" variant="outline" onClick={() => setWeek((w) => shiftWeek(w, -1))}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-semibold text-center flex-1">{formatWeekLabel(week)}</span>
+          <Button size="sm" variant="outline" onClick={() => setWeek((w) => shiftWeek(w, 1))}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+        {loading ? (
+          <p className="text-center text-muted-foreground py-6">Chargement...</p>
+        ) : (
+          <div className="rounded-lg border overflow-x-auto max-w-full">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Valeur</th>
+                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Saisie</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p) => (
+                  <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                    <td className="p-3 text-sm font-medium">{p.name}</td>
+                    <td className="p-3 text-right">
+                      <WeeklyMepInput value={values[p.id] ?? 0} onSave={(v) => save(p.id, v)} />
+                    </td>
+                    <td className="p-3 text-right">
+                      {saved[p.id] ? (
+                        <Badge variant="secondary">Cette semaine</Badge>
+                      ) : values[p.id] !== undefined ? (
+                        <Badge variant="outline">Reprise</Badge>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {products.length === 0 && (
+              <p className="text-center text-muted-foreground py-6">Aucun produit</p>
+            )}
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function WeeklyMepInput({ value, onSave }: { value: number; onSave: (v: number) => void }) {
+  const [draft, setDraft] = useState(String(value ?? 0));
+  useEffect(() => {
+    setDraft(String(value ?? 0));
+  }, [value]);
+  return (
+    <Input
+      type="number"
+      inputMode="decimal"
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onBlur={() => {
+        const n = Number(draft) || 0;
+        if (n !== value) onSave(n);
+      }}
+      className="h-8 w-24 text-right font-mono text-sm ml-auto"
+    />
+  );
+}
