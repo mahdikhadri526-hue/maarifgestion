@@ -295,8 +295,15 @@ export function WeeklyMiseEnPlacePage() {
                       from: weekToDate(week),
                       to: new Date(weekToDate(week).getFullYear(), weekToDate(week).getMonth(), weekToDate(week).getDate() + 6),
                     },
+                    // Jour d'inventaire : lundi de chaque semaine, ou lendemain
+                    // de la fin du mois pour la dernière semaine du mois.
+                    inventoryDay: (d: Date) =>
+                      weeklyEntryDate(weekStartOf(d)).due === formatISODate(d),
                   }}
-                  modifiersClassNames={{ selectedWeek: "bg-primary/15 rounded-none" }}
+                  modifiersClassNames={{
+                    selectedWeek: "bg-primary/15 rounded-none",
+                    inventoryDay: "mep-inventory-day",
+                  }}
                   onSelect={(d) => {
                     if (d) {
                       setWeek(weekStartOf(d));
@@ -330,6 +337,11 @@ export function WeeklyMiseEnPlacePage() {
           {isLastWeekOfMonth
             ? "Dernière semaine du mois : saisie à faire le lendemain de la fin du mois."
             : "Saisie à faire le lundi de chaque semaine."}
+          {" "}
+          <span className="inline-flex items-center gap-1.5 align-middle">
+            <span className="inline-block h-2.5 w-2.5 rounded-full bg-primary" aria-hidden />
+            Jour d’inventaire (marqué sur le calendrier)
+          </span>
         </p>
       </div>
 
