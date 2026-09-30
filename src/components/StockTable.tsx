@@ -1506,6 +1506,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   Semaine actuelle
                 </Button>
               )}
+              {!mepEditable && (
+                <span className="text-xs text-muted-foreground">
+                  Saisie verrouillée — jour de comptage : {mepInventoryDay.toLocaleDateString("fr-FR")}
+                </span>
+              )}
             </div>
           )}
         </div>
