@@ -210,6 +210,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [weeklyRows, setWeeklyRows] = useState<Array<{ article: string; sorties: number; stockActuel: number }>>([]);
   const [weeklyLoading, setWeeklyLoading] = useState(false);
   const [macaronAgg, setMacaronAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
+  const macaronDataRef = useRef<WeeklyTrackingOrderRecord[]>([]);
   const [siropWeekly, setSiropWeekly] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const [chantillyAgg, setChantillyAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const [amandesAgg, setAmandesAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
@@ -741,6 +742,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             }),
         );
         if (cancelled) return;
+        macaronDataRef.current = data || [];
         const isInSelectedPeriod = (date: string) => {
           if (mode === "day") return day ? date === day : true;
           if (mode === "month") return month ? date.startsWith(month) : true;
@@ -1277,20 +1279,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         const breakdown = await getGlaceBreakdownForRange(bStart, bEnd, mode === "all");
         setDetailsRows(breakdown);
       } else if (isMacaron) {
-        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
-          supabase
-            .from("weekly_tracking")
-            .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
-            .eq("fiche_type", "Mouvement glaces & tartes")
-            .in("article", MACARON_ARTICLES as unknown as string[]),
-        );
+        // Mêmes données (même filtre de semaines) que la ligne MACARON
+        const data = macaronDataRef.current;
         const isInPeriod = (d: string) => {
-          if (mode === "all") return true;
           if (mode === "day") return day ? d === day : true;
           if (mode === "month") return month ? d.startsWith(month) : true;
           if (mode === "period") {
-            if (range.start && d < range.start) return false;
-            if (range.end && d > range.end) return false;
+            if (start && d < start) return false;
+            if (end && d > end) return false;
             return true;
           }
           return true;
@@ -1301,47 +1297,31 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         });
         setDetailsRows(rows);
       } else if (isToppings) {
-        // 1) SMARTIES + OREO via levels / periodTotals
-        const sourceRows: AggregateBreakdownRow[] = TOPPINGS_ALI_PRODUCT_IDS.map((id) => {
+        const labels: Record<string, string> = {};
+        TOPPINGS_ALI_PRODUCT_IDS.forEach((id) => {
           const src = (levels || []).find((l) => l.productId === id);
-          const label = src?.productName || id;
-          if (mode === "all") {
-            return {
-              name: label,
-              stockInitial: src?.stockInitial || 0,
-              entrees: src?.totalEntrees || 0,
-              sorties: src?.totalSorties || 0,
-              stockRestant: src?.stockRestant || 0,
-            };
-          }
-          const t = periodTotals[id];
-          if (!t) return { name: label, stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 };
-          return { name: label, ...t };
+          labels[id] = src?.productName || id;
         });
-        // 2) Articles Suivi Hebdo
-        const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
-          supabase
-            .from("weekly_tracking")
-            .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
-            .eq("fiche_type", "Mouvement glaces & tartes")
-            .in("article", TOPPINGS_WEEKLY_ARTICLES as unknown as string[]),
-        );
-        const isInPeriod = (d: string) => {
-          if (mode === "all") return true;
-          if (mode === "day") return day ? d === day : true;
-          if (mode === "month") return month ? d.startsWith(month) : true;
+        const matchDate = (d: string) => {
+          const dd = d.slice(0, 10);
+          if (mode === "day") return day ? dd === day : true;
+          if (mode === "month") return month ? dd.startsWith(month) : true;
           if (mode === "period") {
-            if (range.start && d < range.start) return false;
-            if (range.end && d > range.end) return false;
+            if (start && dd < start) return false;
+            if (end && dd > end) return false;
             return true;
           }
           return true;
         };
-        const weeklyRowsBd: AggregateBreakdownRow[] = TOPPINGS_WEEKLY_ARTICLES.map((art) => {
-          const t = buildWeeklyAggregateTotals(data || [], [art], isInPeriod, mode === "all");
-          return { name: `${art} (Suivi Hebdo)`, ...t };
-        });
-        setDetailsRows([...sourceRows, ...weeklyRowsBd]);
+        const isBefore = (d: string) => {
+          const dd = d.slice(0, 10);
+          if (mode === "day") return dd < day;
+          if (mode === "month") return dd < `${month}-01`;
+          if (mode === "period") return start ? dd < start : false;
+          return false;
+        };
+        const rows = await getToppingsBreakdown(mode === "all" ? null : matchDate, isBefore, labels);
+        setDetailsRows(rows);
       }
     } catch (e) {
       toast.error("Erreur lors du chargement des détails");
