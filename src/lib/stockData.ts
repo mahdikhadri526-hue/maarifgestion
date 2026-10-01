@@ -752,6 +752,12 @@ async function computeToppingsAggregate(): Promise<{ entrees: number; sorties: n
 // Détail par composant de la ligne TOPPINGS, avec exactement les mêmes règles
 // que la ligne : vue générale = computeToppingsAggregate, période =
 // cumul quotidien de getToppingsDailyHistory. La somme = la ligne.
+// Conversion Oreo : 1 pièce = 0,116 kg (appliquée UNIQUEMENT dans le détail
+// de calcul TOPPINGS, jamais sur la ligne principale ni ailleurs).
+const OREO_PRODUCT_ID = "ali-2";
+const OREO_KG_PER_PIECE = 0.116;
+const oreoKg = (v: number) => Number((v * OREO_KG_PER_PIECE).toFixed(3));
+
 export async function getToppingsBreakdown(
   matchDate: ((d: string) => boolean) | null,
   isBefore: (d: string) => boolean,
