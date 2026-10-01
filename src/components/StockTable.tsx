@@ -37,7 +37,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
 import { useMiseEnPlace, MiseEnPlaceInput } from "@/components/MiseEnPlaceCell";
-import { weekStartOf, inventoryDayOfWeek } from "@/lib/miseEnPlaceData";
+import { weekStartOf, inventoryDayOfWeek, getMiseEnPlaceStocksForWeek } from "@/lib/miseEnPlaceData";
 import { getOperators } from "@/lib/operators";
 import { useOperators } from "@/lib/roster";
 import { toast } from "sonner";
@@ -268,6 +268,24 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [mepMapRaw, mode, day, mepWeek]
   );
+  // Report : le Stock total saisi le jour du comptage devient le stock initial
+  // du lendemain (filtres jour / mois / période uniquement, vue « Tout » inchangée).
+  const carryDay = useMemo(() => {
+    const startISO = mode === "day" ? day : mode === "month" && month ? `${month}-01` : mode === "period" ? start : "";
+    if (!startISO) return null;
+    const d = new Date(`${startISO}T00:00:00`);
+    d.setDate(d.getDate() - 1);
+    const ws = weekStartOf(d);
+    return formatISODate(inventoryDayOfWeek(ws)) === formatISODate(d) ? ws : null;
+  }, [mode, day, month, start]);
+  const [carryMap, setCarryMap] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let cancelled = false;
+    setCarryMap({});
+    if (!carryDay) return;
+    getMiseEnPlaceStocksForWeek(carryDay).then((r) => { if (!cancelled) setCarryMap(r); }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [carryDay]);
   // Saisie déverrouillée uniquement le jour du comptage de la semaine affichée.
   const mepEditable = todayISO() === formatISODate(mepInventoryDay)
     && !(mode === "day" && day && day !== todayISO());
@@ -1710,7 +1728,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             </thead>
             <tbody>
               {filtered.map((level) => {
-                const v = getRowValues(level);
+                const v0 = getRowValues(level);
+                const carry = carryMap[level.productId] ?? 0;
+                const v = carry
+                  ? { ...v0, stockInitial: roundStockQuantity((Number(v0.stockInitial) || 0) + carry), stockRestant: roundStockQuantity((Number(v0.stockRestant) || 0) + carry) }
+                  : v0;
                 const stockTotal = (Number(v.stockRestant) || 0) + (mepMap[level.productId] ?? 0);
                 const sortiesTotal = roundStockQuantity((Number(v.stockInitial) || 0) + (Number(v.entrees) || 0) - stockTotal);
                 return (
