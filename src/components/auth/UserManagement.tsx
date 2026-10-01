@@ -15,6 +15,7 @@ import { ALL_PERMISSIONS, publishedPermissionGroups, AppRole, useAuth } from "@/
 import { PdvManagement } from "@/components/pdv/PdvManagement";
 import { RosterManagement } from "@/components/roster/RosterManagement";
 import { setKioskPin } from "@/lib/kioskPin";
+import { VoiceScriptsSettings } from "@/components/auth/VoiceScriptsSettings";
 
 const PROTECTED_EMAILS = ["gestionmaarif1@gmail.com"];
 
@@ -574,6 +575,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       {isAdmin && (
         <>
           <KioskPinSettings />
+          <VoiceScriptsSettings />
           <Tabs defaultValue="users" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="users" className="gap-2">
