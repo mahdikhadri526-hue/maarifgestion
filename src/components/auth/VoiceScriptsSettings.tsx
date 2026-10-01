@@ -27,7 +27,7 @@ export function VoiceScriptsSettings() {
   const [guides, setGuides] = useState<VoiceGuide[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
-  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [open, setOpen] = useState<Record<string, boolean>>({ dashboard: true });
   const [query, setQuery] = useState("");
   const [playing, setPlaying] = useState<{ key: string; audio: HTMLAudioElement } | null>(null);
 
@@ -56,7 +56,8 @@ export function VoiceScriptsSettings() {
     const order = ["dashboard", "stock-initial", "mouvements", "historique", "produit", "lots", "requisition", "autocontrole", "stuffs-glace", "hebdo", "temperatures", "nettoyage", "ecarts", "pep", "tech", "pointage", "rh", "planning", "anomalies", "administration"];
     const rank = (k: string) => { const i = order.indexOf(k); return i < 0 ? 999 : i; };
     const ts = (r: Row) => { const c = (r as Row & { created_at?: string }).created_at; return c ? Date.parse(c) : Number.MAX_SAFE_INTEGER; };
-    m.forEach((list) => list.sort((a, b) => ts(a) - ts(b) || a.section_key.localeCompare(b.section_key)));
+    const pin = (r: Row) => (r.section_key.startsWith("dashboard:bienvenue") ? 0 : 1);
+    m.forEach((list) => list.sort((a, b) => pin(a) - pin(b) || ts(a) - ts(b) || a.section_key.localeCompare(b.section_key)));
     return Array.from(m.entries()).sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b));
   }, [rows, query]);
 
