@@ -1496,7 +1496,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 </span>
               ) : (
                 <span className="text-xs text-muted-foreground">
-                  Saisie mise en place verrouillée. Prochain comptage : {mepInventoryDay.toLocaleDateString("fr-FR")}
+                  Saisie mise en place verrouillée. Prochain comptage : {(() => {
+                    const t = todayISO();
+                    let ws = weekStartOf(new Date(`${t}T00:00:00`));
+                    for (let i = 0; i < 3; i++) {
+                      const inv = inventoryDayOfWeek(ws);
+                      if (formatISODate(inv) >= t) return inv.toLocaleDateString("fr-FR");
+                      ws = new Date(ws); ws.setDate(ws.getDate() + 7);
+                    }
+                    return mepInventoryDay.toLocaleDateString("fr-FR");
+                  })()}
                 </span>
               )}
             </div>
