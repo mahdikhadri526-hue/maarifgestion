@@ -27,7 +27,7 @@ export function VoiceScriptsSettings() {
   const [guides, setGuides] = useState<VoiceGuide[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
-  const [open, setOpen] = useState<Record<string, boolean>>({});
+  const [open, setOpen] = useState<Record<string, boolean>>({ dashboard: true });
   const [query, setQuery] = useState("");
   const [playing, setPlaying] = useState<{ key: string; audio: HTMLAudioElement } | null>(null);
 
