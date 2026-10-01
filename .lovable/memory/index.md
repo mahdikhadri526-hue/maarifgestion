@@ -21,3 +21,4 @@ Ne PAS publier les modifications du jour tant que l'utilisateur n'a pas tapé le
 - [Design System et UI](mem://style/ui-design) — Marqueurs visuels (fonds ambrés réquisition), agencement du dashboard et branding
 - [Signal de publication](mem://preferences/publication-signal) — Mot-clé `go` requis avant toute publication
 - [Mise en place hebdomadaire](mem://features/mise-en-place-hebdo) — Saisie chaque lundi ; dernière semaine du mois saisie le lendemain de la fin du mois
+- [Aide vocale par rubrique](mem://features/aide-vocale) — Audios enregistrés par l’administrateur principal, écoutables par tous dans chaque rubrique.
