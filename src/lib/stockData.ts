@@ -1,3 +1,4 @@
+import { buildWeeklyAggregateTotals, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
 import { supabase } from "@/lib/db";
 import { supabase as rawSupabase } from "@/integrations/supabase/client";
 import { requireCurrentPdvId } from "@/lib/pdvStore";
@@ -734,42 +735,15 @@ async function computeToppingsAggregate(): Promise<{ entrees: number; sorties: n
     stockRestant += init + e - s;
   }
 
-  // 2) Source : Suivi Hebdo — somme directe des colonnes saisies pour chaque article ciblé.
-  // stockInitial = dernier SI saisi par article ; entrées/sorties = somme de toute l'historique.
-  type DayAgg = { date: string; si: number | null; entries: number; sortieCol: number };
-  const byArticle = new Map<string, DayAgg[]>();
-  ((weeklyRes as any).data || []).forEach((r: any) => {
-    if (!r.article) return;
-    const key = `${r.week_start}__${r.day_of_week}__${r.article}`;
-    let list = byArticle.get(r.article);
-    if (!list) { list = []; byArticle.set(r.article, list); }
-    list.push({
-      date: `${r.week_start}__${r.day_of_week}__${r.row_index ?? 0}`,
-      si: (r.row_index ?? 0) === 0 && r.stock_initial != null ? Number(r.stock_initial) : null,
-      entries: r.entrees != null ? Number(r.entrees) : 0,
-      sortieCol: r.sorties != null ? Number(r.sorties) : 0,
-    });
-    void key;
-  });
-  for (const [, rows] of byArticle) {
-    let lastSi: number | null = null;
-    let lastSiKey = "";
-    let articleEntries = 0;
-    let articleSorties = 0;
-    let firstSi: number | null = null;
-    let firstSiKey = "";
-    for (const r of rows) {
-      articleEntries += r.entries;
-      articleSorties += r.sortieCol;
-      if (r.si != null) {
-        if (firstSi == null || r.date < firstSiKey) { firstSi = r.si; firstSiKey = r.date; }
-        if (lastSi == null || r.date > lastSiKey) { lastSi = r.si; lastSiKey = r.date; }
-      }
-    }
-    if (firstSi != null) stockInitial += firstSi;
-    entrees += articleEntries;
-    sorties += articleSorties;
-    if (lastSi != null) stockRestant += lastSi;
+  // 2) Source : Suivi Hebdo — même calcul que les autres articles hebdo
+  // (sorties déduites des SI quotidiens successifs + entrées).
+  const weeklyRows = ((weeklyRes as any).data || []) as WeeklyTrackingOrderRecord[];
+  for (const art of TOPPINGS_WEEKLY_ARTICLES) {
+    const t = buildWeeklyAggregateTotals(weeklyRows, [art], () => true, true);
+    stockInitial += t.stockInitial;
+    entrees += t.entrees;
+    sorties += t.sorties;
+    stockRestant += t.stockRestant;
   }
 
   return { stockInitial, entrees, sorties, stockRestant };
@@ -796,20 +770,10 @@ export async function getToppingsBreakdown(
       const s = r(agg?.sortiesAll ?? 0);
       out.push({ name: labels[pid] || pid, stockInitial: r(init), entrees: e, sorties: s, stockRestant: r(init + e - s) });
     }
+    const weeklyRows = ((weeklyRes as any).data || []) as WeeklyTrackingOrderRecord[];
     for (const art of TOPPINGS_WEEKLY_ARTICLES) {
-      let e = 0, s = 0, firstSi: number | null = null, firstKey = "", lastSi: number | null = null, lastKey = "";
-      ((weeklyRes as any).data || []).forEach((row: any) => {
-        if (row.article !== art) return;
-        const key = `${row.week_start}__${row.day_of_week}__${row.row_index ?? 0}`;
-        e += row.entrees != null ? Number(row.entrees) : 0;
-        s += row.sorties != null ? Number(row.sorties) : 0;
-        if ((row.row_index ?? 0) === 0 && row.stock_initial != null) {
-          const si = Number(row.stock_initial);
-          if (firstSi == null || key < firstKey) { firstSi = si; firstKey = key; }
-          if (lastSi == null || key > lastKey) { lastSi = si; lastKey = key; }
-        }
-      });
-      out.push({ name: `${art} (Suivi Hebdo)`, stockInitial: r(firstSi ?? 0), entrees: r(e), sorties: r(s), stockRestant: r(lastSi ?? 0) });
+      const t = buildWeeklyAggregateTotals(weeklyRows, [art], () => true, true);
+      out.push({ name: `${art} (Suivi Hebdo)`, ...t });
     }
     return out;
   }
@@ -830,31 +794,12 @@ export async function getToppingsBreakdown(
     });
     comps.push(c);
   }
-  const wrows = ((weeklyRes as any).data || []) as any[];
-  for (const art of TOPPINGS_WEEKLY_ARTICLES) {
-    const c: Comp = { name: `${art} (Suivi Hebdo)`, start: 0, days: {} };
-    let firstKey = "";
-    let firstSi: number | null = null;
-    for (const row of wrows) {
-      if (row.article !== art) continue;
-      const dayIdx = WEEKLY_DAY_INDEX[row.day_of_week];
-      if (row.week_start == null || dayIdx == null) continue;
-      const date = addDaysISO(row.week_start, dayIdx);
-      const key = `${date}__${row.row_index ?? 0}`;
-      if (row.stock_initial != null && (firstSi == null || key < firstKey)) { firstSi = Number(row.stock_initial); firstKey = key; }
-      if (!c.days[date]) c.days[date] = { e: 0, s: 0 };
-      c.days[date].e += row.entrees != null ? Number(row.entrees) : 0;
-      c.days[date].s += row.sorties != null ? Number(row.sorties) : 0;
-    }
-    c.start = firstSi ?? 0;
-    comps.push(c);
-  }
   // Dates communes à tous les composants (la ligne raisonne sur l'ensemble des dates)
   const allDates = new Set<string>();
   comps.forEach((c) => Object.keys(c.days).forEach((d) => allDates.add(d)));
   const dates = Array.from(allDates).sort();
   const anyMatch = dates.some((d) => matchDate(d));
-  return comps.map((c) => {
+  const aliRows = comps.map((c) => {
     let cumul = c.start;
     let si: number | null = null;
     let e = 0, s = 0, rest = cumul, lastBefore = cumul;
@@ -872,6 +817,12 @@ export async function getToppingsBreakdown(
     if (!anyMatch || si === null) { si = lastBefore; rest = lastBefore; e = 0; s = 0; }
     return { name: c.name, stockInitial: r(si), entrees: r(e), sorties: r(s), stockRestant: r(rest) };
   });
+  const wrows = ((weeklyRes as any).data || []) as WeeklyTrackingOrderRecord[];
+  const weeklyOut = TOPPINGS_WEEKLY_ARTICLES.map((art) => ({
+    name: `${art} (Suivi Hebdo)`,
+    ...buildWeeklyAggregateTotals(wrows, [art], matchDate, false),
+  }));
+  return [...aliRows, ...weeklyOut];
 }
 
 const WEEKLY_DAY_INDEX: Record<string, number> = {
