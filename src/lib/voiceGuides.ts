@@ -37,7 +37,7 @@ export async function saveVoiceGuide(input: {
   userId: string;
   previousPath?: string;
 }): Promise<VoiceGuide> {
-  const extension = input.blob.type.includes("mp4") ? "m4a" : input.blob.type.includes("ogg") ? "ogg" : "webm";
+  const extension = input.blob.type.includes("wav") ? "wav" : input.blob.type.includes("mp4") ? "m4a" : input.blob.type.includes("ogg") ? "ogg" : "webm";
   const safeKey = input.sectionKey.replace(/[^a-z0-9_-]+/gi, "-").slice(0, 120);
   const audioPath = `${safeKey}/${Date.now()}.${extension}`;
   const { error: uploadError } = await supabase.storage

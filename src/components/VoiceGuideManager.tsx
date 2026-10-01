@@ -7,6 +7,10 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { toast } from "@/components/ui/sonner";
 import { deleteVoiceGuide, getVoiceGuideUrl, loadVoiceGuides, saveVoiceGuide, type VoiceGuide } from "@/lib/voiceGuides";
 
+import { supabase } from "@/integrations/supabase/client";
+
+const registered = new Set<string>();
+
 interface SectionRef { key: string; title: string }
 interface Mount { root: Root; host: HTMLElement }
 
@@ -111,6 +115,11 @@ export function VoiceGuideManager({ moduleKey }: { moduleKey: string }) {
         const number = (occurrence.get(slug) ?? 0) + 1;
         occurrence.set(slug, number);
         const key = `${moduleKey}:${slug}:${number}`;
+        if (isAdmin && !registered.has(key)) {
+          registered.add(key);
+          void supabase.from("voice_guide_texts" as never)
+            .upsert({ section_key: key, module_key: moduleKey, section_title: title } as never, { onConflict: "section_key", ignoreDuplicates: true });
+        }
         let mount = mounts.current.get(heading);
         if (!mount) {
           const host = document.createElement("span");
