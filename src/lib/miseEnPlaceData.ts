@@ -47,6 +47,28 @@ export async function setMiseEnPlaceStock(productId: string, quantity: number) {
   if (error) throw error;
 }
 
+/**
+ * Valeurs applicables à une semaine : pour chaque produit, la dernière saisie
+ * faite à cette semaine ou avant (reprise jusqu'au prochain comptage).
+ */
+export async function getMiseEnPlaceStocksUpToWeek(weekStart: string): Promise<Record<string, number>> {
+  const pdvId = requireCurrentPdvId();
+  const { data, error } = await (supabase as any)
+    .from("mise_en_place_stocks")
+    .select("product_id, quantity, week_start")
+    .eq("pdv_id", pdvId)
+    .lte("week_start", weekStart)
+    .neq("week_start", SINGLE_WEEK)
+    .order("week_start", { ascending: false });
+  if (error) throw error;
+  const map: Record<string, number> = {};
+  for (const row of (data || []) as any[]) {
+    if (row.product_id in map) continue;
+    map[row.product_id] = Number(row.quantity) || 0;
+  }
+  return map;
+}
+
 /** Valeurs enregistrées pour une semaine précise (lundi ISO). */
 export async function getMiseEnPlaceStocksForWeek(weekStart: string): Promise<Record<string, number>> {
   const pdvId = requireCurrentPdvId();
