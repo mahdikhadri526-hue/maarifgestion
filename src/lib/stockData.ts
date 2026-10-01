@@ -774,7 +774,11 @@ export async function getToppingsBreakdown(
       const agg = aggregates.get(pid);
       const e = r(agg?.entreesAll ?? 0);
       const s = r(agg?.sortiesAll ?? 0);
-      out.push({ name: labels[pid] || pid, stockInitial: r(init), entrees: e, sorties: s, stockRestant: r(init + e - s) });
+      if (pid === OREO_PRODUCT_ID) {
+        out.push({ name: `${labels[pid] || pid} (kg)`, stockInitial: oreoKg(init), entrees: oreoKg(e), sorties: oreoKg(s), stockRestant: oreoKg(init + e - s) });
+      } else {
+        out.push({ name: labels[pid] || pid, stockInitial: r(init), entrees: e, sorties: s, stockRestant: r(init + e - s) });
+      }
     }
     const weeklyRows = ((weeklyRes as any).data || []) as WeeklyTrackingOrderRecord[];
     for (const art of TOPPINGS_WEEKLY_ARTICLES) {
