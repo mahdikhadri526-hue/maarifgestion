@@ -242,7 +242,19 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       : mode === "month" && month ? (month === currentMonthISO() ? todayISO() : monthEndISO(month))
       : mode === "period" && end ? end
       : todayISO();
-    return weekStartOf(new Date(`${ref}T00:00:00`));
+    const ws = weekStartOf(new Date(`${ref}T00:00:00`));
+    // Le comptage du lendemain de fin de mois clôture le mois précédent :
+    // en filtre mois, une semaine commencée avant le 1er appartient au mois
+    // précédent → on prend le premier lundi du mois filtré.
+    if (mode === "month" && month) {
+      const monthStart = `${month.slice(0, 7)}-01`;
+      if (ws < monthStart) {
+        const d = new Date(`${monthStart}T00:00:00`);
+        d.setDate(d.getDate() + ((8 - d.getDay()) % 7));
+        return weekStartOf(d);
+      }
+    }
+    return ws;
   }, [mode, day, month, end]);
   const { map: mepMap, save: saveMep } = useMiseEnPlace(mepWeek);
   const mepInventoryDay = inventoryDayOfWeek(mepWeek);
