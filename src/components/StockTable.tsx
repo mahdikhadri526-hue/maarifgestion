@@ -217,8 +217,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [amandesAgg, setAmandesAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const { can, isAdmin } = useAuth();
   const operatorOptions = useOperators();
-  const [showRefCols, setShowRefCols] = useState<boolean>(false);
-  const [showMepCols, setShowMepCols] = useState<boolean>(false);
+  const [showRefColsRaw, setShowRefCols] = useState<boolean>(false);
+  const [showMepColsRaw, setShowMepCols] = useState<boolean>(false);
+  // Permission unique : affichage Stock mise en place / Stock total / Sorties
+  // total + boutons « Colonnes Réf. » et « Mise en place / total ».
+  const canToggleExtraCols = can("toggle_stock_extra_cols");
+  const showRefCols = canToggleExtraCols && showRefColsRaw;
+  const showMepCols = canToggleExtraCols && showMepColsRaw;
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustData, setAdjustData] = useState<{
     productId: string;
