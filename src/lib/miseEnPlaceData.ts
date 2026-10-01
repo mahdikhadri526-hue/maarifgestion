@@ -19,13 +19,14 @@ const SINGLE_WEEK = "2000-01-03"; // un lundi
  * La table garde une colonne week_start ; on lit la dernière valeur connue
  * et on écrit toujours sur la semaine fixe.
  */
-export async function getMiseEnPlaceStocks(): Promise<Record<string, number>> {
+export async function getMiseEnPlaceStocks(legacyOnly = false): Promise<Record<string, number>> {
   const pdvId = requireCurrentPdvId();
-  const { data, error } = await (supabase as any)
+  let q = (supabase as any)
     .from("mise_en_place_stocks")
     .select("product_id, quantity, week_start")
-    .eq("pdv_id", pdvId)
-    .order("week_start", { ascending: false });
+    .eq("pdv_id", pdvId);
+  if (legacyOnly) q = q.eq("week_start", SINGLE_WEEK);
+  const { data, error } = await q.order("week_start", { ascending: false });
   if (error) throw error;
   const map: Record<string, number> = {};
   for (const row of (data || []) as any[]) {

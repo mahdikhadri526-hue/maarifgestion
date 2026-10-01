@@ -3,40 +3,43 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   getMiseEnPlaceStocks,
-  setMiseEnPlaceStock,
   getMiseEnPlaceStocksForWeek,
   setMiseEnPlaceStockForWeek,
   weekStartOf,
 } from "@/lib/miseEnPlaceData";
 
 /**
- * Charge les valeurs de mise en place.
- * - Semaine courante (ou aucune) : valeur unique historique (comportement d'origine).
- * - Autre semaine : valeurs enregistrées pour cette semaine (week_start = lundi).
+ * Charge les valeurs de mise en place d'UNE semaine (week_start = lundi).
+ * Chaque semaine a ses propres saisies. Pour la semaine courante sans saisie,
+ * on reprend l'ancienne valeur unique (avant le passage hebdomadaire).
  */
 export function useMiseEnPlace(weekStart?: string) {
   const [map, setMap] = useState<Record<string, number>>({});
   const currentWeek = weekStartOf();
-  const isCurrent = !weekStart || weekStart === currentWeek;
+  const week = weekStart || currentWeek;
+  const isCurrent = week === currentWeek;
 
   useEffect(() => {
     let cancelled = false;
-    const loader = isCurrent ? getMiseEnPlaceStocks() : getMiseEnPlaceStocksForWeek(weekStart!);
-    loader
-      .then((r) => { if (!cancelled) setMap(r); })
-      .catch(() => {});
+    setMap({});
+    (async () => {
+      let r = await getMiseEnPlaceStocksForWeek(week);
+      if (isCurrent && Object.keys(r).length === 0) {
+        r = await getMiseEnPlaceStocks(true);
+      }
+      if (!cancelled) setMap(r);
+    })().catch(() => {});
     return () => { cancelled = true; };
-  }, [weekStart, isCurrent]);
+  }, [week, isCurrent]);
 
   const save = useCallback(async (productId: string, value: number) => {
     setMap((prev) => ({ ...prev, [productId]: value }));
     try {
-      if (isCurrent) await setMiseEnPlaceStock(productId, value);
-      else await setMiseEnPlaceStockForWeek(productId, value, weekStart!);
+      await setMiseEnPlaceStockForWeek(productId, value, week);
     } catch (e: any) {
       toast.error(e?.message || "Enregistrement impossible");
     }
-  }, [isCurrent, weekStart]);
+  }, [week]);
 
   return { map, save };
 }
