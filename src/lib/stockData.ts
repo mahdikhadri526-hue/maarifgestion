@@ -775,6 +775,105 @@ async function computeToppingsAggregate(): Promise<{ entrees: number; sorties: n
   return { stockInitial, entrees, sorties, stockRestant };
 }
 
+// Détail par composant de la ligne TOPPINGS, avec exactement les mêmes règles
+// que la ligne : vue générale = computeToppingsAggregate, période =
+// cumul quotidien de getToppingsDailyHistory. La somme = la ligne.
+export async function getToppingsBreakdown(
+  matchDate: ((d: string) => boolean) | null,
+  isBefore: (d: string) => boolean,
+  labels: Record<string, string>,
+): Promise<Array<{ name: string; stockInitial: number; entrees: number; sorties: number; stockRestant: number }>> {
+  const r = roundStockQuantity;
+  if (!matchDate) {
+    const [aggregates, initialStocks, weeklyRes] = await Promise.all([
+      getMovementAggregates(), getInitialStocks(), getToppingsWeeklyRes(),
+    ]);
+    const out: Array<{ name: string; stockInitial: number; entrees: number; sorties: number; stockRestant: number }> = [];
+    for (const pid of TOPPINGS_ALI_PRODUCT_IDS) {
+      const init = initialStocks[pid] || 0;
+      const agg = aggregates.get(pid);
+      const e = r(agg?.entreesAll ?? 0);
+      const s = r(agg?.sortiesAll ?? 0);
+      out.push({ name: labels[pid] || pid, stockInitial: r(init), entrees: e, sorties: s, stockRestant: r(init + e - s) });
+    }
+    for (const art of TOPPINGS_WEEKLY_ARTICLES) {
+      let e = 0, s = 0, firstSi: number | null = null, firstKey = "", lastSi: number | null = null, lastKey = "";
+      ((weeklyRes as any).data || []).forEach((row: any) => {
+        if (row.article !== art) return;
+        const key = `${row.week_start}__${row.day_of_week}__${row.row_index ?? 0}`;
+        e += row.entrees != null ? Number(row.entrees) : 0;
+        s += row.sorties != null ? Number(row.sorties) : 0;
+        if ((row.row_index ?? 0) === 0 && row.stock_initial != null) {
+          const si = Number(row.stock_initial);
+          if (firstSi == null || key < firstKey) { firstSi = si; firstKey = key; }
+          if (lastSi == null || key > lastKey) { lastSi = si; lastKey = key; }
+        }
+      });
+      out.push({ name: `${art} (Suivi Hebdo)`, stockInitial: r(firstSi ?? 0), entrees: r(e), sorties: r(s), stockRestant: r(lastSi ?? 0) });
+    }
+    return out;
+  }
+
+  const [allMovements, initialStocks, units, configs, weeklyRes] = await Promise.all([
+    getMovements(), getInitialStocks(), getProductUnits(), getProductUnitConfigs(), getToppingsWeeklyRes(),
+  ]);
+  type Comp = { name: string; start: number; days: Record<string, { e: number; s: number }> };
+  const comps: Comp[] = [];
+  for (const pid of TOPPINGS_ALI_PRODUCT_IDS) {
+    const c: Comp = { name: labels[pid] || pid, start: initialStocks[pid] || 0, days: {} };
+    const unit = units[pid] || "PIECE";
+    allMovements.filter((m) => m.productId === pid).forEach((m) => {
+      const d = m.date.split("T")[0];
+      if (!c.days[d]) c.days[d] = { e: 0, s: 0 };
+      const q = movementPiecesToDisplay(m.quantity, unit, configs[pid], pid);
+      if (m.type === "entree") c.days[d].e += q; else c.days[d].s += q;
+    });
+    comps.push(c);
+  }
+  const wrows = ((weeklyRes as any).data || []) as any[];
+  for (const art of TOPPINGS_WEEKLY_ARTICLES) {
+    const c: Comp = { name: `${art} (Suivi Hebdo)`, start: 0, days: {} };
+    let firstKey = "";
+    let firstSi: number | null = null;
+    for (const row of wrows) {
+      if (row.article !== art) continue;
+      const dayIdx = WEEKLY_DAY_INDEX[row.day_of_week];
+      if (row.week_start == null || dayIdx == null) continue;
+      const date = addDaysISO(row.week_start, dayIdx);
+      const key = `${date}__${row.row_index ?? 0}`;
+      if (row.stock_initial != null && (firstSi == null || key < firstKey)) { firstSi = Number(row.stock_initial); firstKey = key; }
+      if (!c.days[date]) c.days[date] = { e: 0, s: 0 };
+      c.days[date].e += row.entrees != null ? Number(row.entrees) : 0;
+      c.days[date].s += row.sorties != null ? Number(row.sorties) : 0;
+    }
+    c.start = firstSi ?? 0;
+    comps.push(c);
+  }
+  // Dates communes à tous les composants (la ligne raisonne sur l'ensemble des dates)
+  const allDates = new Set<string>();
+  comps.forEach((c) => Object.keys(c.days).forEach((d) => allDates.add(d)));
+  const dates = Array.from(allDates).sort();
+  const anyMatch = dates.some((d) => matchDate(d));
+  return comps.map((c) => {
+    let cumul = c.start;
+    let si: number | null = null;
+    let e = 0, s = 0, rest = cumul, lastBefore = cumul;
+    for (const d of dates) {
+      const day = c.days[d] || { e: 0, s: 0 };
+      const before = cumul;
+      cumul = before + day.e - day.s;
+      if (matchDate(d)) {
+        if (si === null) si = before;
+        e += day.e; s += day.s; rest = cumul;
+      } else if (isBefore(d)) {
+        lastBefore = cumul;
+      }
+    }
+    if (!anyMatch || si === null) { si = lastBefore; rest = lastBefore; e = 0; s = 0; }
+    return { name: c.name, stockInitial: r(si), entrees: r(e), sorties: r(s), stockRestant: r(rest) };
+  });
+}
+
 const WEEKLY_DAY_INDEX: Record<string, number> = {
   Lundi: 0, Mardi: 1, Mercredi: 2, Jeudi: 3, Vendredi: 4, Samedi: 5, Dimanche: 6,
 };
