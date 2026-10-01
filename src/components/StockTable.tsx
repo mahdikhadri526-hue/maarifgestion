@@ -1502,7 +1502,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     for (let i = 0; i < 3; i++) {
                       const inv = inventoryDayOfWeek(ws);
                       if (formatISODate(inv) >= t) return inv.toLocaleDateString("fr-FR");
-                      ws = new Date(ws); ws.setDate(ws.getDate() + 7);
+                      const nx = new Date(`${ws}T00:00:00`); nx.setDate(nx.getDate() + 7); ws = weekStartOf(nx);
                     }
                     return mepInventoryDay.toLocaleDateString("fr-FR");
                   })()}
