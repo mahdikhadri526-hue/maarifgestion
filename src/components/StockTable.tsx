@@ -1874,7 +1874,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   {showMepCols && (
                     <>
                   <td className="p-3 text-right font-mono text-sm">
-                    {canEditRemaining && mepEditable && !isReadOnlyAggId(level.productId) ? (
+                    {canEditRemaining && mepEditable ? (
                       <MiseEnPlaceInput
                         value={mepMap[level.productId] ?? 0}
                         onSave={(n) => saveMep(level.productId, n)}
