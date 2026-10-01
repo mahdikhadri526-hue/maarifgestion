@@ -235,7 +235,15 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const canEditStock = can("edit_stock");
   const canEditRemaining = can("edit_remaining_stock") || can("edit_stock");
   // Semaine sélectionnée pour la colonne « Stock mise en place » (lundi ISO).
-  const [mepWeek, setMepWeek] = useState<string>(() => weekStartOf());
+  // Semaine suivie par le filtre de date : chaque semaine a ses propres saisies.
+  const mepWeek = useMemo(() => {
+    const ref =
+      mode === "day" && day ? day
+      : mode === "month" && month ? (month === currentMonthISO() ? todayISO() : monthEndISO(month))
+      : mode === "period" && end ? end
+      : todayISO();
+    return weekStartOf(new Date(`${ref}T00:00:00`));
+  }, [mode, day, month, end]);
   const { map: mepMap, save: saveMep } = useMiseEnPlace(mepWeek);
   const mepInventoryDay = inventoryDayOfWeek(mepWeek);
   // Saisie déverrouillée uniquement le jour du comptage de la semaine affichée.
