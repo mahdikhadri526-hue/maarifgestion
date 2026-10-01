@@ -263,10 +263,17 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const { map: mepMapRaw, save: saveMep } = useMiseEnPlace(mepWeek);
   const mepInventoryDay = inventoryDayOfWeek(mepWeek);
   // En filtre « jour », la saisie n'apparaît que le jour même du comptage.
+  // En filtre « période », la saisie n'apparaît que si le jour du comptage est
+  // compris dans la période (ex. comptage du 1er oct. absent d'une période finissant le 30/09).
   const mepMap = useMemo<Record<string, number>>(
-    () => (mode === "day" && day && day !== formatISODate(mepInventoryDay) ? {} : mepMapRaw),
+    () => {
+      const inv = formatISODate(mepInventoryDay);
+      if (mode === "day" && day && day !== inv) return {};
+      if (mode === "period" && ((end && inv > end) || (start && inv < start))) return {};
+      return mepMapRaw;
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mepMapRaw, mode, day, mepWeek]
+    [mepMapRaw, mode, day, start, end, mepWeek]
   );
   // Report : le Stock total saisi le jour du comptage devient le stock initial
   // du lendemain (filtres jour / mois / période uniquement, vue « Tout » inchangée).
