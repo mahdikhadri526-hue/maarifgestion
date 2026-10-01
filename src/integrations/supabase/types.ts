@@ -2298,6 +2298,33 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_guide_texts: {
+        Row: {
+          created_at: string
+          module_key: string
+          script: string
+          section_key: string
+          section_title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          module_key: string
+          script?: string
+          section_key: string
+          section_title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          module_key?: string
+          script?: string
+          section_key?: string
+          section_title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       voice_guides: {
         Row: {
           audio_path: string
