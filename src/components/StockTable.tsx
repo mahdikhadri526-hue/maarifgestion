@@ -1700,9 +1700,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 )}
                 {showMepCols && (
                   <>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties total</th>
+                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
+                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties total</th>
+                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total</th>
                   </>
                 )}
 
@@ -1854,14 +1854,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       <span className="text-muted-foreground">{roundStockQuantity(mepMap[level.productId] ?? 0)}</span>
                     )}
                   </td>
-                  <td className="p-3 text-right font-mono text-sm font-bold text-primary">
-                    {roundStockQuantity((Number(v.stockRestant) || 0) + (mepMap[level.productId] ?? 0))}
-                  </td>
-                  <td className="p-3 text-right font-mono text-sm font-bold">
-                    <span className={sortiesTotal < 0 ? "text-destructive" : "text-accent-foreground"}>
-                      {sortiesTotal}
-                    </span>
-                  </td>
+                   <td className="p-3 text-right font-mono text-sm font-bold">
+                     <span className={sortiesTotal < 0 ? "text-destructive" : "text-accent-foreground"}>
+                       {sortiesTotal}
+                     </span>
+                   </td>
+                   <td className="p-3 text-right font-mono text-sm font-bold text-primary">
+                     {roundStockQuantity((Number(v.stockRestant) || 0) + (mepMap[level.productId] ?? 0))}
+                   </td>
                     </>
                   )}
                 </tr>
