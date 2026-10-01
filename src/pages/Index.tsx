@@ -132,13 +132,15 @@ const Index = () => {
       )}
 
       {showAnomalies && (isAdmin || can("view_anomalies")) ? (
-        <main className="max-w-5xl mx-auto px-4 py-6">
+        <main data-voice-guide-scope className="max-w-5xl mx-auto px-4 py-6">
+          <VoiceGuideManager moduleKey="anomalies" />
           <Suspense fallback={<TabFallback />}>
             <AnomalyCenter onBack={() => setShowAnomalies(false)} />
           </Suspense>
         </main>
       ) : showAdmin && (isAdmin || isRegionalAdmin) ? (
-        <main className="max-w-5xl mx-auto px-4 py-6">
+        <main data-voice-guide-scope className="max-w-5xl mx-auto px-4 py-6">
+          <VoiceGuideManager moduleKey="administration" />
           <Suspense fallback={<TabFallback />}>
             <UserManagement onBack={() => setShowAdmin(false)} />
           </Suspense>
@@ -165,7 +167,7 @@ const Index = () => {
       </nav>
 
       <main data-voice-guide-scope className="max-w-7xl mx-auto px-4 py-6 space-y-6 overflow-x-hidden min-w-0">
-        <VoiceGuideManager moduleKey={showAnomalies ? "anomalies" : showAdmin ? "administration" : tab} />
+        <VoiceGuideManager moduleKey={tab} />
         {tabs.length === 0 && (
           <div className="bg-card border rounded-xl p-8 text-center">
             <h2 className="text-lg font-semibold mb-2">Aucune permission</h2>
