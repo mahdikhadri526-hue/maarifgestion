@@ -1261,7 +1261,20 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         }).filter(Boolean) as AggregateBreakdownRow[];
         setDetailsRows(rows);
       } else if (isGlace) {
-        const breakdown = await getGlaceBreakdownForRange(range.start, range.end);
+        let bStart = range.start;
+        let bEnd = range.end;
+        if (mode === "all") {
+          // La ligne GLACE en vue générale = semaine en cours (lundi → dimanche)
+          const d = new Date();
+          d.setDate(d.getDate() + ((d.getDay() === 0 ? -6 : 1) - d.getDay()));
+          const iso = (x: Date) =>
+            `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+          bStart = iso(d);
+          const s = new Date(d);
+          s.setDate(s.getDate() + 6);
+          bEnd = iso(s);
+        }
+        const breakdown = await getGlaceBreakdownForRange(bStart, bEnd, mode === "all");
         setDetailsRows(breakdown);
       } else if (isMacaron) {
         const data = await fetchAllRows<WeeklyTrackingOrderRecord>(() =>

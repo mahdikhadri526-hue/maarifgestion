@@ -1300,6 +1300,7 @@ export interface AggregateBreakdownRow {
 export async function getGlaceBreakdownForRange(
   startDate?: string,
   endDate?: string,
+  useGlobalLatest = false,
 ): Promise<AggregateBreakdownRow[]> {
   const [rows, gramRes] = await Promise.all([
     getGlaceWeeklyRows(weekLowerBound(startDate, 8)),
@@ -1328,6 +1329,17 @@ export async function getGlaceBreakdownForRange(
     if (r.entrees != null) cell.entries += Number(r.entrees) || 0;
   });
   const inRange = (date: string) => (!startDate || date >= startDate) && (!endDate || date <= endDate);
+  // Même logique que la ligne GLACE du tableau : SI = date de 1er comptage commune
+  // à tous les parfums dans la période ; restant = dernier SI (global en vue semaine).
+  let firstStockDate: string | null = null;
+  let latestGlobal: string | null = null;
+  for (const days of byArticle.values()) {
+    for (const [date, cell] of days) {
+      if (!inRange(date) || cell.si == null) continue;
+      if (!firstStockDate || date < firstStockDate) firstStockDate = date;
+      if (!latestGlobal || date > latestGlobal) latestGlobal = date;
+    }
+  }
   const out: AggregateBreakdownRow[] = [];
   const allArticles = Object.keys(grams).filter((a) => !GLACE_PARFUMS_BLACKLIST.has(a));
   for (const article of allArticles) {
@@ -1336,30 +1348,10 @@ export async function getGlaceBreakdownForRange(
     let stockInitial = 0;
     let entrees = 0;
     let sorties = 0;
-    // Stock initial du parfum sur la période : si un SI existe au début exact
-    // de la période (cas filtre jour), il est prioritaire. Sinon on reprend
-    // le dernier SI connu avant la période, puis à défaut le premier SI dedans.
-    let initialBacs: number | null = null;
-    if (startDate) {
-      const exactStartSi = days.get(startDate)?.si;
-      if (exactStartSi != null) initialBacs = exactStartSi;
-
-      let bestBefore: string | null = null;
-      for (const [date, cell] of days) {
-        if (cell.si == null || date >= startDate) continue;
-        if (!bestBefore || date > bestBefore) bestBefore = date;
-      }
-      if (initialBacs == null && bestBefore) initialBacs = days.get(bestBefore)?.si ?? null;
+    if (firstStockDate) {
+      const si = days.get(firstStockDate)?.si;
+      if (si != null) stockInitial = si * g;
     }
-    if (initialBacs == null) {
-      let firstIn: string | null = null;
-      for (const [date, cell] of days) {
-        if (cell.si == null || !inRange(date)) continue;
-        if (!firstIn || date < firstIn) firstIn = date;
-      }
-      if (firstIn) initialBacs = days.get(firstIn)?.si ?? null;
-    }
-    if (initialBacs != null) stockInitial = initialBacs * g;
     for (const [date, cell] of days) {
       if (!inRange(date)) continue;
       entrees += cell.entries * g;
@@ -1369,19 +1361,18 @@ export async function getGlaceBreakdownForRange(
       if (sortie == null) sortie = cell.explicitSortie ?? 0;
       sorties += sortie * g;
     }
-    // Stock restant = dernier SI saisi <= endDate pour ce parfum (même logique
-    // que l'agrégat GLACE affiché dans la table). Si rien n'a été saisi dans
-    // la période, on retombe sur SI + entrées − sorties.
-    let stockRestant = stockInitial + entrees - sorties;
-    let latestSiDate: string | null = null;
-    for (const [date, cell] of days) {
-      if (cell.si == null) continue;
-      if (endDate && date > endDate) continue;
-      if (startDate && date < startDate) continue;
-      if (!latestSiDate || date > latestSiDate) latestSiDate = date;
-    }
-    if (latestSiDate) {
-      const si = days.get(latestSiDate)?.si;
+    let stockRestant = 0;
+    if (useGlobalLatest) {
+      const si = latestGlobal ? days.get(latestGlobal)?.si : null;
+      if (si != null) stockRestant = si * g;
+    } else {
+      let latestSiDate: string | null = null;
+      for (const [date, cell] of days) {
+        if (cell.si == null) continue;
+        if (endDate && date > endDate) continue;
+        if (!latestSiDate || date > latestSiDate) latestSiDate = date;
+      }
+      const si = latestSiDate ? days.get(latestSiDate)?.si : null;
       if (si != null) stockRestant = si * g;
     }
     out.push({
