@@ -242,16 +242,20 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       : mode === "month" && month ? (month === currentMonthISO() ? todayISO() : monthEndISO(month))
       : mode === "period" && end ? end
       : todayISO();
-    const ws = weekStartOf(new Date(`${ref}T00:00:00`));
-    // Le comptage du lendemain de fin de mois clôture le mois précédent :
-    // en filtre mois, une semaine commencée avant le 1er appartient au mois
-    // précédent → on prend le premier lundi du mois filtré.
-    if (mode === "month" && month) {
-      const monthStart = `${month.slice(0, 7)}-01`;
-      if (ws < monthStart) {
-        const d = new Date(`${monthStart}T00:00:00`);
-        d.setDate(d.getDate() + ((8 - d.getDay()) % 7));
-        return weekStartOf(d);
+    let ws = weekStartOf(new Date(`${ref}T00:00:00`));
+    // La semaine qui chevauche la fin du mois est comptée le 1er du mois
+    // suivant et appartient au mois SUIVANT. En filtre mois passé, si la
+    // semaine contenant le dernier jour du mois déborde sur le mois suivant,
+    // on recule d'une semaine (elle sera affichée dans le filtre du mois
+    // suivant).
+    if (mode === "month" && month && month !== currentMonthISO()) {
+      const monthEnd = monthEndISO(month);
+      const d = new Date(`${monthEnd}T00:00:00`);
+      if (d.getDay() !== 0) {
+        // fin de mois ≠ dimanche → la semaine chevauche → reculer d'une semaine
+        const prev = new Date(d);
+        prev.setDate(prev.getDate() - 7);
+        ws = weekStartOf(prev);
       }
     }
     return ws;
