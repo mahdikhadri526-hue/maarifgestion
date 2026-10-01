@@ -53,7 +53,11 @@ export function VoiceScriptsSettings() {
     const m = new Map<string, Row[]>();
     rows.filter((r) => !q || r.section_title.toLowerCase().includes(q) || r.module_key.toLowerCase().includes(q))
       .forEach((r) => m.set(r.module_key, [...(m.get(r.module_key) ?? []), r]));
-    return Array.from(m.entries()).sort(([a], [b]) => a.localeCompare(b));
+    const order = ["dashboard", "stock-initial", "mouvements", "historique", "produit", "lots", "requisition", "autocontrole", "stuffs-glace", "hebdo", "temperatures", "nettoyage", "ecarts", "pep", "tech", "pointage", "rh", "planning", "anomalies", "administration"];
+    const rank = (k: string) => { const i = order.indexOf(k); return i < 0 ? 999 : i; };
+    const ts = (r: Row) => { const c = (r as Row & { created_at?: string }).created_at; return c ? Date.parse(c) : Number.MAX_SAFE_INTEGER; };
+    m.forEach((list) => list.sort((a, b) => ts(a) - ts(b) || a.section_key.localeCompare(b.section_key)));
+    return Array.from(m.entries()).sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b));
   }, [rows, query]);
 
   const saveText = async (r: Row) => {
