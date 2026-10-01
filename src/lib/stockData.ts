@@ -795,6 +795,7 @@ export async function getToppingsBreakdown(
   const comps: Comp[] = [];
   for (const pid of TOPPINGS_ALI_PRODUCT_IDS) {
     const c: Comp = { name: labels[pid] || pid, start: initialStocks[pid] || 0, days: {} };
+    if (pid === OREO_PRODUCT_ID) c.name = `${c.name} (kg)`;
     const unit = units[pid] || "PIECE";
     allMovements.filter((m) => m.productId === pid).forEach((m) => {
       const d = m.date.split("T")[0];
