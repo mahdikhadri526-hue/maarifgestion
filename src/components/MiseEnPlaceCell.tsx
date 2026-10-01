@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import {
   getMiseEnPlaceStocks,
-  getMiseEnPlaceStocksForWeek,
+  getMiseEnPlaceStocksUpToWeek,
   setMiseEnPlaceStockForWeek,
   weekStartOf,
 } from "@/lib/miseEnPlaceData";
@@ -23,7 +23,7 @@ export function useMiseEnPlace(weekStart?: string) {
     let cancelled = false;
     setMap({});
     (async () => {
-      let r = await getMiseEnPlaceStocksForWeek(week);
+      let r = await getMiseEnPlaceStocksUpToWeek(week);
       if (isCurrent && Object.keys(r).length === 0) {
         r = await getMiseEnPlaceStocks(true);
       }
