@@ -15,9 +15,10 @@ Deno.serve(async (req) => {
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
     });
-    const { data: userData } = await supabase.auth.getUser(authHeader.replace("Bearer ", ""));
-    if (!userData?.user) return json({ error: "Unauthorized" }, 401);
-    const { data: admin } = await supabase.rpc("is_admin", { _user_id: userData.user.id });
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(authHeader.replace("Bearer ", ""));
+    const userId = claimsData?.claims?.sub;
+    if (claimsError || !userId) return json({ error: "Session expirée. Reconnectez-vous." }, 401);
+    const { data: admin } = await supabase.rpc("is_admin", { _user_id: userId });
     if (!admin) return json({ error: "Réservé à l'administrateur" }, 403);
 
     const { text } = await req.json();

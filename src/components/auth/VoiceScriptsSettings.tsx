@@ -73,13 +73,19 @@ export function VoiceScriptsSettings() {
   };
 
   const createAudio = async (r: Row, text: string, previousPath?: string): Promise<VoiceGuide> => {
-      const { data: s } = await supabase.auth.getSession();
-      if (!s.session?.access_token || !user) throw new Error("Session expirée. Reconnectez-vous.");
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-tts`, {
+      if (!user) throw new Error("Session expirée. Reconnectez-vous.");
+      const call = async (token: string) => fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-tts`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${s.session.access_token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" },
+        headers: { Authorization: `Bearer ${token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       });
+      const { data: s } = await supabase.auth.getSession();
+      let res = s.session?.access_token ? await call(s.session.access_token) : null;
+      if (!res || res.status === 401) {
+        const { data: r } = await supabase.auth.refreshSession();
+        if (!r.session?.access_token) throw new Error("Session expirée. Reconnectez-vous.");
+        res = await call(r.session.access_token);
+      }
       if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || "Erreur"); }
       const buf = await res.arrayBuffer();
       return saveVoiceGuide({
