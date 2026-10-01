@@ -810,7 +810,9 @@ export async function getToppingsBreakdown(
   comps.forEach((c) => Object.keys(c.days).forEach((d) => allDates.add(d)));
   const dates = Array.from(allDates).sort();
   const anyMatch = dates.some((d) => matchDate(d));
-  const aliRows = comps.map((c) => {
+  const aliRows = comps.map((c, idx) => {
+    const isOreo = TOPPINGS_ALI_PRODUCT_IDS[idx] === OREO_PRODUCT_ID;
+    const cv = isOreo ? oreoKg : r;
     let cumul = c.start;
     let si: number | null = null;
     let e = 0, s = 0, rest = cumul, lastBefore = cumul;
@@ -826,7 +828,7 @@ export async function getToppingsBreakdown(
       }
     }
     if (!anyMatch || si === null) { si = lastBefore; rest = lastBefore; e = 0; s = 0; }
-    return { name: c.name, stockInitial: r(si), entrees: r(e), sorties: r(s), stockRestant: r(rest) };
+    return { name: c.name, stockInitial: cv(si), entrees: cv(e), sorties: cv(s), stockRestant: cv(rest) };
   });
   const wrows = ((weeklyRes as any).data || []) as WeeklyTrackingOrderRecord[];
   const weeklyOut = TOPPINGS_WEEKLY_ARTICLES.map((art) => ({
