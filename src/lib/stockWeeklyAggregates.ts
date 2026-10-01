@@ -68,6 +68,7 @@ export function buildWeeklyAggregateTotals(
   articleList: readonly string[],
   isInSelectedPeriod: (iso: string) => boolean,
   matchAll: boolean,
+  closeOnNextDayCount = false,
 ) {
   const byArticle = new Map<string, Map<string, { si: number | null; entrees: number; explicitSorties: number }>>();
   for (const r of records) {
@@ -99,6 +100,8 @@ export function buildWeeklyAggregateTotals(
     let stockInitialPeriod: number | null = null;
     let lastSIBeforePeriod = 0;
     let entreesPeriodArt = 0;
+    let lastPeriodDate: string | null = null;
+    let nextDaySI: number | null = null;
 
     for (const [date, bucket] of entries) {
       if (bucket.si != null) {
@@ -121,7 +124,14 @@ export function buildWeeklyAggregateTotals(
       } else {
         pendingEntries += bucket.entrees;
       }
-      if (isInSelectedPeriod(date)) entreesPeriodArt += bucket.entrees;
+      if (isInSelectedPeriod(date)) {
+        entreesPeriodArt += bucket.entrees;
+        lastPeriodDate = date;
+      } else if (lastPeriodDate && nextDaySI === null && bucket.si != null) {
+        const nd = parseISODate(lastPeriodDate);
+        nd.setDate(nd.getDate() + 1);
+        if (formatISODate(nd) === date) nextDaySI = bucket.si;
+      }
     }
 
     entries.forEach(([date, bucket]) => {
@@ -138,6 +148,11 @@ export function buildWeeklyAggregateTotals(
     }
 
     if (stockInitialPeriod === null) stockInitialPeriod = lastSIBeforePeriod;
+    // Option : le stock compté le lendemain de la période sert de stock final
+    // (sorties = SI + entrées − stock final), comme sur les fiches hebdo.
+    if (!matchAll && closeOnNextDayCount && nextDaySI !== null && lastPeriodDate) {
+      totalSortiesArt = stockInitialPeriod + entreesPeriodArt - nextDaySI;
+    }
     aggStockInitial += stockInitialPeriod;
     aggEntrees += entreesPeriodArt;
     aggSorties += totalSortiesArt;

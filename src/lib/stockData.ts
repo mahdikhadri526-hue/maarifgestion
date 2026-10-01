@@ -820,7 +820,7 @@ export async function getToppingsBreakdown(
   const wrows = ((weeklyRes as any).data || []) as WeeklyTrackingOrderRecord[];
   const weeklyOut = TOPPINGS_WEEKLY_ARTICLES.map((art) => ({
     name: `${art} (Suivi Hebdo)`,
-    ...buildWeeklyAggregateTotals(wrows, [art], matchDate, false),
+    ...buildWeeklyAggregateTotals(wrows, [art], matchDate, false, true),
   }));
   return [...aliRows, ...weeklyOut];
 }
