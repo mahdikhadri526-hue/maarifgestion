@@ -937,7 +937,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       }
       const toppingsLevel = levels.find((lvl) => lvl.productName === "TOPPINGS" && lvl.category === "alimentaire");
       if (toppingsLevel) {
-        const parts = await getToppingsBreakdown(mode === "all" ? null : matchDate, isBefore, {});
+        const parts = await getToppingsBreakdown(matchDate, isBefore, {});
         const sum = (k: "stockInitial" | "entrees" | "sorties" | "stockRestant") =>
           roundStockQuantity(parts.reduce((t, p) => t + p[k], 0));
         results[toppingsLevel.productId] = {
