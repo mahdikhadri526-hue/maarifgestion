@@ -5,3 +5,4 @@
 - Les constantes et l'agrégation des articles hebdo (Macaron/Sirop/Chantilly/Amandes, dates des lignes du Suivi Hebdo) vivent dans `src/lib/stockWeeklyAggregates.ts`, utilisées par `StockTable`.
 - Report mise en place : en filtre jour/mois/période, si la veille du début de période est un jour de comptage, la saisie mise en place de ce jour est ajoutée au Stock initial et au Stock restant affichés (SI du lendemain = Stock total) ; la vue « Tout » reste inchangée.
 - L’aide vocale est transversale : les titres de rubriques reçoivent automatiquement un bouton lié à une clé stable module/titre, avec fichiers privés dans `voice-guides` et gestion réservée au rôle admin.
+- La génération des explications vocales utilise la même voix masculine darija préconfigurée côté fonction pour toutes les rubriques ; la création groupée conserve les enregistrements micro et la rubrique Bienvenue, afin de ne pas remplacer des voix personnelles.

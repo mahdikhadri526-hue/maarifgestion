@@ -27,6 +27,7 @@ export function VoiceScriptsSettings() {
   const [guides, setGuides] = useState<VoiceGuide[]>([]);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null);
   const [open, setOpen] = useState<Record<string, boolean>>({ dashboard: true });
   const [query, setQuery] = useState("");
   const [playing, setPlaying] = useState<{ key: string; audio: HTMLAudioElement } | null>(null);
@@ -48,6 +49,9 @@ export function VoiceScriptsSettings() {
   useEffect(() => { load(); }, []);
 
   const guideMap = useMemo(() => new Map(guides.map((g) => [g.section_key, g])), [guides]);
+  const canApplyWelcomeVoice = (r: Row) => !r.section_key.startsWith("dashboard:bienvenue")
+    && !!(drafts[r.section_key] ?? "").trim()
+    && (!guideMap.has(r.section_key) || guideMap.get(r.section_key)?.mime_type === "audio/wav");
   const grouped = useMemo(() => {
     const q = query.trim().toLowerCase();
     const m = new Map<string, Row[]>();
@@ -68,6 +72,23 @@ export function VoiceScriptsSettings() {
     return true;
   };
 
+  const createAudio = async (r: Row, text: string, previousPath?: string): Promise<VoiceGuide> => {
+      const { data: s } = await supabase.auth.getSession();
+      if (!s.session?.access_token || !user) throw new Error("Session expirée. Reconnectez-vous.");
+      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-tts`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${s.session.access_token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || "Erreur"); }
+      const buf = await res.arrayBuffer();
+      return saveVoiceGuide({
+        sectionKey: r.section_key, sectionTitle: r.section_title,
+        blob: new Blob([buf], { type: "audio/wav" }), durationSeconds: wavDuration(buf),
+        userId: user.id, previousPath,
+      });
+  };
+
   const generate = async (r: Row) => {
     const text = (drafts[r.section_key] ?? "").trim();
     if (!text) { toast.error("Écrivez d'abord l'explication."); return; }
@@ -75,24 +96,33 @@ export function VoiceScriptsSettings() {
     setBusy(r.section_key);
     try {
       if (!(await saveText(r))) return;
-      const { data: s } = await supabase.auth.getSession();
-      const res = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/voice-tts`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${s.session?.access_token}`, apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-      if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.error || "Erreur"); }
-      const buf = await res.arrayBuffer();
-      const saved = await saveVoiceGuide({
-        sectionKey: r.section_key, sectionTitle: r.section_title,
-        blob: new Blob([buf], { type: "audio/wav" }), durationSeconds: wavDuration(buf),
-        userId: user.id, previousPath: guideMap.get(r.section_key)?.audio_path,
-      });
+      const saved = await createAudio(r, text, guideMap.get(r.section_key)?.audio_path);
       setGuides((c) => [...c.filter((g) => g.section_key !== saved.section_key), saved]);
       toast.success("Vocal créé pour « " + r.section_title + " »");
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Création du vocal impossible");
     } finally { setBusy(null); }
+  };
+
+  const generateAll = async () => {
+    const candidates = rows.filter(canApplyWelcomeVoice);
+    if (!candidates.length || !user) return;
+    setBatchProgress({ done: 0, total: candidates.length });
+    let completed = 0;
+    let failed = 0;
+    for (const r of candidates) {
+      setBusy(r.section_key);
+      try {
+        const saved = await createAudio(r, (drafts[r.section_key] ?? "").trim(), guideMap.get(r.section_key)?.audio_path);
+        setGuides((current) => [...current.filter((g) => g.section_key !== saved.section_key), saved]);
+        completed++;
+      } catch { failed++; }
+      setBatchProgress({ done: completed + failed, total: candidates.length });
+    }
+    setBusy(null);
+    setBatchProgress(null);
+    if (completed) toast.success(`${completed} explication${completed > 1 ? "s" : ""} créée${completed > 1 ? "s" : ""} avec la voix de Bienvenue.`);
+    if (failed) toast.error(`${failed} explication${failed > 1 ? "s" : ""} non créée${failed > 1 ? "s" : ""}. Réessayez plus tard.`);
   };
 
   const play = async (key: string) => {
@@ -107,20 +137,26 @@ export function VoiceScriptsSettings() {
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base flex items-center gap-2"><Mic className="h-4 w-4 text-primary" /> Textes des explications vocales</CardTitle>
-        <p className="text-xs text-muted-foreground">Écrivez l'explication de chaque rubrique puis appuyez sur « Créer le vocal » (voix d'homme, darija). Les rubriques apparaissent ici dès que vous ouvrez leur page.</p>
+        <p className="text-xs text-muted-foreground">Les nouveaux vocaux utilisent la même voix masculine darija que « Bienvenue sur votre espace de gestion ». Les rubriques apparaissent ici dès que vous ouvrez leur page.</p>
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="relative">
           <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input className="pl-8" placeholder="Rechercher une rubrique" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
+        {rows.some(canApplyWelcomeVoice) && (
+          <Button className="w-full sm:w-auto" disabled={busy !== null} onClick={() => void generateAll()}>
+            {batchProgress ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}
+            {batchProgress ? `Création ${batchProgress.done}/${batchProgress.total}` : "Appliquer la voix de Bienvenue aux textes"}
+          </Button>
+        )}
         {grouped.length === 0 && <p className="text-sm text-muted-foreground">Aucune rubrique encore. Ouvrez les différentes pages de l'application pour les faire apparaître.</p>}
         {grouped.map(([mod, list]) => (
           <div key={mod} className="border rounded-lg">
-            <button type="button" className="w-full flex items-center justify-between px-3 py-2 font-semibold text-sm" onClick={() => setOpen((o) => ({ ...o, [mod]: !o[mod] }))}>
+            <Button type="button" variant="ghost" className="w-full h-auto min-h-10 flex items-center justify-between px-3 py-2 font-semibold text-sm text-left" onClick={() => setOpen((o) => ({ ...o, [mod]: !o[mod] }))}>
               <span className="flex items-center gap-2">{open[mod] ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}{MODULE_LABELS[mod] ?? mod}</span>
               <span className="text-xs text-muted-foreground">{list.filter((r) => guideMap.has(r.section_key)).length}/{list.length} vocaux</span>
-            </button>
+            </Button>
             {open[mod] && (
               <div className="space-y-3 p-3 pt-0">
                 {list.map((r) => (
@@ -129,7 +165,7 @@ export function VoiceScriptsSettings() {
                     <Textarea rows={3} placeholder="Votre explication pour cette rubrique…" value={drafts[r.section_key] ?? ""}
                       onChange={(e) => setDrafts((d) => ({ ...d, [r.section_key]: e.target.value }))} />
                     <div className="flex flex-wrap gap-2">
-                      <Button size="sm" variant="outline" onClick={async () => { if (await saveText(r)) toast.success("Texte enregistré"); }}><Save className="h-4 w-4" /> Enregistrer le texte</Button>
+                      <Button size="sm" variant="outline" disabled={busy !== null} onClick={async () => { if (await saveText(r)) toast.success("Texte enregistré"); }}><Save className="h-4 w-4" /> Enregistrer le texte</Button>
                       <Button size="sm" disabled={busy !== null} onClick={() => generate(r)}>
                         {busy === r.section_key ? <Loader2 className="h-4 w-4 animate-spin" /> : <Mic className="h-4 w-4" />}
                         {guideMap.has(r.section_key) ? "Recréer le vocal" : "Créer le vocal"}
