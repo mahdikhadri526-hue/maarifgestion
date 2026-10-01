@@ -752,6 +752,12 @@ async function computeToppingsAggregate(): Promise<{ entrees: number; sorties: n
 // Détail par composant de la ligne TOPPINGS, avec exactement les mêmes règles
 // que la ligne : vue générale = computeToppingsAggregate, période =
 // cumul quotidien de getToppingsDailyHistory. La somme = la ligne.
+// Conversion Oreo : 1 pièce = 0,116 kg (appliquée UNIQUEMENT dans le détail
+// de calcul TOPPINGS, jamais sur la ligne principale ni ailleurs).
+const OREO_PRODUCT_ID = "ali-2";
+const OREO_KG_PER_PIECE = 0.116;
+const oreoKg = (v: number) => Number((v * OREO_KG_PER_PIECE).toFixed(3));
+
 export async function getToppingsBreakdown(
   matchDate: ((d: string) => boolean) | null,
   isBefore: (d: string) => boolean,
@@ -768,7 +774,11 @@ export async function getToppingsBreakdown(
       const agg = aggregates.get(pid);
       const e = r(agg?.entreesAll ?? 0);
       const s = r(agg?.sortiesAll ?? 0);
-      out.push({ name: labels[pid] || pid, stockInitial: r(init), entrees: e, sorties: s, stockRestant: r(init + e - s) });
+      if (pid === OREO_PRODUCT_ID) {
+        out.push({ name: `${labels[pid] || pid} (kg)`, stockInitial: oreoKg(init), entrees: oreoKg(e), sorties: oreoKg(s), stockRestant: oreoKg(init + e - s) });
+      } else {
+        out.push({ name: labels[pid] || pid, stockInitial: r(init), entrees: e, sorties: s, stockRestant: r(init + e - s) });
+      }
     }
     const weeklyRows = ((weeklyRes as any).data || []) as WeeklyTrackingOrderRecord[];
     for (const art of TOPPINGS_WEEKLY_ARTICLES) {
@@ -785,6 +795,7 @@ export async function getToppingsBreakdown(
   const comps: Comp[] = [];
   for (const pid of TOPPINGS_ALI_PRODUCT_IDS) {
     const c: Comp = { name: labels[pid] || pid, start: initialStocks[pid] || 0, days: {} };
+    if (pid === OREO_PRODUCT_ID) c.name = `${c.name} (kg)`;
     const unit = units[pid] || "PIECE";
     allMovements.filter((m) => m.productId === pid).forEach((m) => {
       const d = m.date.split("T")[0];
@@ -799,7 +810,9 @@ export async function getToppingsBreakdown(
   comps.forEach((c) => Object.keys(c.days).forEach((d) => allDates.add(d)));
   const dates = Array.from(allDates).sort();
   const anyMatch = dates.some((d) => matchDate(d));
-  const aliRows = comps.map((c) => {
+  const aliRows = comps.map((c, idx) => {
+    const isOreo = TOPPINGS_ALI_PRODUCT_IDS[idx] === OREO_PRODUCT_ID;
+    const cv = isOreo ? oreoKg : r;
     let cumul = c.start;
     let si: number | null = null;
     let e = 0, s = 0, rest = cumul, lastBefore = cumul;
@@ -815,7 +828,7 @@ export async function getToppingsBreakdown(
       }
     }
     if (!anyMatch || si === null) { si = lastBefore; rest = lastBefore; e = 0; s = 0; }
-    return { name: c.name, stockInitial: r(si), entrees: r(e), sorties: r(s), stockRestant: r(rest) };
+    return { name: c.name, stockInitial: cv(si), entrees: cv(e), sorties: cv(s), stockRestant: cv(rest) };
   });
   const wrows = ((weeklyRes as any).data || []) as WeeklyTrackingOrderRecord[];
   const weeklyOut = TOPPINGS_WEEKLY_ARTICLES.map((art) => ({
