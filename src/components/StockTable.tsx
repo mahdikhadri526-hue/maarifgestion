@@ -260,10 +260,17 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
     return ws;
   }, [mode, day, month, end]);
-  const { map: mepMap, save: saveMep } = useMiseEnPlace(mepWeek);
+  const { map: mepMapRaw, save: saveMep } = useMiseEnPlace(mepWeek);
   const mepInventoryDay = inventoryDayOfWeek(mepWeek);
+  // En filtre « jour », la saisie n'apparaît que le jour même du comptage.
+  const mepMap = useMemo<Record<string, number>>(
+    () => (mode === "day" && day && day !== formatISODate(mepInventoryDay) ? {} : mepMapRaw),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [mepMapRaw, mode, day, mepWeek]
+  );
   // Saisie déverrouillée uniquement le jour du comptage de la semaine affichée.
-  const mepEditable = todayISO() === formatISODate(mepInventoryDay);
+  const mepEditable = todayISO() === formatISODate(mepInventoryDay)
+    && !(mode === "day" && day && day !== todayISO());
   // Jours de comptage : chaque lundi, sauf la semaine qui chevauche la fin du
   // mois — là le comptage se fait le lendemain du dernier jour du mois
   // (géré dans inventoryDayOfWeek / miseEnPlaceData).
