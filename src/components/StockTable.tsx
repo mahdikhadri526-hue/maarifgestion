@@ -1461,7 +1461,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               </Button>
             </div>
           )}
-          {variant !== "order" && (
+          {variant !== "order" && canToggleExtraCols && (
             <div className="flex flex-wrap gap-2 mt-1">
               <Button size="sm" variant="outline" onClick={() => setShowRefCols((s) => !s)}>
                 {showRefCols ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
