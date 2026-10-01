@@ -118,7 +118,7 @@ export function VoiceGuideManager({ moduleKey }: { moduleKey: string }) {
         if (isAdmin && !registered.has(key)) {
           registered.add(key);
           void supabase.from("voice_guide_texts" as never)
-            .upsert({ section_key: key, module_key: moduleKey, section_title: title } as never, { onConflict: "section_key", ignoreDuplicates: true });
+            .upsert({ section_key: key, module_key: moduleKey, section_title: title } as never, { onConflict: "section_key", ignoreDuplicates: true }).then(({ error }) => { if (error) registered.delete(key); });
         }
         let mount = mounts.current.get(heading);
         if (!mount) {

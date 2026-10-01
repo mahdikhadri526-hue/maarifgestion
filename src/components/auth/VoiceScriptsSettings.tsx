@@ -11,7 +11,7 @@ import { getVoiceGuideUrl, loadVoiceGuides, saveVoiceGuide, type VoiceGuide } fr
 
 interface Row { section_key: string; module_key: string; section_title: string; script: string }
 
-const MODULE_LABELS: Record<string, string> = { administration: "Administration", anomalies: "Centre des anomalies" };
+const MODULE_LABELS: Record<string, string> = { administration: "Administration", anomalies: "Centre des anomalies", dashboard: "Tableau de bord", "stock-initial": "Stock Initial", mouvements: "Mouvements", historique: "Historique Mouvements", produit: "Stock Restant", lots: "Lots / DLC", requisition: "Réquisition", autocontrole: "Autocontrôle", "stuffs-glace": "Contrôle STUFFS de glace", hebdo: "Suivi hebdomadaire", temperatures: "Températures frigos", nettoyage: "Nettoyage", ecarts: "Calcul des écarts", pep: "Agenda PEP", tech: "Suivi Technique", pointage: "Pointage", rh: "RH — Plannings", planning: "Planning" };
 
 function wavDuration(buf: ArrayBuffer): number {
   try {
