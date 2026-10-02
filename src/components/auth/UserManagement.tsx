@@ -138,7 +138,7 @@ function KioskPinSettings() {
 }
 
 export function UserManagement({ onBack }: { onBack: () => void }) {
-  const { user: currentUser, multiPdvEnabled, pdvs, isAdmin, isRegionalAdmin, can } = useAuth();
+  const { user: currentUser, multiPdvEnabled, pdvs, hasAdminRole, isRegionalAdmin, can } = useAuth();
   const [users, setUsers] = useState<ProfileRow[]>([]);
   const [roles, setRoles] = useState<Record<string, AppRole | null>>({});
   const [perms, setPerms] = useState<Record<string, Set<string>>>({});
@@ -242,7 +242,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
   };
 
   useEffect(() => {
-    if (isAdmin || isRegionalAdmin) load();
+    if (hasAdminRole || isRegionalAdmin) load();
     else setLoading(false);
   }, []);
 
@@ -394,7 +394,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
 
   // Chaque compte ne voit (et n'accorde) que les permissions qu'il détient
   // lui-même ; l'administrateur principal garde la liste complète.
-  const visibleGroups = isAdmin
+  const visibleGroups = hasAdminRole
     ? publishedPermissionGroups()
     : publishedPermissionGroups().map((g) => ({ ...g, keys: g.keys.filter((k) => can(k)) })).filter(
         (g) => g.keys.length > 0,
@@ -531,11 +531,11 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
         </Button>
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <ShieldCheck className="h-5 w-5 text-primary" />
-          {isAdmin ? "Gestion des utilisateurs" : "Permissions de mes points de vente"}
+          {hasAdminRole ? "Gestion des utilisateurs" : "Permissions de mes points de vente"}
         </h2>
       </div>
 
-      {!isAdmin && (
+      {!hasAdminRole && (
         <div className="space-y-4">
           {multiPdvEnabled && <PdvManagement />}
           {can("manage_roster") && <RosterManagement />}
@@ -572,7 +572,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
         </div>
       )}
 
-      {isAdmin && (
+      {hasAdminRole && (
         <>
           <KioskPinSettings />
           <VoiceScriptsSettings />

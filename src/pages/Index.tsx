@@ -49,7 +49,7 @@ const Index = () => {
   useEffect(() => {
     void loadProductCatalog().then(() => setRefreshKey((k) => k + 1));
   }, []);
-  const { can, isAdmin, isRegionalAdmin, user } = useAuth();
+  const { can, isAdmin, hasAdminRole, isRegionalAdmin, user } = useAuth();
 
   // Mode kiosque automatique : 2 secondes après la connexion (désactivé à la déconnexion)
   useEffect(() => {
@@ -138,7 +138,7 @@ const Index = () => {
             <AnomalyCenter onBack={() => setShowAnomalies(false)} />
           </Suspense>
         </main>
-      ) : showAdmin && (isAdmin || isRegionalAdmin) ? (
+      ) : showAdmin && (hasAdminRole || isRegionalAdmin) ? (
         <main data-voice-guide-scope className="max-w-5xl mx-auto px-4 py-6">
           <VoiceGuideManager moduleKey="administration" />
           <Suspense fallback={<TabFallback />}>
