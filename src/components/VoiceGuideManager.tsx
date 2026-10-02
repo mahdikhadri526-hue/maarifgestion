@@ -65,7 +65,14 @@ export function VoiceGuideManager({ moduleKey }: { moduleKey: string }) {
   const selectedGuide = selected ? guideMap.get(selected.key) : undefined;
 
   const refresh = useCallback(async () => {
-    try { setGuides(await loadVoiceGuides()); }
+    try {
+      const [all, { data: off }] = await Promise.all([
+        loadVoiceGuides(),
+        supabase.from("voice_guide_texts" as never).select("section_key").eq("active" as never, false as never),
+      ]);
+      const inactive = new Set(((off ?? []) as { section_key: string }[]).map((r) => r.section_key));
+      setGuides(all.filter((g) => !inactive.has(g.section_key)));
+    }
     catch { toast.error("Impossible de charger les explications vocales."); }
   }, []);
 

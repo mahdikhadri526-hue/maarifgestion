@@ -9,7 +9,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { getVoiceGuideUrl, loadVoiceGuides, saveVoiceGuide, type VoiceGuide } from "@/lib/voiceGuides";
 
-interface Row { section_key: string; module_key: string; section_title: string; script: string }
+import { Switch } from "@/components/ui/switch";
+
+interface Row { section_key: string; module_key: string; section_title: string; script: string; active?: boolean }
 
 const MODULE_LABELS: Record<string, string> = { administration: "Administration", anomalies: "Centre des anomalies", dashboard: "Tableau de bord", "stock-initial": "Stock Initial", mouvements: "Mouvements", historique: "Historique Mouvements", produit: "Stock Restant", lots: "Lots / DLC", requisition: "Réquisition", autocontrole: "Autocontrôle", "stuffs-glace": "Contrôle STUFFS de glace", hebdo: "Suivi hebdomadaire", temperatures: "Températures frigos", nettoyage: "Nettoyage", ecarts: "Calcul des écarts", pep: "Agenda PEP", tech: "Suivi Technique", pointage: "Pointage", rh: "RH — Plannings", planning: "Planning" };
 
@@ -64,6 +66,14 @@ export function VoiceScriptsSettings() {
     m.forEach((list) => list.sort((a, b) => pin(a) - pin(b) || ts(a) - ts(b) || a.section_key.localeCompare(b.section_key)));
     return Array.from(m.entries()).sort(([a], [b]) => rank(a) - rank(b) || a.localeCompare(b));
   }, [rows, query]);
+
+  const toggleActive = async (r: Row, active: boolean) => {
+    const { error } = await supabase.from("voice_guide_texts" as never)
+      .upsert({ section_key: r.section_key, module_key: r.module_key, section_title: r.section_title, script: drafts[r.section_key] ?? r.script ?? "", active } as never);
+    if (error) { toast.error("Modification impossible"); return; }
+    setRows((list) => list.map((x) => x.section_key === r.section_key ? { ...x, active } : x));
+    toast.success(active ? "Explication activée" : "Explication désactivée");
+  };
 
   const saveText = async (r: Row) => {
     const { error } = await supabase.from("voice_guide_texts" as never)
@@ -167,7 +177,13 @@ export function VoiceScriptsSettings() {
               <div className="space-y-3 p-3 pt-0">
                 {list.map((r) => (
                   <div key={r.section_key} className="space-y-2 border-t pt-3">
-                    <div className="text-sm font-medium">{r.section_title}</div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-sm font-medium">{r.section_title}</div>
+                      <label className="flex items-center gap-2 text-xs text-muted-foreground shrink-0">
+                        {r.active === false ? "Inactif" : "Actif"}
+                        <Switch checked={r.active !== false} onCheckedChange={(v) => void toggleActive(r, v)} />
+                      </label>
+                    </div>
                     <Textarea rows={3} placeholder="Votre explication pour cette rubrique…" value={drafts[r.section_key] ?? ""}
                       onChange={(e) => setDrafts((d) => ({ ...d, [r.section_key]: e.target.value }))} />
                     <div className="flex flex-wrap gap-2">

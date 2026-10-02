@@ -2300,6 +2300,7 @@ export type Database = {
       }
       voice_guide_texts: {
         Row: {
+          active: boolean
           created_at: string
           module_key: string
           script: string
@@ -2308,6 +2309,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active?: boolean
           created_at?: string
           module_key: string
           script?: string
@@ -2316,6 +2318,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active?: boolean
           created_at?: string
           module_key?: string
           script?: string
