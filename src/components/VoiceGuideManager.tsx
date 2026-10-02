@@ -163,7 +163,7 @@ export function VoiceGuideManager({ moduleKey }: { moduleKey: string }) {
       mounts.current.forEach((mount) => mount.root.unmount());
       mounts.current.clear();
     };
-  }, [guideMap, handleSection, isAdmin, canListen, moduleKey, playingKey]);
+  }, [guideMap, handleSection, isAdmin, canListen, moduleKey, playingKey, inactiveKeys]);
 
   useEffect(() => () => {
     stopPlayback();
