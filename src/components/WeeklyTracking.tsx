@@ -1688,6 +1688,7 @@ export function WeeklyTracking() {
           </div>
 
         <TabsContent value="creme" className="mt-4 min-w-0">
+          <h3 className="mb-3 text-base font-semibold">Crème fraîche</h3>
           <div className="bg-card rounded-lg border overflow-auto max-h-[70vh] max-w-full">
             <table className="weekly-sticky-table text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", overflow: "visible" }}>
               <thead className="bg-muted sticky top-0 z-30">
@@ -1857,6 +1858,7 @@ export function WeeklyTracking() {
 
         {(["glace", "tarte", "nettoyant"] as const).map((t) => (
         <TabsContent key={t} value={t} className="mt-4 space-y-3 min-w-0">
+          <h3 className="text-base font-semibold">{t === "glace" ? "Mouvement glaces" : t === "tarte" ? "Mouvement tartes" : "Mouvement produits nettoyants"}</h3>
           {/* FILTERS BAR */}
           {showControls && (
           <div className="bg-card rounded-lg border p-3 flex flex-wrap items-end gap-3">
