@@ -134,6 +134,8 @@ interface AuthContextValue {
   role: AppRole | null;
   permissions: Set<string>;
   isAdmin: boolean;
+  /** Rôle Admin brut (accès à l'administration), même si ses permissions sont limitées. */
+  hasAdminRole: boolean;
   isRegionalAdmin: boolean;
   assignedPdvIds: string[];
   can: (key: string) => boolean;
@@ -169,13 +171,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [assignedPdvIds, setAssignedPdvIds] = useState<string[]>([]);
   const [assignedLoaded, setAssignedLoaded] = useState(false);
 
-  const isAdmin = role === "admin";
+  // Rôle Admin brut (accès à l'administration) vs accès total aux fonctions :
+  // seul l'admin principal, ou un Admin sans permissions configurées, contourne
+  // les permissions. Un Admin dont les permissions ont été configurées est
+  // limité à ses cases cochées.
+  const hasAdminRole = role === "admin";
+  const isMainAdmin = (user?.email ?? "").toLowerCase() === "gestionmaarif1@gmail.com";
+  const isAdmin = hasAdminRole && (isMainAdmin || !hasCustomPerms);
   const isRegionalAdmin = role === "regional_admin";
   // Responsable technique (manage_tech, hors admin) : vue centralisée sur tous
   // les PDV — il ne doit jamais avoir à choisir un point de vente.
-  const isTechCentral = !isAdmin && !isRegionalAdmin && permissions.has("manage_tech");
+  const isTechCentral = !hasAdminRole && !isRegionalAdmin && permissions.has("manage_tech");
   const multiPdvEnabled =
-    (ENABLE_MULTI_PDV || (MULTI_PDV_ADMIN_ONLY && (isAdmin || isRegionalAdmin))) && !isTechCentral;
+    (ENABLE_MULTI_PDV || (MULTI_PDV_ADMIN_ONLY && (hasAdminRole || isRegionalAdmin))) && !isTechCentral;
   const assignedPdvId = assignedPdvIds[0] ?? null;
 
   // Bascule automatique selon le compte : admin => multi-PDV,
@@ -348,19 +356,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const can = useCallback(
     (key: string) => {
       if (!user) return false;
-      if (isAdmin) {
-        // Admin principal : accès total. Autres comptes Admin : si des
-        // permissions ont été configurées, elles s'appliquent (cases décochées respectées).
-        const isMainAdmin = (user.email ?? "").toLowerCase() === "gestionmaarif1@gmail.com";
-        if (isMainAdmin || !hasCustomPerms) return true;
-        return permissions.has(key);
-      }
-      if (isRegionalAdmin) return permissions.has(key);
+      if (isAdmin) return true;
+      if (hasAdminRole || isRegionalAdmin) return permissions.has(key);
       // Permissions individuelles (Gestion des utilisateurs) + permissions du
       // point de vente rattaché : les deux s'appliquent.
       return permissions.has(key) || (pdvPermissions?.has(key) ?? false);
     },
-    [user, isAdmin, isRegionalAdmin, permissions, pdvPermissions, hasCustomPerms],
+    [user, isAdmin, hasAdminRole, isRegionalAdmin, permissions, pdvPermissions],
   );
 
   const signOut = async () => {
@@ -453,6 +455,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role,
         permissions,
         isAdmin,
+        hasAdminRole,
         isRegionalAdmin,
         assignedPdvIds,
         can,
