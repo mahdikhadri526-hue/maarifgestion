@@ -339,9 +339,9 @@ export function RequisitionForm({ onUpdated }: Props) {
           <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté demandée</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-72">Qté demandée le soir</th>
               {showAdded && (
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-56">Qté demandée (total)</th>
+                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-56">Qté demandée modifiée</th>
               )}
             </tr>
           </thead>
