@@ -575,7 +575,9 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       {hasAdminRole && (
         <>
           <KioskPinSettings />
-          <VoiceScriptsSettings />
+          {(currentUser?.email ?? "").toLowerCase() === "gestionmaarif1@gmail.com" && (
+            <VoiceScriptsSettings />
+          )}
           <Tabs defaultValue="users" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="users" className="gap-2">
