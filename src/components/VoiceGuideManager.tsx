@@ -47,6 +47,7 @@ export function VoiceGuideManager({ moduleKey }: { moduleKey: string }) {
   const { isAdmin, user, can } = useAuth();
   const canListen = can("listen_voice_guides");
   const [guides, setGuides] = useState<VoiceGuide[]>([]);
+  const [inactiveKeys, setInactiveKeys] = useState<Set<string>>(new Set());
   const [selected, setSelected] = useState<SectionRef | null>(null);
   const [recording, setRecording] = useState(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
@@ -71,6 +72,7 @@ export function VoiceGuideManager({ moduleKey }: { moduleKey: string }) {
         supabase.from("voice_guide_texts" as never).select("section_key").eq("active" as never, false as never),
       ]);
       const inactive = new Set(((off ?? []) as { section_key: string }[]).map((r) => r.section_key));
+      setInactiveKeys(inactive);
       setGuides(all.filter((g) => !inactive.has(g.section_key)));
     }
     catch { toast.error("Impossible de charger les explications vocales."); }
@@ -123,6 +125,7 @@ export function VoiceGuideManager({ moduleKey }: { moduleKey: string }) {
         const number = (occurrence.get(slug) ?? 0) + 1;
         occurrence.set(slug, number);
         const key = `${moduleKey}:${slug}:${number}`;
+        if (inactiveKeys.has(key)) return;
         if (isAdmin && !registered.has(key)) {
           registered.add(key);
           void supabase.from("voice_guide_texts" as never)
