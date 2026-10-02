@@ -45,15 +45,15 @@ const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
 };
 
 export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
-  const { pdvs, refreshPdvs, pdvId, isAdmin, isRegionalAdmin, permissions, can, user } = useAuth();
-  const canEditPerms = isAdmin || isRegionalAdmin;
+  const { pdvs, refreshPdvs, pdvId, hasAdminRole, isRegionalAdmin, permissions, can, user } = useAuth();
+  const canEditPerms = hasAdminRole || isRegionalAdmin;
   // Chaque compte ne voit que les permissions qu'il détient lui-même.
-  const visibleGroups = isAdmin
+  const visibleGroups = hasAdminRole
     ? publishedPermissionGroups()
     : publishedPermissionGroups().map((g) => ({ ...g, keys: g.keys.filter((k) => can(k)) })).filter(
         (g) => g.keys.length > 0,
       );
-  const canTogglePerm = (_key: string) => isAdmin || isRegionalAdmin;
+  const canTogglePerm = (_key: string) => hasAdminRole || isRegionalAdmin;
   const [pdvRoles, setPdvRoles] = useState<Record<string, AppRole>>({});
   const [pdvPerms, setPdvPerms] = useState<Record<string, Set<string>>>({});
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
@@ -171,19 +171,19 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
             <Input
               defaultValue={p.name}
               className="h-8 flex-1 min-w-[140px]"
-              disabled={!isAdmin}
+              disabled={!hasAdminRole}
               onBlur={(e) => e.target.value !== p.name && rename(p.id, e.target.value)}
             />
             <Input
               placeholder="Code d'accès"
               className="h-8 w-32"
-              disabled={!isAdmin}
+              disabled={!hasAdminRole}
               onBlur={(e) => e.target.value && setPdvAccessCode(p.id, e.target.value)}
             />
             <Select
               value={pdvRoles[p.id] ?? "operator"}
               onValueChange={(v) => setPdvRole(p.id, v as AppRole)}
-              disabled={!isAdmin}
+              disabled={!hasAdminRole}
             >
               <SelectTrigger className="h-8 w-[130px]">
                 <SelectValue />
@@ -205,7 +205,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
               Permissions ({pdvPerms[p.id]?.size ?? 0})
             </Button>
             {p.id === pdvId && <Badge className="shrink-0">Actuel</Badge>}
-            <Button variant="ghost" size="icon" className="shrink-0" disabled={!isAdmin} onClick={() => remove(p.id)}>
+            <Button variant="ghost" size="icon" className="shrink-0" disabled={!hasAdminRole} onClick={() => remove(p.id)}>
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
           </div>
