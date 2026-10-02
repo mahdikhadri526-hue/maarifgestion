@@ -180,7 +180,8 @@ export function MaterielTracking({ weekStart }: { weekStart: string }) {
       <div className="bg-card rounded-lg border p-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div>
-            <h3 className="font-semibold">Suivi matériel — semaine du {formatDateFR(weekStart)}</h3>
+            <h3 className="font-semibold">Suivi matériel</h3>
+            <p className="text-xs text-muted-foreground">Semaine du {formatDateFR(weekStart)}</p>
             <p className="text-xs text-muted-foreground">
               SI saisi une seule fois par semaine. Entrées et Sorties modifiables pour toutes les semaines. Restant = SI + E − S.
             </p>

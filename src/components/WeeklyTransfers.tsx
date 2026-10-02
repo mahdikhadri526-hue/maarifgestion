@@ -177,6 +177,7 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
 
   return (
     <div className="mt-3 no-print">
+      <h3 className="mb-2 text-base font-semibold">Transferts reçus / envoyés</h3>
       <Button variant="outline" size="sm" onClick={() => setOpen((v) => !v)} className="shadow-sm">
         <ArrowDownLeft className="h-4 w-4 mr-1 text-success" />
         <ArrowUpRight className="h-4 w-4 mr-2 text-destructive" />
