@@ -158,6 +158,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [permissions, setPermissions] = useState<Set<string>>(new Set());
+  const [hasCustomPerms, setHasCustomPerms] = useState(false);
   const [loading, setLoading] = useState(true);
   const [pdvs, setPdvs] = useState<Pdv[]>([]);
   const [pdvId, setPdvId] = useState<string | null>(
@@ -281,6 +282,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (p.allowed) set.add(p.permission_key);
     });
     setPermissions(set);
+    setHasCustomPerms((perms ?? []).length > 0);
     setAssignedPdvIds(((userPdvs ?? []) as any[]).map((r) => r.pdv_id));
     setAssignedLoaded(true);
   }, []);
@@ -346,13 +348,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const can = useCallback(
     (key: string) => {
       if (!user) return false;
-      if (isAdmin) return true;
+      if (isAdmin) {
+        // Admin principal : accès total. Autres comptes Admin : si des
+        // permissions ont été configurées, elles s'appliquent (cases décochées respectées).
+        const isMainAdmin = (user.email ?? "").toLowerCase() === "gestionmaarif1@gmail.com";
+        if (isMainAdmin || !hasCustomPerms) return true;
+        return permissions.has(key);
+      }
       if (isRegionalAdmin) return permissions.has(key);
       // Permissions individuelles (Gestion des utilisateurs) + permissions du
       // point de vente rattaché : les deux s'appliquent.
       return permissions.has(key) || (pdvPermissions?.has(key) ?? false);
     },
-    [user, isAdmin, isRegionalAdmin, permissions, pdvPermissions],
+    [user, isAdmin, isRegionalAdmin, permissions, pdvPermissions, hasCustomPerms],
   );
 
   const signOut = async () => {
