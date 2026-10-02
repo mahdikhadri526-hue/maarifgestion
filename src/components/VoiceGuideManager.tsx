@@ -44,7 +44,8 @@ function VoiceButton({ hasAudio, isAdmin, playing, onClick }: {
 }
 
 export function VoiceGuideManager({ moduleKey }: { moduleKey: string }) {
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, can } = useAuth();
+  const canListen = isAdmin || can("listen_voice_guides");
   const [guides, setGuides] = useState<VoiceGuide[]>([]);
   const [selected, setSelected] = useState<SectionRef | null>(null);
   const [recording, setRecording] = useState(false);
@@ -92,8 +93,8 @@ export function VoiceGuideManager({ moduleKey }: { moduleKey: string }) {
 
   const handleSection = useCallback((section: SectionRef) => {
     const guide = guideMap.get(section.key);
-    if (isAdmin) setSelected(section);
-    else if (guide) void playGuide(guide);
+    if (guide) void playGuide(guide);
+    else if (isAdmin) setSelected(section);
   }, [guideMap, isAdmin, playGuide]);
 
   useEffect(() => {
@@ -129,7 +130,7 @@ export function VoiceGuideManager({ moduleKey }: { moduleKey: string }) {
           mount = { host, root: createRoot(host) };
           mounts.current.set(heading, mount);
         }
-        mount.root.render(<VoiceButton hasAudio={guideMap.has(key)} isAdmin={isAdmin} playing={playingKey === key} onClick={() => handleSection({ key, title })} />);
+        mount.root.render(<VoiceButton hasAudio={guideMap.has(key) && canListen} isAdmin={isAdmin} playing={playingKey === key} onClick={() => handleSection({ key, title })} />);
       });
       mounts.current.forEach((mount, heading) => {
         if (!current.has(heading) || !heading.isConnected) {
