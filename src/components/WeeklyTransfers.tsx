@@ -15,6 +15,14 @@ const TRANSFER_LOCATIONS = [
   "Franchise", "Événement", "Ville verte",
 ];
 
+const HIDDEN_TRANSFER_DESTINATIONS = new Set([
+  "admin mohammedia",
+  "mohammedia",
+  "mohamedia",
+  "mansouria",
+  "miramar",
+]);
+
 type Direction = "recu" | "envoye";
 type Kind = "pret" | "emprunt" | "retour_pret" | "retour_emprunt";
 
@@ -228,7 +236,10 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-1">
               <Label className="text-xs">Sens</Label>
-              <Select value={direction} onValueChange={(v) => setDirection(v as Direction)}>
+              <Select value={direction} onValueChange={(v) => {
+                setDirection(v as Direction);
+                setLocation("");
+              }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent className="bg-popover z-50">
                   <SelectItem value="recu">Reçu (emprunt)</SelectItem>
@@ -245,7 +256,9 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
               <Select value={location} onValueChange={setLocation}>
                 <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
                 <SelectContent className="bg-popover z-50 max-h-64">
-                  {TRANSFER_LOCATIONS.map((l) => (
+                  {TRANSFER_LOCATIONS.filter((l) => (
+                    direction === "recu" || !HIDDEN_TRANSFER_DESTINATIONS.has(l.trim().toLowerCase())
+                  )).map((l) => (
                     <SelectItem key={l} value={l}>{l}</SelectItem>
                   ))}
                 </SelectContent>
