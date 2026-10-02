@@ -45,7 +45,7 @@ function VoiceButton({ hasAudio, isAdmin, playing, onClick }: {
 
 export function VoiceGuideManager({ moduleKey }: { moduleKey: string }) {
   const { isAdmin, user, can } = useAuth();
-  const canListen = isAdmin || can("listen_voice_guides");
+  const canListen = can("listen_voice_guides");
   const [guides, setGuides] = useState<VoiceGuide[]>([]);
   const [selected, setSelected] = useState<SectionRef | null>(null);
   const [recording, setRecording] = useState(false);
