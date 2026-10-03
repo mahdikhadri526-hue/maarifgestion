@@ -37,7 +37,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
 import { useMiseEnPlace, MiseEnPlaceInput } from "@/components/MiseEnPlaceCell";
-import { weekStartOf, inventoryDayOfWeek, getMiseEnPlaceStocksUpToWeek } from "@/lib/miseEnPlaceData";
+import { weekStartOf, inventoryDayOfWeek } from "@/lib/miseEnPlaceData";
 import { getOperators } from "@/lib/operators";
 import { useOperators } from "@/lib/roster";
 import { toast } from "sonner";
@@ -280,31 +280,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [mepMapRaw, mode, day, start, end, mepWeek]
   );
-  // Report : le Stock total saisi au comptage devient le stock initial du
-  // lendemain et reste reporté les jours suivants, jusqu'au prochain comptage
-  // (filtres jour / mois / période uniquement, vue « Tout » inchangée).
-  // On reprend donc la dernière saisie de mise en place connue à la veille du
-  // début de la période affichée.
-  const carryWeek = useMemo(() => {
-    const startISO = mode === "day" ? day : mode === "month" && month ? `${month}-01` : mode === "period" ? start : "";
-    if (!startISO) return null;
-    // Pas de report le jour du comptage lui-même : ce jour-là la saisie reste
-    // dans sa colonne et le Stock total = Stock + Mise en place. C'est ce
-    // Stock total qui devient le stock initial du lendemain (report ci-dessous).
-    const invDayStart = formatISODate(inventoryDayOfWeek(weekStartOf(new Date(`${startISO}T00:00:00`))));
-    if (startISO === invDayStart) return null;
-    const d = new Date(`${startISO}T00:00:00`);
-    d.setDate(d.getDate() - 1);
-    return weekStartOf(d);
-  }, [mode, day, month, start]);
-  const [carryMap, setCarryMap] = useState<Record<string, number>>({});
-  useEffect(() => {
-    let cancelled = false;
-    setCarryMap({});
-    if (!carryWeek) return;
-    getMiseEnPlaceStocksUpToWeek(carryWeek).then((r) => { if (!cancelled) setCarryMap(r); }).catch(() => {});
-    return () => { cancelled = true; };
-  }, [carryWeek]);
+  // Pas de report : le stock initial du lendemain est le stock de la veille
+  // (la mise en place reste uniquement dans sa colonne, sans toucher au SI).
   // Saisie déverrouillée uniquement le jour du comptage de la semaine affichée.
   const mepEditable = todayISO() === formatISODate(mepInventoryDay)
     && !(mode === "day" && day && day !== todayISO());
@@ -1737,10 +1714,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             <tbody>
               {filtered.map((level) => {
                 const v0 = getRowValues(level);
-                const carry = carryMap[level.productId] ?? 0;
-                const v = carry
-                  ? { ...v0, stockInitial: roundStockQuantity((Number(v0.stockInitial) || 0) + carry), stockRestant: roundStockQuantity((Number(v0.stockRestant) || 0) + carry) }
-                  : v0;
+                const v = v0;
                 const stockTotal = (Number(v.stockRestant) || 0) + (mepMap[level.productId] ?? 0);
                 const sortiesTotal = roundStockQuantity((Number(v.stockInitial) || 0) + (Number(v.entrees) || 0) - stockTotal);
                 return (
