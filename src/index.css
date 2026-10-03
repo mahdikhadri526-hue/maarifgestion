@@ -216,4 +216,11 @@
   .mep-inventory-day:hover {
     box-shadow: inset 0 0 0 2px hsl(var(--primary));
   }
+
+  /* Le titre de rubrique est centralisé par la page ; les anciens titres restent
+     dans le contenu pour préserver les contrôles et explications vocales. */
+  .page-module-content > div > h2:first-child,
+  .page-module-content > div > div:first-child > h2:first-child {
+    @apply sr-only;
+  }
 }

@@ -34,6 +34,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { KioskToggle } from "@/components/KioskToggle";
 import { VoiceGuideManager } from "@/components/VoiceGuideManager";
+import { PageTitle } from "@/components/PageTitle";
 
 type Tab = "dashboard" | "rh" | "planning" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "pep" | "tech" | "pointage";
 
@@ -102,6 +103,26 @@ const Index = () => {
   const tabs = allTabs.filter(
     (t) => (can(t.perm) || (!!(t as { alt?: string }).alt && can((t as { alt?: string }).alt!))) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED) && (t.id !== "rh" || ATTENDANCE_ENABLED) && (t.id !== "planning" || ATTENDANCE_ENABLED)
   );
+  const pageTitles: Partial<Record<Tab, string>> = {
+    "stock-initial": "Stock Initial",
+    mouvements: "Nouveau Mouvement",
+    historique: "Historique Mouvements",
+    produit: "Stock Restant",
+    requisition: "Réquisition",
+    lots: "Gestion des Lots / DLC",
+    autocontrole: "Autocontrôle",
+    "stuffs-glace": "Contrôle des STUFFS de glace",
+    hebdo: "Suivi hebdomadaire",
+    temperatures: "Températures frigos",
+    recettes: "Recettes des produits finis",
+    nettoyage: "Suivi de nettoyage quotidien",
+    inventaire: "Inventaire",
+    ecarts: "Calcul des écarts",
+    pep: "Agenda PEP",
+    tech: "Suivi Technique",
+    rh: "RH — Plannings",
+    planning: "Planning",
+  };
 
   // Ensure current tab is allowed
   if (tabs.length > 0 && !tabs.some((t) => t.id === tab)) {
@@ -271,6 +292,13 @@ const Index = () => {
         )}
 
         {tab !== "dashboard" && (
+          <div className="space-y-5">
+          {tab !== "pointage" && pageTitles[tab] ? (
+            <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-5">
+              <PageTitle title={pageTitles[tab] ?? ""} />
+            </div>
+          ) : null}
+          <div className="page-module-content">
           <Suspense fallback={<TabFallback />}>
             {tab === "stock-initial" && <InitialStockForm key={refreshKey} onUpdated={refresh} />}
             {tab === "mouvements" && (
@@ -300,6 +328,8 @@ const Index = () => {
             {ATTENDANCE_ENABLED && tab === "rh" && <HrModule />}
             {ATTENDANCE_ENABLED && tab === "planning" && <PlanningModule />}
           </Suspense>
+          </div>
+          </div>
         )}
       </main>
       </>
