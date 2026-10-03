@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import logo from "@/assets/logo.jpeg";
 import { cn } from "@/lib/utils";
 
@@ -9,8 +9,26 @@ interface PageTitleProps {
 }
 
 export function PageTitle({ title, subtitle, className }: PageTitleProps) {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const section = rootRef.current?.parentElement?.parentElement;
+    if (!section) return;
+    const hideDuplicate = () => {
+      const content = section.querySelector<HTMLElement>(".page-module-content");
+      if (!content) return;
+      const duplicate = Array.from(content.querySelectorAll<HTMLElement>("h2"))
+        .find((heading) => heading.textContent?.trim().replace(/\s+/g, " ") === title);
+      duplicate?.classList.add("sr-only");
+    };
+    hideDuplicate();
+    const observer = new MutationObserver(hideDuplicate);
+    observer.observe(section, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [title]);
+
   return (
-    <div className={cn("flex min-w-0 items-center gap-3", className)}>
+    <div ref={rootRef} className={cn("flex min-w-0 items-center gap-3", className)}>
       <img
         src={logo}
         alt="Logo Oliveri"

@@ -161,18 +161,28 @@ const Index = () => {
       )}
 
       {showAnomalies && (isAdmin || can("view_anomalies")) ? (
-        <main data-voice-guide-scope className="max-w-5xl mx-auto px-4 py-6">
+        <main data-voice-guide-scope className="max-w-5xl mx-auto px-4 py-6 space-y-5">
           <VoiceGuideManager moduleKey="anomalies" />
+          <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-5">
+            <PageTitle title="Centre des anomalies" />
+          </div>
+          <div className="page-module-content">
           <Suspense fallback={<TabFallback />}>
             <AnomalyCenter onBack={() => setShowAnomalies(false)} />
           </Suspense>
+          </div>
         </main>
       ) : showAdmin && (hasAdminRole || isRegionalAdmin) ? (
-        <main data-voice-guide-scope className="max-w-5xl mx-auto px-4 py-6">
+        <main data-voice-guide-scope className="max-w-5xl mx-auto px-4 py-6 space-y-5">
           <VoiceGuideManager moduleKey="administration" />
+          <div className="rounded-lg border bg-card p-4 shadow-sm sm:p-5">
+            <PageTitle title="Gestion des utilisateurs" />
+          </div>
+          <div className="page-module-content">
           <Suspense fallback={<TabFallback />}>
             <UserManagement onBack={() => setShowAdmin(false)} />
           </Suspense>
+          </div>
         </main>
       ) : (
       <>
