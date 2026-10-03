@@ -223,11 +223,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   // total + boutons « Colonnes Réf. » et « Mise en place / total ».
   const canToggleExtraCols = can("toggle_stock_extra_cols");
   const showRefCols = canToggleExtraCols && showRefColsRaw;
-  // Les colonnes Mise en place / Sorties total / Stock total ne s'affichent
-  // que si le jour de comptage tombe dans le filtre affiché (lecture seule,
-  // sans aucun impact sur les données du tableau).
-  const [countingDayInFilter, setCountingDayInFilter] = useState<boolean>(false);
-  const showMepCols = canToggleExtraCols && showMepColsRaw && countingDayInFilter;
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustData, setAdjustData] = useState<{
     productId: string;
