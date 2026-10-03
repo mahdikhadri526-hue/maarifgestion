@@ -33,7 +33,6 @@ export function KioskToggle({ active, onChange }: { active: boolean; onChange: (
       <Button
         variant="ghost"
         size="sm"
-        className={active ? "fixed top-2 right-2 z-50" : ""}
         onClick={async () => {
           if (active) return setOpen(true);
           try { await document.documentElement.requestFullscreen?.(); } catch { /* indisponible */ }

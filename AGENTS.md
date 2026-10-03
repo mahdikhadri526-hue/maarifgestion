@@ -6,3 +6,4 @@
 - Report mise en place : en filtre jour/mois/période, si la veille du début de période est un jour de comptage, la saisie mise en place de ce jour est ajoutée au Stock initial et au Stock restant affichés (SI du lendemain = Stock total) ; la vue « Tout » reste inchangée.
 - Voice guides attach to stable visible section headings, including weekly sheet and transfer headings, so guide keys do not change with dates; audio stays private in `voice-guides` and only admins manage it.
 - La génération des explications vocales utilise la même voix masculine darija préconfigurée côté fonction pour toutes les rubriques ; la création groupée conserve les enregistrements micro et la rubrique Bienvenue, afin de ne pas remplacer des voix personnelles.
+- Keep the brand logo in the shared application header in both standard and kiosk modes, and on standalone PDV selection screens; the fullscreen attendance camera remains camera-only as requested.
