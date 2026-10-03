@@ -4,9 +4,8 @@ import { formatQuantityForProduct, getProducts, getMinStocks } from "@/lib/stock
 import { useExpiringLots, useProductLots, useProductUnitConfigs, useStockLevels } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2, PackageX, ClipboardCheck, TrendingDown } from "lucide-react";
+import { AlertTriangle, Clock, Edit2, Check, X, Trash2, PackageX, ClipboardCheck, TrendingDown } from "lucide-react";
 import { toast } from "sonner";
-import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/contexts/AuthContext";
 import { ENABLE_FIFO_INDICATOR } from "@/lib/featureFlags";
 import { formatDateFR, formatMaybeDate } from "@/lib/utils";
@@ -405,19 +404,6 @@ export function LotManager() {
 
   return (
     <div className="bg-card rounded-lg border animate-fade-in">
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
-            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
-          </div>
-          <Package className="h-5 w-5 text-primary" />
-          Gestion des Lots
-        </h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          Consultez et modifiez les lots par produit alimentaire
-        </p>
-      </div>
-
       <div className="p-4 border-b">
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Sélectionner un produit</label>
         <select
