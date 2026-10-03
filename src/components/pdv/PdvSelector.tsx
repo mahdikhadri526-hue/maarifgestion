@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, Pdv } from "@/contexts/AuthContext";
+import logo from "@/assets/logo.jpeg";
 
 const HIDDEN_PDVS = ["admin mohammedia", "mohammedia", "miramar", "mansouria"];
 const HIDDEN_ACCOUNTS = ["oliverimohammedia2016", "oliverimohammedia2026", "gestion-mohammedia", "gestion-miramar", "gestion-mansouria"];
@@ -47,6 +48,7 @@ export function PdvSelector() {
       <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
         <Card className="w-full max-w-sm">
           <CardHeader>
+            <img src={logo} alt="Logo Oliveri" className="w-14 h-14 rounded-full object-cover mb-2" />
             <CardTitle className="flex items-center gap-2 text-lg">
               <Lock className="h-5 w-5 text-primary" />
               {pending.name}
@@ -87,6 +89,7 @@ export function PdvSelector() {
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
       <Card className="w-full max-w-md">
         <CardHeader>
+          <img src={logo} alt="Logo Oliveri" className="w-14 h-14 rounded-full object-cover mb-2" />
           <CardTitle className="flex items-center gap-2 text-lg">
             <Building2 className="h-5 w-5 text-primary" />
             Choisir un point de vente

@@ -111,7 +111,15 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {kiosk ? (
-        <KioskToggle active={kiosk} onChange={setKiosk} />
+        <header className="bg-sidebar text-sidebar-foreground border-b border-sidebar-border">
+          <div className="max-w-7xl mx-auto px-4 py-2 flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+              <img src={logo} alt="Logo Oliveri" className="w-full h-full object-cover" />
+            </div>
+            <span className="font-semibold flex-1">Gestion Oliveri</span>
+            <KioskToggle active={kiosk} onChange={setKiosk} />
+          </div>
+        </header>
       ) : (
         <header className="bg-sidebar text-sidebar-foreground border-b border-sidebar-border">
           <div className="max-w-7xl mx-auto px-4 py-4 flex items-center gap-3">
