@@ -266,6 +266,17 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   }, [mode, day, month, end]);
   const { map: mepMapRaw, save: saveMep } = useMiseEnPlace(mepWeek);
   const mepInventoryDay = inventoryDayOfWeek(mepWeek);
+  // Les colonnes Mise en place / Sorties total / Stock total ne s'affichent
+  // que si le jour de comptage tombe dans le filtre affiché (lecture seule,
+  // sans aucun impact sur les données du tableau).
+  const countingDayInFilter = useMemo(() => {
+    const inv = formatISODate(mepInventoryDay);
+    if (mode === "day") return !!day && day === inv;
+    if (mode === "month") return !!month && inv.startsWith(month);
+    if (mode === "period") return (!start || inv >= start) && (!end || inv <= end);
+    return false; // vue « Tout » : colonnes masquées
+  }, [mode, day, month, start, end, mepInventoryDay]);
+  const showMepCols = canToggleExtraCols && showMepColsRaw && countingDayInFilter;
   // En filtre « jour », la saisie n'apparaît que le jour même du comptage.
   // En filtre « période », la saisie n'apparaît que si le jour du comptage est
   // compris dans la période (ex. comptage du 1er oct. absent d'une période finissant le 30/09).
