@@ -288,6 +288,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const carryWeek = useMemo(() => {
     const startISO = mode === "day" ? day : mode === "month" && month ? `${month}-01` : mode === "period" ? start : "";
     if (!startISO) return null;
+    // Pas de report le jour du comptage lui-même : ce jour-là la saisie reste
+    // dans sa colonne et le Stock total = Stock + Mise en place. C'est ce
+    // Stock total qui devient le stock initial du lendemain (report ci-dessous).
+    const invDayStart = formatISODate(inventoryDayOfWeek(weekStartOf(new Date(`${startISO}T00:00:00`))));
+    if (startISO === invDayStart) return null;
     const d = new Date(`${startISO}T00:00:00`);
     d.setDate(d.getDate() - 1);
     return weekStartOf(d);
