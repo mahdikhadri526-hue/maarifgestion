@@ -37,7 +37,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
 import { useMiseEnPlace, MiseEnPlaceInput } from "@/components/MiseEnPlaceCell";
-import { weekStartOf, inventoryDayOfWeek, getMiseEnPlaceStocksForWeek } from "@/lib/miseEnPlaceData";
+import { weekStartOf, inventoryDayOfWeek, getMiseEnPlaceStocksUpToWeek } from "@/lib/miseEnPlaceData";
 import { getOperators } from "@/lib/operators";
 import { useOperators } from "@/lib/roster";
 import { toast } from "sonner";
@@ -280,24 +280,26 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [mepMapRaw, mode, day, start, end, mepWeek]
   );
-  // Report : le Stock total saisi le jour du comptage devient le stock initial
-  // du lendemain (filtres jour / mois / période uniquement, vue « Tout » inchangée).
-  const carryDay = useMemo(() => {
+  // Report : le Stock total saisi au comptage devient le stock initial du
+  // lendemain et reste reporté les jours suivants, jusqu'au prochain comptage
+  // (filtres jour / mois / période uniquement, vue « Tout » inchangée).
+  // On reprend donc la dernière saisie de mise en place connue à la veille du
+  // début de la période affichée.
+  const carryWeek = useMemo(() => {
     const startISO = mode === "day" ? day : mode === "month" && month ? `${month}-01` : mode === "period" ? start : "";
     if (!startISO) return null;
     const d = new Date(`${startISO}T00:00:00`);
     d.setDate(d.getDate() - 1);
-    const ws = weekStartOf(d);
-    return formatISODate(inventoryDayOfWeek(ws)) === formatISODate(d) ? ws : null;
+    return weekStartOf(d);
   }, [mode, day, month, start]);
   const [carryMap, setCarryMap] = useState<Record<string, number>>({});
   useEffect(() => {
     let cancelled = false;
     setCarryMap({});
-    if (!carryDay) return;
-    getMiseEnPlaceStocksForWeek(carryDay).then((r) => { if (!cancelled) setCarryMap(r); }).catch(() => {});
+    if (!carryWeek) return;
+    getMiseEnPlaceStocksUpToWeek(carryWeek).then((r) => { if (!cancelled) setCarryMap(r); }).catch(() => {});
     return () => { cancelled = true; };
-  }, [carryDay]);
+  }, [carryWeek]);
   // Saisie déverrouillée uniquement le jour du comptage de la semaine affichée.
   const mepEditable = todayISO() === formatISODate(mepInventoryDay)
     && !(mode === "day" && day && day !== todayISO());
