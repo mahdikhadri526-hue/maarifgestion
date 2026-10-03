@@ -32,10 +32,10 @@ export function PageTitle({ title, subtitle, className }: PageTitleProps) {
       <img
         src={logo}
         alt="Logo Oliveri"
-        className="h-11 w-11 shrink-0 rounded-full border border-border object-cover sm:h-12 sm:w-12"
+        className="h-8 w-8 shrink-0 rounded-full border border-border object-cover sm:h-12 sm:w-12"
       />
       <div className="min-w-0">
-        <h2 className="text-xl font-bold leading-tight text-foreground sm:text-2xl">
+        <h2 className="text-lg font-bold leading-tight text-foreground sm:text-2xl">
           {title}
         </h2>
         {subtitle ? (
