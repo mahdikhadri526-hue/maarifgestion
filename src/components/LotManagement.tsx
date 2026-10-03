@@ -4,7 +4,7 @@ import { formatQuantityForProduct, getProducts, getMinStocks } from "@/lib/stock
 import { useExpiringLots, useProductLots, useProductUnitConfigs, useStockLevels } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Clock, Edit2, Check, X, Package, Trash2, PackageX, ClipboardCheck, TrendingDown } from "lucide-react";
+import { AlertTriangle, Clock, Edit2, Check, X, Trash2, PackageX, ClipboardCheck, TrendingDown } from "lucide-react";
 import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/contexts/AuthContext";
