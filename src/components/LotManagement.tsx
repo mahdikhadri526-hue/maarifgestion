@@ -406,17 +406,7 @@ export function LotManager() {
   return (
     <div className="bg-card rounded-lg border animate-fade-in">
       <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <div className="w-6 h-6 rounded-full overflow-hidden flex-shrink-0">
-            <img src={logo} alt="Logo" className="w-full h-full object-cover" />
-          </div>
-          <Package className="h-5 w-5 text-primary" />
-          Gestion des Lots
-        </h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          Consultez et modifiez les lots par produit alimentaire
-        </p>
-      </div>
+
 
       <div className="p-4 border-b">
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Sélectionner un produit</label>
