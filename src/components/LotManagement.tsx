@@ -404,6 +404,7 @@ export function LotManager() {
 
   return (
     <div className="bg-card rounded-lg border animate-fade-in">
+      <div className="p-4 border-b">
         <label className="text-xs font-medium text-muted-foreground mb-1 block">Sélectionner un produit</label>
         <select
           value={selectedProductId || ""}
