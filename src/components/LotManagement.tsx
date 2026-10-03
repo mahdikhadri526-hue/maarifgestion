@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Clock, Edit2, Check, X, Trash2, PackageX, ClipboardCheck, TrendingDown } from "lucide-react";
 import { toast } from "sonner";
-import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/contexts/AuthContext";
 import { ENABLE_FIFO_INDICATOR } from "@/lib/featureFlags";
 import { formatDateFR, formatMaybeDate } from "@/lib/utils";
