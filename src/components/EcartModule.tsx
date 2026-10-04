@@ -355,7 +355,7 @@ export function EcartModule() {
               subtitle: "Repris automatiquement du stock initial du lendemain (Suivi hebdo « Mouvement glaces »).",
               autoLocked: true,
             })}
-            {sectionTable({ section: "SF_SP", title: "Stock final Salle / Surplace", subtitle: "Grammes par parfum." })}
+            {sectionTable({ section: "SF_SP", title: "Stock final Salle / Surplace", subtitle: "Grammes par parfum.", scannable: true })}
           </div>
           <div className="bg-card border rounded-xl p-4 shadow-sm text-sm">
             <Stat label="Emporter (frigo + transit) (g)" value={result.sfEmpG - result.sfChambreG} />
