@@ -124,18 +124,30 @@ export function EcartModule() {
     { consoTotalG: 0, ventesEmpG: 0, ventesSpG: 0, ventesTotalG: 0, ecartTotalG: 0 },
   );
 
+  const applyScan = (section: Section) => async (entries: ScannedEntry[]) => {
+    setDay((d) => {
+      const next = { ...(d[section] ?? {}) };
+      for (const e of entries) {
+        if (e.article && typeof e.quantity === "number") next[e.article] = e.quantity;
+      }
+      return { ...d, [section]: next };
+    });
+  };
+
   const sectionTable = ({
     section,
     title,
     subtitle,
     override,
     autoLocked,
+    scannable,
   }: {
     section: Section;
     title: string;
     subtitle: string;
     override?: Record<string, number>;
     autoLocked?: boolean;
+    scannable?: boolean;
   }) => {
     const items = SECTION_ITEMS[section];
     const gramInput = GRAM_SECTIONS.includes(section);
