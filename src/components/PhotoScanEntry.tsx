@@ -76,7 +76,22 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
       } else {
         toast.success(`${detected.length} entrée(s) détectée(s)`);
       }
-      setEntries(detected);
+      // Plusieurs scans possibles avant validation : on fusionne avec les
+      // entrées déjà détectées (même article + même lot => quantités additionnées).
+      setEntries((prev) => {
+        const merged = [...prev];
+        for (const d of detected) {
+          const idx = merged.findIndex(
+            (m) => m.article === d.article && m.lotNumber === d.lotNumber && d.article !== "",
+          );
+          if (idx >= 0 && typeof merged[idx].quantity === "number" && typeof d.quantity === "number") {
+            merged[idx] = { ...merged[idx], quantity: (merged[idx].quantity as number) + d.quantity };
+          } else {
+            merged.push(d);
+          }
+        }
+        return merged;
+      });
     } catch (e: any) {
       console.error(e);
       toast.error(e.message || "Erreur lors de l'analyse");
