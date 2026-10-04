@@ -333,8 +333,8 @@ export function EcartModule() {
         <div className="py-16 text-center text-sm text-muted-foreground">Chargement…</div>
       ) : view === "ventes" ? (
         <div className="grid gap-4 lg:grid-cols-2">
-          {sectionTable({ section: "VENTE_EMP", title: "Ventes Emporter", subtitle: "Saisir les quantités vendues — les grammes sont calculés automatiquement." })}
-          {sectionTable({ section: "VENTE_SP", title: "Ventes Salle / Surplace", subtitle: "Saisir les quantités vendues — les grammes sont calculés automatiquement." })}
+          {sectionTable({ section: "VENTE_EMP", title: "Ventes Emporter", subtitle: "Saisir les quantités vendues — les grammes sont calculés automatiquement.", scannable: true })}
+          {sectionTable({ section: "VENTE_SP", title: "Ventes Salle / Surplace", subtitle: "Saisir les quantités vendues — les grammes sont calculés automatiquement.", scannable: true })}
         </div>
       ) : view === "entrees" ? (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -348,7 +348,7 @@ export function EcartModule() {
       ) : view === "final" ? (
         <div className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-3">
-            {sectionTable({ section: "SF_EMP", title: "Stock final Emporter", subtitle: "Grammes par parfum (frigo + transit)." })}
+            {sectionTable({ section: "SF_EMP", title: "Stock final Emporter", subtitle: "Grammes par parfum (frigo + transit).", scannable: true })}
             {sectionTable({
               section: "SF_CHAMBRE_EMP",
               title: "Stock final Chambre",
