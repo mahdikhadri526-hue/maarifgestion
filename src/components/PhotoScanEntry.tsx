@@ -210,9 +210,18 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
 
             {entries.length > 0 && (
               <div className="space-y-2">
-                <p className="text-sm font-medium">
-                  Vérifiez et ajustez les données détectées :
-                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-sm font-medium">
+                    Vérifiez et ajustez les données détectées — vous pouvez ajouter d'autres scans avant de valider :
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setEntries([])}
+                    className="text-xs text-destructive hover:underline whitespace-nowrap"
+                  >
+                    Tout effacer
+                  </button>
+                </div>
                 <div className="space-y-2">
                   {entries.map((e, i) => (
                     <div
