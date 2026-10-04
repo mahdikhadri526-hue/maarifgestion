@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Boxes, Loader2, Package, Save, Scale, ShoppingCart } from "lucide-react";
 import { formatDateFR } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { PhotoScanEntry, type ScannedEntry } from "@/components/PhotoScanEntry";
 import {
   GRAM_SECTIONS,
   SECTION_ITEMS,
@@ -123,18 +124,30 @@ export function EcartModule() {
     { consoTotalG: 0, ventesEmpG: 0, ventesSpG: 0, ventesTotalG: 0, ecartTotalG: 0 },
   );
 
+  const applyScan = (section: Section) => async (entries: ScannedEntry[]) => {
+    setDay((d) => {
+      const next = { ...(d[section] ?? {}) };
+      for (const e of entries) {
+        if (e.article && typeof e.quantity === "number") next[e.article] = e.quantity;
+      }
+      return { ...d, [section]: next };
+    });
+  };
+
   const sectionTable = ({
     section,
     title,
     subtitle,
     override,
     autoLocked,
+    scannable,
   }: {
     section: Section;
     title: string;
     subtitle: string;
     override?: Record<string, number>;
     autoLocked?: boolean;
+    scannable?: boolean;
   }) => {
     const items = SECTION_ITEMS[section];
     const gramInput = GRAM_SECTIONS.includes(section);
@@ -150,9 +163,18 @@ export function EcartModule() {
     );
     return (
       <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
-        <div className="px-3 py-2 border-b bg-muted/50">
-          <h3 className="font-semibold text-sm">{title}</h3>
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
+        <div className="px-3 py-2 border-b bg-muted/50 flex items-start justify-between gap-2 flex-wrap">
+          <div>
+            <h3 className="font-semibold text-sm">{title}</h3>
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
+          </div>
+          {scannable && canEdit && !locked && (
+            <PhotoScanEntry
+              articles={items.map((it) => it.name)}
+              onConfirm={applyScan(section)}
+              buttonLabel="Scanner photo"
+            />
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs sm:text-sm border-collapse">
@@ -311,8 +333,8 @@ export function EcartModule() {
         <div className="py-16 text-center text-sm text-muted-foreground">Chargement…</div>
       ) : view === "ventes" ? (
         <div className="grid gap-4 lg:grid-cols-2">
-          {sectionTable({ section: "VENTE_EMP", title: "Ventes Emporter", subtitle: "Saisir les quantités vendues — les grammes sont calculés automatiquement." })}
-          {sectionTable({ section: "VENTE_SP", title: "Ventes Salle / Surplace", subtitle: "Saisir les quantités vendues — les grammes sont calculés automatiquement." })}
+          {sectionTable({ section: "VENTE_EMP", title: "Ventes Emporter", subtitle: "Saisir les quantités vendues — les grammes sont calculés automatiquement.", scannable: true })}
+          {sectionTable({ section: "VENTE_SP", title: "Ventes Salle / Surplace", subtitle: "Saisir les quantités vendues — les grammes sont calculés automatiquement.", scannable: true })}
         </div>
       ) : view === "entrees" ? (
         <div className="grid gap-4 lg:grid-cols-2">
@@ -326,14 +348,14 @@ export function EcartModule() {
       ) : view === "final" ? (
         <div className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-3">
-            {sectionTable({ section: "SF_EMP", title: "Stock final Emporter", subtitle: "Grammes par parfum (frigo + transit)." })}
+            {sectionTable({ section: "SF_EMP", title: "Stock final Emporter", subtitle: "Grammes par parfum (frigo + transit).", scannable: true })}
             {sectionTable({
               section: "SF_CHAMBRE_EMP",
               title: "Stock final Chambre",
               subtitle: "Repris automatiquement du stock initial du lendemain (Suivi hebdo « Mouvement glaces »).",
               autoLocked: true,
             })}
-            {sectionTable({ section: "SF_SP", title: "Stock final Salle / Surplace", subtitle: "Grammes par parfum." })}
+            {sectionTable({ section: "SF_SP", title: "Stock final Salle / Surplace", subtitle: "Grammes par parfum.", scannable: true })}
           </div>
           <div className="bg-card border rounded-xl p-4 shadow-sm text-sm">
             <Stat label="Emporter (frigo + transit) (g)" value={result.sfEmpG - result.sfChambreG} />
