@@ -163,9 +163,18 @@ export function EcartModule() {
     );
     return (
       <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
-        <div className="px-3 py-2 border-b bg-muted/50">
-          <h3 className="font-semibold text-sm">{title}</h3>
-          <p className="text-xs text-muted-foreground">{subtitle}</p>
+        <div className="px-3 py-2 border-b bg-muted/50 flex items-start justify-between gap-2 flex-wrap">
+          <div>
+            <h3 className="font-semibold text-sm">{title}</h3>
+            <p className="text-xs text-muted-foreground">{subtitle}</p>
+          </div>
+          {scannable && canEdit && !locked && (
+            <PhotoScanEntry
+              articles={items.map((it) => it.name)}
+              onConfirm={applyScan(section)}
+              buttonLabel="Scanner photo"
+            />
+          )}
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs sm:text-sm border-collapse">
