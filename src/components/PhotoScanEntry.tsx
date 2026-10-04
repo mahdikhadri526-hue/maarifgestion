@@ -48,7 +48,6 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
 
   const handleFile = async (file: File) => {
     setLoading(true);
-    setEntries([]);
     try {
       const url = URL.createObjectURL(file);
       setPreviewUrl(url);
