@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Thermometer, Save, AlertTriangle, CheckCircle2, FileDown, Volume2, VolumeX } from "lucide-react";
+import { Save, AlertTriangle, CheckCircle2, FileDown, Volume2, VolumeX } from "lucide-react";
 import { EQUIPMENTS as BASE_EQUIPMENTS, SLOTS, ZONES, formatDisplayTemp, parseDisplayTemp, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
 import { OPERATORS } from "@/lib/operators";
 import { MANAGERS } from "@/lib/managers";
@@ -593,10 +593,6 @@ export function FridgeTemperatureManager() {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Thermometer className="h-5 w-5 text-primary" />
-            Prise de température des frigos (HACCP)
-          </CardTitle>
           <p className="text-sm text-muted-foreground">
             3 contrôles par jour&nbsp;: <strong>07h</strong>, <strong>16h</strong>, <strong>00h</strong>.
           </p>
