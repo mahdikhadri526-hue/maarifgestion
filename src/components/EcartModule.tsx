@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { Boxes, Loader2, Package, Save, Scale, ShoppingCart } from "lucide-react";
 import { formatDateFR } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { PhotoScanEntry, type ScannedEntry } from "@/components/PhotoScanEntry";
 import {
   GRAM_SECTIONS,
   SECTION_ITEMS,
