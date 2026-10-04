@@ -62,10 +62,20 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
         binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
       }
       const base64 = btoa(binary);
-      const { data, error } = await supabase.functions.invoke("scan-stock-entry", {
-        body: { imageBase64: base64, mimeType: compressed.mimeType, articles },
-      });
-      if (error) throw error;
+      const body = { imageBase64: base64, mimeType: compressed.mimeType, articles };
+      let { data, error } = await supabase.functions.invoke("scan-stock-entry", { body });
+      if (error && (error as any).context?.status === 401) {
+        await supabase.auth.refreshSession();
+        ({ data, error } = await supabase.functions.invoke("scan-stock-entry", { body }));
+      }
+      if (error) {
+        let msg = error.message;
+        try {
+          const j = await (error as any).context?.json?.();
+          if (j?.error) msg = j.error;
+        } catch { /* ignore */ }
+        throw new Error(msg);
+      }
       const detected: ScannedEntry[] = (data?.entries || []).map((e: any) => ({
         article: matchArticle(e.article, articles) || "",
         quantity: typeof e.quantity === "number" ? e.quantity : "",
