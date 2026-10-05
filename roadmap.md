@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Utiliser uniquement les cinq premières secondes de la musique fournie, une seule fois pendant l’introduction.
+
 - [x] Afficher les photos de connexion en plein écran et remplacer la signature Oliveri par une voix masculine plus mûre.
 
 - [x] Prolonger la dernière photo et le message de bienvenue ; jouer une introduction musicale douce pendant les photos, sans couvrir la voix off.

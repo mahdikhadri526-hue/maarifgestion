@@ -10,7 +10,7 @@ import { PdvSelector } from "@/components/pdv/PdvSelector";
 import { WelcomeScreen } from "@/components/auth/WelcomeScreen";
 import { loadWelcomePhotos, type WelcomePhoto } from "@/lib/welcomePhotos";
 import voiceOverAsset from "@/assets/oliveri-voix-mature.mp3.asset.json";
-import introMusic from "@/assets/oliveri-intro.mp3";
+import introMusic from "@/assets/oliveri-intro-first-five.mp3.asset.json";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -49,9 +49,9 @@ function AuthGate() {
   const musicActive = MUSIC_STEPS.has(loginPhase);
 
   const prepareMusic = () => {
-    const music = musicRef.current ?? new Audio(introMusic);
+    const music = musicRef.current ?? new Audio(introMusic.url);
     musicRef.current = music;
-    music.loop = true;
+    music.loop = false;
     music.volume = 0;
     // Unlock audio on the user's sign-in gesture, but keep it silent until login succeeds.
     void music.play().then(() => {
@@ -84,9 +84,9 @@ function AuthGate() {
     if (!musicActive) return;
     cancelRampRef.current?.();
     cancelRampRef.current = null;
-    const music = musicRef.current ?? new Audio(introMusic);
+    const music = musicRef.current ?? new Audio(introMusic.url);
     musicRef.current = music;
-    music.loop = true;
+    music.loop = false;
     void music.play().catch(() => undefined);
     return () => {
       // Fade out instead of cutting the music the moment the welcome message disappears.
