@@ -222,6 +222,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   // Permission unique : affichage Stock mise en place / Stock total / Sorties
   // total + boutons « Colonnes Réf. » et « Mise en place / total ».
   const canToggleExtraCols = can("toggle_stock_extra_cols");
+  const canEditCapacity = isAdmin || can("edit_storage_capacity");
   const showRefCols = canToggleExtraCols && showRefColsRaw;
   const [adjustOpen, setAdjustOpen] = useState(false);
   const [adjustData, setAdjustData] = useState<{
