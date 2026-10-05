@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -10,6 +10,7 @@ import { PdvSelector } from "@/components/pdv/PdvSelector";
 import { WelcomeScreen } from "@/components/auth/WelcomeScreen";
 import { loadWelcomePhotos, type WelcomePhoto } from "@/lib/welcomePhotos";
 import voiceOver from "@/assets/oliveri-voix.mp3";
+import introMusic from "@/assets/oliveri-intro.mp3";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -21,6 +22,21 @@ function AuthGate() {
   const [welcomePhotos, setWelcomePhotos] = useState<WelcomePhoto[]>([]);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [photosReady, setPhotosReady] = useState(false);
+  const musicRef = useRef<HTMLAudioElement | null>(null);
+
+  const prepareMusic = () => {
+    const music = musicRef.current ?? new Audio(introMusic);
+    musicRef.current = music;
+    music.loop = true;
+    music.volume = 0;
+    // Unlock audio on the user's sign-in gesture, but keep it silent until login succeeds.
+    void music.play().then(() => {
+      if (music.volume === 0) {
+        music.pause();
+        music.currentTime = 0;
+      }
+    }).catch(() => undefined);
+  };
 
   useEffect(() => {
     if (loginPhase !== "photos") return;
@@ -40,10 +56,25 @@ function AuthGate() {
 
   useEffect(() => {
     if (loginPhase !== "photos" || !photosReady) return;
+    const music = musicRef.current;
+    if (music) {
+      music.volume = 0.2;
+      void music.play().catch(() => undefined);
+    }
+    return () => {
+      if (music) {
+        music.pause();
+        music.currentTime = 0;
+      }
+    };
+  }, [loginPhase, photosReady]);
+
+  useEffect(() => {
+    if (loginPhase !== "photos" || !photosReady) return;
     const timer = window.setTimeout(() => {
       if (photoIndex + 1 < welcomePhotos.length) setPhotoIndex(photoIndex + 1);
       else setLoginPhase("logo");
-    }, 2400);
+    }, photoIndex === welcomePhotos.length - 1 ? 4800 : 2400);
     return () => window.clearTimeout(timer);
   }, [loginPhase, photosReady, photoIndex, welcomePhotos.length]);
 
@@ -57,12 +88,12 @@ function AuthGate() {
 
   useEffect(() => {
     if (loginPhase !== "welcome") return;
-    const timer = window.setTimeout(() => setLoginPhase("idle"), 2200);
+    const timer = window.setTimeout(() => setLoginPhase("idle"), 4200);
     return () => window.clearTimeout(timer);
   }, [loginPhase]);
 
   const lastPhoto = welcomePhotos[welcomePhotos.length - 1];
-  if (user && loginPhase === "photos" && photosReady && welcomePhotos[photoIndex]) return <WelcomeScreen photo={welcomePhotos[photoIndex]} />;
+  if (user && loginPhase === "photos" && photosReady && welcomePhotos[photoIndex]) return <WelcomeScreen photo={welcomePhotos[photoIndex]} isLastPhoto={photoIndex === welcomePhotos.length - 1} />;
   if (user && loginPhase === "photos") return <main className="min-h-screen bg-background" />;
   if (user && loginPhase === "logo") return <WelcomeScreen stage="logo" backdrop={lastPhoto} />;
   if (user && loginPhase === "welcome") return <WelcomeScreen stage="welcome" backdrop={lastPhoto} />;
@@ -72,7 +103,7 @@ function AuthGate() {
   if (loading || (user && pdvLoading) || (user && !multiPdvEnabled && !pdvId)) {
     return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Chargement…</div>;
   }
-  if (!user) return <AuthPage onLoginStart={() => setLoginPhase("authenticating")} onLoginSuccess={() => setLoginPhase("photos")} onLoginFailure={() => setLoginPhase("idle")} />;
+  if (!user) return <AuthPage onLoginStart={() => { prepareMusic(); setLoginPhase("authenticating"); }} onLoginSuccess={() => setLoginPhase("photos")} onLoginFailure={() => { musicRef.current?.pause(); setLoginPhase("idle"); }} />;
   if (multiPdvEnabled && !pdvId) return <PdvSelector />;
   return (
     <Routes>
