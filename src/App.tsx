@@ -10,7 +10,7 @@ import { PdvSelector } from "@/components/pdv/PdvSelector";
 import { WelcomeScreen } from "@/components/auth/WelcomeScreen";
 import { loadWelcomePhotos, type WelcomePhoto } from "@/lib/welcomePhotos";
 import voiceOverAsset from "@/assets/oliveri-voix-mature.mp3.asset.json";
-import introMusic from "@/assets/oliveri-intro-first-five.mp3.asset.json";
+import introMusic from "@/assets/oliveri-intro.mp3";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
