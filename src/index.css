@@ -89,24 +89,26 @@
   }
 
   .welcome-photo-bg {
-    filter: blur(28px) brightness(1.06) saturate(1.1);
+    filter: blur(28px) brightness(1.4) saturate(0.8);
     transform: scale(1.15);
     animation: welcome-bg-enter 1s ease-out both;
   }
 
+  /* Fond de l'accueil : la photo est très éclaircie, jamais sombre. */
   .welcome-backdrop {
-    filter: blur(42px) saturate(1.2);
+    filter: blur(48px) brightness(1.55) saturate(0.75);
   }
 
-  /* Voile clair : la photo de fond reste lumineuse, aucun fond noir. */
+  /* Voile blanc : la photo de fond s'efface sous un fond blanc clair. */
   .welcome-veil {
     background: linear-gradient(
       180deg,
-      hsl(var(--background) / 0.45) 0%,
-      hsl(var(--background) / 0.72) 45%,
-      hsl(var(--background) / 0.88) 100%
+      hsl(var(--background) / 0.86) 0%,
+      hsl(var(--background) / 0.92) 45%,
+      hsl(var(--background) / 0.96) 100%
     );
   }
+
 
   /* Message d'accueil posé directement sur l'écran : aucun cadre, aucune carte. */
   .welcome-message-overlay {
