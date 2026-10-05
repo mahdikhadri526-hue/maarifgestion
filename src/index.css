@@ -108,10 +108,12 @@
     );
   }
 
-  /* Message d'accueil sur carte claire et givrée, lisible sans fond sombre. */
-  .welcome-card {
-    @apply rounded-2xl border border-border/60 bg-card/85 px-6 py-4 text-foreground shadow-lg backdrop-blur-md;
+  /* Message d'accueil posé directement sur l'écran : aucun cadre, aucune carte. */
+  .welcome-message-overlay {
+    @apply text-foreground;
+    text-shadow: 0 1px 0 hsl(var(--background) / 0.85), 0 0 22px hsl(var(--background) / 0.75);
   }
+
 
 }
 

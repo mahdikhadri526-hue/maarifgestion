@@ -17,7 +17,7 @@ export function WelcomeScreen({ photo, backdrop, stage = "welcome", isLastPhoto 
       {backdrop && <div aria-hidden className="welcome-veil absolute inset-0" />}
       <img src={logo} alt="Logo Oliveri" className="welcome-logo relative h-28 w-28 rounded-full border border-card/80 object-cover shadow-xl sm:h-32 sm:w-32" />
       {stage === "welcome" && (
-        <h1 className={`welcome-message relative max-w-md text-xl font-semibold leading-relaxed sm:text-2xl${backdrop ? " welcome-card" : ""}`}>
+        <h1 className={`welcome-message relative max-w-md text-xl font-semibold leading-relaxed sm:text-2xl${backdrop ? " welcome-message-overlay" : ""}`}>
           Bienvenue à votre espace de gestion
         </h1>
       )}
