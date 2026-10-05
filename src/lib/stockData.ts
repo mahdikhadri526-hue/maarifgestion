@@ -677,6 +677,23 @@ export async function setMinStock(productId: string, minQuantity: number) {
   if (error) throw error;
 }
 
+export async function getDlcAlertDays(): Promise<Record<string, number>> {
+  const { data, error } = await supabase.from("initial_stocks").select("product_id, dlc_alert_days");
+  if (error) throw error;
+  const result: Record<string, number> = {};
+  (data || []).forEach((row: any) => {
+    if (row.dlc_alert_days !== null && row.dlc_alert_days !== undefined) result[row.product_id] = Number(row.dlc_alert_days);
+  });
+  return result;
+}
+
+export async function setDlcAlertDays(productId: string, days: number | null) {
+  const { error } = await supabase
+    .from("initial_stocks")
+    .upsert({ product_id: productId, dlc_alert_days: days } as any, { onConflict: "product_id" });
+  if (error) throw error;
+}
+
 // Agrégat « TOPPINGS » : SMARTIES TOPPING + OREO TOPPING (table alimentaire)
 // + ingrédients tartes saisis dans le Suivi Hebdo « Mouvement glaces & tartes ».
 export const TOPPINGS_ALI_PRODUCT_IDS = ["ali-1", "ali-2"]; // SMARTIES TOPPING, OREO TOPPING

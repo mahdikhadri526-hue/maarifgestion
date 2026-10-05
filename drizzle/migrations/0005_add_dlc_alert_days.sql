@@ -1,0 +1,1 @@
+ALTER TABLE public.initial_stocks ADD COLUMN IF NOT EXISTS dlc_alert_days integer;

@@ -91,11 +91,15 @@ export async function getProductLots(productId: string): Promise<LotEntry[]> {
 
 export async function getExpiringLots(days: number = 30): Promise<(LotEntry & { daysUntilExpiry: number })[]> {
   await syncLotBalances();
-  const { data, error } = await supabase
-    .from("lot_entries")
-    .select("*")
-    .gt("remaining_quantity", 0);
+  const [{ data, error }, { data: alertRows }] = await Promise.all([
+    supabase.from("lot_entries").select("*").gt("remaining_quantity", 0),
+    supabase.from("initial_stocks").select("product_id, dlc_alert_days"),
+  ]);
   if (error) throw error;
+  const thresholds: Record<string, number> = {};
+  (alertRows || []).forEach((r: any) => {
+    if (r.dlc_alert_days !== null && r.dlc_alert_days !== undefined) thresholds[r.product_id] = Number(r.dlc_alert_days);
+  });
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -108,7 +112,7 @@ export async function getExpiringLots(days: number = 30): Promise<(LotEntry & { 
       const diff = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
       return { ...entry, daysUntilExpiry: diff };
     })
-    .filter((e) => e.daysUntilExpiry <= days)
+    .filter((e) => e.daysUntilExpiry <= (thresholds[e.productId] ?? days))
     .sort((a, b) => a.daysUntilExpiry - b.daysUntilExpiry);
 }
 
