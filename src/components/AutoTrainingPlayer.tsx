@@ -44,24 +44,56 @@ function collectSections(moduleKey: string, guides: Map<string, VoiceGuide>, scr
   return out;
 }
 
-/** Finds, inside the section, the visible element whose label is mentioned in the sentence. */
-function findMentioned(heading: HTMLElement, sentence: string): HTMLElement {
+const words = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f\u064B-\u065F]/g, "").toLowerCase()
+  .split(/[^a-z0-9\u0600-\u06FF]+/).filter((w) => w.length >= 3);
+
+/** Whole block of the section: climbs until the next parent would contain another section heading. */
+function sectionBox(heading: HTMLElement): HTMLElement {
   let box: HTMLElement = heading;
-  for (let i = 0; i < 4 && box.parentElement; i++) {
-    box = box.parentElement;
-    if (box.matches("[data-voice-guide-scope]")) break;
-    if (box.getBoundingClientRect().height > heading.getBoundingClientRect().height * 3) break;
+  while (box.parentElement && !box.parentElement.matches("[data-voice-guide-scope]")) {
+    const p = box.parentElement;
+    const others = Array.from(p.querySelectorAll("h2, h3")).filter((h) => h !== heading && (h as HTMLElement).offsetParent !== null);
+    if (others.length) break;
+    box = p;
   }
-  const said = norm(sentence);
-  let best: HTMLElement | null = null;
-  let bestLen = 0;
-  box.querySelectorAll<HTMLElement>("button, a, th, label, [role=tab], h3, h4, [role=combobox]").forEach((el) => {
-    if (el.offsetParent === null || el.closest("[data-voice-guide-control], [data-training-overlay]")) return;
-    const label = norm(el.innerText || el.getAttribute("aria-label") || "").trim();
-    if (label.length < 4 || label.length > 40) return;
-    if (said.includes(` ${label} `) && label.length > bestLen) { best = el; bestLen = label.length; }
+  return box;
+}
+
+const SELECTOR = "button, a, th, label, input, select, textarea, [role=tab], [role=combobox], [role=switch], h3, h4";
+
+function details(heading: HTMLElement): HTMLElement[] {
+  return Array.from(sectionBox(heading).querySelectorAll<HTMLElement>(SELECTOR)).filter((el) => {
+    if (el === heading || el.offsetParent === null || el.closest("[data-voice-guide-control], [data-training-overlay]")) return false;
+    const r = el.getBoundingClientRect();
+    return r.width > 8 && r.height > 8;
   });
-  return best ?? heading;
+}
+
+const labelOf = (el: HTMLElement) =>
+  el.innerText || el.getAttribute("aria-label") || el.getAttribute("placeholder") || (el as HTMLInputElement).labels?.[0]?.innerText || "";
+
+/** Element named by the sentence; otherwise walks the section details one by one so the arrow never stays on the title. */
+function findMentioned(heading: HTMLElement, sentence: string, index: number, used: Set<HTMLElement>): HTMLElement {
+  const els = details(heading);
+  if (!els.length) return heading;
+  const said = new Set(words(sentence));
+  const saidNorm = norm(sentence);
+  let best: HTMLElement | null = null;
+  let bestScore = 0;
+  for (const el of els) {
+    const raw = labelOf(el);
+    if (raw.length > 60) continue;
+    const lw = words(raw);
+    if (!lw.length) continue;
+    let score = lw.filter((w) => said.has(w) || [...said].some((s) => s.length >= 4 && (s.startsWith(w) || w.startsWith(s)))).length / lw.length;
+    if (saidNorm.includes(norm(raw))) score += 1;
+    if (used.has(el)) score -= 0.3;
+    if (score > bestScore) { bestScore = score; best = el; }
+  }
+  if (best && bestScore >= 0.5) return best;
+  const fresh = els.filter((e) => !used.has(e));
+  const pool = fresh.length ? fresh : els;
+  return pool[Math.min(index, pool.length - 1) % pool.length];
 }
 
 export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
@@ -74,6 +106,7 @@ export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
   const [sentence, setSentence] = useState(0);
   const [rect, setRect] = useState<Rect | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
+  const used = useRef<Set<HTMLElement>>(new Set());
 
   useEffect(() => {
     if (!allowed) return;
@@ -109,8 +142,12 @@ export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
     if (!current) return;
     let cancelled = false;
     audio.current?.pause();
+    used.current = new Set();
     const weights = current.sentences.map((s) => s.length);
     const total = weights.reduce((a, b) => a + b, 0);
+    // Safety net: never stay stuck on a section if the audio stalls or cannot play.
+    const est = Math.max(6, (current.guide.duration_seconds || total / 14) + 4) * 1000;
+    let guard = window.setTimeout(() => !cancelled && nextSection(), est);
     void getVoiceGuideUrl(current.guide.audio_path).then((url) => {
       if (cancelled) return;
       const a = new Audio(url);
@@ -122,16 +159,27 @@ export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
         for (; idx < weights.length - 1; idx++) { acc += weights[idx]; if (acc > target) break; }
         setSentence(idx);
       };
-      a.onended = () => window.setTimeout(nextSection, 600);
-      void a.play().catch(() => undefined);
+      a.onloadedmetadata = () => {
+        window.clearTimeout(guard);
+        guard = window.setTimeout(() => !cancelled && nextSection(), ((a.duration || 0) + 4) * 1000);
+      };
+      a.onended = () => { window.clearTimeout(guard); window.setTimeout(nextSection, 600); };
+      a.onerror = () => { window.clearTimeout(guard); nextSection(); };
+      void a.play().catch(() => {
+        // Autoplay blocked: advance sentence by sentence at reading pace instead of freezing.
+        let i = 0;
+        const step = () => { if (cancelled) return; i++; if (i < weights.length) { setSentence(i); window.setTimeout(step, 3500); } };
+        window.setTimeout(step, 3500);
+      });
     }).catch(() => nextSection());
-    return () => { cancelled = true; audio.current?.pause(); };
+    return () => { cancelled = true; window.clearTimeout(guard); audio.current?.pause(); };
   }, [current, nextSection]);
 
   // Arrow follows the element mentioned by the current sentence.
   useEffect(() => {
     if (!current) return;
-    const el = findMentioned(current.heading, current.sentences[sentence] ?? "");
+    const el = findMentioned(current.heading, current.sentences[sentence] ?? "", sentence, used.current);
+    used.current.add(el);
     el.scrollIntoView({ block: "center", behavior: "smooth" });
     const update = () => {
       const r = el.getBoundingClientRect();
