@@ -71,6 +71,28 @@
   .font-mono {
     font-family: var(--font-mono);
   }
+
+  .welcome-logo {
+    animation: welcome-logo-enter 0.8s cubic-bezier(0.2, 0.75, 0.2, 1) both;
+  }
+
+  .welcome-message {
+    animation: welcome-message-enter 0.65s ease-out 0.55s both;
+  }
+}
+
+@keyframes welcome-logo-enter {
+  from { opacity: 0; transform: translateY(14px) scale(0.88); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes welcome-message-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-logo, .welcome-message { animation: none; }
 }
 
 @layer components {
