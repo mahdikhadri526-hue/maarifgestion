@@ -40,7 +40,7 @@ function rampVolume(music: HTMLAudioElement, target: number, ms: number, onDone?
 function AuthGate() {
 
   const { user, loading, pdvId, pdvLoading, multiPdvEnabled } = useAuth();
-  const [loginPhase, setLoginPhase] = useState<"idle" | "authenticating" | "photos" | "logo" | "welcome">("idle");
+  const [loginPhase, setLoginPhase] = useState<"idle" | "authenticating" | "photos" | "logo" | "welcome">("photos");
   const [welcomePhotos, setWelcomePhotos] = useState<WelcomePhoto[]>([]);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [photosReady, setPhotosReady] = useState(false);
