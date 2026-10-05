@@ -44,7 +44,7 @@ export const PERMISSION_GROUPS: { title: string; keys: string[] }[] = [
   { title: "Agenda PEP", keys: ["view_pep", "manage_pep"] },
   { title: "Suivi Technique", keys: ["view_tech", "manage_tech"] },
   { title: "Explications vocales", keys: ["listen_voice_guides"] },
-  { title: "Écran de bienvenue", keys: ["manage_welcome_screen"] },
+  { title: "Écran de bienvenue", keys: ["view_welcome_screen", "manage_welcome_screen"] },
   { title: "Pointage (reconnaissance faciale)", keys: ["view_attendance", "manage_attendance"] },
   { title: "RH — Plannings", keys: ["view_hr", "manage_hr"] },
   { title: "Planning", keys: ["view_planning", "manage_planning"] },
@@ -70,6 +70,7 @@ export const ALL_PERMISSIONS = [
   { key: "edit_remaining_stock", label: "Modifier le stock restant" },
   { key: "toggle_stock_extra_cols", label: "Afficher Stock mise en place / Stock total / Sorties total + boutons « Colonnes Réf. » et « Mise en place / total »" },
   { key: "listen_voice_guides", label: "Écouter les explications vocales des tables" },
+  { key: "view_welcome_screen", label: "Voir l'écran de bienvenue après connexion (photos, musique, message)" },
   { key: "manage_welcome_screen", label: "Gérer l'écran de bienvenue (photos, musique, voix)" },
 
 

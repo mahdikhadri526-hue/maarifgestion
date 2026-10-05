@@ -39,7 +39,7 @@ function rampVolume(music: HTMLAudioElement, target: number, ms: number, onDone?
 
 function AuthGate() {
 
-  const { user, loading, pdvId, pdvLoading, multiPdvEnabled } = useAuth();
+  const { user, loading, role, pdvId, pdvLoading, multiPdvEnabled, can } = useAuth();
   const [loginPhase, setLoginPhase] = useState<"idle" | "authenticating" | "photos" | "logo" | "welcome">("idle");
   const [welcomePhotos, setWelcomePhotos] = useState<WelcomePhoto[]>([]);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -62,6 +62,19 @@ function AuthGate() {
     }).catch(() => undefined);
   };
 
+
+  // Permission « Voir l'écran de bienvenue » : sans elle, on saute toute la
+  // séquence (photos, logo, message) et on arrive directement sur l'application.
+  // On attend que le rôle/permissions soient chargés (role non null) avant de décider.
+  useEffect(() => {
+    if (!user || !role) return;
+    if (loginPhase === "photos" || loginPhase === "logo" || loginPhase === "welcome") {
+      if (!can("view_welcome_screen")) {
+        musicRef.current?.pause();
+        setLoginPhase("idle");
+      }
+    }
+  }, [user, role, loginPhase, can]);
 
   useEffect(() => {
     if (loginPhase !== "photos") return;
