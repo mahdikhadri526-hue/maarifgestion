@@ -161,6 +161,7 @@ export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
     used.current = new Set();
     closeOpened();
     opened.current = openSection(current.heading);
+    if (opened.current) used.current.add(opened.current);
     const weights = current.sentences.map((s) => s.length);
     const total = weights.reduce((a, b) => a + b, 0);
     // Safety net: never stay stuck on a section if the audio stalls or cannot play.
