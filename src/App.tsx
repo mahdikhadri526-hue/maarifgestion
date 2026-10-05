@@ -40,7 +40,7 @@ function rampVolume(music: HTMLAudioElement, target: number, ms: number, onDone?
 function AuthGate() {
 
   const { user, loading, role, pdvId, pdvLoading, multiPdvEnabled, can } = useAuth();
-  const [loginPhase, setLoginPhase] = useState<"idle" | "authenticating" | "photos" | "logo" | "welcome">("idle");
+  const [loginPhase, setLoginPhase] = useState<"idle" | "authenticating" | "deciding" | "photos" | "logo" | "welcome">("idle");
   const [welcomePhotos, setWelcomePhotos] = useState<WelcomePhoto[]>([]);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [photosReady, setPhotosReady] = useState(false);
@@ -66,6 +66,19 @@ function AuthGate() {
   // Permission « Voir l'écran de bienvenue » : sans elle, on saute toute la
   // séquence (photos, logo, message) et on arrive directement sur l'application.
   // On attend que le rôle/permissions soient chargés (role non null) avant de décider.
+  // Après connexion réussie, on reste sur « Connexion… » jusqu'à connaître les
+  // permissions : aucune image, musique ou message ne s'affiche avant la décision.
+  useEffect(() => {
+    if (loginPhase !== "deciding" || !user) return;
+    if (role) {
+      if (can("view_welcome_screen")) setLoginPhase("photos");
+      else { musicRef.current?.pause(); setLoginPhase("idle"); }
+      return;
+    }
+    const timer = window.setTimeout(() => { musicRef.current?.pause(); setLoginPhase("idle"); }, 6000);
+    return () => window.clearTimeout(timer);
+  }, [user, role, loginPhase, can]);
+
   useEffect(() => {
     if (!user || !role) return;
     if (loginPhase === "photos" || loginPhase === "logo" || loginPhase === "welcome") {
@@ -150,13 +163,13 @@ function AuthGate() {
   if (user && loginPhase === "photos") return <main className="min-h-screen bg-background" />;
   if (user && loginPhase === "logo") return <WelcomeScreen stage="logo" backdrop={lastPhoto} />;
   if (user && loginPhase === "welcome") return <WelcomeScreen stage="welcome" backdrop={lastPhoto} />;
-  if (user && loginPhase === "authenticating") {
+  if (user && (loginPhase === "authenticating" || loginPhase === "deciding")) {
     return <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">Connexion…</div>;
   }
   if (loading || (user && pdvLoading) || (user && !multiPdvEnabled && !pdvId)) {
     return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Chargement…</div>;
   }
-  if (!user) return <AuthPage onLoginStart={() => { prepareMusic(); setLoginPhase("authenticating"); }} onLoginSuccess={() => setLoginPhase("photos")} onLoginFailure={() => { musicRef.current?.pause(); setLoginPhase("idle"); }} />;
+  if (!user) return <AuthPage onLoginStart={() => { prepareMusic(); setLoginPhase("authenticating"); }} onLoginSuccess={() => setLoginPhase("deciding")} onLoginFailure={() => { musicRef.current?.pause(); setLoginPhase("idle"); }} />;
   if (multiPdvEnabled && !pdvId) return <PdvSelector />;
   return (
     <Routes>
