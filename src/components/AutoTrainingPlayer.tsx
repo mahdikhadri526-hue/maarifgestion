@@ -64,8 +64,18 @@ function sectionBox(heading: HTMLElement): HTMLElement {
 const SELECTOR = "button, a, th, label, input, select, textarea, [role=tab], [role=combobox], [role=switch], h3, h4";
 
 function details(heading: HTMLElement): HTMLElement[] {
-  return Array.from(sectionBox(heading).querySelectorAll<HTMLElement>(SELECTOR)).filter((el) => {
-    if (el === heading || el.offsetParent === null || el.closest("[data-voice-guide-control], [data-training-overlay]")) return false;
+  // Everything from this heading down to the next trained heading (document order), plus the heading's own block.
+  const scope = heading.closest("[data-voice-guide-scope]") ?? document.body;
+  const ordered = [...sectionHeadings].sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+  const next = ordered[ordered.indexOf(heading) + 1];
+  const box = sectionBox(heading);
+  const inRange = (el: HTMLElement) =>
+    box.contains(el) ||
+    (!!(heading.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+      (!next || !!(el.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING)));
+  return Array.from(scope.querySelectorAll<HTMLElement>(SELECTOR)).filter((el) => {
+    if (el === heading || heading.contains(el) || el.offsetParent === null || el.closest("[data-voice-guide-control], [data-training-overlay]")) return false;
+    if (!inRange(el)) return false;
     const r = el.getBoundingClientRect();
     return r.width > 8 && r.height > 8;
   });
@@ -79,7 +89,7 @@ const OPENER = /^(consulter|afficher|voir|details?|voir plus|developper)$/;
 
 /** Temporarily opens collapsed content of the section (e.g. « Consulter ») so the arrow can show the details. */
 function openSection(heading: HTMLElement): HTMLElement | null {
-  const btn = Array.from(sectionBox(heading).querySelectorAll<HTMLElement>("button"))
+  const btn = details(heading).filter((b) => b.tagName === "BUTTON")
     .find((b) => b.offsetParent !== null && OPENER.test(norm(b.innerText).trim()));
   if (!btn) return null;
   btn.click();
@@ -87,8 +97,11 @@ function openSection(heading: HTMLElement): HTMLElement | null {
 }
 
 function findMentioned(heading: HTMLElement, sentence: string, index: number, used: Set<HTMLElement>): HTMLElement {
-  const els = details(heading);
-  if (!els.length) return heading;
+  let els = details(heading);
+  const global = !els.length;
+  // Intro sections with no own controls (e.g. Bienvenue): point at the menu items they name, anywhere on screen.
+  if (global) els = Array.from(document.querySelectorAll<HTMLElement>(SELECTOR)).filter((el) =>
+    el.offsetParent !== null && !el.closest("[data-voice-guide-control], [data-training-overlay]"));
   const said = new Set(words(sentence));
   const saidNorm = norm(sentence);
   let best: HTMLElement | null = null;
@@ -104,6 +117,7 @@ function findMentioned(heading: HTMLElement, sentence: string, index: number, us
     if (score > bestScore) { bestScore = score; best = el; }
   }
   if (best && bestScore >= 0.5) return best;
+  if (global) return heading;
   const fresh = els.filter((e) => !used.has(e));
   const pool = fresh.length ? fresh : els;
   return pool[Math.min(index, pool.length - 1) % pool.length];
