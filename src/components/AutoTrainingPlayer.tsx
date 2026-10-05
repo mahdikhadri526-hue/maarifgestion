@@ -75,12 +75,12 @@ const labelOf = (el: HTMLElement) =>
   el.innerText || el.getAttribute("aria-label") || el.getAttribute("placeholder") || (el as HTMLInputElement).labels?.[0]?.innerText || "";
 
 /** Element named by the sentence; otherwise walks the section details one by one so the arrow never stays on the title. */
-const OPENER = /^(consulter|afficher|voir|details?|ouvrir|developper)\b/;
+const OPENER = /^(consulter|afficher|voir|details?|voir plus|developper)$/;
 
 /** Temporarily opens collapsed content of the section (e.g. « Consulter ») so the arrow can show the details. */
 function openSection(heading: HTMLElement): HTMLElement | null {
-  const btn = Array.from(sectionBox(heading).querySelectorAll<HTMLElement>("button, [aria-expanded=false]"))
-    .find((b) => b.offsetParent !== null && (b.getAttribute("aria-expanded") === "false" || OPENER.test(norm(b.innerText).trim())));
+  const btn = Array.from(sectionBox(heading).querySelectorAll<HTMLElement>("button"))
+    .find((b) => b.offsetParent !== null && OPENER.test(norm(b.innerText).trim()));
   if (!btn) return null;
   btn.click();
   return btn;
