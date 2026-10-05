@@ -49,7 +49,7 @@ function AuthGate() {
   const musicActive = MUSIC_STEPS.has(loginPhase);
 
   const prepareMusic = () => {
-    const music = musicRef.current ?? new Audio(introMusic.url);
+    const music = musicRef.current ?? new Audio(introMusic);
     musicRef.current = music;
     music.loop = false;
     music.volume = 0;
@@ -85,7 +85,7 @@ function AuthGate() {
     if (!musicActive) return;
     cancelRampRef.current?.();
     cancelRampRef.current = null;
-    const music = musicRef.current ?? new Audio(introMusic.url);
+    const music = musicRef.current ?? new Audio(introMusic);
     musicRef.current = music;
     music.loop = false;
     void music.play().catch(() => undefined);
