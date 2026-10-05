@@ -1,25 +1,14 @@
 import { supabase } from "@/integrations/supabase/client";
 
-const DEFAULT_PIN = "1975";
-let cachedPin: string | null = null;
-
-export async function getKioskPin(): Promise<string> {
-  if (cachedPin) return cachedPin;
-  try {
-    const { data } = await supabase
-      .from("app_settings")
-      .select("value")
-      .eq("key", "kiosk_pin")
-      .maybeSingle();
-    cachedPin = data?.value || DEFAULT_PIN;
-  } catch {
-    cachedPin = DEFAULT_PIN;
-  }
-  return cachedPin;
-}
-
+// The kiosk code is verified server-side; it is never sent to the browser.
 export async function checkKioskPin(pin: string): Promise<boolean> {
-  return pin === (await getKioskPin());
+  try {
+    const { data, error } = await (supabase.rpc as any)("verify_kiosk_pin", { _pin: pin });
+    if (error) return false;
+    return data === true;
+  } catch {
+    return false;
+  }
 }
 
 export async function setKioskPin(newPin: string): Promise<boolean> {
@@ -27,7 +16,5 @@ export async function setKioskPin(newPin: string): Promise<boolean> {
     .from("app_settings")
     .update({ value: newPin, updated_at: new Date().toISOString() })
     .eq("key", "kiosk_pin");
-  if (error) return false;
-  cachedPin = newPin;
-  return true;
+  return !error;
 }
