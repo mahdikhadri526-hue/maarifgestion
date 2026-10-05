@@ -8,7 +8,13 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import logo from "@/assets/logo.jpeg";
 
-export function AuthPage() {
+interface AuthPageProps {
+  onLoginStart: () => void;
+  onLoginSuccess: () => void;
+  onLoginFailure: () => void;
+}
+
+export function AuthPage({ onLoginStart, onLoginSuccess, onLoginFailure }: AuthPageProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -17,12 +23,21 @@ export function AuthPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message === "Invalid login credentials" ? "Email ou mot de passe incorrect" : error.message);
-    } else {
-      toast.success("Connexion réussie");
+    onLoginStart();
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+      if (error) {
+        onLoginFailure();
+        toast.error(error.message === "Invalid login credentials" ? "Email ou mot de passe incorrect" : error.message);
+      } else {
+        onLoginSuccess();
+        toast.success("Connexion réussie");
+      }
+    } catch {
+      onLoginFailure();
+      toast.error("Connexion impossible. Veuillez réessayer.");
+    } finally {
+      setLoading(false);
     }
   };
 
