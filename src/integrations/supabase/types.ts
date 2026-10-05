@@ -2510,6 +2510,27 @@ export type Database = {
           },
         ]
       }
+      welcome_photos: {
+        Row: {
+          created_at: string
+          id: string
+          position: number
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          position?: number
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          position?: number
+          storage_path?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

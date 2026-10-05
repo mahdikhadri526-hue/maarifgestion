@@ -16,6 +16,7 @@ import { PdvManagement } from "@/components/pdv/PdvManagement";
 import { RosterManagement } from "@/components/roster/RosterManagement";
 import { setKioskPin } from "@/lib/kioskPin";
 import { VoiceScriptsSettings } from "@/components/auth/VoiceScriptsSettings";
+import { WelcomePhotosSettings } from "@/components/auth/WelcomePhotosSettings";
 
 const PROTECTED_EMAILS = ["gestionmaarif1@gmail.com"];
 
@@ -575,6 +576,9 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       {hasAdminRole && (
         <>
           <KioskPinSettings />
+          {["gestionmaarif1@gmail.com", "khadri1982@gmail.com"].includes((currentUser?.email ?? "").toLowerCase()) && (
+            <WelcomePhotosSettings />
+          )}
           {(currentUser?.email ?? "").toLowerCase() === "khadri1982@gmail.com" && (
             <VoiceScriptsSettings />
           )}

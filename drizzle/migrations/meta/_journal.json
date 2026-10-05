@@ -8,6 +8,20 @@
       "when": 1790972439142,
       "tag": "0000_voice_guide_texts_active",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791159648211,
+      "tag": "0001_welcome_photos",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791159727300,
+      "tag": "0002_allow_voice_admin_welcome_photos",
+      "breakpoints": true
     }
   ]
 }
