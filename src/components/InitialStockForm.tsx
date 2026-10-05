@@ -23,7 +23,9 @@ export function InitialStockForm({ onUpdated }: Props) {
   const [expiryDates, setExpiryDates] = useState<Record<string, string>>({});
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
   const [catalogTick, setCatalogTick] = useState(0);
-  const { can } = useAuth();
+  const { can, user } = useAuth();
+  // Seul l'admin khadri1982@gmail.com peut saisir/modifier l'alerte DLC.
+  const canEditDlcAlert = (user?.email ?? "").toLowerCase() === "khadri1982@gmail.com";
   const { data: savedStocks, loading } = useInitialStocks();
 
   useEffect(() => {
