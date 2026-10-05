@@ -9,7 +9,7 @@ import { AuthPage } from "@/components/auth/AuthPage";
 import { PdvSelector } from "@/components/pdv/PdvSelector";
 import { WelcomeScreen } from "@/components/auth/WelcomeScreen";
 import { loadWelcomePhotos, type WelcomePhoto } from "@/lib/welcomePhotos";
-import voiceOver from "@/assets/oliveri-voix.mp3";
+import voiceOverAsset from "@/assets/oliveri-voix-mature.mp3.asset.json";
 import introMusic from "@/assets/oliveri-intro.mp3";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -80,7 +80,7 @@ function AuthGate() {
 
   useEffect(() => {
     if (loginPhase !== "logo") return;
-    const audio = new Audio(voiceOver);
+    const audio = new Audio(voiceOverAsset.url);
     void audio.play().catch(() => undefined);
     const timer = window.setTimeout(() => setLoginPhase("welcome"), 3000);
     return () => window.clearTimeout(timer);

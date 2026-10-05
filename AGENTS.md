@@ -12,3 +12,4 @@
 - Store login welcome photos in a private bucket with an ordered database list; only the two designated admin accounts can manage them, because all signed-in users should see the same sequence after password sign-in.
 
 - Keep the welcome instrumental as a bundled static audio asset and play it only during post-password-login photos; stop it before the existing voice-over so the welcome has no streaming dependency and speech stays clear.
+- Serve the pre-generated welcome signature as a static audio asset, not a per-login synthesis call, to keep sign-in fast and predictable.

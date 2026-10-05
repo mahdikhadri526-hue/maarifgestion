@@ -1,5 +1,7 @@
 # Roadmap
 
+- [x] Afficher les photos de connexion en plein écran et remplacer la signature Oliveri par une voix masculine plus mûre.
+
 - [x] Prolonger la dernière photo et le message de bienvenue ; jouer une introduction musicale douce pendant les photos, sans couvrir la voix off.
 
 - [x] Permettre à l’admin principal d’ajouter, réordonner et retirer plusieurs photos affichées après le logo et le message de bienvenue, uniquement après connexion.
