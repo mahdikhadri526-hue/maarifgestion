@@ -29,6 +29,7 @@ import {
   getManagerRefusals,
   getTechEvents,
   getTechIssues,
+  deleteTechIssue,
   isDeadlineSoon,
   isOverdue,
   isRecurring,
@@ -53,8 +54,9 @@ const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 
 type View = "dossiers" | "controle" | "historique" | "planning";
 
 export function TechModule() {
-  const { can, pdv, isAdmin } = useAuth();
+  const { can, pdv, isAdmin, user } = useAuth();
   const canManage = can("manage_tech");
+  const canDelete = (user?.email ?? "").toLowerCase() === "khadri1982@gmail.com";
   // Responsable technique (permission manage_tech) : vue centralisée de tous
   // les PDV. L'admin principal garde la vue du PDV sélectionné.
   const central = canManage && !isAdmin;
@@ -358,8 +360,14 @@ export function TechModule() {
                     {/* Le bouton « Suivi » est masqué : la saisie se fait via
                         « Prendre en charge », « Valider la réparation » et les
                         validations du manager. */}
-                    {/* Suppression désactivée : ni le responsable technique ni le manager
-                        ne peuvent supprimer une intervention. */}
+                    {/* Suppression réservée au seul compte khadri1982@gmail.com (tous statuts). */}
+                    {canDelete && (
+                      <Button size="sm" variant="destructive" onClick={async () => {
+                        if (!window.confirm(`Supprimer l'intervention « ${i.equipment} » ?`)) return;
+                        try { await deleteTechIssue(i.id); toast({ title: "Intervention supprimée" }); void load(); }
+                        catch (e: any) { toast({ title: "Suppression impossible", description: e?.message ?? String(e), variant: "destructive" }); }
+                      }}>Supprimer</Button>
+                    )}
 
                   </div>
                 </div>

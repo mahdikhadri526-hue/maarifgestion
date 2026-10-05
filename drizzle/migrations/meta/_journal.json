@@ -29,6 +29,13 @@
       "when": 1791167900657,
       "tag": "0003_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791237282466,
+      "tag": "0004_tech_delete_only_khadri",
+      "breakpoints": true
     }
   ]
 }
