@@ -97,8 +97,11 @@ function openSection(heading: HTMLElement): HTMLElement | null {
 }
 
 function findMentioned(heading: HTMLElement, sentence: string, index: number, used: Set<HTMLElement>): HTMLElement {
-  const els = details(heading);
-  if (!els.length) return heading;
+  let els = details(heading);
+  const global = !els.length;
+  // Intro sections with no own controls (e.g. Bienvenue): point at the menu items they name, anywhere on screen.
+  if (global) els = Array.from(document.querySelectorAll<HTMLElement>(SELECTOR)).filter((el) =>
+    el.offsetParent !== null && !el.closest("[data-voice-guide-control], [data-training-overlay]"));
   const said = new Set(words(sentence));
   const saidNorm = norm(sentence);
   let best: HTMLElement | null = null;
@@ -114,6 +117,7 @@ function findMentioned(heading: HTMLElement, sentence: string, index: number, us
     if (score > bestScore) { bestScore = score; best = el; }
   }
   if (best && bestScore >= 0.5) return best;
+  if (global) return heading;
   const fresh = els.filter((e) => !used.has(e));
   const pool = fresh.length ? fresh : els;
   return pool[Math.min(index, pool.length - 1) % pool.length];
