@@ -60,7 +60,7 @@ function AuthGate() {
   if (loading || (user && pdvLoading) || (user && !multiPdvEnabled && !pdvId)) {
     return <div className="min-h-screen flex items-center justify-center text-sm text-muted-foreground">Chargement…</div>;
   }
-  if (!user) return <AuthPage onLoginStart={() => setLoginPhase("authenticating")} onLoginSuccess={() => setLoginPhase("welcome")} onLoginFailure={() => setLoginPhase("idle")} />;
+  if (!user) return <AuthPage onLoginStart={() => setLoginPhase("authenticating")} onLoginSuccess={() => setLoginPhase("photos")} onLoginFailure={() => setLoginPhase("idle")} />;
   if (multiPdvEnabled && !pdvId) return <PdvSelector />;
   return (
     <Routes>
