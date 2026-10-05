@@ -10,7 +10,7 @@ import { PdvSelector } from "@/components/pdv/PdvSelector";
 import { WelcomeScreen } from "@/components/auth/WelcomeScreen";
 import { loadWelcomePhotos, type WelcomePhoto } from "@/lib/welcomePhotos";
 import voiceOverAsset from "@/assets/oliveri-voix-mature.mp3.asset.json";
-import introMusic from "@/assets/oliveri-intro-first-five.mp3.asset.json";
+import introMusic from "@/assets/oliveri-intro.mp3";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -49,7 +49,7 @@ function AuthGate() {
   const musicActive = MUSIC_STEPS.has(loginPhase);
 
   const prepareMusic = () => {
-    const music = musicRef.current ?? new Audio(introMusic.url);
+    const music = musicRef.current ?? new Audio(introMusic);
     musicRef.current = music;
     music.loop = false;
     music.volume = 0;
@@ -85,7 +85,7 @@ function AuthGate() {
     if (!musicActive) return;
     cancelRampRef.current?.();
     cancelRampRef.current = null;
-    const music = musicRef.current ?? new Audio(introMusic.url);
+    const music = musicRef.current ?? new Audio(introMusic);
     musicRef.current = music;
     music.loop = false;
     void music.play().catch(() => undefined);
