@@ -26,7 +26,7 @@ export const ROLE_ORDER: AppRole[] = ["admin", "regional_admin", "manager", "ope
 // Liste complète des permissions, regroupées par tableau / module de l'application.
 export const PERMISSION_GROUPS: { title: string; keys: string[] }[] = [
   { title: "Tableau de bord & rapports", keys: ["view_dashboard", "view_reports"] },
-  { title: "Stock initial", keys: ["view_stock", "edit_stock", "delete_stock", "edit_remaining_stock", "toggle_stock_extra_cols"] },
+  { title: "Stock initial", keys: ["view_stock", "edit_stock", "delete_stock", "edit_remaining_stock", "toggle_stock_extra_cols", "edit_storage_capacity"] },
   { title: "Mouvements", keys: ["view_movements", "edit_movements", "delete_movements"] },
   { title: "Réquisitions", keys: ["view_requisitions", "edit_requisitions", "delete_requisitions"] },
   { title: "Lots & DLC", keys: ["view_lots", "edit_lots", "delete_lots"] },
@@ -69,6 +69,7 @@ export const ALL_PERMISSIONS = [
   { key: "delete_stock", label: "Supprimer du stock initial" },
   { key: "edit_remaining_stock", label: "Modifier le stock restant" },
   { key: "toggle_stock_extra_cols", label: "Afficher Stock mise en place / Stock total / Sorties total + boutons « Colonnes Réf. » et « Mise en place / total »" },
+  { key: "edit_storage_capacity", label: "Modifier la capacité de stockage (glace)" },
   { key: "listen_voice_guides", label: "Écouter les explications vocales des tables" },
   { key: "view_welcome_screen", label: "Voir l'écran de bienvenue après connexion (photos, musique, message)" },
   { key: "manage_welcome_screen", label: "Gérer l'écran de bienvenue (photos, musique, voix)" },
