@@ -48,12 +48,14 @@ const words = (v: string) => v.normalize("NFD").replace(/[\u0300-\u036f\u064B-\u
   .split(/[^a-z0-9\u0600-\u06FF]+/).filter((w) => w.length >= 3);
 
 /** Whole block of the section: climbs until the next parent would contain another section heading. */
+let sectionHeadings: HTMLElement[] = [];
+
 function sectionBox(heading: HTMLElement): HTMLElement {
   let box: HTMLElement = heading;
   while (box.parentElement && !box.parentElement.matches("[data-voice-guide-scope]")) {
     const p = box.parentElement;
-    const others = Array.from(p.querySelectorAll("h2, h3")).filter((h) => h !== heading && (h as HTMLElement).offsetParent !== null);
-    if (others.length) break;
+    // Only other trained sections bound the block; inner tables/sub-titles belong to this section.
+    if (sectionHeadings.some((h) => h !== heading && p.contains(h))) break;
     box = p;
   }
   return box;
@@ -73,6 +75,17 @@ const labelOf = (el: HTMLElement) =>
   el.innerText || el.getAttribute("aria-label") || el.getAttribute("placeholder") || (el as HTMLInputElement).labels?.[0]?.innerText || "";
 
 /** Element named by the sentence; otherwise walks the section details one by one so the arrow never stays on the title. */
+const OPENER = /^(consulter|afficher|voir|details?|ouvrir|developper)\b/;
+
+/** Temporarily opens collapsed content of the section (e.g. « Consulter ») so the arrow can show the details. */
+function openSection(heading: HTMLElement): HTMLElement | null {
+  const btn = Array.from(sectionBox(heading).querySelectorAll<HTMLElement>("button, [aria-expanded=false]"))
+    .find((b) => b.offsetParent !== null && (b.getAttribute("aria-expanded") === "false" || OPENER.test(norm(b.innerText).trim())));
+  if (!btn) return null;
+  btn.click();
+  return btn;
+}
+
 function findMentioned(heading: HTMLElement, sentence: string, index: number, used: Set<HTMLElement>): HTMLElement {
   const els = details(heading);
   if (!els.length) return heading;
@@ -107,6 +120,8 @@ export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
   const [rect, setRect] = useState<Rect | null>(null);
   const audio = useRef<HTMLAudioElement | null>(null);
   const used = useRef<Set<HTMLElement>>(new Set());
+  const opened = useRef<HTMLElement | null>(null);
+  const closeOpened = () => { const b = opened.current; opened.current = null; if (b?.isConnected) b.click(); };
 
   useEffect(() => {
     if (!allowed) return;
@@ -123,6 +138,7 @@ export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
   }, [moduleKey, allowed]);
 
   const stop = useCallback(() => {
+    closeOpened();
     audio.current?.pause();
     audio.current = null;
     setSections(null);
@@ -143,6 +159,8 @@ export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
     let cancelled = false;
     audio.current?.pause();
     used.current = new Set();
+    closeOpened();
+    opened.current = openSection(current.heading);
     const weights = current.sentences.map((s) => s.length);
     const total = weights.reduce((a, b) => a + b, 0);
     // Safety net: never stay stuck on a section if the audio stalls or cannot play.
@@ -178,16 +196,21 @@ export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
   // Arrow follows the element mentioned by the current sentence.
   useEffect(() => {
     if (!current) return;
-    const el = findMentioned(current.heading, current.sentences[sentence] ?? "", sentence, used.current);
-    used.current.add(el);
-    el.scrollIntoView({ block: "center", behavior: "smooth" });
+    let el: HTMLElement = current.heading;
+    const pick = () => {
+      el = findMentioned(current.heading, current.sentences[sentence] ?? "", sentence, used.current);
+      used.current.add(el);
+      el.scrollIntoView({ block: "center", behavior: "smooth" });
+    };
+    // Wait for opened details to render before pointing.
+    const t = window.setTimeout(pick, opened.current && sentence === 0 ? 900 : 50);
     const update = () => {
       const r = el.getBoundingClientRect();
       setRect({ top: r.top - 6, left: r.left - 6, width: r.width + 12, height: r.height + 12 });
     };
     update();
     const id = window.setInterval(update, 150);
-    return () => window.clearInterval(id);
+    return () => { window.clearTimeout(t); window.clearInterval(id); };
   }, [current, sentence]);
 
   if (!allowed || guides.size === 0) return null;
@@ -200,6 +223,7 @@ export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
         onClick={() => {
           const list = collectSections(moduleKey, guides, scripts);
           if (!list.length) return;
+          sectionHeadings = list.map((x) => x.heading);
           setSi(0); setSentence(0); setSections(list);
         }}
       >
