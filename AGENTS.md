@@ -11,5 +11,5 @@
 - Trigger the welcome transition only from a successful password sign-in attempt and let the existing PDV gate decide the destination afterward, so restored sessions and PDV changes never replay it.
 - Store login welcome photos in a private bucket with an ordered database list; only the two designated admin accounts can manage them, because all signed-in users should see the same sequence after password sign-in.
 
-- Keep the welcome instrumental as a bundled static audio asset, looping from the first photo until the welcome message disappears (fading out after it), with the volume ducked while the voice-over speaks so speech stays clear and the welcome keeps no streaming dependency.
+- Keep the welcome instrumental as a bundled static audio asset, looping from the first photo and fading out when the welcome message appears (no music on the welcome message), with the volume ducked while the voice-over speaks so speech stays clear and the welcome keeps no streaming dependency.
 - Serve the pre-generated welcome signature as a static audio asset, not a per-login synthesis call, to keep sign-in fast and predictable.
