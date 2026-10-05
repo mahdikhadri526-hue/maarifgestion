@@ -16,7 +16,7 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
-const MUSIC_STEPS = new Set(["photos", "logo", "welcome"]);
+const MUSIC_STEPS = new Set(["photos", "logo"]);
 
 /** Smoothly moves the audio volume to `target`, then calls `onDone`. Returns a cancel fn. */
 function rampVolume(music: HTMLAudioElement, target: number, ms: number, onDone?: () => void) {
