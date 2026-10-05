@@ -576,7 +576,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       {hasAdminRole && (
         <>
           <KioskPinSettings />
-          {(currentUser?.email ?? "").toLowerCase() === "gestionmaarif1@gmail.com" && (
+          {["gestionmaarif1@gmail.com", "khadri1982@gmail.com"].includes((currentUser?.email ?? "").toLowerCase()) && (
             <WelcomePhotosSettings />
           )}
           {(currentUser?.email ?? "").toLowerCase() === "khadri1982@gmail.com" && (
