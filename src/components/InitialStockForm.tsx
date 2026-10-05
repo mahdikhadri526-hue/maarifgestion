@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Category, getProducts, setInitialStock, getMinStocks, setMinStock } from "@/lib/stockData";
+import { Category, getProducts, setInitialStock, getMinStocks, setMinStock, getDlcAlertDays, setDlcAlertDays } from "@/lib/stockData";
 import { useInitialStocks } from "@/hooks/useStockData";
 import { addLotEntry } from "@/lib/lotData";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ export function InitialStockForm({ onUpdated }: Props) {
   const [search, setSearch] = useState("");
   const [stocks, setStocks] = useState<Record<string, string>>({});
   const [minStocks, setMinStocks] = useState<Record<string, string>>({});
+  const [alertDays, setAlertDays] = useState<Record<string, string>>({});
   const [lotNumbers, setLotNumbers] = useState<Record<string, string>>({});
   const [expiryDates, setExpiryDates] = useState<Record<string, string>>({});
   const [unlockedIds, setUnlockedIds] = useState<Set<string>>(new Set());
@@ -38,6 +39,14 @@ export function InitialStockForm({ onUpdated }: Props) {
       const result: Record<string, string> = {};
       Object.entries(m).forEach(([k, v]) => { result[k] = String(v); });
       setMinStocks(result);
+    }).catch((e) => console.error(e));
+  }, []);
+
+  useEffect(() => {
+    getDlcAlertDays().then((m) => {
+      const r: Record<string, string> = {};
+      Object.entries(m).forEach(([k, v]) => { r[k] = String(v); });
+      setAlertDays(r);
     }).catch((e) => console.error(e));
   }, []);
 
@@ -146,6 +155,7 @@ export function InitialStockForm({ onUpdated }: Props) {
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-28">Stock Initial</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-36">N° Lot (Alim.)</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-36">DLC (Alim.)</th>
+              <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-28">Alerte DLC (jours)</th>
               <th className="p-3 w-16"></th>
             </tr>
           </thead>
@@ -219,6 +229,33 @@ export function InitialStockForm({ onUpdated }: Props) {
                         onChange={(e) => setExpiryDates((s) => ({ ...s, [p.id]: e.target.value }))}
                         className="text-xs w-36"
                         disabled={!isUnlocked}
+                      />
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
+                  </td>
+                  <td className="p-3">
+                    {isAlim ? (
+                      <Input
+                        type="number" min="0"
+                        value={alertDays[p.id] || ""}
+                        onChange={(e) => setAlertDays((s) => ({ ...s, [p.id]: e.target.value }))}
+                        onBlur={async (e) => {
+                          if (!can("edit_stock")) return;
+                          const raw = e.target.value.trim();
+                          const v = raw === "" ? null : Number(raw);
+                          if (v !== null && (isNaN(v) || v < 0 || !Number.isInteger(v))) { toast.error("Nombre de jours invalide"); return; }
+                          try {
+                            await setDlcAlertDays(p.id, v);
+                            toast.success("Alerte DLC mise à jour");
+                          } catch (err) {
+                            console.error(err);
+                            toast.error("Erreur enregistrement alerte DLC");
+                          }
+                        }}
+                        className="font-mono text-right w-20 ml-auto"
+                        placeholder="30"
+                        disabled={!can("edit_stock")}
                       />
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
