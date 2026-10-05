@@ -16,13 +16,37 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
+const MUSIC_STEPS = new Set(["photos", "logo", "welcome"]);
+
+/** Smoothly moves the audio volume to `target`, then calls `onDone`. Returns a cancel fn. */
+function rampVolume(music: HTMLAudioElement, target: number, ms: number, onDone?: () => void) {
+  const steps = Math.max(1, Math.round(ms / 50));
+  const from = music.volume;
+  const delta = (target - from) / steps;
+  let step = 0;
+  const id = window.setInterval(() => {
+    step += 1;
+    if (step >= steps) {
+      window.clearInterval(id);
+      music.volume = Math.min(1, Math.max(0, target));
+      onDone?.();
+    } else {
+      music.volume = Math.min(1, Math.max(0, from + delta * step));
+    }
+  }, 50);
+  return () => window.clearInterval(id);
+}
+
 function AuthGate() {
+
   const { user, loading, pdvId, pdvLoading, multiPdvEnabled } = useAuth();
   const [loginPhase, setLoginPhase] = useState<"idle" | "authenticating" | "photos" | "logo" | "welcome">("idle");
   const [welcomePhotos, setWelcomePhotos] = useState<WelcomePhoto[]>([]);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [photosReady, setPhotosReady] = useState(false);
   const musicRef = useRef<HTMLAudioElement | null>(null);
+  const cancelRampRef = useRef<(() => void) | null>(null);
+  const musicActive = MUSIC_STEPS.has(loginPhase);
 
   const prepareMusic = () => {
     const music = musicRef.current ?? new Audio(introMusic);
@@ -37,6 +61,7 @@ function AuthGate() {
       }
     }).catch(() => undefined);
   };
+
 
   useEffect(() => {
     if (loginPhase !== "photos") return;
@@ -54,20 +79,34 @@ function AuthGate() {
     return () => { cancelled = true; };
   }, [loginPhase]);
 
+  // Music runs through the whole intro: photos, logo/voice-over and the welcome message.
   useEffect(() => {
-    if (loginPhase !== "photos" || !photosReady) return;
-    const music = musicRef.current;
-    if (music) {
-      music.volume = 0.2;
-      void music.play().catch(() => undefined);
-    }
+    if (!musicActive) return;
+    cancelRampRef.current?.();
+    cancelRampRef.current = null;
+    const music = musicRef.current ?? new Audio(introMusic);
+    musicRef.current = music;
+    music.loop = true;
+    void music.play().catch(() => undefined);
     return () => {
-      if (music) {
+      // Fade out instead of cutting the music the moment the welcome message disappears.
+      cancelRampRef.current?.();
+      cancelRampRef.current = rampVolume(music, 0, 700, () => {
         music.pause();
         music.currentTime = 0;
-      }
+        cancelRampRef.current = null;
+      });
     };
-  }, [loginPhase, photosReady]);
+  }, [musicActive]);
+
+  // Duck the music while the voice-over speaks, then bring it back for the welcome message.
+  useEffect(() => {
+    const music = musicRef.current;
+    if (!music || !musicActive) return;
+    cancelRampRef.current?.();
+    cancelRampRef.current = rampVolume(music, loginPhase === "logo" ? 0.08 : 0.2, 500);
+  }, [loginPhase, musicActive]);
+
 
   useEffect(() => {
     if (loginPhase !== "photos" || !photosReady) return;
