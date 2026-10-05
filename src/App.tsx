@@ -16,7 +16,7 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
-const MUSIC_STEPS = new Set(["photos", "logo", "welcome"]);
+const MUSIC_STEPS = new Set(["photos", "logo"]);
 
 /** Smoothly moves the audio volume to `target`, then calls `onDone`. Returns a cancel fn. */
 function rampVolume(music: HTMLAudioElement, target: number, ms: number, onDone?: () => void) {
@@ -79,7 +79,7 @@ function AuthGate() {
     return () => { cancelled = true; };
   }, [loginPhase]);
 
-  // Music runs through the whole intro: photos, logo/voice-over and the welcome message.
+  // Music accompanies photos and the logo/voice-over, never the welcome message.
   useEffect(() => {
     if (!musicActive) return;
     cancelRampRef.current?.();
@@ -89,17 +89,14 @@ function AuthGate() {
     music.loop = true;
     void music.play().catch(() => undefined);
     return () => {
-      // Fade out instead of cutting the music the moment the welcome message disappears.
       cancelRampRef.current?.();
-      cancelRampRef.current = rampVolume(music, 0, 700, () => {
-        music.pause();
-        music.currentTime = 0;
-        cancelRampRef.current = null;
-      });
+      music.pause();
+      music.currentTime = 0;
+      cancelRampRef.current = null;
     };
   }, [musicActive]);
 
-  // Duck the music while the voice-over speaks, then bring it back for the welcome message.
+  // Duck the music while the voice-over speaks.
   useEffect(() => {
     const music = musicRef.current;
     if (!music || !musicActive) return;
@@ -121,8 +118,18 @@ function AuthGate() {
     if (loginPhase !== "logo") return;
     const audio = new Audio(voiceOverAsset.url);
     void audio.play().catch(() => undefined);
+    const fadeTimer = window.setTimeout(() => {
+      const music = musicRef.current;
+      if (!music) return;
+      cancelRampRef.current?.();
+      cancelRampRef.current = rampVolume(music, 0, 700, () => {
+        music.pause();
+        music.currentTime = 0;
+        cancelRampRef.current = null;
+      });
+    }, 2300);
     const timer = window.setTimeout(() => setLoginPhase("welcome"), 3000);
-    return () => window.clearTimeout(timer);
+    return () => { window.clearTimeout(fadeTimer); window.clearTimeout(timer); };
   }, [loginPhase]);
 
   useEffect(() => {
