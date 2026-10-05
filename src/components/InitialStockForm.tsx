@@ -243,7 +243,7 @@ export function InitialStockForm({ onUpdated }: Props) {
                         value={alertDays[p.id] || ""}
                         onChange={(e) => setAlertDays((s) => ({ ...s, [p.id]: e.target.value }))}
                         onBlur={async (e) => {
-                          if (!can("edit_stock")) return;
+                          if (!canEditDlcAlert) return;
                           const raw = e.target.value.trim();
                           const v = raw === "" ? null : Number(raw);
                           if (v !== null && (isNaN(v) || v < 0 || !Number.isInteger(v))) { toast.error("Nombre de jours invalide"); return; }
@@ -257,7 +257,7 @@ export function InitialStockForm({ onUpdated }: Props) {
                         }}
                         className="font-mono text-right w-20 ml-auto"
                         placeholder="30"
-                        disabled={!can("edit_stock")}
+                        disabled={!canEditDlcAlert}
                       />
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
