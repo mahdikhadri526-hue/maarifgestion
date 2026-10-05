@@ -79,7 +79,8 @@ function AuthGate() {
     return () => { cancelled = true; };
   }, [loginPhase]);
 
-  // Music runs through the whole intro: photos, logo/voice-over and the welcome message.
+  // Music plays from the first photo through the logo/voice-over, and fades out at the
+  // very beginning of the welcome message (no music on the welcome message itself).
   useEffect(() => {
     if (!musicActive) return;
     cancelRampRef.current?.();
