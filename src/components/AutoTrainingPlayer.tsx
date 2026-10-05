@@ -242,9 +242,9 @@ export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
     <div data-training-overlay className="fixed inset-0 z-50 pointer-events-none">
       {rect && (
         <>
-          <div className="absolute rounded-lg ring-4 ring-primary transition-all duration-500 ease-out"
+          <div className="absolute rounded-lg ring-4 ring-primary transition-all duration-200 ease-out"
             style={{ ...rect, boxShadow: "0 0 0 9999px hsl(var(--foreground) / 0.4)" }} />
-          <div className="absolute transition-all duration-500 ease-out text-primary"
+          <div className="absolute transition-all duration-200 ease-out text-primary"
             style={{ left: rect.left + rect.width / 2 - 20, top: arrowAbove ? rect.top - 48 : rect.top + rect.height + 4 }}>
             <ArrowDown className={`h-10 w-10 animate-bounce drop-shadow ${arrowAbove ? "" : "rotate-180"}`} strokeWidth={3} />
           </div>
