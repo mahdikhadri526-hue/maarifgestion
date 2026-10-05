@@ -14,3 +14,4 @@
 - Keep the welcome instrumental as a bundled static audio asset, playing only once from the first photo and stopping before the welcome message (no music on the welcome message), with the volume ducked while the voice-over speaks so speech stays clear and the welcome keeps no streaming dependency.
 - Serve the pre-generated welcome signature as a static audio asset, not a per-login synthesis call, to keep sign-in fast and predictable.
 - Guided training steps live in `voice_training_steps` (per module, ordered); each step's voice reuses `voice-tts` and is stored in `voice-guides`, and the player highlights the real page element by matching its visible text so steps survive layout changes.
+- Formation guidée automatique : lit les explications vocales existantes (lecture seule) et une flèche suit l'élément cité phrase par phrase (`AutoTrainingPlayer`).
