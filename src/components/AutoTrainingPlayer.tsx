@@ -162,7 +162,8 @@ export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
     closeOpened();
     opened.current = openSection(current.heading);
     if (opened.current) used.current.add(opened.current);
-    const weights = current.sentences.map((s) => s.length);
+    // Spoken-time estimate: word count + a pause after each fragment (bigger after a full stop).
+    const weights = current.sentences.map((s) => s.split(/\s+/).filter(Boolean).length + (/[.!?؟]$/.test(s) ? 1.6 : 0.8));
     const total = weights.reduce((a, b) => a + b, 0);
     // Safety net: never stay stuck on a section if the audio stalls or cannot play.
     const est = Math.max(6, (current.guide.duration_seconds || total / 14) + 4) * 1000;
@@ -173,7 +174,7 @@ export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
       audio.current = a;
       a.ontimeupdate = () => {
         const d = a.duration || current.guide.duration_seconds || 1;
-        const target = (a.currentTime / d) * total;
+        const target = Math.min(total, ((a.currentTime + 0.25) / d) * total);
         let acc = 0; let idx = 0;
         for (; idx < weights.length - 1; idx++) { acc += weights[idx]; if (acc > target) break; }
         setSentence(idx);
@@ -201,10 +202,10 @@ export function AutoTrainingPlayer({ moduleKey }: { moduleKey: string }) {
     const pick = () => {
       el = findMentioned(current.heading, current.sentences[sentence] ?? "", sentence, used.current);
       used.current.add(el);
-      el.scrollIntoView({ block: "center", behavior: "smooth" });
+      el.scrollIntoView({ block: "center", behavior: "auto" });
     };
     // Wait for opened details to render before pointing.
-    const t = window.setTimeout(pick, opened.current && sentence === 0 ? 900 : 50);
+    const t = window.setTimeout(pick, opened.current && sentence === 0 ? 500 : 0);
     const update = () => {
       const r = el.getBoundingClientRect();
       setRect({ top: r.top - 6, left: r.left - 6, width: r.width + 12, height: r.height + 12 });
