@@ -2364,39 +2364,6 @@ export type Database = {
         }
         Relationships: []
       }
-      voice_training_steps: {
-        Row: {
-          audio_path: string | null
-          created_at: string
-          id: string
-          module_key: string
-          position: number
-          target_label: string
-          text: string
-          updated_at: string
-        }
-        Insert: {
-          audio_path?: string | null
-          created_at?: string
-          id?: string
-          module_key: string
-          position?: number
-          target_label?: string
-          text?: string
-          updated_at?: string
-        }
-        Update: {
-          audio_path?: string | null
-          created_at?: string
-          id?: string
-          module_key?: string
-          position?: number
-          target_label?: string
-          text?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       weekly_tracking: {
         Row: {
           article: string | null

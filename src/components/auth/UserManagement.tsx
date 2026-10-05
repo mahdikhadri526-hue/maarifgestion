@@ -16,7 +16,6 @@ import { PdvManagement } from "@/components/pdv/PdvManagement";
 import { RosterManagement } from "@/components/roster/RosterManagement";
 import { setKioskPin } from "@/lib/kioskPin";
 import { VoiceScriptsSettings } from "@/components/auth/VoiceScriptsSettings";
-import { TrainingSettings } from "@/components/TrainingSettings";
 import { WelcomePhotosSettings } from "@/components/auth/WelcomePhotosSettings";
 
 const PROTECTED_EMAILS = ["gestionmaarif1@gmail.com"];
@@ -581,7 +580,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
             <WelcomePhotosSettings />
           )}
           {(currentUser?.email ?? "").toLowerCase() === "khadri1982@gmail.com" && (
-            <><VoiceScriptsSettings /><TrainingSettings /></>
+            <VoiceScriptsSettings />
           )}
           <Tabs defaultValue="users" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
