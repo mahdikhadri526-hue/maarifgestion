@@ -63,6 +63,19 @@ function AuthGate() {
   };
 
 
+  // Permission « Voir l'écran de bienvenue » : sans elle, on saute toute la
+  // séquence (photos, logo, message) et on arrive directement sur l'application.
+  // On attend que le rôle/permissions soient chargés (role non null) avant de décider.
+  useEffect(() => {
+    if (!user || !role) return;
+    if (loginPhase === "photos" || loginPhase === "logo" || loginPhase === "welcome") {
+      if (!can("view_welcome_screen")) {
+        musicRef.current?.pause();
+        setLoginPhase("idle");
+      }
+    }
+  }, [user, role, loginPhase, can]);
+
   useEffect(() => {
     if (loginPhase !== "photos") return;
     let cancelled = false;
