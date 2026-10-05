@@ -814,6 +814,7 @@ export type Database = {
         Row: {
           carton_enabled: boolean
           created_at: string
+          dlc_alert_days: number | null
           id: string
           min_quantity: number
           paquet_enabled: boolean
@@ -828,6 +829,7 @@ export type Database = {
         Insert: {
           carton_enabled?: boolean
           created_at?: string
+          dlc_alert_days?: number | null
           id?: string
           min_quantity?: number
           paquet_enabled?: boolean
@@ -842,6 +844,7 @@ export type Database = {
         Update: {
           carton_enabled?: boolean
           created_at?: string
+          dlc_alert_days?: number | null
           id?: string
           min_quantity?: number
           paquet_enabled?: boolean

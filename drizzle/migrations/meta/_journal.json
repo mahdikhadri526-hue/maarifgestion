@@ -36,6 +36,13 @@
       "when": 1791237282466,
       "tag": "0004_tech_delete_only_khadri",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791238698006,
+      "tag": "0005_add_dlc_alert_days",
+      "breakpoints": true
     }
   ]
 }
