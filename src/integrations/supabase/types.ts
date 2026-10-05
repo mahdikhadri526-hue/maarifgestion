@@ -2553,6 +2553,7 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
+      has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_permission: {
         Args: { _permission_key: string; _user_id: string }
         Returns: boolean
@@ -2627,6 +2628,7 @@ export type Database = {
         Returns: undefined
       }
       user_pdv_ids: { Args: { _user_id: string }; Returns: string[] }
+      verify_kiosk_pin: { Args: { _pin: string }; Returns: boolean }
       verify_pdv_code: {
         Args: { _code: string; _pdv_id: string }
         Returns: boolean
