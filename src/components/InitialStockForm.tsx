@@ -152,13 +152,13 @@ export function InitialStockForm({ onUpdated }: Props) {
           <thead className="sticky top-0 bg-card z-10">
             <tr className="border-b bg-muted/50">
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Produit</th>
+              <th className="p-3 w-16 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">Modifier</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-28">Stock Minimum</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-28">Stock Initial</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-36">N° Lot (Alim.)</th>
               <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-36">DLC (Alim.)</th>
               <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider w-28">Alerte DLC (jours)</th>
-              <th className="p-3 w-16"></th>
             </tr>
           </thead>
           <tbody>
@@ -168,6 +168,42 @@ export function InitialStockForm({ onUpdated }: Props) {
               return (
                 <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                   <td className="p-3 text-sm font-medium">{p.name}</td>
+                  <td className="p-3">
+                    <div className="flex items-center gap-1">
+                      {isUnlocked ? (
+                        <>
+                          <button
+                            onClick={() => handleSave(p.id, p.category)}
+                            className="p-1.5 rounded-md hover:bg-muted transition-colors text-primary"
+                            title="Enregistrer"
+                          >
+                            <Save className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setUnlockedIds((s) => { const n = new Set(s); n.delete(p.id); return n; })}
+                            className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground"
+                            title="Verrouiller"
+                          >
+                            <Unlock className="h-4 w-4" />
+                          </button>
+                        </>
+                      ) : (
+                      <button
+                        onClick={() => {
+                          if (can("edit_stock")) {
+                            setUnlockedIds((s) => new Set(s).add(p.id));
+                          } else {
+                            toast.error("Opération non autorisée");
+                          }
+                        }}
+                        className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+                        title="Déverrouiller pour modifier"
+                      >
+                        <Lock className="h-4 w-4" />
+                      </button>
+                      )}
+                    </div>
+                  </td>
                   <td className="p-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       isAlim ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent-foreground"
@@ -262,42 +298,6 @@ export function InitialStockForm({ onUpdated }: Props) {
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>
                     )}
-                  </td>
-                  <td className="p-3">
-                    <div className="flex items-center gap-1">
-                      {isUnlocked ? (
-                        <>
-                          <button
-                            onClick={() => handleSave(p.id, p.category)}
-                            className="p-1.5 rounded-md hover:bg-muted transition-colors text-primary"
-                            title="Enregistrer"
-                          >
-                            <Save className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={() => setUnlockedIds((s) => { const n = new Set(s); n.delete(p.id); return n; })}
-                            className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground"
-                            title="Verrouiller"
-                          >
-                            <Unlock className="h-4 w-4" />
-                          </button>
-                        </>
-                      ) : (
-                      <button
-                        onClick={() => {
-                          if (can("edit_stock")) {
-                            setUnlockedIds((s) => new Set(s).add(p.id));
-                          } else {
-                            toast.error("Opération non autorisée");
-                          }
-                        }}
-                        className="p-1.5 rounded-md hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
-                        title="Déverrouiller pour modifier"
-                      >
-                        <Lock className="h-4 w-4" />
-                      </button>
-                      )}
-                    </div>
                   </td>
                 </tr>
               );
