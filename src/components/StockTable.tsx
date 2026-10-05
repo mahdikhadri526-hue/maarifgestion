@@ -1530,7 +1530,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     </td>
                     {category === "glace" && (
                       <td className="p-3 text-right">
-                        {isAdmin ? (
+                        {canEditCapacity ? (
                           <input
                             type="number"
                             min="0"
@@ -1540,7 +1540,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                             className="w-20 text-right bg-background border rounded px-2 py-1 text-sm font-mono"
                           />
                         ) : (
-                          <span className="inline-block w-20 text-right text-sm font-mono text-muted-foreground" title="Seul l'administrateur peut modifier la capacité de stockage">
+                          <span className="inline-block w-20 text-right text-sm font-mono text-muted-foreground" title="Vous n'avez pas la permission de modifier la capacité de stockage">
                             {capacityByArticle[r.article] || "—"}
                           </span>
                         )}
