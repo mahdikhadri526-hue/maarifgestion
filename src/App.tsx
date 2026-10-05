@@ -9,6 +9,7 @@ import { AuthPage } from "@/components/auth/AuthPage";
 import { PdvSelector } from "@/components/pdv/PdvSelector";
 import { WelcomeScreen } from "@/components/auth/WelcomeScreen";
 import { loadWelcomePhotos, type WelcomePhoto } from "@/lib/welcomePhotos";
+import voiceOver from "@/assets/oliveri-voix.mp3";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -16,44 +17,55 @@ const queryClient = new QueryClient();
 
 function AuthGate() {
   const { user, loading, pdvId, pdvLoading, multiPdvEnabled } = useAuth();
-  const [loginPhase, setLoginPhase] = useState<"idle" | "authenticating" | "photos" | "welcome">("idle");
+  const [loginPhase, setLoginPhase] = useState<"idle" | "authenticating" | "photos" | "logo" | "welcome">("idle");
   const [welcomePhotos, setWelcomePhotos] = useState<WelcomePhoto[]>([]);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [photosReady, setPhotosReady] = useState(false);
 
   useEffect(() => {
     if (loginPhase !== "photos") return;
     let cancelled = false;
+    setPhotosReady(false);
     const deadline = new Promise<WelcomePhoto[]>((resolve) => window.setTimeout(() => resolve([]), 4000));
     void Promise.race([loadWelcomePhotos().catch(() => []), deadline]).then((photos) => {
       if (cancelled) return;
-      if (photos.length) {
-        setWelcomePhotos(photos);
-        setPhotoIndex(0);
-      } else {
-        setLoginPhase("welcome");
-      }
+      photos.forEach((p) => { const i = new Image(); i.src = p.url; });
+      setWelcomePhotos(photos);
+      setPhotoIndex(0);
+      if (photos.length) setPhotosReady(true);
+      else setLoginPhase("logo");
     });
     return () => { cancelled = true; };
   }, [loginPhase]);
 
   useEffect(() => {
-    if (loginPhase !== "photos" || welcomePhotos.length === 0) return;
+    if (loginPhase !== "photos" || !photosReady) return;
     const timer = window.setTimeout(() => {
       if (photoIndex + 1 < welcomePhotos.length) setPhotoIndex(photoIndex + 1);
-      else setLoginPhase("welcome");
-    }, 2200);
+      else setLoginPhase("logo");
+    }, 2400);
     return () => window.clearTimeout(timer);
-  }, [loginPhase, photoIndex, welcomePhotos.length]);
+  }, [loginPhase, photosReady, photoIndex, welcomePhotos.length]);
 
   useEffect(() => {
-    if (loginPhase !== "welcome") return;
-    const timer = window.setTimeout(() => setLoginPhase("idle"), 2000);
+    if (loginPhase !== "logo") return;
+    const audio = new Audio(voiceOver);
+    void audio.play().catch(() => undefined);
+    const timer = window.setTimeout(() => setLoginPhase("welcome"), 3000);
     return () => window.clearTimeout(timer);
   }, [loginPhase]);
 
-  if (user && loginPhase === "photos" && welcomePhotos[photoIndex]) return <WelcomeScreen photo={welcomePhotos[photoIndex]} />;
-  if (user && loginPhase === "photos") return <WelcomeScreen logoOnly />;
-  if (user && loginPhase === "welcome") return <WelcomeScreen />;
+  useEffect(() => {
+    if (loginPhase !== "welcome") return;
+    const timer = window.setTimeout(() => setLoginPhase("idle"), 2200);
+    return () => window.clearTimeout(timer);
+  }, [loginPhase]);
+
+  const lastPhoto = welcomePhotos[welcomePhotos.length - 1];
+  if (user && loginPhase === "photos" && photosReady && welcomePhotos[photoIndex]) return <WelcomeScreen photo={welcomePhotos[photoIndex]} />;
+  if (user && loginPhase === "photos") return <main className="min-h-screen bg-background" />;
+  if (user && loginPhase === "logo") return <WelcomeScreen stage="logo" backdrop={lastPhoto} />;
+  if (user && loginPhase === "welcome") return <WelcomeScreen stage="welcome" backdrop={lastPhoto} />;
   if (user && loginPhase === "authenticating") {
     return <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">Connexion…</div>;
   }
