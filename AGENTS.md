@@ -10,3 +10,5 @@
 - Render every main menu module with the shared branded page title (logo left, title right); keep the fullscreen attendance camera header-free.
 - Trigger the welcome transition only from a successful password sign-in attempt and let the existing PDV gate decide the destination afterward, so restored sessions and PDV changes never replay it.
 - Store login welcome photos in a private bucket with an ordered database list; only the two designated admin accounts can manage them, because all signed-in users should see the same sequence after password sign-in.
+
+- Keep the welcome instrumental as a bundled static audio asset and play it only during post-password-login photos; stop it before the existing voice-over so the welcome has no streaming dependency and speech stays clear.

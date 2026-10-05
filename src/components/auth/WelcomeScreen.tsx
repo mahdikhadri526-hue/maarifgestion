@@ -1,14 +1,14 @@
 import logo from "@/assets/logo.jpeg";
 import type { WelcomePhoto } from "@/lib/welcomePhotos";
 
-type Props = { photo?: WelcomePhoto; backdrop?: WelcomePhoto; stage?: "logo" | "welcome" };
+type Props = { photo?: WelcomePhoto; backdrop?: WelcomePhoto; stage?: "logo" | "welcome"; isLastPhoto?: boolean };
 
-export function WelcomeScreen({ photo, backdrop, stage = "welcome" }: Props) {
+export function WelcomeScreen({ photo, backdrop, stage = "welcome", isLastPhoto = false }: Props) {
   if (photo) {
     return (
       <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background" aria-label="Photos de bienvenue">
         <img key={photo.id} src={photo.url} alt="" aria-hidden className="welcome-photo-bg absolute inset-0 h-full w-full object-cover" />
-        <img key={`f-${photo.id}`} src={photo.url} alt="Photo Oliveri" className="welcome-photo relative max-h-[86vh] max-w-[94vw] rounded-lg object-contain shadow-2xl" />
+        <img key={`f-${photo.id}`} src={photo.url} alt="Photo Oliveri" className={`welcome-photo relative max-h-[86vh] max-w-[94vw] rounded-lg object-contain shadow-2xl${isLastPhoto ? " welcome-photo-last" : ""}`} />
       </main>
     );
   }
