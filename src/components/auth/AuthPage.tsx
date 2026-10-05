@@ -31,7 +31,6 @@ export function AuthPage({ onLoginStart, onLoginSuccess, onLoginFailure }: AuthP
         toast.error(error.message === "Invalid login credentials" ? "Email ou mot de passe incorrect" : error.message);
       } else {
         onLoginSuccess();
-        toast.success("Connexion réussie");
       }
     } catch {
       onLoginFailure();
