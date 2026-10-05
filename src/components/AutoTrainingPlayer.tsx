@@ -38,7 +38,7 @@ function collectSections(moduleKey: string, guides: Map<string, VoiceGuide>, scr
     const guide = guides.get(key);
     if (!guide) return;
     const script = scripts.get(key) ?? "";
-    const sentences = script.split(/(?<=[.!?؟])\s+|\n+/).map((x) => x.trim()).filter((x) => x.length > 1);
+    const sentences = script.split(/(?<=[.!?؟،,;:])\s+|\n+/).map((x) => x.trim()).filter((x) => x.length > 1);
     out.push({ guide, heading: h, sentences: sentences.length ? sentences : [guide.section_title] });
   });
   return out;
