@@ -89,14 +89,30 @@
   }
 
   .welcome-photo-bg {
-    filter: blur(28px) brightness(0.55);
+    filter: blur(28px) brightness(1.06) saturate(1.1);
     transform: scale(1.15);
     animation: welcome-bg-enter 1s ease-out both;
   }
 
   .welcome-backdrop {
-    filter: blur(36px) brightness(0.35);
+    filter: blur(42px) saturate(1.2);
   }
+
+  /* Voile clair : la photo de fond reste lumineuse, aucun fond noir. */
+  .welcome-veil {
+    background: linear-gradient(
+      180deg,
+      hsl(var(--background) / 0.45) 0%,
+      hsl(var(--background) / 0.72) 45%,
+      hsl(var(--background) / 0.88) 100%
+    );
+  }
+
+  /* Message d'accueil sur carte claire et givrée, lisible sans fond sombre. */
+  .welcome-card {
+    @apply rounded-2xl border border-border/60 bg-card/85 px-6 py-4 text-foreground shadow-lg backdrop-blur-md;
+  }
+
 }
 
 @keyframes welcome-photo-enter {
