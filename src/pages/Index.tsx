@@ -34,6 +34,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { KioskToggle } from "@/components/KioskToggle";
 import { VoiceGuideManager } from "@/components/VoiceGuideManager";
+import { TrainingPlayer } from "@/components/TrainingPlayer";
 import { PageTitle } from "@/components/PageTitle";
 
 type Tab = "dashboard" | "rh" | "planning" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "pep" | "tech" | "pointage";
@@ -207,6 +208,7 @@ const Index = () => {
 
       <main data-voice-guide-scope className="max-w-7xl mx-auto px-4 py-6 space-y-6 overflow-x-hidden min-w-0">
         <VoiceGuideManager moduleKey={tab} />
+        <TrainingPlayer moduleKey={tab} />
         {tabs.length === 0 && (
           <div className="bg-card border rounded-xl p-8 text-center">
             <h2 className="text-lg font-semibold mb-2">Aucune permission</h2>
