@@ -51,7 +51,7 @@ function AuthGate() {
   const prepareMusic = () => {
     const music = musicRef.current ?? new Audio(introMusic);
     musicRef.current = music;
-    music.loop = true;
+    music.loop = false;
     music.volume = 0;
     // Unlock audio on the user's sign-in gesture, but keep it silent until login succeeds.
     void music.play().then(() => {
@@ -86,7 +86,7 @@ function AuthGate() {
     cancelRampRef.current = null;
     const music = musicRef.current ?? new Audio(introMusic);
     musicRef.current = music;
-    music.loop = true;
+    music.loop = false;
     void music.play().catch(() => undefined);
     return () => {
       // Fade out instead of cutting the music the moment the welcome message disappears.
