@@ -64,8 +64,18 @@ function sectionBox(heading: HTMLElement): HTMLElement {
 const SELECTOR = "button, a, th, label, input, select, textarea, [role=tab], [role=combobox], [role=switch], h3, h4";
 
 function details(heading: HTMLElement): HTMLElement[] {
-  return Array.from(sectionBox(heading).querySelectorAll<HTMLElement>(SELECTOR)).filter((el) => {
-    if (el === heading || el.offsetParent === null || el.closest("[data-voice-guide-control], [data-training-overlay]")) return false;
+  // Everything from this heading down to the next trained heading (document order), plus the heading's own block.
+  const scope = heading.closest("[data-voice-guide-scope]") ?? document.body;
+  const ordered = [...sectionHeadings].sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+  const next = ordered[ordered.indexOf(heading) + 1];
+  const box = sectionBox(heading);
+  const inRange = (el: HTMLElement) =>
+    box.contains(el) ||
+    (!!(heading.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING) &&
+      (!next || !!(el.compareDocumentPosition(next) & Node.DOCUMENT_POSITION_FOLLOWING)));
+  return Array.from(scope.querySelectorAll<HTMLElement>(SELECTOR)).filter((el) => {
+    if (el === heading || heading.contains(el) || el.offsetParent === null || el.closest("[data-voice-guide-control], [data-training-overlay]")) return false;
+    if (!inRange(el)) return false;
     const r = el.getBoundingClientRect();
     return r.width > 8 && r.height > 8;
   });
@@ -79,7 +89,7 @@ const OPENER = /^(consulter|afficher|voir|details?|voir plus|developper)$/;
 
 /** Temporarily opens collapsed content of the section (e.g. « Consulter ») so the arrow can show the details. */
 function openSection(heading: HTMLElement): HTMLElement | null {
-  const btn = Array.from(sectionBox(heading).querySelectorAll<HTMLElement>("button"))
+  const btn = details(heading).filter((b) => b.tagName === "BUTTON")
     .find((b) => b.offsetParent !== null && OPENER.test(norm(b.innerText).trim()));
   if (!btn) return null;
   btn.click();
