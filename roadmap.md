@@ -1,5 +1,6 @@
 # Roadmap
 
+- [x] Permettre à l’admin principal d’ajouter, réordonner et retirer plusieurs photos affichées après le logo et le message de bienvenue, uniquement après connexion.
 - [x] Afficher le logo Oliveri puis le message de bienvenue pendant environ 2 secondes après une connexion réussie, avant l'accès habituel.
 - [x] Uniformiser le titre de chaque rubrique avec le logo Oliveri à gauche, sauf la caméra plein écran du pointage.
 - [x] Afficher le logo sur les pages sans en-tête commun (mode kiosque, choix du PDV et page introuvable), sans perturber la caméra de pointage.
