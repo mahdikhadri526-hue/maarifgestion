@@ -89,15 +89,24 @@ export function VoiceGuideManager({ moduleKey }: { moduleKey: string }) {
   const playGuide = useCallback(async (guide: VoiceGuide) => {
     if (playingKey === guide.section_key) { stopPlayback(); return; }
     stopPlayback();
-    try {
-      const url = await getVoiceGuideUrl(guide.audio_path);
+    const urls: string[] = [];
+    try { urls.push(await getVoiceGuideUrl(guide.audio_path)); } catch { /* fallback below */ }
+    urls.push(voiceGuideFallbackUrl(guide.audio_path));
+    setPlayingKey(guide.section_key);
+    for (const url of urls) {
       const next = new Audio(url);
       audio.current = next;
-      setPlayingKey(guide.section_key);
       next.onended = stopPlayback;
-      next.onerror = () => { stopPlayback(); toast.error("Impossible de lire cette explication."); };
-      await next.play();
-    } catch { stopPlayback(); toast.error("Impossible de lire cette explication."); }
+      try {
+        await next.play();
+        next.onerror = () => { stopPlayback(); toast.error("Impossible de lire cette explication."); };
+        return;
+      } catch {
+        if (audio.current !== next) return; // stopped meanwhile
+      }
+    }
+    stopPlayback();
+    toast.error("Impossible de lire cette explication.");
   }, [playingKey, stopPlayback]);
 
   const handleSection = useCallback((section: SectionRef) => {

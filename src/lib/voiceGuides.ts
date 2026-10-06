@@ -29,6 +29,11 @@ export async function getVoiceGuideUrl(path: string): Promise<string> {
   return data.signedUrl;
 }
 
+/** Copy of the audio shipped next to the built app (self-hosted servers without storage). */
+export function voiceGuideFallbackUrl(path: string): string {
+  return `/stockage/${VOICE_GUIDES_BUCKET}/${path.split("/").map(encodeURIComponent).join("/")}`;
+}
+
 export async function saveVoiceGuide(input: {
   sectionKey: string;
   sectionTitle: string;
