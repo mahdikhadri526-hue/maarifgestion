@@ -43,6 +43,13 @@
       "when": 1791238698006,
       "tag": "0005_add_dlc_alert_days",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791289787147,
+      "tag": "0006_ecart_sale_articles",
+      "breakpoints": true
     }
   ]
 }

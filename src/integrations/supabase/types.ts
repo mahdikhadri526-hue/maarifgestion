@@ -419,6 +419,39 @@ export type Database = {
           },
         ]
       }
+      ecart_sale_articles: {
+        Row: {
+          created_at: string
+          dose: number
+          id: string
+          name: string
+          product: string
+          sort_order: number
+          updated_at: string
+          zone: string
+        }
+        Insert: {
+          created_at?: string
+          dose?: number
+          id?: string
+          name: string
+          product: string
+          sort_order?: number
+          updated_at?: string
+          zone: string
+        }
+        Update: {
+          created_at?: string
+          dose?: number
+          id?: string
+          name?: string
+          product?: string
+          sort_order?: number
+          updated_at?: string
+          zone?: string
+        }
+        Relationships: []
+      }
       finished_products: {
         Row: {
           active: boolean
