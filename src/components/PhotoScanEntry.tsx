@@ -29,9 +29,11 @@ interface Props {
   articles: string[];
   onConfirm: (entries: ScannedEntry[]) => Promise<void> | void;
   buttonLabel?: string;
+  /** Masque la colonne « N° lot » (scans des stocks finaux emporter/salle). */
+  showLotNumber?: boolean;
 }
 
-export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner photo" }: Props) {
+export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner photo", showLotNumber = true }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [entries, setEntries] = useState<ScannedEntry[]>([]);
