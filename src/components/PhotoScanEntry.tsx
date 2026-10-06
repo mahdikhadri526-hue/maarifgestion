@@ -238,9 +238,9 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
                   {entries.map((e, i) => (
                     <div
                       key={i}
-                      className="grid grid-cols-12 gap-2 items-center bg-muted/40 p-2 rounded-md"
+                      className={`grid gap-2 items-center bg-muted/40 p-2 rounded-md ${showLotNumber ? "grid-cols-12" : "grid-cols-12"}`}
                     >
-                      <div className="col-span-5">
+                      <div className={showLotNumber ? "col-span-5" : "col-span-7"}>
                         <label className="text-[10px] text-muted-foreground">Article</label>
                         <Select
                           value={e.article}
