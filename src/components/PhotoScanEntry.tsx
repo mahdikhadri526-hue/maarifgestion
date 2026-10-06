@@ -262,7 +262,7 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="col-span-3">
+                      <div className={showLotNumber ? "col-span-3" : "col-span-4"}>
                         <label className="text-[10px] text-muted-foreground">Quantité</label>
                         <Input
                           type="number"
