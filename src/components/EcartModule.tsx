@@ -175,6 +175,7 @@ export function EcartModule() {
               articles={items.map((it) => it.name)}
               onConfirm={applyScan(section)}
               buttonLabel="Scanner photo"
+              showLotNumber={showLotNumber}
             />
           )}
         </div>
