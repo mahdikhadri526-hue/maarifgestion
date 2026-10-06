@@ -169,12 +169,12 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
     </div>
   );
 
-  const stockTable = (part: Part, zone: typeof ZONES[number], title: string) => {
+  const stockTable = (part: Part, title: string) => {
     const locked = part === "SI" && siAuto;
-    const value = locked ? prev?.SF[zone.key] ?? null : day[part][zone.key];
+    const value = locked ? partValue(prev, "SF") : partValue(day, part);
     return (
-      <div key={zone.key} className="bg-card border rounded-xl shadow-sm overflow-hidden">
-        <div className="px-3 py-2 border-b bg-muted/50"><h3 className="font-semibold text-sm">{title} {zone.label}</h3></div>
+      <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
+        <div className="px-3 py-2 border-b bg-muted/50"><h3 className="font-semibold text-sm">{title}</h3></div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs sm:text-sm border-collapse">
             <thead className="bg-muted/30"><tr>
@@ -184,7 +184,7 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
             <tbody><tr className="border-t">
               <td className="px-2 py-1 whitespace-nowrap font-medium">{cfg.label}</td>
               <td className="px-1 py-1"><div className="flex justify-end">
-                {numInput(value, (v) => setPart(part, zone.key, v), `${title} ${zone.label} (${cfg.inputUnit})`, locked)}
+                {numInput(value, (v) => setPart(part, v), `${title} (${cfg.inputUnit})`, locked)}
               </div></td>
             </tr><tr className="border-t bg-muted/40 font-semibold">
               <td className="px-2 py-2">TOTAL</td><td className="px-2 py-2 text-right tabular-nums">{fmt(value ?? 0)} {cfg.inputUnit}</td>
