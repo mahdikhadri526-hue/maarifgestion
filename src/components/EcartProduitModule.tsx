@@ -84,8 +84,17 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
 
   const siAuto = hasFinal(prev);
 
-  const setPart = (part: Part, zone: Zone, raw: string) =>
-    setDay((d) => ({ ...d, [part]: { ...d[part], [zone]: raw === "" ? null : Number(raw.replace(",", ".")) } }));
+  /** Stock unique (sans séparation Salle/Emporter) : lecture = somme des deux zones, écriture sur EMP seul. */
+  const partValue = (d: ProduitDay | undefined, part: Part): number | null => {
+    if (!d) return null;
+    const a = d[part].EMP;
+    const b = d[part].SP;
+    if (a === null && b === null) return null;
+    return (a ?? 0) + (b ?? 0);
+  };
+
+  const setPart = (part: Part, raw: string) =>
+    setDay((d) => ({ ...d, [part]: { EMP: raw === "" ? null : Number(raw.replace(",", ".")), SP: null } }));
 
   const save = async () => {
     setSaving(true);
