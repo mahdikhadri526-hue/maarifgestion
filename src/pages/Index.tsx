@@ -16,6 +16,7 @@ const CleaningManager = lazy(() => import("@/components/CleaningManager").then((
 const GlaceStuffControl = lazy(() => import("@/components/GlaceStuffControl").then((m) => ({ default: m.GlaceStuffControl })));
 const InventoryModule = lazy(() => import("@/components/inventory/InventoryModule").then((m) => ({ default: m.InventoryModule })));
 const EcartModule = lazy(() => import("@/components/EcartModule").then((m) => ({ default: m.EcartModule })));
+const EcartHub = lazy(() => import("@/components/EcartProduitModule").then((m) => ({ default: m.EcartHub })));
 const PepModule = lazy(() => import("@/components/pep/PepModule").then((m) => ({ default: m.PepModule })));
 const TechModule = lazy(() => import("@/components/tech/TechModule").then((m) => ({ default: m.TechModule })));
 const AttendanceModule = lazy(() => import("@/components/attendance/AttendanceModule").then((m) => ({ default: m.AttendanceModule })));
