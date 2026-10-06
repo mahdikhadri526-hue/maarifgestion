@@ -84,8 +84,17 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
 
   const siAuto = hasFinal(prev);
 
-  const setPart = (part: Part, zone: Zone, raw: string) =>
-    setDay((d) => ({ ...d, [part]: { ...d[part], [zone]: raw === "" ? null : Number(raw.replace(",", ".")) } }));
+  /** Stock unique (sans séparation Salle/Emporter) : lecture = somme des deux zones, écriture sur EMP seul. */
+  const partValue = (d: ProduitDay | undefined, part: Part): number | null => {
+    if (!d) return null;
+    const a = d[part].EMP;
+    const b = d[part].SP;
+    if (a === null && b === null) return null;
+    return (a ?? 0) + (b ?? 0);
+  };
+
+  const setPart = (part: Part, raw: string) =>
+    setDay((d) => ({ ...d, [part]: { EMP: raw === "" ? null : Number(raw.replace(",", ".")), SP: null } }));
 
   const save = async () => {
     setSaving(true);
@@ -160,12 +169,12 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
     </div>
   );
 
-  const stockTable = (part: Part, zone: typeof ZONES[number], title: string) => {
+  const stockTable = (part: Part, title: string) => {
     const locked = part === "SI" && siAuto;
-    const value = locked ? prev?.SF[zone.key] ?? null : day[part][zone.key];
+    const value = locked ? partValue(prev, "SF") : partValue(day, part);
     return (
-      <div key={zone.key} className="bg-card border rounded-xl shadow-sm overflow-hidden">
-        <div className="px-3 py-2 border-b bg-muted/50"><h3 className="font-semibold text-sm">{title} {zone.label}</h3></div>
+      <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
+        <div className="px-3 py-2 border-b bg-muted/50"><h3 className="font-semibold text-sm">{title}</h3></div>
         <div className="overflow-x-auto">
           <table className="w-full text-xs sm:text-sm border-collapse">
             <thead className="bg-muted/30"><tr>
@@ -175,7 +184,7 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
             <tbody><tr className="border-t">
               <td className="px-2 py-1 whitespace-nowrap font-medium">{cfg.label}</td>
               <td className="px-1 py-1"><div className="flex justify-end">
-                {numInput(value, (v) => setPart(part, zone.key, v), `${title} ${zone.label} (${cfg.inputUnit})`, locked)}
+                {numInput(value, (v) => setPart(part, v), `${title} (${cfg.inputUnit})`, locked)}
               </div></td>
             </tr><tr className="border-t bg-muted/40 font-semibold">
               <td className="px-2 py-2">TOTAL</td><td className="px-2 py-2 text-right tabular-nums">{fmt(value ?? 0)} {cfg.inputUnit}</td>
@@ -264,15 +273,13 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
       {loading ? <div className="py-16 text-center text-sm text-muted-foreground">Chargement…</div>
         : view === "ventes" ? <div className="grid gap-4 lg:grid-cols-2">{ZONES.map(salesTable)}</div>
         : view === "initial" || view === "entrees" || view === "final" ? <div className="space-y-4">
-          <div className="grid gap-4 lg:grid-cols-2">{ZONES.map((z) => stockTable(
-            view === "initial" ? "SI" : view === "entrees" ? "ENTREE" : "SF", z,
+          {stockTable(
+            view === "initial" ? "SI" : view === "entrees" ? "ENTREE" : "SF",
             view === "initial" ? "Stock initial" : view === "entrees" ? "Entrées" : "Stock final",
-          ))}</div>
+          )}
           <div className="bg-card border rounded-xl p-4 shadow-sm text-sm">
-            {stat(`Total ${view === "initial" ? "stock initial" : view === "entrees" ? "entrées" : "stock final"} Emporter (${cfg.calcUnit})`,
-              ((view === "initial" ? (siAuto ? prev?.SF.EMP : day.SI.EMP) : view === "entrees" ? day.ENTREE.EMP : day.SF.EMP) ?? 0) * cfg.factor, true)}
-            {stat(`Total ${view === "initial" ? "stock initial" : view === "entrees" ? "entrées" : "stock final"} Salle (${cfg.calcUnit})`,
-              ((view === "initial" ? (siAuto ? prev?.SF.SP : day.SI.SP) : view === "entrees" ? day.ENTREE.SP : day.SF.SP) ?? 0) * cfg.factor, true)}
+            {stat(`Total ${view === "initial" ? "stock initial" : view === "entrees" ? "entrées" : "stock final"} (${cfg.calcUnit})`,
+              (partValue(view === "initial" && siAuto ? prev : day, view === "initial" ? (siAuto ? "SF" : "SI") : view === "entrees" ? "ENTREE" : "SF") ?? 0) * cfg.factor, true)}
           </div>
         </div> : <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">{[
