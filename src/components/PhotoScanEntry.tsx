@@ -284,20 +284,22 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
                           className="h-8 text-xs"
                         />
                       </div>
-                      <div className="col-span-3">
-                        <label className="text-[10px] text-muted-foreground">N° lot</label>
-                        <Input
-                          value={e.lotNumber}
-                          onChange={(ev) =>
-                            setEntries((prev) =>
-                              prev.map((p, idx) =>
-                                idx === i ? { ...p, lotNumber: ev.target.value } : p,
-                              ),
-                            )
-                          }
-                          className="h-8 text-xs"
-                        />
-                      </div>
+                      {showLotNumber && (
+                        <div className="col-span-3">
+                          <label className="text-[10px] text-muted-foreground">N° lot</label>
+                          <Input
+                            value={e.lotNumber}
+                            onChange={(ev) =>
+                              setEntries((prev) =>
+                                prev.map((p, idx) =>
+                                  idx === i ? { ...p, lotNumber: ev.target.value } : p,
+                                ),
+                              )
+                            }
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={() =>
