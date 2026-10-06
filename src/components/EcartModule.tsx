@@ -348,7 +348,7 @@ export function EcartModule() {
       ) : view === "final" ? (
         <div className="space-y-4">
           <div className="grid gap-4 lg:grid-cols-3">
-            {sectionTable({ section: "SF_EMP", title: "Stock final Emporter", subtitle: "Grammes par parfum (frigo + transit).", scannable: true })}
+            {sectionTable({ section: "SF_EMP", title: "Stock final Emporter", subtitle: "Grammes par parfum (frigo + transit).", scannable: true, showLotNumber: false })}
             {sectionTable({
               section: "SF_CHAMBRE_EMP",
               title: "Stock final Chambre",
