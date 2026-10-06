@@ -50,12 +50,13 @@ Deno.serve(async (req) => {
 ${articleList}
 Pour chaque produit visible sur la photo, retourne :
 - article (depuis la liste si possible, sinon nom détecté)
-- quantity (nombre entier)
+- terms (liste de TOUS les nombres écrits pour cet article, chiffre par chiffre, dans l'ordre, sans les additionner)
+- quantity (null — le total est calculé par l'application)
 - lotNumber (numéro de lot tel qu'écrit)
 
 Si une donnée est illisible, mets-la à null.
 
-RÈGLE IMPORTANTE sur les quantités : quand pour un même article la photo montre une addition — plusieurs nombres séparés par des signes « + » (ex. « 120 + 80 + 50 ») OU plusieurs nombres écrits les uns sous les autres / côte à côte (ex. un chiffre au-dessus d'un autre) — calcule la SOMME de tous ces nombres et retourne le total comme quantity. Ne retourne jamais un seul des nombres quand une addition est visible.`;
+RÈGLE IMPORTANTE sur les quantités : quand pour un même article la photo montre une addition — plusieurs nombres séparés par des signes « + » (ex. « 120 + 80 + 50 ») OU plusieurs nombres écrits les uns sous les autres / côte à côte (ex. un chiffre au-dessus d'un autre) — mets CHAQUE nombre séparément dans terms (ex. [963, 3851]). Ne calcule jamais toi-même la somme. Lis chaque nombre en entier (tous ses chiffres, y compris les zéros de tête comme « 0963 » = 963). La photo peut être tournée : lis bien chaque colonne.`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -101,9 +102,10 @@ RÈGLE IMPORTANTE sur les quantités : quand pour un même article la photo mont
                         properties: {
                           article: { type: ["string", "null"] },
                           quantity: { type: ["number", "null"] },
+                          terms: { type: "array", items: { type: "number" } },
                           lotNumber: { type: ["string", "null"] },
                         },
-                        required: ["article", "quantity", "lotNumber"],
+                        required: ["article", "quantity", "terms", "lotNumber"],
                         additionalProperties: false,
                       },
                     },
@@ -150,7 +152,15 @@ RÈGLE IMPORTANTE sur les quantités : quand pour un même article la photo mont
     if (args) {
       try {
         const parsed = typeof args === "string" ? JSON.parse(args) : args;
-        entries = parsed.entries || [];
+        entries = (parsed.entries || []).map((e: any) => {
+          const terms = Array.isArray(e?.terms)
+            ? e.terms.map(Number).filter((n: number) => Number.isFinite(n))
+            : [];
+          const quantity = terms.length > 0
+            ? Math.round(terms.reduce((a: number, b: number) => a + b, 0) * 1000) / 1000
+            : e?.quantity ?? null;
+          return { article: e?.article ?? null, quantity, lotNumber: e?.lotNumber ?? null };
+        });
       } catch (e) {
         console.error("parse args error", e);
       }
