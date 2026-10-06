@@ -179,7 +179,7 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
           <table className="w-full text-xs sm:text-sm border-collapse">
             <thead className="bg-muted/30"><tr>
               <th className="px-2 py-1.5 text-left">Article</th>
-              <th className="px-2 py-1.5 text-right">{cfg.inputUnit === "kg" ? "Kilogrammes" : "Bouteilles"}</th>
+              <th className="px-2 py-1.5 text-right">{cfg.inputUnit === "g" ? "Grammes" : cfg.inputUnit === "kg" ? "Kilogrammes" : "Bouteilles"}</th>
             </tr></thead>
             <tbody><tr className="border-t">
               <td className="px-2 py-1 whitespace-nowrap font-medium">{cfg.label}</td>

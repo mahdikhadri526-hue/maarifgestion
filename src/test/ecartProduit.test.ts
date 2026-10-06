@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { computeProduitDay, emptyDay, type SaleArticle } from "@/lib/ecartProduit";
+import { PRODUITS, computeProduitDay, emptyDay, type SaleArticle } from "@/lib/ecartProduit";
 
 const arts: SaleArticle[] = [
   { id: "a", product: "CAFE", zone: "EMP", name: "Expresso", dose: 8, sort_order: 0 },
@@ -7,14 +7,23 @@ const arts: SaleArticle[] = [
 ];
 
 describe("Écart Café Dubois / Sidi Ali", () => {
-  it("convertit le café saisi en kg en grammes", () => {
+  it("le café est saisi et calculé en grammes partout", () => {
+    expect(PRODUITS.CAFE.inputUnit).toBe("g");
+    expect(PRODUITS.CAFE.calcUnit).toBe("g");
+    expect(PRODUITS.CAFE.factor).toBe(1);
+  });
+
+  it("calcule la consommation du café en grammes", () => {
     const d = emptyDay();
-    d.SI = { EMP: 2, SP: 1 };
-    d.ENTREE = { EMP: 1, SP: 0 };
-    d.SF = { EMP: 1.5, SP: 0.5 };
+    d.SI = { EMP: 2000, SP: 1000 };
+    d.ENTREE = { EMP: 1000, SP: 0 };
+    d.SF = { EMP: 1500, SP: 500 };
     d.VENTES = { a: 100 };
     const r = computeProduitDay("CAFE", d, undefined, arts);
-    expect(r.conso).toBe(2000); // 3000 + 1000 − 2000 g
+    expect(r.si).toBe(3000);
+    expect(r.entrees).toBe(1000);
+    expect(r.sf).toBe(2000);
+    expect(r.conso).toBe(2000);
     expect(r.ventes).toBe(800);
     expect(r.ecart).toBe(-1200);
   });

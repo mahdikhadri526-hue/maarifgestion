@@ -6,7 +6,7 @@ import { fetchAllRows } from "@/lib/supabasePaginate";
 /**
  * Calcul des écarts Café Dubois / Sidi Ali — même principe que la glace,
  * séparé de son calcul. Stockage dans ecart_lines avec une section préfixée
- * (ex. « CAFE:SF_EMP »). Le café se saisit en kg et se calcule en grammes ;
+ * (ex. « CAFE:SF_EMP »). Le café se saisit et se calcule en grammes partout ;
  * Sidi Ali se compte en bouteilles.
  */
 export type ProduitKey = "CAFE" | "SIDIALI";
@@ -14,7 +14,7 @@ export type Zone = "EMP" | "SP";
 export type Part = "SI" | "ENTREE" | "SF";
 
 export const PRODUITS: Record<ProduitKey, { label: string; inputUnit: string; calcUnit: string; factor: number; doseUnit: string }> = {
-  CAFE: { label: "Café Dubois", inputUnit: "kg", calcUnit: "g", factor: 1000, doseUnit: "g / article" },
+  CAFE: { label: "Café Dubois", inputUnit: "g", calcUnit: "g", factor: 1, doseUnit: "g / article" },
   SIDIALI: { label: "Sidi Ali", inputUnit: "bouteilles", calcUnit: "bouteilles", factor: 1, doseUnit: "bouteille(s) / article" },
 };
 

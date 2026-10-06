@@ -50,6 +50,13 @@
       "when": 1791289787147,
       "tag": "0006_ecart_sale_articles",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791296914601,
+      "tag": "0007_cafe_ecart_unite_grammes",
+      "breakpoints": true
     }
   ]
 }
