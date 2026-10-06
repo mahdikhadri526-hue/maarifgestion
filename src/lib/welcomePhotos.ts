@@ -15,7 +15,8 @@ export async function loadWelcomePhotos(): Promise<WelcomePhoto[]> {
   const photos = data ?? [];
   return Promise.all(photos.map(async (photo) => {
     const { data: signed, error: signError } = await supabase.storage.from(BUCKET).createSignedUrl(photo.storage_path, 3600);
-    if (signError || !signed?.signedUrl) throw signError ?? new Error("Photo indisponible");
+    // Self-hosted servers without storage: use the copy shipped next to the built app.
+    if (signError || !signed?.signedUrl) return { ...photo, url: `/stockage/${BUCKET}/${encodeURIComponent(photo.storage_path)}` };
     return { ...photo, url: signed.signedUrl };
   }));
 }

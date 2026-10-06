@@ -14,3 +14,4 @@
 - Keep the welcome instrumental as a bundled static audio asset, playing only once from the first photo and stopping before the welcome message (no music on the welcome message), with the volume ducked while the voice-over speaks so speech stays clear and the welcome keeps no streaming dependency.
 - Serve the pre-generated welcome signature as a static audio asset, not a per-login synthesis call, to keep sign-in fast and predictable.
 - Keep product discrepancy views separate from ice-cream logic and persist their existing prefixed sections in ecart_lines, so presentation changes preserve historical data and calculations.
+- Self-hosted copies: voice guides and welcome photos fall back to /stockage/<bucket>/<path> shipped beside the built app when storage signing or playback fails, so offline-server packages play without a storage service.
