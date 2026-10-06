@@ -327,7 +327,7 @@ const Index = () => {
             {tab === "recettes" && <RecipeManager />}
             {tab === "nettoyage" && <CleaningManager />}
             {tab === "inventaire" && <InventoryModule />}
-            {tab === "ecarts" && <EcartModule />}
+            {tab === "ecarts" && <EcartHub glace={<EcartModule />} />}
             {tab === "pep" && <PepModule />}
             {TECH_ENABLED && tab === "tech" && <TechModule />}
             {ATTENDANCE_ENABLED && tab === "pointage" && (
