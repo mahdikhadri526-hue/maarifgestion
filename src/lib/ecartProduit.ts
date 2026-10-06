@@ -11,7 +11,7 @@ import { fetchAllRows } from "@/lib/supabasePaginate";
  */
 export type ProduitKey = "CAFE" | "SIDIALI";
 export type Zone = "EMP" | "SP";
-export type Part = "SI" | "ENTREE" | "SF";
+export type Part = "SI" | "ENTREE" | "SF" | "MEP";
 
 export const PRODUITS: Record<ProduitKey, { label: string; inputUnit: string; calcUnit: string; factor: number; doseUnit: string }> = {
   CAFE: { label: "Café Dubois", inputUnit: "g", calcUnit: "g", factor: 1, doseUnit: "g / article" },
@@ -32,6 +32,8 @@ export interface ProduitDay {
   SI: Record<Zone, number | null>;
   ENTREE: Record<Zone, number | null>;
   SF: Record<Zone, number | null>;
+  /** Stock mise en place, ajouté au stock final. */
+  MEP: Record<Zone, number | null>;
   VENTES: Record<string, number>; // article id -> quantité vendue
 }
 
@@ -39,10 +41,16 @@ export const emptyDay = (): ProduitDay => ({
   SI: { EMP: null, SP: null },
   ENTREE: { EMP: null, SP: null },
   SF: { EMP: null, SP: null },
+  MEP: { EMP: null, SP: null },
   VENTES: {},
 });
 
+const n = (v: number | null | undefined) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+
 export const hasFinal = (d?: ProduitDay) => !!d && (d.SF.EMP !== null || d.SF.SP !== null);
+
+/** Stock final = Stock final + Stock mise en place (unité de saisie). */
+export const finalTotal = (d: ProduitDay) => n(d.SF.EMP) + n(d.SF.SP) + n(d.MEP.EMP) + n(d.MEP.SP);
 
 export interface ProduitResult {
   si: number;
@@ -52,8 +60,6 @@ export interface ProduitResult {
   ventes: number;
   ecart: number;
 }
-
-const n = (v: number | null | undefined) => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 
 /**
  * Consommation = Stocks initiaux + Entrées − Stocks finaux (Emporter + Salle)
@@ -68,10 +74,9 @@ export function computeProduitDay(
   articles: SaleArticle[],
 ): ProduitResult {
   const f = PRODUITS[product].factor;
-  const siSrc = hasFinal(prev) ? prev!.SF : day.SI;
-  const si = (n(siSrc.EMP) + n(siSrc.SP)) * f;
+  const si = (hasFinal(prev) ? finalTotal(prev!) : n(day.SI.EMP) + n(day.SI.SP)) * f;
   const entrees = (n(day.ENTREE.EMP) + n(day.ENTREE.SP)) * f;
-  const sf = (n(day.SF.EMP) + n(day.SF.SP)) * f;
+  const sf = finalTotal(day) * f;
   const conso = si + entrees - sf;
   const ventes = articles
     .filter((a) => a.product === product)
@@ -140,7 +145,7 @@ export async function saveProduitDay(product: ProduitKey, date: string, day: Pro
   const pdv_id = requireCurrentPdvId();
   const rows: { pdv_id: string; entry_date: string; section: string; item: string; qty: number }[] = [];
   const dels: string[] = [];
-  for (const part of ["SI", "ENTREE", "SF"] as Part[]) {
+  for (const part of ["SI", "ENTREE", "SF", "MEP"] as Part[]) {
     for (const zone of ["EMP", "SP"] as Zone[]) {
       const section = `${prefix(product)}${part}_${zone}`;
       const v = day[part][zone];

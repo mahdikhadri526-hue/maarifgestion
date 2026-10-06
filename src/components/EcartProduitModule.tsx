@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatDateFR } from "@/lib/utils";
 import { eachDate, monthRange, shiftDate } from "@/lib/ecartRatio";
 import {
+  finalTotal,
   PRODUITS,
   addArticle,
   computeProduitDay,
@@ -171,7 +172,8 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
 
   const stockTable = (part: Part, title: string) => {
     const locked = part === "SI" && siAuto;
-    const value = locked ? partValue(prev, "SF") : partValue(day, part);
+    const value = locked ? (prev ? finalTotal(prev) : null) : partValue(day, part);
+    const mep = part === "SF" ? partValue(day, "MEP") : null;
     return (
       <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
         <div className="px-3 py-2 border-b bg-muted/50"><h3 className="font-semibold text-sm">{title}</h3></div>
@@ -186,8 +188,13 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
               <td className="px-1 py-1"><div className="flex justify-end">
                 {numInput(value, (v) => setPart(part, v), `${title} (${cfg.inputUnit})`, locked)}
               </div></td>
-            </tr><tr className="border-t bg-muted/40 font-semibold">
-              <td className="px-2 py-2">TOTAL</td><td className="px-2 py-2 text-right tabular-nums">{fmt(value ?? 0)} {cfg.inputUnit}</td>
+            </tr>{part === "SF" && <tr className="border-t">
+              <td className="px-2 py-1 whitespace-nowrap font-medium">Stock mise en place</td>
+              <td className="px-1 py-1"><div className="flex justify-end">
+                {numInput(mep, (v) => setPart("MEP", v), `Stock mise en place (${cfg.inputUnit})`)}
+              </div></td>
+            </tr>}<tr className="border-t bg-muted/40 font-semibold">
+              <td className="px-2 py-2">TOTAL</td><td className="px-2 py-2 text-right tabular-nums">{fmt((value ?? 0) + (mep ?? 0))} {cfg.inputUnit}</td>
             </tr></tbody>
           </table>
         </div>
@@ -279,7 +286,7 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
           )}
           <div className="bg-card border rounded-xl p-4 shadow-sm text-sm">
             {stat(`Total ${view === "initial" ? "stock initial" : view === "entrees" ? "entrées" : "stock final"} (${cfg.calcUnit})`,
-              (partValue(view === "initial" && siAuto ? prev : day, view === "initial" ? (siAuto ? "SF" : "SI") : view === "entrees" ? "ENTREE" : "SF") ?? 0) * cfg.factor, true)}
+              (view === "final" ? finalTotal(day) : view === "initial" && siAuto && prev ? finalTotal(prev) : partValue(day, view === "initial" ? "SI" : "ENTREE") ?? 0) * cfg.factor, true)}
           </div>
         </div> : <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">{[

@@ -40,3 +40,11 @@ describe("Écart Café Dubois / Sidi Ali", () => {
     expect(r.ecart).toBe(0);
   });
 });
+
+describe("stock mise en place", () => {
+  it("stock final = stock final + mise en place", () => {
+    const d = emptyDay();
+    d.SF.EMP = 1000; d.MEP.EMP = 250; d.SI.EMP = 2000;
+    expect(computeProduitDay("CAFE", d, undefined, []).sf).toBe(1250);
+  });
+});
