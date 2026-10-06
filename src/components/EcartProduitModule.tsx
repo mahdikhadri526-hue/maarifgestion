@@ -136,6 +136,18 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
     }
   };
 
+  const changeName = async (a: SaleArticle, raw: string) => {
+    const name = raw.trim();
+    if (!name || name === a.name) return;
+    try {
+      await updateArticle(a.id, { name });
+      setArticles((s) => s.map((x) => (x.id === a.id ? { ...x, name } : x)));
+      toast.success("Nom modifié");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
   const changeDose = async (a: SaleArticle, raw: string) => {
     const dose = Number(raw.replace(",", "."));
     if (!Number.isFinite(dose) || dose === a.dose) return;
@@ -220,7 +232,9 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
           <tbody>
             {list.length === 0 && <tr><td colSpan={canEdit ? 5 : 4} className="px-3 py-8 text-center text-muted-foreground">Aucun article.</td></tr>}
             {list.map((a) => <tr key={a.id} className="border-t">
-              <td className="px-2 py-1 whitespace-nowrap font-medium">{a.name}</td>
+              <td className="px-1 py-1">{canEdit ? <Input key={`${a.id}-${a.name}`} defaultValue={a.name} aria-label={`Nom ${a.name} ${zone.label}`}
+                className="h-auto min-w-32 rounded px-1.5 py-1 font-medium bg-background"
+                onBlur={(e) => changeName(a, e.target.value)} /> : <span className="px-1 whitespace-nowrap font-medium">{a.name}</span>}</td>
               <td className="px-1 py-1"><Input type="number" step="any" defaultValue={a.dose} disabled={!canEdit}
                 aria-label={`Dose ${a.name} ${zone.label}`} className="h-auto w-24 rounded px-1.5 py-1 text-right bg-background"
                 onBlur={(e) => changeDose(a, e.target.value)} /></td>
