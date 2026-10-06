@@ -5,7 +5,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/sonner";
-import { deleteVoiceGuide, getVoiceGuideUrl, loadVoiceGuides, saveVoiceGuide, type VoiceGuide } from "@/lib/voiceGuides";
+import { deleteVoiceGuide, getVoiceGuideUrl, loadVoiceGuides, saveVoiceGuide, voiceGuideFallbackUrl, type VoiceGuide } from "@/lib/voiceGuides";
 
 import { supabase } from "@/integrations/supabase/client";
 
