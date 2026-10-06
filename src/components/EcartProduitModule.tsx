@@ -7,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatDateFR } from "@/lib/utils";
 import { eachDate, monthRange, shiftDate } from "@/lib/ecartRatio";
 import {
+  finalTotal,
   PRODUITS,
   addArticle,
   computeProduitDay,
