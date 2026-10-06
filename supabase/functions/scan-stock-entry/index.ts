@@ -53,7 +53,9 @@ Pour chaque produit visible sur la photo, retourne :
 - quantity (nombre entier)
 - lotNumber (numéro de lot tel qu'écrit)
 
-Si une donnée est illisible, mets-la à null.`;
+Si une donnée est illisible, mets-la à null.
+
+RÈGLE IMPORTANTE sur les quantités : quand pour un même article la photo montre une addition — plusieurs nombres séparés par des signes « + » (ex. « 120 + 80 + 50 ») OU plusieurs nombres écrits les uns sous les autres / côte à côte (ex. un chiffre au-dessus d'un autre) — calcule la SOMME de tous ces nombres et retourne le total comme quantity. Ne retourne jamais un seul des nombres quand une addition est visible.`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
