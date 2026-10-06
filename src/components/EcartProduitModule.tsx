@@ -273,15 +273,13 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
       {loading ? <div className="py-16 text-center text-sm text-muted-foreground">Chargement…</div>
         : view === "ventes" ? <div className="grid gap-4 lg:grid-cols-2">{ZONES.map(salesTable)}</div>
         : view === "initial" || view === "entrees" || view === "final" ? <div className="space-y-4">
-          <div className="grid gap-4 lg:grid-cols-2">{ZONES.map((z) => stockTable(
-            view === "initial" ? "SI" : view === "entrees" ? "ENTREE" : "SF", z,
+          {stockTable(
+            view === "initial" ? "SI" : view === "entrees" ? "ENTREE" : "SF",
             view === "initial" ? "Stock initial" : view === "entrees" ? "Entrées" : "Stock final",
-          ))}</div>
+          )}
           <div className="bg-card border rounded-xl p-4 shadow-sm text-sm">
-            {stat(`Total ${view === "initial" ? "stock initial" : view === "entrees" ? "entrées" : "stock final"} Emporter (${cfg.calcUnit})`,
-              ((view === "initial" ? (siAuto ? prev?.SF.EMP : day.SI.EMP) : view === "entrees" ? day.ENTREE.EMP : day.SF.EMP) ?? 0) * cfg.factor, true)}
-            {stat(`Total ${view === "initial" ? "stock initial" : view === "entrees" ? "entrées" : "stock final"} Salle (${cfg.calcUnit})`,
-              ((view === "initial" ? (siAuto ? prev?.SF.SP : day.SI.SP) : view === "entrees" ? day.ENTREE.SP : day.SF.SP) ?? 0) * cfg.factor, true)}
+            {stat(`Total ${view === "initial" ? "stock initial" : view === "entrees" ? "entrées" : "stock final"} (${cfg.calcUnit})`,
+              (partValue(view === "initial" && siAuto ? prev : day, view === "initial" ? (siAuto ? "SF" : "SI") : view === "entrees" ? "ENTREE" : "SF") ?? 0) * cfg.factor, true)}
           </div>
         </div> : <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-3">{[
