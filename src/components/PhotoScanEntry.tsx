@@ -29,9 +29,11 @@ interface Props {
   articles: string[];
   onConfirm: (entries: ScannedEntry[]) => Promise<void> | void;
   buttonLabel?: string;
+  /** Masque la colonne « N° lot » (scans des stocks finaux emporter/salle). */
+  showLotNumber?: boolean;
 }
 
-export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner photo" }: Props) {
+export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner photo", showLotNumber = true }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [entries, setEntries] = useState<ScannedEntry[]>([]);
@@ -238,7 +240,7 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
                       key={i}
                       className="grid grid-cols-12 gap-2 items-center bg-muted/40 p-2 rounded-md"
                     >
-                      <div className="col-span-5">
+                      <div className={showLotNumber ? "col-span-5" : "col-span-7"}>
                         <label className="text-[10px] text-muted-foreground">Article</label>
                         <Select
                           value={e.article}
@@ -260,7 +262,7 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
                           </SelectContent>
                         </Select>
                       </div>
-                      <div className="col-span-3">
+                      <div className={showLotNumber ? "col-span-3" : "col-span-4"}>
                         <label className="text-[10px] text-muted-foreground">Quantité</label>
                         <Input
                           type="number"
@@ -282,20 +284,22 @@ export function PhotoScanEntry({ articles, onConfirm, buttonLabel = "Scanner pho
                           className="h-8 text-xs"
                         />
                       </div>
-                      <div className="col-span-3">
-                        <label className="text-[10px] text-muted-foreground">N° lot</label>
-                        <Input
-                          value={e.lotNumber}
-                          onChange={(ev) =>
-                            setEntries((prev) =>
-                              prev.map((p, idx) =>
-                                idx === i ? { ...p, lotNumber: ev.target.value } : p,
-                              ),
-                            )
-                          }
-                          className="h-8 text-xs"
-                        />
-                      </div>
+                      {showLotNumber && (
+                        <div className="col-span-3">
+                          <label className="text-[10px] text-muted-foreground">N° lot</label>
+                          <Input
+                            value={e.lotNumber}
+                            onChange={(ev) =>
+                              setEntries((prev) =>
+                                prev.map((p, idx) =>
+                                  idx === i ? { ...p, lotNumber: ev.target.value } : p,
+                                ),
+                              )
+                            }
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                      )}
                       <button
                         type="button"
                         onClick={() =>
