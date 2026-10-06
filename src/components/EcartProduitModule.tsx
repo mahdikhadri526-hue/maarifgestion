@@ -82,7 +82,6 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
     load();
   }, [load]);
 
-  const result = useMemo(() => computeProduitDay(product, day, prev, articles), [product, day, prev, articles]);
   const siAuto = hasFinal(prev);
 
   const setPart = (part: Part, zone: Zone, raw: string) =>
