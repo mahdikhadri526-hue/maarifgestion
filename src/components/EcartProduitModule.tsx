@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { Boxes, Loader2, Package, Plus, Save, Scale, ShoppingCart, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDateFR } from "@/lib/utils";
-import { shiftDate } from "@/lib/ecartRatio";
+import { eachDate, monthRange, shiftDate } from "@/lib/ecartRatio";
 import {
   PRODUITS,
   addArticle,
@@ -25,6 +25,9 @@ import {
   type Zone,
 } from "@/lib/ecartProduit";
 
+type View = "initial" | "entrees" | "ventes" | "final" | "ecarts";
+type Mode = "jour" | "mois" | "periode";
+
 const today = () => new Date().toISOString().slice(0, 10);
 const ZONES: { key: Zone; label: string }[] = [
   { key: "EMP", label: "Emporter" },
@@ -37,6 +40,12 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
   const canEdit = can("edit_ecarts") || isAdmin || isRegionalAdmin;
   const cfg = PRODUITS[product];
 
+  const [view, setView] = useState<View>("ecarts");
+  const [mode, setMode] = useState<Mode>("jour");
+  const [month, setMonth] = useState(today().slice(0, 7));
+  const [start, setStart] = useState(today());
+  const [end, setEnd] = useState(today());
+  const [history, setHistory] = useState<Map<string, ProduitDay>>(new Map());
   const [date, setDate] = useState(today());
   const [day, setDay] = useState<ProduitDay>(emptyDay());
   const [prev, setPrev] = useState<ProduitDay | undefined>();
@@ -48,10 +57,17 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
     SP: { name: "", dose: "" },
   });
 
+  const range = useMemo(() => {
+    if (view !== "ecarts" || mode === "jour") return { start: date, end: date };
+    if (mode === "mois") return monthRange(month);
+    return { start, end };
+  }, [view, mode, date, month, start, end]);
+
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [hist, arts] = await Promise.all([fetchProduitDays(product, shiftDate(date, -60), date), fetchArticles()]);
+      const [hist, arts] = await Promise.all([fetchProduitDays(product, shiftDate(range.start, -60), range.end), fetchArticles()]);
+      setHistory(hist);
       setArticles(arts.filter((a) => a.product === product));
       setDay(hist.get(date) ?? emptyDay());
       setPrev(lastFinal(hist, date));
@@ -60,13 +76,12 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
     } finally {
       setLoading(false);
     }
-  }, [product, date]);
+  }, [product, date, range.start, range.end]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const result = useMemo(() => computeProduitDay(product, day, prev, articles), [product, day, prev, articles]);
   const siAuto = hasFinal(prev);
 
   const setPart = (part: Part, zone: Zone, raw: string) =>
@@ -122,182 +137,167 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
     }
   };
 
-  const numInput = (value: number | null, onChange: (v: string) => void, disabled = false) => (
-    <Input
-      type="number"
-      inputMode="decimal"
-      step="any"
-      className="h-8 w-28 text-right"
-      value={value ?? ""}
-      disabled={!canEdit || disabled}
-      onChange={(e) => onChange(e.target.value)}
-    />
+  const rows = eachDate(range.start, range.end)
+    .filter((d) => history.has(d))
+    .map((d) => ({ date: d, ...computeProduitDay(product, history.get(d) ?? emptyDay(), lastFinal(history, d), articles) }));
+  const sum = rows.reduce((acc, row) => ({
+    conso: acc.conso + row.conso, ventes: acc.ventes + row.ventes, ecart: acc.ecart + row.ecart,
+  }), { conso: 0, ventes: 0, ecart: 0 });
+
+  const numInput = (value: number | null, onChange: (v: string) => void, label: string, disabled = false) => (
+    <Input type="number" inputMode="decimal" step="any" aria-label={label}
+      className="h-auto w-24 rounded px-1.5 py-1 text-right bg-background"
+      value={value === 0 || value === null ? "" : value} disabled={!canEdit || disabled}
+      onChange={(e) => onChange(e.target.value)} />
   );
+
+  const stat = (label: string, value: number, strong = false) => (
+    <div className="flex items-center justify-between gap-4 py-1">
+      <span className="text-muted-foreground">{label}</span>
+      <span className={`tabular-nums ${strong ? "font-bold" : "font-medium"} ${strong && value < 0 ? "text-destructive" : ""}`}>
+        {fmt(value)} {cfg.calcUnit}
+      </span>
+    </div>
+  );
+
+  const stockTable = (part: Part, zone: typeof ZONES[number], title: string) => {
+    const locked = part === "SI" && siAuto;
+    const value = locked ? prev?.SF[zone.key] ?? null : day[part][zone.key];
+    return (
+      <div key={zone.key} className="bg-card border rounded-xl shadow-sm overflow-hidden">
+        <div className="px-3 py-2 border-b bg-muted/50"><h3 className="font-semibold text-sm">{title} {zone.label}</h3></div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs sm:text-sm border-collapse">
+            <thead className="bg-muted/30"><tr>
+              <th className="px-2 py-1.5 text-left">Article</th>
+              <th className="px-2 py-1.5 text-right">{cfg.inputUnit === "kg" ? "Kilogrammes" : "Bouteilles"}</th>
+            </tr></thead>
+            <tbody><tr className="border-t">
+              <td className="px-2 py-1 whitespace-nowrap font-medium">{cfg.label}</td>
+              <td className="px-1 py-1"><div className="flex justify-end">
+                {numInput(value, (v) => setPart(part, zone.key, v), `${title} ${zone.label} (${cfg.inputUnit})`, locked)}
+              </div></td>
+            </tr><tr className="border-t bg-muted/40 font-semibold">
+              <td className="px-2 py-2">TOTAL</td><td className="px-2 py-2 text-right tabular-nums">{fmt(value ?? 0)} {cfg.inputUnit}</td>
+            </tr></tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const salesTable = (zone: typeof ZONES[number]) => {
+    const list = articles.filter((a) => a.zone === zone.key);
+    const totalQty = list.reduce((n, a) => n + (day.VENTES[a.id] ?? 0), 0);
+    const total = list.reduce((n, a) => n + (day.VENTES[a.id] ?? 0) * a.dose, 0);
+    return (
+      <div key={zone.key} className="bg-card border rounded-xl shadow-sm overflow-hidden">
+        <div className="px-3 py-2 border-b bg-muted/50"><h3 className="font-semibold text-sm">Ventes {zone.label}</h3></div>
+        <div className="overflow-x-auto"><table className="w-full text-xs sm:text-sm border-collapse">
+          <thead className="bg-muted/30"><tr>
+            <th className="px-2 py-1.5 text-left">Article</th>
+            <th className="px-2 py-1.5 text-right">{product === "CAFE" ? "Grammage (g)" : "Dose (bouteilles)"}</th>
+            <th className="px-2 py-1.5 text-right">Quantité</th>
+            <th className="px-2 py-1.5 text-right">Total ({cfg.calcUnit})</th>
+            {canEdit && <th className="px-2 py-1.5"><span className="sr-only">Actions</span></th>}
+          </tr></thead>
+          <tbody>
+            {list.length === 0 && <tr><td colSpan={canEdit ? 5 : 4} className="px-3 py-8 text-center text-muted-foreground">Aucun article.</td></tr>}
+            {list.map((a) => <tr key={a.id} className="border-t">
+              <td className="px-2 py-1 whitespace-nowrap font-medium">{a.name}</td>
+              <td className="px-1 py-1"><Input type="number" step="any" defaultValue={a.dose} disabled={!canEdit}
+                aria-label={`Dose ${a.name} ${zone.label}`} className="h-auto w-24 rounded px-1.5 py-1 text-right bg-background"
+                onBlur={(e) => changeDose(a, e.target.value)} /></td>
+              <td className="px-1 py-1">{numInput(day.VENTES[a.id] ?? null, (v) =>
+                setDay((d) => ({ ...d, VENTES: { ...d.VENTES, [a.id]: v === "" ? 0 : Number(v.replace(",", ".")) } })),
+                `Quantité ${a.name} ${zone.label}`)}</td>
+              <td className="px-2 py-1 text-right tabular-nums">{fmt((day.VENTES[a.id] ?? 0) * a.dose)}</td>
+              {canEdit && <td className="px-1 py-1"><Button size="icon" variant="ghost" title={`Supprimer ${a.name}`}
+                aria-label={`Supprimer ${a.name}`} className="h-8 w-8 text-destructive" onClick={() => removeArticle(a)}><Trash2 className="h-4 w-4" /></Button></td>}
+            </tr>)}
+            <tr className="border-t bg-muted/40 font-semibold">
+              <td className="px-2 py-2">TOTAL</td><td /><td className="px-2 py-2 text-right tabular-nums">{fmt(totalQty)}</td>
+              <td className="px-2 py-2 text-right tabular-nums">{fmt(total)} {cfg.calcUnit}</td>{canEdit && <td />}
+            </tr>
+            {canEdit && <tr className="border-t">
+              <td className="px-2 py-2"><Input placeholder="Nouvel article" aria-label={`Nouvel article ${zone.label}`} value={newArt[zone.key].name}
+                onChange={(e) => setNewArt((s) => ({ ...s, [zone.key]: { ...s[zone.key], name: e.target.value } }))} className="h-8 min-w-32" /></td>
+              <td className="px-1 py-2"><Input type="number" step="any" placeholder="Dose" aria-label={`Nouvelle dose ${zone.label}`} value={newArt[zone.key].dose}
+                onChange={(e) => setNewArt((s) => ({ ...s, [zone.key]: { ...s[zone.key], dose: e.target.value } }))} className="h-8 w-24 text-right" /></td>
+              <td colSpan={3} className="px-2 py-2 text-right"><Button size="sm" variant="outline" className="gap-1" onClick={() => createArticle(zone.key)}><Plus className="h-4 w-4" /> Ajouter</Button></td>
+            </tr>}
+          </tbody>
+        </table></div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3">
-        <div>
-          <label className="text-xs text-muted-foreground">Date</label>
-          <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-9 w-44" />
+      <div className="bg-card border rounded-xl p-4 shadow-sm space-y-3">
+        <h2 className="text-lg font-semibold flex items-center gap-2"><Scale className="h-5 w-5 text-primary" /> Calcul des écarts — {cfg.label}</h2>
+        <div className="flex flex-wrap gap-2">
+          {([
+            ["initial", "Stock initial", Boxes], ["entrees", "Entrées", Package], ["ventes", "Ventes", ShoppingCart],
+            ["final", "Stock final", Boxes], ["ecarts", "Écarts", Scale],
+          ] as const).map(([id, label, Icon]) => <Button key={id} variant={view === id ? "default" : "outline"}
+            onClick={() => setView(id)} className="gap-2 px-3 py-2 rounded-lg text-sm"><Icon className="h-4 w-4" />{label}</Button>)}
         </div>
-        {canEdit && (
-          <Button onClick={save} disabled={saving || loading} className="gap-2">
+        <div className="flex flex-wrap gap-2 items-end">
+          {view === "ecarts" && <div><label className="block text-xs text-muted-foreground mb-1" htmlFor="ecart-mode">Période</label>
+            <select id="ecart-mode" value={mode} onChange={(e) => setMode(e.target.value as Mode)} className="border rounded-lg px-2 py-1.5 text-sm bg-background">
+              <option value="jour">Jour</option><option value="mois">Mois</option><option value="periode">Période</option>
+            </select></div>}
+          {(view !== "ecarts" || mode === "jour") && <div><label htmlFor="ecart-date" className="block text-xs text-muted-foreground mb-1">Date</label>
+            <Input id="ecart-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-auto w-auto rounded-lg px-2 py-1.5" /></div>}
+          {view === "ecarts" && mode === "mois" && <div><label htmlFor="ecart-month" className="block text-xs text-muted-foreground mb-1">Mois</label>
+            <Input id="ecart-month" type="month" value={month} onChange={(e) => setMonth(e.target.value)} className="h-auto w-auto rounded-lg px-2 py-1.5" /></div>}
+          {view === "ecarts" && mode === "periode" && <>
+            <div><label htmlFor="ecart-start" className="block text-xs text-muted-foreground mb-1">Du</label><Input id="ecart-start" type="date" value={start} onChange={(e) => setStart(e.target.value)} className="h-auto w-auto rounded-lg px-2 py-1.5" /></div>
+            <div><label htmlFor="ecart-end" className="block text-xs text-muted-foreground mb-1">Au</label><Input id="ecart-end" type="date" value={end} onChange={(e) => setEnd(e.target.value)} className="h-auto w-auto rounded-lg px-2 py-1.5" /></div>
+          </>}
+          {view !== "ecarts" && canEdit && <Button onClick={save} disabled={saving || loading} className="ml-auto gap-2 rounded-lg">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Enregistrer
-          </Button>
-        )}
-      </div>
-
-      {loading ? (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
+          </Button>}
         </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-            {[
-              ["Stock initial", result.si],
-              ["Entrées", result.entrees],
-              ["Stock final", result.sf],
-              ["Consommation", result.conso],
-              ["Ventes", result.ventes],
-            ].map(([l, v]) => (
-              <div key={l as string} className="rounded-md border bg-card p-3">
-                <div className="text-xs text-muted-foreground">{l}</div>
-                <div className="text-lg font-semibold">{fmt(v as number)} {cfg.calcUnit}</div>
-              </div>
-            ))}
+      </div>
+      {loading ? <div className="py-16 text-center text-sm text-muted-foreground">Chargement…</div>
+        : view === "ventes" ? <div className="grid gap-4 lg:grid-cols-2">{ZONES.map(salesTable)}</div>
+        : view === "initial" || view === "entrees" || view === "final" ? <div className="space-y-4">
+          <div className="grid gap-4 lg:grid-cols-2">{ZONES.map((z) => stockTable(
+            view === "initial" ? "SI" : view === "entrees" ? "ENTREE" : "SF", z,
+            view === "initial" ? "Stock initial" : view === "entrees" ? "Entrées" : "Stock final",
+          ))}</div>
+          <div className="bg-card border rounded-xl p-4 shadow-sm text-sm">
+            {stat(`Total ${view === "initial" ? "stock initial" : view === "entrees" ? "entrées" : "stock final"} Emporter (${cfg.calcUnit})`,
+              ((view === "initial" ? (siAuto ? prev?.SF.EMP : day.SI.EMP) : view === "entrees" ? day.ENTREE.EMP : day.SF.EMP) ?? 0) * cfg.factor, true)}
+            {stat(`Total ${view === "initial" ? "stock initial" : view === "entrees" ? "entrées" : "stock final"} Salle (${cfg.calcUnit})`,
+              ((view === "initial" ? (siAuto ? prev?.SF.SP : day.SI.SP) : view === "entrees" ? day.ENTREE.SP : day.SF.SP) ?? 0) * cfg.factor, true)}
           </div>
-          <div className={`rounded-md border p-3 ${result.ecart < 0 ? "border-destructive bg-destructive/10" : "bg-primary/5"}`}>
-            <div className="text-xs text-muted-foreground">Écart {cfg.label} du {formatDateFR(date)} (Ventes − Consommation)</div>
-            <div className={`text-2xl font-bold ${result.ecart < 0 ? "text-destructive" : "text-primary"}`}>
-              {fmt(result.ecart)} {cfg.calcUnit}
-            </div>
-          </div>
-
-          <div className="rounded-md border overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50">
-                <tr>
-                  <th className="text-left p-2">Saisie ({cfg.inputUnit})</th>
-                  {ZONES.map((z) => <th key={z.key} className="text-right p-2">{z.label}</th>)}
-                </tr>
-              </thead>
+        </div> : <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">{[
+            { label: "Consommation", value: sum.conso }, { label: "Ventes", value: sum.ventes }, { label: "Écart", value: sum.ecart, strong: true },
+          ].map((b) => <div key={b.label} className="bg-card border rounded-xl p-4 shadow-sm text-sm"><h3 className="font-semibold mb-2">{b.label}</h3>{stat(`${b.label} (${cfg.calcUnit})`, b.value, b.strong)}</div>)}</div>
+          <div className="bg-card border rounded-xl shadow-sm overflow-x-auto">
+            <table className="w-full text-xs sm:text-sm border-collapse min-w-[400px]">
+              <thead className="bg-muted/60"><tr>
+                <th className="sticky left-0 z-10 bg-muted/60 px-2 py-2 text-left">Date</th>
+                <th className="px-2 py-2 text-right">Consommation ({cfg.calcUnit})</th><th className="px-2 py-2 text-right">Ventes ({cfg.calcUnit})</th><th className="px-2 py-2 text-right">Écart ({cfg.calcUnit})</th>
+              </tr></thead>
               <tbody>
-                <tr className="border-t">
-                  <td className="p-2">Stock initial {siAuto && <span className="text-xs text-muted-foreground">(stock final de la veille)</span>}</td>
-                  {ZONES.map((z) => (
-                    <td key={z.key} className="p-2 text-right">
-                      <div className="flex justify-end">
-                        {numInput(siAuto ? prev!.SF[z.key] : day.SI[z.key], (v) => setPart("SI", z.key, v), siAuto)}
-                      </div>
-                    </td>
-                  ))}
-                </tr>
-                {(["ENTREE", "SF"] as Part[]).map((p) => (
-                  <tr key={p} className="border-t">
-                    <td className="p-2">{p === "ENTREE" ? "Entrées" : "Stock final"}</td>
-                    {ZONES.map((z) => (
-                      <td key={z.key} className="p-2">
-                        <div className="flex justify-end">{numInput(day[p][z.key], (v) => setPart(p, z.key, v))}</div>
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                {rows.length === 0 && <tr><td colSpan={4} className="px-3 py-8 text-center text-muted-foreground">Aucune saisie sur la période.</td></tr>}
+                {rows.map((r) => <tr key={r.date} className="border-t">
+                  <td className="sticky left-0 z-10 bg-card px-2 py-1 whitespace-nowrap">{formatDateFR(r.date)}</td>
+                  <td className="px-2 py-1 text-right tabular-nums">{fmt(r.conso)}</td><td className="px-2 py-1 text-right tabular-nums">{fmt(r.ventes)}</td>
+                  <td className={`px-2 py-1 text-right tabular-nums font-bold ${r.ecart < 0 ? "text-destructive" : ""}`}>{fmt(r.ecart)}</td>
+                </tr>)}
+                {rows.length > 0 && <tr className="border-t bg-muted/40 font-semibold"><td className="sticky left-0 z-10 bg-muted/40 px-2 py-2">Total</td>
+                  <td className="px-2 py-2 text-right tabular-nums">{fmt(sum.conso)}</td><td className="px-2 py-2 text-right tabular-nums">{fmt(sum.ventes)}</td><td className="px-2 py-2 text-right tabular-nums">{fmt(sum.ecart)}</td>
+                </tr>}
               </tbody>
             </table>
-            {product === "CAFE" && (
-              <p className="p-2 text-xs text-muted-foreground">Le café se saisit en kg ; il est converti automatiquement en grammes pour le calcul.</p>
-            )}
           </div>
-
-          {ZONES.map((z) => {
-            const list = articles.filter((a) => a.zone === z.key);
-            return (
-              <div key={z.key} className="rounded-md border overflow-x-auto">
-                <div className="p-2 font-medium bg-muted/50">Ventes {z.label}</div>
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-xs text-muted-foreground">
-                      <th className="text-left p-2">Article</th>
-                      <th className="text-right p-2">Dose ({cfg.doseUnit})</th>
-                      <th className="text-right p-2">Qté vendue</th>
-                      <th className="text-right p-2">Total ({cfg.calcUnit})</th>
-                      {canEdit && <th className="p-2" />}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {list.length === 0 && (
-                      <tr><td colSpan={5} className="p-2 text-xs text-muted-foreground">Aucun article — ajoutez-en ci-dessous.</td></tr>
-                    )}
-                    {list.map((a) => (
-                      <tr key={a.id} className="border-t">
-                        <td className="p-2">{a.name}</td>
-                        <td className="p-2">
-                          <div className="flex justify-end">
-                            <Input
-                              type="number"
-                              step="any"
-                              defaultValue={a.dose}
-                              disabled={!canEdit}
-                              className="h-8 w-24 text-right"
-                              onBlur={(e) => changeDose(a, e.target.value)}
-                            />
-                          </div>
-                        </td>
-                        <td className="p-2">
-                          <div className="flex justify-end">
-                            {numInput(day.VENTES[a.id] ?? null, (v) =>
-                              setDay((d) => ({ ...d, VENTES: { ...d.VENTES, [a.id]: v === "" ? 0 : Number(v) } })),
-                            )}
-                          </div>
-                        </td>
-                        <td className="p-2 text-right">{fmt((day.VENTES[a.id] ?? 0) * a.dose)}</td>
-                        {canEdit && (
-                          <td className="p-2 text-right">
-                            <button onClick={() => removeArticle(a)} className="text-destructive p-1" title="Supprimer">
-                              <Trash2 className="h-4 w-4" />
-                            </button>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                    {canEdit && (
-                      <tr className="border-t bg-muted/20">
-                        <td className="p-2">
-                          <Input
-                            placeholder="Nouvel article"
-                            value={newArt[z.key].name}
-                            onChange={(e) => setNewArt((s) => ({ ...s, [z.key]: { ...s[z.key], name: e.target.value } }))}
-                            className="h-8"
-                          />
-                        </td>
-                        <td className="p-2">
-                          <div className="flex justify-end">
-                            <Input
-                              type="number"
-                              step="any"
-                              placeholder="Dose"
-                              value={newArt[z.key].dose}
-                              onChange={(e) => setNewArt((s) => ({ ...s, [z.key]: { ...s[z.key], dose: e.target.value } }))}
-                              className="h-8 w-24 text-right"
-                            />
-                          </div>
-                        </td>
-                        <td colSpan={3} className="p-2 text-right">
-                          <Button size="sm" variant="outline" className="gap-1" onClick={() => createArticle(z.key)}>
-                            <Plus className="h-4 w-4" /> Ajouter
-                          </Button>
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            );
-          })}
-        </>
-      )}
+        </div>}
     </div>
   );
 }
