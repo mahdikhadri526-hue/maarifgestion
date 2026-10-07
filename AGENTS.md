@@ -15,3 +15,4 @@
 - Serve the pre-generated welcome signature as a static audio asset, not a per-login synthesis call, to keep sign-in fast and predictable.
 - Keep product discrepancy views separate from ice-cream logic and persist their existing prefixed sections in ecart_lines, so presentation changes preserve historical data and calculations.
 - Self-hosted copies: voice guides and welcome photos fall back to /stockage/<bucket>/<path> shipped beside the built app when storage signing or playback fails, so offline-server packages play without a storage service.
+- Photo-scan reading in `supabase/functions/scan-stock-entry` picks its provider by secret: `GOOGLE_API_KEY` (model from `GEMINI_MODEL`, cheapest tier by default) on self-hosted servers, otherwise the built-in Lovable AI service, so one build runs both online and on the offline server without shipping a key in the app.
