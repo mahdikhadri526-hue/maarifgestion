@@ -38,7 +38,8 @@ const fmt = (v: number) => new Intl.NumberFormat("fr-FR", { maximumFractionDigit
 
 export function EcartProduitModule({ product }: { product: ProduitKey }) {
   const { can, isAdmin, isRegionalAdmin } = useAuth();
-  const canEdit = can("edit_ecarts") || isAdmin || isRegionalAdmin;
+  const editPerm = product === "CAFE" ? "edit_ecart_cafe" : "edit_ecart_sidiali";
+  const canEdit = can(editPerm) || can("edit_ecarts") || isAdmin || isRegionalAdmin;
   const cfg = PRODUITS[product];
 
   const [view, setView] = useState<View>("ecarts");
@@ -331,11 +332,13 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
 }
 
 export function EcartHub({ glace }: { glace: React.ReactNode }) {
+  const { can, isAdmin, isRegionalAdmin } = useAuth();
+  const full = isAdmin || isRegionalAdmin;
   const [tab, setTab] = useState<"GLACE" | ProduitKey>("GLACE");
   const tabs: { key: "GLACE" | ProduitKey; label: string }[] = [
     { key: "GLACE", label: "Glace" },
-    { key: "CAFE", label: "Café Dubois" },
-    { key: "SIDIALI", label: "Sidi Ali" },
+    ...(full || can("view_ecart_cafe") || can("view_ecarts") ? [{ key: "CAFE" as const, label: "Café Dubois" }] : []),
+    ...(full || can("view_ecart_sidiali") || can("view_ecarts") ? [{ key: "SIDIALI" as const, label: "Sidi Ali" }] : []),
   ];
   return (
     <div className="space-y-4">
