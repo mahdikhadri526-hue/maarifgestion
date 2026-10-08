@@ -514,7 +514,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
               size="sm"
               className="w-full h-9 justify-start"
               onClick={() => { setPermSearch(""); setEditing(u); }}
-              disabled={isMe || locked}
+              disabled={isMe}
             >
               <Settings2 className="h-4 w-4 mr-2" /> Configurer
             </Button>
