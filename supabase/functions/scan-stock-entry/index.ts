@@ -16,7 +16,7 @@ const CORS = {
  *   (3 à 4 fois plus cher) dans les variables du serveur.
  * - LOVABLE_API_KEY : utilisé sur l'hébergement Lovable (aucune clé à gérer).
  */
-const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-2.5-flash-lite";
+const GEMINI_MODEL = Deno.env.get("GEMINI_MODEL") || "gemini-3.5-flash-lite";
 
 const USER_TEXT =
   "Extrait les entrées de stock de cette photo (article, quantité, n° de lot).";
