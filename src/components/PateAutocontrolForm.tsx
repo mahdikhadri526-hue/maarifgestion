@@ -7,6 +7,7 @@ import { getProducts } from "@/lib/stockData";
 import { useManagers } from "@/lib/roster";
 import { supabase } from "@/lib/db";
 import { addAutocontrol, type FicheType, type ConformityStatus } from "@/lib/autocontrolData";
+import { formatDateFR } from "@/lib/utils";
 
 export const PATE_FICHES: Record<string, { article: string; ingredients: string[] }> = {
   "Pâte à crêpe": {
@@ -37,7 +38,14 @@ const CONTROLS: { key: "etiquettes" | "aspectOdeur" | "conservation"; label: str
   { key: "conservation", label: "Conservation" },
 ];
 
-const today = () => new Date().toISOString().slice(0, 10);
+const localIso = () => {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
+const today = () => localIso();
+// Date du jour au format JJ.MM.AAAA, utilisée pour préremplir « N° lot / Date de production ».
+const todayFr = () => formatDateFR(localIso());
 
 export function PateAutocontrolForm({
   ficheType,
@@ -53,7 +61,7 @@ export function PateAutocontrolForm({
   const [agent, setAgent] = useState("");
   const [ings, setIngs] = useState(def.ingredients.map((name) => ({ name, quantity: "", lot: "" })));
   const [qty, setQty] = useState("");
-  const [lot, setLot] = useState("");
+  const [lot, setLot] = useState(todayFr());
   const [controls, setControls] = useState<Record<string, ConformityStatus>>({});
   const [visa, setVisa] = useState("");
   const [notes, setNotes] = useState("");
@@ -89,6 +97,7 @@ export function PateAutocontrolForm({
   useEffect(() => {
     setIngs(def.ingredients.map((name) => ({ name, quantity: "", lot: "" })));
     setControls({});
+    setLot(todayFr());
     autoFillLots();
   }, [ficheType]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -137,7 +146,7 @@ export function PateAutocontrolForm({
       toast.success(`Fiche ${def.article} enregistrée`);
       setIngs(def.ingredients.map((name) => ({ name, quantity: "", lot: "" })));
       setQty("");
-      setLot("");
+      setLot(todayFr());
       setControls({});
       setVisa("");
       setNotes("");
