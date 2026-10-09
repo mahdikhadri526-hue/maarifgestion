@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { getProducts } from "@/lib/stockData";
 import { useManagers } from "@/lib/roster";
-import { fetchFifoLotForProduct } from "@/components/AutocontrolManager";
+import { supabase } from "@/lib/db";
 import { addAutocontrol, type FicheType, type ConformityStatus } from "@/lib/autocontrolData";
 
 export const PATE_FICHES: Record<string, { article: string; ingredients: string[] }> = {
@@ -60,16 +60,30 @@ export function PateAutocontrolForm({
   const [saving, setSaving] = useState(false);
   const managerOptions = useManagers();
 
+  const [lotChoices, setLotChoices] = useState<Record<string, string[]>>({});
+
+  // Trois derniers lots enregistrés pour chaque matière première (sauf l'œuf, saisi à la main).
   const autoFillLots = async () => {
     const products = getProducts("alimentaire");
-    const lots = await Promise.all(
+    const entries = await Promise.all(
       def.ingredients.map(async (name) => {
         const pat = LOT_PATTERN[name];
         const prod = pat && products.find((p) => pat.test(p.name));
-        return prod ? await fetchFifoLotForProduct(prod.id) : null;
+        if (!prod) return [name, []] as const;
+        const { data } = await supabase
+          .from("lot_entries")
+          .select("lot_number, entry_date, created_at")
+          .eq("product_id", prod.id)
+          .order("entry_date", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(20);
+        const uniq = Array.from(new Set((data ?? []).map((r: any) => String(r.lot_number ?? "").trim()).filter(Boolean)));
+        return [name, uniq.slice(0, 3)] as const;
       }),
     );
-    setIngs((s) => s.map((x, i) => (x.lot.trim() || !lots[i] ? x : { ...x, lot: lots[i] as string })));
+    const map = Object.fromEntries(entries) as Record<string, string[]>;
+    setLotChoices(map);
+    setIngs((s) => s.map((x) => (LOT_PATTERN[x.name] ? { ...x, lot: map[x.name]?.[0] ?? "" } : x)));
   };
 
   useEffect(() => {
@@ -181,14 +195,34 @@ export function PateAutocontrolForm({
                   />
                 </td>
                 <td className="p-1">
-                  <Input
-                    className="h-8 min-w-[110px]"
-                    placeholder={LOT_PATTERN[i.name] ? "Auto" : "Saisir"}
-                    value={i.lot}
-                    onChange={(e) =>
-                      setIngs((s) => s.map((x, j) => (j === idx ? { ...x, lot: e.target.value } : x)))
-                    }
-                  />
+                  {LOT_PATTERN[i.name] ? (
+                    (lotChoices[i.name]?.length ?? 0) > 0 ? (
+                      <Select
+                        value={i.lot}
+                        onValueChange={(v) =>
+                          setIngs((s) => s.map((x, j) => (j === idx ? { ...x, lot: v } : x)))
+                        }
+                      >
+                        <SelectTrigger className="h-8 min-w-[110px]"><SelectValue placeholder="Choisir" /></SelectTrigger>
+                        <SelectContent>
+                          {lotChoices[i.name].map((l) => (
+                            <SelectItem key={l} value={l}>{l}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Aucun lot en stock</span>
+                    )
+                  ) : (
+                    <Input
+                      className="h-8 min-w-[110px]"
+                      placeholder="Saisir"
+                      value={i.lot}
+                      onChange={(e) =>
+                        setIngs((s) => s.map((x, j) => (j === idx ? { ...x, lot: e.target.value } : x)))
+                      }
+                    />
+                  )}
                 </td>
               </tr>
             ))}
