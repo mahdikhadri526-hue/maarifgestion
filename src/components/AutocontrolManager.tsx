@@ -59,6 +59,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 
+import { PateAutocontrolForm, isPateFiche } from "@/components/PateAutocontrolForm";
+
 const CLAIMS_FICHE = "Réclamations & Retours";
 
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
@@ -67,6 +69,8 @@ const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Panaché": "",
   "Cornet/Tulipe/Gaufrette": "Cornet",
   "Suivi perte produit et casse matériel": "",
+  "Pâte à gaufre": "Pâte à gaufre",
+  "Pâte à crêpe": "Pâte à crêpe",
   "Autre": "",
 };
 
@@ -1263,7 +1267,10 @@ export function AutocontrolManager() {
             </SelectContent>
           </Select>
         </div>
-        {!showClaims && (
+        {!showClaims && isPateFiche(form.ficheType) && (
+          <PateAutocontrolForm ficheType={form.ficheType} operatorOptions={operatorOptions} onSaved={refresh} />
+        )}
+        {!showClaims && !isPateFiche(form.ficheType) && (
         <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
           <div>
