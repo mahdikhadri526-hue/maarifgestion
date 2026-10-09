@@ -1,6 +1,6 @@
 # Roadmap
-- [ ] Créer une présentation PowerPoint française des seules rubriques publiées, avec objectifs, éléments et captures.
-- [ ] Créer et vérifier la version arabe de la même présentation.
+- [x] Créer une présentation PowerPoint française des seules rubriques publiées, avec objectifs, éléments et captures.
+- [x] Créer et vérifier la version arabe de la même présentation.
 - [x] Aligner les tableaux Café Dubois et Sidi Ali sur la structure de l’écart glace, sans changer les calculs existants.
 
 - [x] Utiliser uniquement les cinq premières secondes de la musique fournie, une seule fois pendant l’introduction.
