@@ -3,17 +3,30 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getProducts } from "@/lib/stockData";
+import { useManagers } from "@/lib/roster";
+import { fetchFifoLotForProduct } from "@/components/AutocontrolManager";
 import { addAutocontrol, type FicheType, type ConformityStatus } from "@/lib/autocontrolData";
 
 export const PATE_FICHES: Record<string, { article: string; ingredients: string[] }> = {
   "Pâte à crêpe": {
     article: "Pâte à crêpe",
-    ingredients: ["Œuf", "Sucre semoule", "Beurre", "Lait"],
+    ingredients: ["Œuf", "Sucre granulé", "Beurre", "Lait"],
   },
   "Pâte à gaufre": {
     article: "Pâte à gaufre",
-    ingredients: ["Œuf", "Sucre semoule", "Beurre", "Lait", "Farine", "Levure déshydratée", "Sel"],
+    ingredients: ["Œuf", "Sucre granulé", "Beurre", "Lait", "Farine", "Levure déshydratée", "Sel"],
   },
+};
+
+// Ingrédients dont le lot est importé automatiquement (FIFO Gestion des lots). L'œuf reste manuel.
+const LOT_PATTERN: Record<string, RegExp> = {
+  "Sucre granulé": /SUCRE\s*GRANUL/i,
+  "Beurre": /BEURRE/i,
+  "Lait": /LAIT/i,
+  "Farine": /FARINE/i,
+  "Levure déshydratée": /LEVURE/i,
+  "Sel": /^SEL\b/i,
 };
 
 export const isPateFiche = (t: string) => t in PATE_FICHES;
@@ -45,10 +58,24 @@ export function PateAutocontrolForm({
   const [visa, setVisa] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const managerOptions = useManagers();
+
+  const autoFillLots = async () => {
+    const products = getProducts("alimentaire");
+    const lots = await Promise.all(
+      def.ingredients.map(async (name) => {
+        const pat = LOT_PATTERN[name];
+        const prod = pat && products.find((p) => pat.test(p.name));
+        return prod ? await fetchFifoLotForProduct(prod.id) : null;
+      }),
+    );
+    setIngs((s) => s.map((x, i) => (x.lot.trim() || !lots[i] ? x : { ...x, lot: lots[i] as string })));
+  };
 
   useEffect(() => {
     setIngs(def.ingredients.map((name) => ({ name, quantity: "", lot: "" })));
     setControls({});
+    autoFillLots();
   }, [ficheType]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = async (e: React.FormEvent) => {
@@ -100,6 +127,7 @@ export function PateAutocontrolForm({
       setControls({});
       setVisa("");
       setNotes("");
+      autoFillLots();
       onSaved();
     } catch (err: any) {
       toast.error("Erreur d'enregistrement", { description: err?.message ?? String(err) });
@@ -155,6 +183,7 @@ export function PateAutocontrolForm({
                 <td className="p-1">
                   <Input
                     className="h-8 min-w-[110px]"
+                    placeholder={LOT_PATTERN[i.name] ? "Auto" : "Saisir"}
                     value={i.lot}
                     onChange={(e) =>
                       setIngs((s) => s.map((x, j) => (j === idx ? { ...x, lot: e.target.value } : x)))
@@ -200,7 +229,15 @@ export function PateAutocontrolForm({
         ))}
         <div>
           <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
-          <Input value={visa} onChange={(e) => setVisa(e.target.value)} placeholder="Nom du manager" />
+          <Select value={visa || "__none__"} onValueChange={(v) => setVisa(v === "__none__" ? "" : v)}>
+            <SelectTrigger><SelectValue placeholder="Sélectionner un manager" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">— Aucun —</SelectItem>
+              {managerOptions.map((m) => (
+                <SelectItem key={m} value={m}>{m}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

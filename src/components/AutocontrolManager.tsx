@@ -151,7 +151,7 @@ const DECORATION_TARTE_ARTICLE: Record<string, string> = {
   "Cassate sicilienne": "Sicilienne vanille",
 };
 
-async function fetchFifoLotForProduct(productId: string): Promise<string | null> {
+export async function fetchFifoLotForProduct(productId: string): Promise<string | null> {
   // 1) Priorité FIFO sur les lots encore en stock (remaining_quantity > 0)
   const { data: avail, error: availErr } = await supabase
     .from("lot_entries")
