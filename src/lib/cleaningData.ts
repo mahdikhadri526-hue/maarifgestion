@@ -126,6 +126,8 @@ export interface CleaningLog {
   collaborateur: string;
   tasks: Record<string, CleaningStatus>;
   visaManager: string | null;
+  qualityValidator: string | null;
+  qualityConformity: "C" | "NC" | null;
   notes: string | null;
   createdAt: string;
 }
@@ -200,6 +202,8 @@ function mapRow(r: any): CleaningLog {
     collaborateur: r.collaborateur,
     tasks: (r.tasks ?? {}) as Record<string, CleaningStatus>,
     visaManager: r.visa_manager,
+    qualityValidator: r.quality_validator ?? null,
+    qualityConformity: r.quality_conformity ?? null,
     notes: r.notes,
     createdAt: r.created_at,
   };
@@ -220,6 +224,8 @@ export async function addCleaningLog(entry: Omit<CleaningLog, "id" | "createdAt"
     collaborateur: entry.collaborateur,
     tasks: entry.tasks,
     visa_manager: entry.visaManager,
+    quality_validator: entry.qualityValidator,
+    quality_conformity: entry.qualityConformity,
     notes: entry.notes,
   });
   if (error) throw error;
@@ -230,10 +236,12 @@ export async function deleteCleaningLog(id: string) {
   if (error) throw error;
 }
 
-export async function updateCleaningLog(id: string, patch: Partial<Pick<CleaningLog, "tasks" | "visaManager" | "notes">>) {
+export async function updateCleaningLog(id: string, patch: Partial<Pick<CleaningLog, "tasks" | "visaManager" | "notes" | "qualityValidator" | "qualityConformity">>) {
   const payload: any = {};
   if (patch.tasks !== undefined) payload.tasks = patch.tasks;
   if (patch.visaManager !== undefined) payload.visa_manager = patch.visaManager;
+  if (patch.qualityValidator !== undefined) payload.quality_validator = patch.qualityValidator;
+  if (patch.qualityConformity !== undefined) payload.quality_conformity = patch.qualityConformity;
   if (patch.notes !== undefined) payload.notes = patch.notes;
   const { error } = await db().update(payload).eq("id", id);
   if (error) throw error;
