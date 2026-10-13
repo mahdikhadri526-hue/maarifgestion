@@ -13,6 +13,33 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Trash2, Check, X, Save, Sparkles, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { CleaningValidations } from "@/components/CleaningValidations";
+import { QUALITY_ACCOUNT_EMAIL, setCleaningQuality } from "@/lib/cleaningData";
+
+function ColHeaders() {
+  return (
+    <div className="flex items-center gap-2 px-2 text-[11px] font-semibold text-muted-foreground">
+      <div className="flex-1" />
+      <div className="w-[76px] text-center">Manager</div>
+      <div className="w-[76px] text-center">Service qualité</div>
+    </div>
+  );
+}
+
+function QualityButtons({ value, canEdit, onSet }: { value: "C" | "NC" | null; canEdit: boolean; onSet: (v: "C" | "NC" | null) => void }) {
+  return (
+    <div className="flex gap-1 w-[76px] justify-center">
+      {(["C", "NC"] as const).map((k) => (
+        <button
+          key={k}
+          type="button"
+          disabled={!canEdit}
+          onClick={() => onSet(value === k ? null : k)}
+          className={`px-2 py-1 text-xs font-semibold rounded-md border disabled:cursor-not-allowed ${value === k ? (k === "C" ? "bg-green-600 text-white border-green-600" : "bg-red-600 text-white border-red-600") : "bg-background " + (canEdit ? "" : "opacity-40")}`}
+        >{k}</button>
+      ))}
+    </div>
+  );
+}
 
 const CLEANING_EXTRA_OPERATORS = [
   "ANNINY HASSANIA",
@@ -186,6 +213,22 @@ export function CleaningManager() {
     }
   };
 
+  const isQuality = (user?.email ?? "").toLowerCase() === QUALITY_ACCOUNT_EMAIL;
+  const setQuality = async (logId: string, task: string, q: "C" | "NC" | null) => {
+    setLogs((prev) => prev.map((l) => {
+      if (l.id !== logId) return l;
+      const next = { ...(l.qualityTasks ?? {}) };
+      if (q) next[task] = q; else delete next[task];
+      return { ...l, qualityTasks: next };
+    }));
+    try {
+      await setCleaningQuality(logId, task, q);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erreur");
+      refresh();
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-card border rounded-xl p-4 sm:p-6 shadow-sm space-y-4">
@@ -251,6 +294,7 @@ export function CleaningManager() {
             </div>
 
             <div className="space-y-2">
+              <ColHeaders />
               {zone.tasks.map((t) => {
                 const v = tasks[t];
                 const isDone = v === "F" || v === "C" || v === "NC";
@@ -290,6 +334,7 @@ export function CleaningManager() {
                         NC
                       </button>
                     </div>
+                    <QualityButtons value={null} canEdit={false} onSet={() => {}} />
                   </div>
                 );
               })}
@@ -377,6 +422,7 @@ export function CleaningManager() {
                     </div>
                     {editingId === l.id ? (
                       <div className="space-y-2 border-t pt-2">
+                        <ColHeaders />
                         {zoneTasks.map((t) => {
                           const v = editTasks[t];
                           const isDone = v === "F" || v === "C" || v === "NC";
@@ -403,6 +449,7 @@ export function CleaningManager() {
                                   className={`px-2 py-1 text-xs font-semibold rounded-md border disabled:opacity-40 ${v === "NC" ? "bg-red-600 text-white border-red-600" : "bg-background"}`}
                                 >NC</button>
                               </div>
+                              <QualityButtons value={l.qualityTasks?.[t] ?? null} canEdit={false} onSet={() => {}} />
                             </div>
                           );
                         })}
@@ -428,6 +475,7 @@ export function CleaningManager() {
                       </div>
                     ) : (
                     <div className="space-y-1 border-t pt-2">
+                      <ColHeaders />
                       {zoneTasks.map((t) => {
                         const v = l.tasks[t];
                         return (
@@ -439,7 +487,7 @@ export function CleaningManager() {
                               )}
                             </span>
                             <span
-                              className={`px-2 py-0.5 rounded font-semibold border ${
+                              className={`w-[76px] text-center px-2 py-0.5 rounded font-semibold border ${
                                 v === "F"
                                   ? "bg-blue-600 text-white border-blue-600"
                                   : v === "C"
@@ -451,6 +499,11 @@ export function CleaningManager() {
                             >
                               {v === "F" ? "Fait" : v ?? "—"}
                             </span>
+                            <QualityButtons
+                              value={l.qualityTasks?.[t] ?? null}
+                              canEdit={isQuality}
+                              onSet={(q) => setQuality(l.id, t, q)}
+                            />
                           </div>
                         );
                       })}
