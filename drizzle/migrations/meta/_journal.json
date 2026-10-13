@@ -57,6 +57,13 @@
       "when": 1791296914601,
       "tag": "0007_cafe_ecart_unite_grammes",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791897125229,
+      "tag": "0008_product_catalog_per_pdv",
+      "breakpoints": true
     }
   ]
 }
