@@ -128,6 +128,7 @@ export interface CleaningLog {
   visaManager: string | null;
   qualityValidator: string | null;
   qualityConformity: "C" | "NC" | null;
+  qualityTasks?: Record<string, "C" | "NC">;
   notes: string | null;
   createdAt: string;
 }
@@ -204,9 +205,18 @@ function mapRow(r: any): CleaningLog {
     visaManager: r.visa_manager,
     qualityValidator: r.quality_validator ?? null,
     qualityConformity: r.quality_conformity ?? null,
+    qualityTasks: (r.quality_tasks ?? {}) as Record<string, "C" | "NC">,
     notes: r.notes,
     createdAt: r.created_at,
   };
+}
+
+export const QUALITY_ACCOUNT_EMAIL = "gestion-qualite@oliveri.com";
+
+/** Évaluation C/NC du service qualité, par tâche (réservée au compte qualité). */
+export async function setCleaningQuality(logId: string, task: string, value: "C" | "NC" | null) {
+  const { error } = await (supabase as any).rpc("set_cleaning_quality", { _log_id: logId, _task: task, _value: value });
+  if (error) throw error;
 }
 
 export async function getCleaningLogs(zone?: string): Promise<CleaningLog[]> {
