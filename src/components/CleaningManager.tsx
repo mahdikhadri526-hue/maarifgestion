@@ -15,12 +15,12 @@ import { toast } from "sonner";
 import { CleaningValidations } from "@/components/CleaningValidations";
 import { QUALITY_ACCOUNT_EMAIL, setCleaningQuality } from "@/lib/cleaningData";
 
-function ColHeaders() {
+function ColHeaders({ showQuality = true }: { showQuality?: boolean }) {
   return (
     <div className="flex items-center gap-2 px-2 text-[11px] font-semibold text-muted-foreground">
       <div className="flex-1" />
       <div className="w-[76px] text-center">Manager</div>
-      <div className="w-[76px] text-center">Service qualité</div>
+      {showQuality && <div className="w-[76px] text-center">Service qualité</div>}
     </div>
   );
 }
@@ -294,7 +294,7 @@ export function CleaningManager() {
             </div>
 
             <div className="space-y-2">
-              <ColHeaders />
+              <ColHeaders showQuality={false} />
               {zone.tasks.map((t) => {
                 const v = tasks[t];
                 const isDone = v === "F" || v === "C" || v === "NC";
@@ -334,7 +334,6 @@ export function CleaningManager() {
                         NC
                       </button>
                     </div>
-                    <QualityButtons value={null} canEdit={false} onSet={() => {}} />
                   </div>
                 );
               })}
