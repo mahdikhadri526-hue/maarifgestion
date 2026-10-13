@@ -280,6 +280,8 @@ export type Database = {
           log_date: string
           notes: string | null
           pdv_id: string
+          quality_conformity: string | null
+          quality_validator: string | null
           tasks: Json
           updated_at: string
           visa_manager: string | null
@@ -292,6 +294,8 @@ export type Database = {
           log_date: string
           notes?: string | null
           pdv_id?: string
+          quality_conformity?: string | null
+          quality_validator?: string | null
           tasks?: Json
           updated_at?: string
           visa_manager?: string | null
@@ -304,6 +308,8 @@ export type Database = {
           log_date?: string
           notes?: string | null
           pdv_id?: string
+          quality_conformity?: string | null
+          quality_validator?: string | null
           tasks?: Json
           updated_at?: string
           visa_manager?: string | null
