@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Séparer les validations manager/qualité du nettoyage, ajouter et vérifier la conformité qualité à droite.
 - [x] Créer une présentation PowerPoint française des seules rubriques publiées, avec objectifs, éléments et captures.
 - [x] Créer et vérifier la version arabe de la même présentation.
 - [x] Aligner les tableaux Café Dubois et Sidi Ali sur la structure de l’écart glace, sans changer les calculs existants.
