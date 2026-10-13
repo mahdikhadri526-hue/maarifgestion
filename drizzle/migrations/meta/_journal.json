@@ -64,6 +64,13 @@
       "when": 1791897125229,
       "tag": "0008_product_catalog_per_pdv",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791927487229,
+      "tag": "0009_cleaning_quality_validation",
+      "breakpoints": true
     }
   ]
 }

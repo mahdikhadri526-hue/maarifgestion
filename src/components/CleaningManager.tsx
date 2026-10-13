@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Trash2, Check, X, Save, Sparkles, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { CleaningValidations } from "@/components/CleaningValidations";
 
 const CLEANING_EXTRA_OPERATORS = [
   "ANNINY HASSANIA",
@@ -55,6 +56,8 @@ export function CleaningManager() {
   const [date, setDate] = useState(todayISO());
   const [collaborateur, setCollaborateur] = useState("");
   const [visa, setVisa] = useState("");
+  const [qualityValidator, setQualityValidator] = useState<string | null>(null);
+  const [qualityConformity, setQualityConformity] = useState<"C" | "NC" | null>(null);
   const [notes, setNotes] = useState("");
   const [tasks, setTasks] = useState<Record<string, CleaningStatus>>({});
   const [historyDate, setHistoryDate] = useState<string>("");
@@ -64,6 +67,8 @@ export function CleaningManager() {
   const [editTasks, setEditTasks] = useState<Record<string, CleaningStatus>>({});
   const [editNotes, setEditNotes] = useState("");
   const [editVisa, setEditVisa] = useState("");
+  const [editQualityValidator, setEditQualityValidator] = useState<string | null>(null);
+  const [editQualityConformity, setEditQualityConformity] = useState<"C" | "NC" | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
   const { user, isAdmin } = useAuth();
   const rosterAllowed = useRosterAllowed();
@@ -113,12 +118,16 @@ export function CleaningManager() {
         collaborateur,
         tasks,
         visaManager: visa || null,
+        qualityValidator: qualityValidator?.trim() || null,
+        qualityConformity,
         notes: notes.trim() || null,
       });
       toast.success("Fiche enregistrée");
       setTasks({});
       setNotes("");
       setVisa("");
+      setQualityValidator(null);
+      setQualityConformity(null);
       refresh();
     } catch (e: any) {
       toast.error(e.message ?? "Erreur");
@@ -143,6 +152,8 @@ export function CleaningManager() {
     setEditTasks({ ...l.tasks });
     setEditNotes(l.notes ?? "");
     setEditVisa(l.visaManager ?? "");
+    setEditQualityValidator(l.qualityValidator);
+    setEditQualityConformity(l.qualityConformity);
   };
 
   const cancelEdit = () => {
@@ -150,6 +161,8 @@ export function CleaningManager() {
     setEditTasks({});
     setEditNotes("");
     setEditVisa("");
+    setEditQualityValidator(null);
+    setEditQualityConformity(null);
   };
 
   const saveEdit = async () => {
@@ -160,6 +173,8 @@ export function CleaningManager() {
         tasks: editTasks,
         notes: editNotes.trim() || null,
         visaManager: editVisa || null,
+        qualityValidator: editQualityValidator?.trim() || null,
+        qualityConformity: editQualityConformity,
       });
       toast.success("Fiche mise à jour");
       cancelEdit();
@@ -285,15 +300,15 @@ export function CleaningManager() {
               <Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} />
             </div>
 
-            <div>
-              <Label>Visa Manager</Label>
-              <Select value={visa} onValueChange={setVisa}>
-                <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
-                <SelectContent>
-                  {managerOptions.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
+            <CleaningValidations
+              managerOptions={managerOptions}
+              value={{ visaManager: visa || null, qualityValidator, qualityConformity }}
+              onChange={(v) => {
+                setVisa(v.visaManager ?? "");
+                setQualityValidator(v.qualityValidator);
+                setQualityConformity(v.qualityConformity);
+              }}
+            />
 
             <Button onClick={save} disabled={saving} className="w-full sm:w-auto">
               <Save className="h-4 w-4 mr-2" /> Enregistrer la fiche
@@ -347,9 +362,7 @@ export function CleaningManager() {
                     <div className="flex items-start gap-3 flex-wrap">
                       <div className="flex-1 min-w-[180px]">
                         <div className="font-medium text-sm">{z?.label ?? l.zone} — {l.collaborateur}</div>
-                        {l.visaManager && (
-                          <div className="text-xs text-muted-foreground">Visa: {l.visaManager}</div>
-                        )}
+
                       </div>
                       {user?.email !== "gestionmaarif1@gmail.com" && editingId !== l.id && (isAdmin || l.logDate === todayISO()) && (
                         <Button size="sm" variant="ghost" onClick={() => startEdit(l)}>
@@ -397,15 +410,15 @@ export function CleaningManager() {
                           <Label className="text-xs">Notes</Label>
                           <Textarea value={editNotes} onChange={(e) => setEditNotes(e.target.value)} rows={2} />
                         </div>
-                        <div>
-                          <Label className="text-xs">Visa Manager</Label>
-                          <Select value={editVisa} onValueChange={setEditVisa}>
-                            <SelectTrigger><SelectValue placeholder="Choisir..." /></SelectTrigger>
-                            <SelectContent>
-                              {managerOptions.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                        <CleaningValidations
+                          managerOptions={managerOptions}
+                          value={{ visaManager: editVisa || null, qualityValidator: editQualityValidator, qualityConformity: editQualityConformity }}
+                          onChange={(v) => {
+                            setEditVisa(v.visaManager ?? "");
+                            setEditQualityValidator(v.qualityValidator);
+                            setEditQualityConformity(v.qualityConformity);
+                          }}
+                        />
                         <div className="flex gap-2">
                           <Button size="sm" onClick={saveEdit} disabled={savingEdit}>
                             <Save className="h-4 w-4 mr-1" /> Enregistrer
@@ -446,8 +459,8 @@ export function CleaningManager() {
                     {editingId !== l.id && l.notes && (
                       <div className="text-xs italic border-t pt-2"><span className="font-semibold not-italic">Notes :</span> {l.notes}</div>
                     )}
-                    {editingId !== l.id && l.visaManager && (
-                      <div className="text-xs"><span className="font-semibold">Visa Manager :</span> {l.visaManager}</div>
+                    {editingId !== l.id && (
+                      <CleaningValidations managerOptions={managerOptions} value={l} />
                     )}
                   </div>
                 );
