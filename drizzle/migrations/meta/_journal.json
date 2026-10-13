@@ -71,6 +71,13 @@
       "when": 1791927487229,
       "tag": "0009_cleaning_quality_validation",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791928061094,
+      "tag": "0010_cleaning_quality_tasks",
+      "breakpoints": true
     }
   ]
 }
