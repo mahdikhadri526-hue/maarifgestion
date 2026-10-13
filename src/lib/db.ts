@@ -20,6 +20,7 @@ const PDV_SCOPED_TABLES = new Set<string>([
   "lot_entries",
   "order_placed_products",
   "pep_tasks",
+  "product_catalog",
   "pep_holidays",
   "pep_occurrences",
   "pep_postponements",

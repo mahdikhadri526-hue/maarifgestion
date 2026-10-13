@@ -1684,6 +1684,7 @@ export type Database = {
           hidden: boolean
           id: string
           name: string
+          pdv_id: string | null
           product_id: string
           sort_order: number
           updated_at: string
@@ -1695,6 +1696,7 @@ export type Database = {
           hidden?: boolean
           id?: string
           name: string
+          pdv_id?: string | null
           product_id: string
           sort_order?: number
           updated_at?: string
@@ -1706,11 +1708,20 @@ export type Database = {
           hidden?: boolean
           id?: string
           name?: string
+          pdv_id?: string | null
           product_id?: string
           sort_order?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "product_catalog_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       production_entries: {
         Row: {
