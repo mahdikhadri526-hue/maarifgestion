@@ -281,6 +281,7 @@ export type Database = {
           notes: string | null
           pdv_id: string
           quality_conformity: string | null
+          quality_tasks: Json
           quality_validator: string | null
           tasks: Json
           updated_at: string
@@ -295,6 +296,7 @@ export type Database = {
           notes?: string | null
           pdv_id?: string
           quality_conformity?: string | null
+          quality_tasks?: Json
           quality_validator?: string | null
           tasks?: Json
           updated_at?: string
@@ -309,6 +311,7 @@ export type Database = {
           notes?: string | null
           pdv_id?: string
           quality_conformity?: string | null
+          quality_tasks?: Json
           quality_validator?: string | null
           tasks?: Json
           updated_at?: string
@@ -2664,7 +2667,12 @@ export type Database = {
         Args: { _agent_id: string; _user_id: string }
         Returns: boolean
       }
+      is_quality_account: { Args: { _user_id: string }; Returns: boolean }
       is_regional_admin: { Args: { _user_id: string }; Returns: boolean }
+      set_cleaning_quality: {
+        Args: { _log_id: string; _task: string; _value: string }
+        Returns: undefined
+      }
       shares_pdv: {
         Args: { _target: string; _viewer: string }
         Returns: boolean
