@@ -117,6 +117,7 @@ export function CleaningManager() {
 
   useEffect(() => {
     setTasks({});
+    setProductionOff(false);
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoneKey]);
@@ -135,7 +136,7 @@ export function CleaningManager() {
     if (!zone) return toast.error("Sélectionnez une zone");
     if (!collaborateur) return toast.error("Sélectionnez un collaborateur");
     const filled = zone.tasks.filter((t) => tasks[t] === "F" || tasks[t] === "C" || tasks[t] === "NC").length;
-    if (filled === 0) return toast.error("Cochez au moins une tâche");
+    if (!productionOff && filled === 0) return toast.error("Cochez au moins une tâche");
     const exists = logs.some((l) => l.zone === zoneKey && l.logDate === date);
     if (exists) return toast.error("Une fiche est déjà enregistrée pour cette zone et cette date");
     setSaving(true);
