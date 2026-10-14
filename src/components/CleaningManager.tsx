@@ -87,6 +87,7 @@ export function CleaningManager() {
   const [qualityConformity, setQualityConformity] = useState<"C" | "NC" | null>(null);
   const [notes, setNotes] = useState("");
   const [tasks, setTasks] = useState<Record<string, CleaningStatus>>({});
+  const [productionOff, setProductionOff] = useState(false);
   const [historyDate, setHistoryDate] = useState<string>("");
   const [logs, setLogs] = useState<CleaningLog[]>([]);
   const [saving, setSaving] = useState(false);
