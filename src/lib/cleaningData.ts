@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/db";
 
-export type CleaningStatus = "F" | "C" | "NC" | null;
+export type CleaningStatus = "F" | "C" | "NC" | "OFF" | null;
 
 export interface CleaningZone {
   key: string;
