@@ -509,10 +509,12 @@ export function CleaningManager() {
                                   ? "bg-green-600 text-white border-green-600"
                                   : v === "NC"
                                   ? "bg-red-600 text-white border-red-600"
+                                  : v === "OFF"
+                                  ? "bg-amber-500 text-white border-amber-500"
                                   : "bg-muted text-muted-foreground"
                               }`}
                             >
-                              {v === "F" ? "Fait" : v ?? "—"}
+                              {v === "F" ? "Fait" : v === "OFF" ? "OFF" : v ?? "—"}
                             </span>
                             <QualityButtons
                               value={l.qualityTasks?.[t] ?? null}
