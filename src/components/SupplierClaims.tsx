@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Camera, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { requireCurrentPdvId } from "@/lib/pdvStore";
+import { getCurrentPdvId } from "@/lib/pdvStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { QUALITY_ACCOUNT_EMAIL } from "@/lib/cleaningData";
 import { formatDateFR } from "@/lib/utils";
@@ -19,8 +19,8 @@ const empty = () => ({
   description: "", quantite_nc: "", action_prise: "", statut: "Ouverte", pieces_jointes: "",
 });
 
-export function SupplierClaims() {
-  const { user, pdv, isAdmin, hasAdminRole } = useAuth();
+export function SupplierClaims({ standalone = false }: { standalone?: boolean }) {
+  const { user, pdv, pdvs, isAdmin, hasAdminRole } = useAuth();
   const isQuality = (user?.email ?? "").toLowerCase() === QUALITY_ACCOUNT_EMAIL;
   const [rows, setRows] = useState<any[]>([]);
   const [form, setForm] = useState(empty());
@@ -28,10 +28,14 @@ export function SupplierClaims() {
   const db = supabase as any;
   const [photo, setPhoto] = useState<File | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
+  const [selPdvId, setSelPdvId] = useState<string>("");
+  const activePdvId = getCurrentPdvId() ?? (selPdvId || null);
+  const activePdvName = pdv?.name ?? pdvs.find((p) => p.id === activePdvId)?.name ?? "—";
 
   const load = useCallback(async () => {
+    if (!activePdvId) { setRows([]); return; }
     const { data, error } = await db.from("supplier_claims").select("*")
-      .eq("pdv_id", requireCurrentPdvId()).order("claim_date", { ascending: true }).order("created_at");
+      .eq("pdv_id", activePdvId).order("claim_date", { ascending: true }).order("created_at");
     if (error) return toast.error("Erreur de chargement", { description: error.message });
     setRows(data ?? []);
     const paths = (data ?? []).map((r: any) => r.pieces_jointes).filter(Boolean);
@@ -41,7 +45,7 @@ export function SupplierClaims() {
       (signed ?? []).forEach((x: any) => { if (x.signedUrl && x.path) m[x.path] = x.signedUrl; });
       setUrls(m);
     }
-  }, []);
+  }, [activePdvId]);
   useEffect(() => { load(); }, [load]);
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -49,15 +53,16 @@ export function SupplierClaims() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.produit || !form.description) return toast.error("Produit et description obligatoires");
+    if (!activePdvId) return toast.error("Choisissez d'abord le point de vente");
     setSaving(true);
     let pj: string | null = null;
     if (photo) {
-      const path = `${requireCurrentPdvId()}/${Date.now()}-${photo.name.replace(/[^\w.-]/g, "_")}`;
+      const path = `${activePdvId}/${Date.now()}-${photo.name.replace(/[^\w.-]/g, "_")}`;
       const up = await supabase.storage.from("supplier-claims").upload(path, photo, { contentType: photo.type });
       if (up.error) { setSaving(false); return toast.error("Photo non envoyée", { description: up.error.message }); }
       pj = path;
     }
-    const { error } = await db.from("supplier_claims").insert({ ...form, pieces_jointes: pj, pdv_id: requireCurrentPdvId(), created_by: user?.id });
+    const { error } = await db.from("supplier_claims").insert({ ...form, pieces_jointes: pj, pdv_id: activePdvId, created_by: user?.id });
     setSaving(false);
     if (error) return toast.error("Erreur", { description: error.message });
     toast.success("Réclamation enregistrée");
@@ -81,7 +86,7 @@ export function SupplierClaims() {
   const print = () => printStructuredPdf({
     filename: `QC-ENSR-001-${today()}`,
     title: "Suivi des réclamations (QC-ENSR 001)",
-    subtitle: pdv?.name ?? "",
+    subtitle: activePdvName,
     meta: [`Nombre : ${rows.length}`],
     sections: [{
       title: "Réclamations",
@@ -94,7 +99,7 @@ export function SupplierClaims() {
         { header: "Statut", dataKey: "statut" }, { header: "Pièces jointes", dataKey: "pj" },
       ],
       rows: rows.map((r, i) => ({
-        n: String(i + 1), date: formatDateFR(r.claim_date), pdv: pdv?.name ?? "", responsable: r.responsable ?? "",
+        n: String(i + 1), date: formatDateFR(r.claim_date), pdv: activePdvName, responsable: r.responsable ?? "",
         fournisseur: r.fournisseur ?? "", produit: r.produit ?? "", lot: r.lot_number ?? "",
         description: r.description ?? "", qte: r.quantite_nc ?? "", action: r.action_prise ?? "",
         statut: r.statut ?? "", pj: r.pieces_jointes ? "Photo" : "",
@@ -116,8 +121,18 @@ export function SupplierClaims() {
       <div className="flex flex-wrap items-center gap-2 p-4 border-b">
         <div className="mr-auto">
           <h2 className="text-lg font-semibold">Suivi des réclamations</h2>
-          <p className="text-xs text-muted-foreground">QC-ENSR 001 — rempli par le service qualité · PDV : {pdv?.name ?? "—"}</p>
+          <p className="text-xs text-muted-foreground">QC-ENSR 001 — rempli par le service qualité · PDV : {activePdvName}</p>
         </div>
+        {standalone && (
+          <div className="w-56">
+            <Select value={selPdvId} onValueChange={setSelPdvId}>
+              <SelectTrigger><SelectValue placeholder="Choisir le PDV concerné" /></SelectTrigger>
+              <SelectContent>
+                {pdvs.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <Button variant="outline" size="sm" onClick={print}><Printer className="h-4 w-4 mr-1" /> Imprimer</Button>
       </div>
 
@@ -179,7 +194,7 @@ export function SupplierClaims() {
               <tr key={r.id}>
                 <td className="border p-2 text-center">{i + 1}</td>
                 <td className="border p-2 whitespace-nowrap">{formatDateFR(r.claim_date)}</td>
-                <td className="border p-2">{pdv?.name ?? ""}</td>
+                <td className="border p-2">{activePdvName}</td>
                 <td className="border p-2">{r.responsable || "—"}</td>
                 <td className="border p-2">{r.fournisseur || "—"}</td>
                 <td className="border p-2">{r.produit || "—"}</td>

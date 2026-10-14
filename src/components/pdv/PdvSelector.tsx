@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, Pdv } from "@/contexts/AuthContext";
+import { SupplierClaims } from "@/components/SupplierClaims";
+import { QUALITY_ACCOUNT_EMAIL } from "@/lib/cleaningData";
 import logo from "@/assets/logo.jpeg";
 
 const HIDDEN_PDVS = ["admin mohammedia", "mohammedia", "miramar", "mansouria"];
@@ -19,6 +21,7 @@ export function PdvSelector() {
 
   const emailPrefix = (user?.email ?? "").toLowerCase().split("@")[0];
   const isHiddenAccount = HIDDEN_ACCOUNTS.includes(emailPrefix);
+  const isQualityAccount = (user?.email ?? "").toLowerCase() === QUALITY_ACCOUNT_EMAIL;
   const visiblePdvs = isHiddenAccount
     ? pdvs
     : pdvs.filter((p) => !HIDDEN_PDVS.includes(p.name.trim().toLowerCase()));
@@ -87,7 +90,9 @@ export function PdvSelector() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md">
+      <div className={`w-full ${isQualityAccount ? "max-w-5xl" : "max-w-md"} space-y-4`}>
+      {isQualityAccount && <SupplierClaims standalone />}
+      <Card className={`w-full ${isQualityAccount ? "max-w-md mx-auto" : "max-w-md"}`}>
         <CardHeader>
           <img src={logo} alt="Logo Oliveri" className="w-14 h-14 rounded-full object-cover mb-2" />
           <CardTitle className="flex items-center gap-2 text-lg">
@@ -124,6 +129,7 @@ export function PdvSelector() {
           </Button>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }
