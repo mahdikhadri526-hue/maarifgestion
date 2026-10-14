@@ -87,6 +87,7 @@ export function CleaningManager() {
   const [qualityConformity, setQualityConformity] = useState<"C" | "NC" | null>(null);
   const [notes, setNotes] = useState("");
   const [tasks, setTasks] = useState<Record<string, CleaningStatus>>({});
+  const [productionOff, setProductionOff] = useState(false);
   const [historyDate, setHistoryDate] = useState<string>("");
   const [logs, setLogs] = useState<CleaningLog[]>([]);
   const [saving, setSaving] = useState(false);
@@ -116,6 +117,7 @@ export function CleaningManager() {
 
   useEffect(() => {
     setTasks({});
+    setProductionOff(false);
     refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zoneKey]);
@@ -134,16 +136,19 @@ export function CleaningManager() {
     if (!zone) return toast.error("Sélectionnez une zone");
     if (!collaborateur) return toast.error("Sélectionnez un collaborateur");
     const filled = zone.tasks.filter((t) => tasks[t] === "F" || tasks[t] === "C" || tasks[t] === "NC").length;
-    if (filled === 0) return toast.error("Cochez au moins une tâche");
+    if (!productionOff && filled === 0) return toast.error("Cochez au moins une tâche");
     const exists = logs.some((l) => l.zone === zoneKey && l.logDate === date);
     if (exists) return toast.error("Une fiche est déjà enregistrée pour cette zone et cette date");
     setSaving(true);
     try {
+      const finalTasks: Record<string, CleaningStatus> = productionOff
+        ? Object.fromEntries(zone.tasks.map((t) => [t, "OFF" as CleaningStatus]))
+        : tasks;
       await addCleaningLog({
         zone: zoneKey,
         logDate: date,
         collaborateur,
-        tasks,
+        tasks: finalTasks,
         visaManager: visa || null,
         qualityValidator: qualityValidator?.trim() || null,
         qualityConformity,
@@ -151,6 +156,7 @@ export function CleaningManager() {
       });
       toast.success("Fiche enregistrée");
       setTasks({});
+      setProductionOff(false);
       setNotes("");
       setVisa("");
       setQualityValidator(null);
@@ -282,7 +288,17 @@ export function CleaningManager() {
           </div>
         </div>
 
-        {zone && (
+        {zone && zone.key === "production" && (
+          <label className="flex items-center gap-2 p-3 rounded-lg border bg-amber-50 border-amber-300 cursor-pointer">
+            <Checkbox
+              checked={productionOff}
+              onCheckedChange={(c) => setProductionOff(c === true)}
+            />
+            <span className="text-sm font-medium">Journée OFF — pas de production aujourd'hui</span>
+          </label>
+        )}
+
+        {zone && !productionOff && (
           <>
             <div className="flex flex-wrap gap-2">
               <Button type="button" size="sm" variant="outline" onClick={() => setAll("C")}>
@@ -424,7 +440,7 @@ export function CleaningManager() {
                         <ColHeaders />
                         {zoneTasks.map((t) => {
                           const v = editTasks[t];
-                          const isDone = v === "F" || v === "C" || v === "NC";
+                          const isDone = v === "F" || v === "C" || v === "NC" || v === "OFF";
                           return (
                             <div key={t} className="flex items-center gap-2 p-2 rounded-md border bg-background">
                               <Checkbox
@@ -493,10 +509,12 @@ export function CleaningManager() {
                                   ? "bg-green-600 text-white border-green-600"
                                   : v === "NC"
                                   ? "bg-red-600 text-white border-red-600"
+                                  : v === "OFF"
+                                  ? "bg-amber-500 text-white border-amber-500"
                                   : "bg-muted text-muted-foreground"
                               }`}
                             >
-                              {v === "F" ? "Fait" : v ?? "—"}
+                              {v === "F" ? "Fait" : v === "OFF" ? "OFF" : v ?? "—"}
                             </span>
                             <QualityButtons
                               value={l.qualityTasks?.[t] ?? null}
