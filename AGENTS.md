@@ -20,3 +20,4 @@
 - Voice-guide generation in `supabase/functions/voice-tts` uses the built-in Lovable AI service when its key exists and falls back to Google AI Studio with `GOOGLE_API_KEY` (model from `GEMINI_TTS_MODEL`), so offline servers can generate voices without the Lovable service.
 - Le catalogue produits (product_catalog) est cloisonné par PDV (pdv_id) : ajout/suppression d’un produit n’affecte que le PDV courant ; les lignes sans pdv_id sont obsolètes.
 - Les zones de nettoyage désactivées pour un PDV sont stockées dans pdv_permissions avec la clé cleaning_zone_off:<zone> (absence = zone active), pour que tous les PDV gardent leurs zones par défaut et que le changement de rôle PDV ne les efface pas.
+- Supplier claim sheet QC-ENSR 001 lives in supplier_claims (per PDV); only the quality account may write (RLS via is_quality_account), others read only.
