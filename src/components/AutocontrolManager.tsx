@@ -1266,7 +1266,7 @@ export function AutocontrolManager() {
               {(can("view_claims") || can("view_autocontrol")) && (
                 <SelectItem value={CLAIMS_FICHE}>{CLAIMS_FICHE}</SelectItem>
               )}
-              {(can("view_claims") || can("view_autocontrol")) && (
+              {(isAdmin || (user?.email ?? "").toLowerCase() === "gestion-qualite@oliveri.com") && (
                 <SelectItem value={SUPPLIER_FICHE}>{SUPPLIER_FICHE}</SelectItem>
               )}
             </SelectContent>
