@@ -45,7 +45,7 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
       (signed ?? []).forEach((x: any) => { if (x.signedUrl && x.path) m[x.path] = x.signedUrl; });
       setUrls(m);
     }
-  }, []);
+  }, [activePdvId]);
   useEffect(() => { load(); }, [load]);
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -53,10 +53,11 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.produit || !form.description) return toast.error("Produit et description obligatoires");
+    if (!activePdvId) return toast.error("Choisissez d'abord le point de vente");
     setSaving(true);
     let pj: string | null = null;
     if (photo) {
-      const path = `${requireCurrentPdvId()}/${Date.now()}-${photo.name.replace(/[^\w.-]/g, "_")}`;
+      const path = `${activePdvId}/${Date.now()}-${photo.name.replace(/[^\w.-]/g, "_")}`;
       const up = await supabase.storage.from("supplier-claims").upload(path, photo, { contentType: photo.type });
       if (up.error) { setSaving(false); return toast.error("Photo non envoyée", { description: up.error.message }); }
       pj = path;
