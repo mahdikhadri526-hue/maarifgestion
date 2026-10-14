@@ -62,7 +62,6 @@ import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableS
 import { PateAutocontrolForm, isPateFiche } from "@/components/PateAutocontrolForm";
 
 const CLAIMS_FICHE = "Réclamations & Retours";
-const SUPPLIER_FICHE = "Suivi des réclamations (QC-ENSR 001)";
 
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Oranges/Bigarreaux confits": "Orange confit",
@@ -1236,7 +1235,7 @@ export function AutocontrolManager() {
           <Select
             value={showClaims ? (showClaims as string) : form.ficheType}
             onValueChange={(v) => {
-              if (v === CLAIMS_FICHE || v === SUPPLIER_FICHE) {
+              if (v === CLAIMS_FICHE) {
                 setShowClaims(v);
                 return;
               }
@@ -1264,9 +1263,6 @@ export function AutocontrolManager() {
               ))}
               {(can("view_claims") || can("view_autocontrol")) && (
                 <SelectItem value={CLAIMS_FICHE}>{CLAIMS_FICHE}</SelectItem>
-              )}
-              {(isAdmin || (user?.email ?? "").toLowerCase() === "gestion-qualite@oliveri.com") && (
-                <SelectItem value={SUPPLIER_FICHE}>{SUPPLIER_FICHE}</SelectItem>
               )}
             </SelectContent>
           </Select>
@@ -1871,7 +1867,7 @@ export function AutocontrolManager() {
         )}
         {showClaims && (
           <Suspense fallback={<p className="text-sm text-muted-foreground">Chargement…</p>}>
-            {showClaims === SUPPLIER_FICHE ? <SupplierClaims /> : <ClaimsReturns />}
+            <ClaimsReturns />
           </Suspense>
         )}
       </div>
