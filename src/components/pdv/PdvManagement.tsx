@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Building2, Trash2, Settings2, Lock } from "lucide-react";
+import { Building2, Trash2, Settings2, Lock, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
   const [pdvRoles, setPdvRoles] = useState<Record<string, AppRole>>({});
   const [pdvPerms, setPdvPerms] = useState<Record<string, Set<string>>>({});
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
+  const [zonesFor, setZonesFor] = useState<{ id: string; name: string } | null>(null);
 
   const loadRights = async () => {
     const [{ data: rows }, { data: perms }] = await Promise.all([
@@ -203,7 +204,16 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
               onClick={() => setEditing({ id: p.id, name: p.name })}
             >
               {canEditPerms ? <Settings2 className="h-4 w-4 mr-1" /> : <Lock className="h-4 w-4 mr-1" />}
-              Permissions ({pdvPerms[p.id]?.size ?? 0})
+              Permissions ({[...(pdvPerms[p.id] ?? [])].filter((k) => !k.startsWith(CLEANING_ZONE_OFF_PREFIX)).length})
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={() => setZonesFor({ id: p.id, name: p.name })}
+            >
+              <Sparkles className="h-4 w-4 mr-1" />
+              Zones nettoyage ({CLEANING_ZONES.filter((z) => !pdvPerms[p.id]?.has(CLEANING_ZONE_OFF_PREFIX + z.key)).length}/{CLEANING_ZONES.length})
             </Button>
             {p.id === pdvId && <Badge className="shrink-0">Actuel</Badge>}
             <Button variant="ghost" size="icon" className="shrink-0" disabled={!hasAdminRole} onClick={() => remove(p.id)}>
@@ -212,6 +222,38 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
           </div>
         ))}
       </CardContent>
+
+      <Dialog open={!!zonesFor} onOpenChange={(o) => !o && setZonesFor(null)}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Zones de nettoyage — {zonesFor?.name}</DialogTitle>
+          </DialogHeader>
+          {zonesFor && (
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground pb-2">
+                Cochez les zones qui existent dans ce PDV. Les zones décochées n'apparaissent plus dans le Suivi nettoyage de ce PDV.
+              </p>
+              {CLEANING_ZONES.map((z) => {
+                const offKey = CLEANING_ZONE_OFF_PREFIX + z.key;
+                const off = pdvPerms[zonesFor.id]?.has(offKey) ?? false;
+                return (
+                  <label key={z.key} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
+                    <Checkbox
+                      checked={!off}
+                      disabled={!canEditPerms}
+                      onCheckedChange={() => togglePdvPerm(zonesFor.id, offKey, off)}
+                    />
+                    <div className="text-sm font-medium">{z.label}</div>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setZonesFor(null)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!editing} onOpenChange={(o) => !o && setEditing(null)}>
         <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto">
@@ -253,25 +295,6 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
                   })}
                 </div>
               ))}
-              <div className="space-y-1">
-                <div className="text-[11px] uppercase tracking-wide text-muted-foreground pt-2 border-t">
-                  Zones de nettoyage de ce PDV
-                </div>
-                {CLEANING_ZONES.map((z) => {
-                  const offKey = CLEANING_ZONE_OFF_PREFIX + z.key;
-                  const off = pdvPerms[editing.id]?.has(offKey) ?? false;
-                  return (
-                    <label key={z.key} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
-                      <Checkbox
-                        checked={!off}
-                        disabled={!canEditPerms}
-                        onCheckedChange={() => togglePdvPerm(editing.id, offKey, off)}
-                      />
-                      <div className="text-sm font-medium">{z.label}</div>
-                    </label>
-                  );
-                })}
-              </div>
             </div>
           )}
           <DialogFooter>
