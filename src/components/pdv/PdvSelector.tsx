@@ -90,7 +90,9 @@ export function PdvSelector() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-muted/30 p-4">
-      <Card className="w-full max-w-md">
+      <div className={`w-full ${isQualityAccount ? "max-w-5xl" : "max-w-md"} space-y-4`}>
+      {isQualityAccount && <SupplierClaims standalone />}
+      <Card className={`w-full ${isQualityAccount ? "max-w-md mx-auto" : "max-w-md"}`}>
         <CardHeader>
           <img src={logo} alt="Logo Oliveri" className="w-14 h-14 rounded-full object-cover mb-2" />
           <CardTitle className="flex items-center gap-2 text-lg">
