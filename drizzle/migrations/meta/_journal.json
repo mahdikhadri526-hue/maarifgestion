@@ -92,6 +92,13 @@
       "when": 1792004398517,
       "tag": "0012_supplier_claims_restrict",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792016094071,
+      "tag": "0013_fix_stock_period_aggregates_types",
+      "breakpoints": true
     }
   ]
 }
