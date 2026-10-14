@@ -62,6 +62,8 @@ import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableS
 import { PateAutocontrolForm, isPateFiche } from "@/components/PateAutocontrolForm";
 
 const CLAIMS_FICHE = "Réclamations & Retours";
+const SUPPLIER_FICHE = "Suivi des réclamations (QC-ENSR 001)";
+const SupplierClaims = lazy(() => import("@/components/SupplierClaims"));
 
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Oranges/Bigarreaux confits": "Orange confit",
@@ -532,7 +534,7 @@ export function AutocontrolManager() {
   const [exportingMonth, setExportingMonth] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [submitting, setSubmitting] = useState(false);
-  const [showClaims, setShowClaims] = useState(false);
+  const [showClaims, setShowClaims] = useState<false | string>(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const { can } = useAuth();
   const operatorOptions = useOperators();
@@ -1233,10 +1235,10 @@ export function AutocontrolManager() {
         <div className="mb-3">
           <label className="text-xs font-medium text-muted-foreground">Type de fiche *</label>
           <Select
-            value={showClaims ? CLAIMS_FICHE : form.ficheType}
+            value={showClaims ? (showClaims as string) : form.ficheType}
             onValueChange={(v) => {
-              if (v === CLAIMS_FICHE) {
-                setShowClaims(true);
+              if (v === CLAIMS_FICHE || v === SUPPLIER_FICHE) {
+                setShowClaims(v);
                 return;
               }
               setShowClaims(false);
@@ -1263,6 +1265,9 @@ export function AutocontrolManager() {
               ))}
               {(can("view_claims") || can("view_autocontrol")) && (
                 <SelectItem value={CLAIMS_FICHE}>{CLAIMS_FICHE}</SelectItem>
+              )}
+              {(can("view_claims") || can("view_autocontrol")) && (
+                <SelectItem value={SUPPLIER_FICHE}>{SUPPLIER_FICHE}</SelectItem>
               )}
             </SelectContent>
           </Select>
@@ -1867,7 +1872,7 @@ export function AutocontrolManager() {
         )}
         {showClaims && (
           <Suspense fallback={<p className="text-sm text-muted-foreground">Chargement…</p>}>
-            <ClaimsReturns />
+            {showClaims === SUPPLIER_FICHE ? <SupplierClaims /> : <ClaimsReturns />}
           </Suspense>
         )}
       </div>
