@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Camera, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { requireCurrentPdvId } from "@/lib/pdvStore";
+import { getCurrentPdvId } from "@/lib/pdvStore";
 import { useAuth } from "@/contexts/AuthContext";
 import { QUALITY_ACCOUNT_EMAIL } from "@/lib/cleaningData";
 import { formatDateFR } from "@/lib/utils";
@@ -19,8 +19,8 @@ const empty = () => ({
   description: "", quantite_nc: "", action_prise: "", statut: "Ouverte", pieces_jointes: "",
 });
 
-export function SupplierClaims() {
-  const { user, pdv, isAdmin, hasAdminRole } = useAuth();
+export function SupplierClaims({ standalone = false }: { standalone?: boolean }) {
+  const { user, pdv, pdvs, isAdmin, hasAdminRole } = useAuth();
   const isQuality = (user?.email ?? "").toLowerCase() === QUALITY_ACCOUNT_EMAIL;
   const [rows, setRows] = useState<any[]>([]);
   const [form, setForm] = useState(empty());
@@ -28,10 +28,14 @@ export function SupplierClaims() {
   const db = supabase as any;
   const [photo, setPhoto] = useState<File | null>(null);
   const [urls, setUrls] = useState<Record<string, string>>({});
+  const [selPdvId, setSelPdvId] = useState<string>("");
+  const activePdvId = getCurrentPdvId() ?? (selPdvId || null);
+  const activePdvName = pdv?.name ?? pdvs.find((p) => p.id === activePdvId)?.name ?? "—";
 
   const load = useCallback(async () => {
+    if (!activePdvId) { setRows([]); return; }
     const { data, error } = await db.from("supplier_claims").select("*")
-      .eq("pdv_id", requireCurrentPdvId()).order("claim_date", { ascending: true }).order("created_at");
+      .eq("pdv_id", activePdvId).order("claim_date", { ascending: true }).order("created_at");
     if (error) return toast.error("Erreur de chargement", { description: error.message });
     setRows(data ?? []);
     const paths = (data ?? []).map((r: any) => r.pieces_jointes).filter(Boolean);
