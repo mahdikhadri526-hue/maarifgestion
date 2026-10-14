@@ -440,7 +440,7 @@ export function CleaningManager() {
                         <ColHeaders />
                         {zoneTasks.map((t) => {
                           const v = editTasks[t];
-                          const isDone = v === "F" || v === "C" || v === "NC";
+                          const isDone = v === "F" || v === "C" || v === "NC" || v === "OFF";
                           return (
                             <div key={t} className="flex items-center gap-2 p-2 rounded-md border bg-background">
                               <Checkbox
