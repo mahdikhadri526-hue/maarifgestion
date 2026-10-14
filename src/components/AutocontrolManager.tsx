@@ -63,7 +63,6 @@ import { PateAutocontrolForm, isPateFiche } from "@/components/PateAutocontrolFo
 
 const CLAIMS_FICHE = "Réclamations & Retours";
 const SUPPLIER_FICHE = "Suivi des réclamations (QC-ENSR 001)";
-const SupplierClaims = lazy(() => import("@/components/SupplierClaims"));
 
 const DEFAULT_ARTICLE_BY_FICHE: Record<FicheType, string> = {
   "Oranges/Bigarreaux confits": "Orange confit",
