@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { CLEANING_ZONES, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs, updateCleaningLog, arOf } from "@/lib/cleaningData";
+import { supabase } from "@/integrations/supabase/client";
+import { CLEANING_ZONES as ALL_CLEANING_ZONES, CLEANING_ZONE_OFF_PREFIX, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs, updateCleaningLog, arOf } from "@/lib/cleaningData";
 import { OPERATORS } from "@/lib/operators";
 import { MANAGERS } from "@/lib/managers";
 import { useRosterAllowed, usePdvRoster } from "@/lib/roster";
@@ -77,8 +78,17 @@ function todayISO() {
 }
 
 export function CleaningManager() {
+  const { pdvId: zonesPdvId } = useAuth();
+  const [disabledZones, setDisabledZones] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!zonesPdvId) { setDisabledZones(new Set()); return; }
+    supabase.from("pdv_permissions" as any).select("permission_key, allowed")
+      .eq("pdv_id", zonesPdvId).like("permission_key", `${CLEANING_ZONE_OFF_PREFIX}%`)
+      .then(({ data }) => setDisabledZones(new Set(((data ?? []) as any[]).filter((r) => r.allowed).map((r) => String(r.permission_key).slice(CLEANING_ZONE_OFF_PREFIX.length)))));
+  }, [zonesPdvId]);
+  const CLEANING_ZONES = useMemo(() => ALL_CLEANING_ZONES.filter((z) => !disabledZones.has(z.key)), [disabledZones]);
   const [zoneKey, setZoneKey] = useState("");
-  const zone = useMemo(() => CLEANING_ZONES.find((z) => z.key === zoneKey), [zoneKey]);
+  const zone = useMemo(() => CLEANING_ZONES.find((z) => z.key === zoneKey), [zoneKey, CLEANING_ZONES]);
 
   const [date, setDate] = useState(todayISO());
   const [collaborateur, setCollaborateur] = useState("");
@@ -410,7 +420,7 @@ export function CleaningManager() {
           return (
             <div className="space-y-2">
               {displayedLogs.map((l) => {
-                const z = CLEANING_ZONES.find((x) => x.key === l.zone);
+                const z = ALL_CLEANING_ZONES.find((x) => x.key === l.zone);
                 const zoneTasks = z?.tasks ?? Object.keys(l.tasks);
                 const total = zoneTasks.length;
                 const conf = zoneTasks.filter((t) => l.tasks[t] === "C").length;

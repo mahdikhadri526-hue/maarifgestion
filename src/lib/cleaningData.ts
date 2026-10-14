@@ -8,6 +8,8 @@ export interface CleaningZone {
   tasks: string[];
 }
 
+export const CLEANING_ZONE_OFF_PREFIX = "cleaning_zone_off:";
+
 export const CLEANING_ZONES: CleaningZone[] = [
   {
     key: "comptoir_salle",
