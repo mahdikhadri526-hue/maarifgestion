@@ -166,6 +166,28 @@ export async function saveProduitDay(product: ProduitKey, date: string, day: Pro
   }
 }
 
+/** Produits du Stock restant liés à chaque écart, avec facteur vers l'unité de saisie. */
+export const STOCK_SOURCES: Record<ProduitKey, { productId: string; factor: number }[]> = {
+  CAFE: [{ productId: "ali-7", factor: 1000 }], // Café Brésil : kg → grammes
+  SIDIALI: [{ productId: "ali-3", factor: 1 }, { productId: "ali-4", factor: 1 }], // bouteilles
+};
+
+/** Entrées du jour et stock restant fin de journée, lus dans le Stock restant. */
+export async function fetchStockImport(product: ProduitKey, date: string): Promise<{ entrees: number; sf: number }> {
+  const pdvId = requireCurrentPdvId();
+  const { data, error } = await rawSupabase.rpc("stock_period_aggregates", { _pdv_id: pdvId, _start_date: date, _end_date: date });
+  if (error) throw error;
+  let entrees = 0, sf = 0;
+  for (const s of STOCK_SOURCES[product]) {
+    const r = (data ?? []).find((x: any) => x.product_id === s.productId);
+    if (!r) continue;
+    entrees += Number(r.entrees) * s.factor;
+    sf += Number(r.stock_restant) * s.factor;
+  }
+  const r3 = (x: number) => Math.round(x * 1000) / 1000;
+  return { entrees: r3(entrees), sf: r3(sf) };
+}
+
 /** Dernière journée avec stock final avant `date`. */
 export function lastFinal(history: Map<string, ProduitDay>, date: string): ProduitDay | undefined {
   const dates = [...history.keys()].filter((d) => d < date).sort().reverse();

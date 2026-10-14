@@ -14,6 +14,7 @@ import {
   deleteArticle,
   emptyDay,
   fetchArticles,
+  fetchStockImport,
   fetchProduitDays,
   hasFinal,
   lastFinal,
@@ -68,10 +69,15 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [hist, arts] = await Promise.all([fetchProduitDays(product, shiftDate(range.start, -60), range.end), fetchArticles()]);
+      const [hist, arts, imp] = await Promise.all([
+        fetchProduitDays(product, shiftDate(range.start, -60), range.end),
+        fetchArticles(),
+        fetchStockImport(product, date).catch(() => null),
+      ]);
       setHistory(hist);
       setArticles(arts.filter((a) => a.product === product));
-      setDay(hist.get(date) ?? emptyDay());
+      const base = hist.get(date) ?? emptyDay();
+      setDay(imp ? { ...base, ENTREE: { EMP: imp.entrees, SP: null }, SF: { EMP: imp.sf, SP: null } } : base);
       setPrev(lastFinal(hist, date));
     } catch (e) {
       toast.error((e as Error).message);
@@ -184,8 +190,8 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
   );
 
   const stockTable = (part: Part, title: string) => {
-    const locked = part === "SI" && siAuto;
-    const value = locked ? (prev ? finalTotal(prev) : null) : partValue(day, part);
+    const locked = (part === "SI" && siAuto) || part === "ENTREE" || part === "SF";
+    const value = part === "SI" && siAuto ? (prev ? finalTotal(prev) : null) : partValue(day, part);
     const mep = part === "SF" ? partValue(day, "MEP") : null;
     return (
       <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
