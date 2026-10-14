@@ -141,11 +141,14 @@ export function CleaningManager() {
     if (exists) return toast.error("Une fiche est déjà enregistrée pour cette zone et cette date");
     setSaving(true);
     try {
+      const finalTasks: Record<string, CleaningStatus> = productionOff
+        ? Object.fromEntries(zone.tasks.map((t) => [t, "OFF" as CleaningStatus]))
+        : tasks;
       await addCleaningLog({
         zone: zoneKey,
         logDate: date,
         collaborateur,
-        tasks,
+        tasks: finalTasks,
         visaManager: visa || null,
         qualityValidator: qualityValidator?.trim() || null,
         qualityConformity,
