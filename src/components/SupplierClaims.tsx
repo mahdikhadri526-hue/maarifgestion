@@ -109,7 +109,7 @@ export function SupplierClaims() {
     </div>
   );
 
-  if (!isQuality && !isAdmin && !hasAdminRole) return null;
+  if (!isQuality && !hasAdminRole) return null;
 
   return (
     <div className="bg-card rounded-xl border shadow-sm">

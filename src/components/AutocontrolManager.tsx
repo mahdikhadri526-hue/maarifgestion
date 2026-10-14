@@ -536,7 +536,7 @@ export function AutocontrolManager() {
   const [submitting, setSubmitting] = useState(false);
   const [showClaims, setShowClaims] = useState<false | string>(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const { can } = useAuth();
+  const { can, user, hasAdminRole: isAdmin } = useAuth();
   const operatorOptions = useOperators();
   const managerOptions = useManagers();
   const [ctgProducts, setCtgProducts] = useState<Record<CtgProductKey, CtgProductRow>>(initialCtgProducts());
