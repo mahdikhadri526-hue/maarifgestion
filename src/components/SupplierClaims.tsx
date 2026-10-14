@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Printer, Trash2 } from "lucide-react";
+import { Camera, Printer, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { requireCurrentPdvId } from "@/lib/pdvStore";
@@ -20,18 +20,27 @@ const empty = () => ({
 });
 
 export function SupplierClaims() {
-  const { user, pdv } = useAuth();
+  const { user, pdv, isAdmin, hasAdminRole } = useAuth();
   const isQuality = (user?.email ?? "").toLowerCase() === QUALITY_ACCOUNT_EMAIL;
   const [rows, setRows] = useState<any[]>([]);
   const [form, setForm] = useState(empty());
   const [saving, setSaving] = useState(false);
   const db = supabase as any;
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [urls, setUrls] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     const { data, error } = await db.from("supplier_claims").select("*")
       .eq("pdv_id", requireCurrentPdvId()).order("claim_date", { ascending: true }).order("created_at");
     if (error) return toast.error("Erreur de chargement", { description: error.message });
     setRows(data ?? []);
+    const paths = (data ?? []).map((r: any) => r.pieces_jointes).filter(Boolean);
+    if (paths.length) {
+      const { data: signed } = await supabase.storage.from("supplier-claims").createSignedUrls(paths, 3600);
+      const m: Record<string, string> = {};
+      (signed ?? []).forEach((x: any) => { if (x.signedUrl && x.path) m[x.path] = x.signedUrl; });
+      setUrls(m);
+    }
   }, []);
   useEffect(() => { load(); }, [load]);
 
@@ -41,11 +50,19 @@ export function SupplierClaims() {
     e.preventDefault();
     if (!form.produit || !form.description) return toast.error("Produit et description obligatoires");
     setSaving(true);
-    const { error } = await db.from("supplier_claims").insert({ ...form, pdv_id: requireCurrentPdvId(), created_by: user?.id });
+    let pj: string | null = null;
+    if (photo) {
+      const path = `${requireCurrentPdvId()}/${Date.now()}-${photo.name.replace(/[^\w.-]/g, "_")}`;
+      const up = await supabase.storage.from("supplier-claims").upload(path, photo, { contentType: photo.type });
+      if (up.error) { setSaving(false); return toast.error("Photo non envoyée", { description: up.error.message }); }
+      pj = path;
+    }
+    const { error } = await db.from("supplier_claims").insert({ ...form, pieces_jointes: pj, pdv_id: requireCurrentPdvId(), created_by: user?.id });
     setSaving(false);
     if (error) return toast.error("Erreur", { description: error.message });
     toast.success("Réclamation enregistrée");
     setForm(empty());
+    setPhoto(null);
     load();
   };
 
@@ -80,7 +97,7 @@ export function SupplierClaims() {
         n: String(i + 1), date: formatDateFR(r.claim_date), pdv: pdv?.name ?? "", responsable: r.responsable ?? "",
         fournisseur: r.fournisseur ?? "", produit: r.produit ?? "", lot: r.lot_number ?? "",
         description: r.description ?? "", qte: r.quantite_nc ?? "", action: r.action_prise ?? "",
-        statut: r.statut ?? "", pj: r.pieces_jointes ?? "",
+        statut: r.statut ?? "", pj: r.pieces_jointes ? "Photo" : "",
       })),
     }],
   });
@@ -91,6 +108,8 @@ export function SupplierClaims() {
       <Input type={type} value={form[k]} onChange={(e) => set(k, e.target.value)} />
     </div>
   );
+
+  if (!isQuality && !hasAdminRole) return null;
 
   return (
     <div className="bg-card rounded-xl border shadow-sm">
@@ -125,7 +144,15 @@ export function SupplierClaims() {
               <SelectContent>{STATUTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
             </Select>
           </div>
-          <div className="sm:col-span-3">{field("pieces_jointes", "Pièces jointes (référence / lien)")}</div>
+          <div className="sm:col-span-3">
+            <label className="text-xs font-medium text-muted-foreground">Pièce jointe (photo)</label>
+            <label className="flex items-center gap-2 border rounded-md p-2 cursor-pointer text-sm">
+              <Camera className="h-4 w-4 text-primary" />
+              {photo ? photo.name : "Prendre une photo"}
+              <input type="file" accept="image/*" capture="environment" className="hidden"
+                onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
+            </label>
+          </div>
           <div className="sm:col-span-3">
             <Button type="submit" disabled={saving}>{saving ? "Enregistrement..." : "Enregistrer"}</Button>
           </div>
@@ -168,7 +195,9 @@ export function SupplierClaims() {
                     </Select>
                   ) : r.statut}
                 </td>
-                <td className="border p-2">{r.pieces_jointes || "—"}</td>
+                <td className="border p-2">{r.pieces_jointes && urls[r.pieces_jointes] ? (
+                  <a href={urls[r.pieces_jointes]} target="_blank" rel="noreferrer"><img src={urls[r.pieces_jointes]} alt="Pièce jointe" className="h-12 w-12 object-cover rounded" /></a>
+                ) : "—"}</td>
                 {isQuality && (
                   <td className="border p-1 text-center">
                     <Button size="icon" variant="ghost" onClick={() => remove(r.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>

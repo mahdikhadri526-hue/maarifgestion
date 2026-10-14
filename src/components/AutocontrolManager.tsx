@@ -536,7 +536,7 @@ export function AutocontrolManager() {
   const [submitting, setSubmitting] = useState(false);
   const [showClaims, setShowClaims] = useState<false | string>(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const { can } = useAuth();
+  const { can, user, hasAdminRole: isAdmin } = useAuth();
   const operatorOptions = useOperators();
   const managerOptions = useManagers();
   const [ctgProducts, setCtgProducts] = useState<Record<CtgProductKey, CtgProductRow>>(initialCtgProducts());
@@ -1266,7 +1266,7 @@ export function AutocontrolManager() {
               {(can("view_claims") || can("view_autocontrol")) && (
                 <SelectItem value={CLAIMS_FICHE}>{CLAIMS_FICHE}</SelectItem>
               )}
-              {(can("view_claims") || can("view_autocontrol")) && (
+              {(isAdmin || (user?.email ?? "").toLowerCase() === "gestion-qualite@oliveri.com") && (
                 <SelectItem value={SUPPLIER_FICHE}>{SUPPLIER_FICHE}</SelectItem>
               )}
             </SelectContent>

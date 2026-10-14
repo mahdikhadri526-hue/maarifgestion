@@ -85,6 +85,13 @@
       "when": 1792003873828,
       "tag": "0011_supplier_claims_quality",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792004398517,
+      "tag": "0012_supplier_claims_restrict",
+      "breakpoints": true
     }
   ]
 }
