@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { CLEANING_ZONES as ALL_CLEANING_ZONES, CLEANING_ZONE_OFF_PREFIX, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs, updateCleaningLog, arOf } from "@/lib/cleaningData";
 import { OPERATORS } from "@/lib/operators";
 import { MANAGERS } from "@/lib/managers";
@@ -419,7 +420,7 @@ export function CleaningManager() {
           return (
             <div className="space-y-2">
               {displayedLogs.map((l) => {
-                const z = CLEANING_ZONES.find((x) => x.key === l.zone);
+                const z = ALL_CLEANING_ZONES.find((x) => x.key === l.zone);
                 const zoneTasks = z?.tasks ?? Object.keys(l.tasks);
                 const total = zoneTasks.length;
                 const conf = zoneTasks.filter((t) => l.tasks[t] === "C").length;
