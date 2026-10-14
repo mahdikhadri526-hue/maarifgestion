@@ -62,7 +62,7 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
       if (up.error) { setSaving(false); return toast.error("Photo non envoyée", { description: up.error.message }); }
       pj = path;
     }
-    const { error } = await db.from("supplier_claims").insert({ ...form, pieces_jointes: pj, pdv_id: requireCurrentPdvId(), created_by: user?.id });
+    const { error } = await db.from("supplier_claims").insert({ ...form, pieces_jointes: pj, pdv_id: activePdvId, created_by: user?.id });
     setSaving(false);
     if (error) return toast.error("Erreur", { description: error.message });
     toast.success("Réclamation enregistrée");
@@ -86,7 +86,7 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
   const print = () => printStructuredPdf({
     filename: `QC-ENSR-001-${today()}`,
     title: "Suivi des réclamations (QC-ENSR 001)",
-    subtitle: pdv?.name ?? "",
+    subtitle: activePdvName,
     meta: [`Nombre : ${rows.length}`],
     sections: [{
       title: "Réclamations",
@@ -99,7 +99,7 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
         { header: "Statut", dataKey: "statut" }, { header: "Pièces jointes", dataKey: "pj" },
       ],
       rows: rows.map((r, i) => ({
-        n: String(i + 1), date: formatDateFR(r.claim_date), pdv: pdv?.name ?? "", responsable: r.responsable ?? "",
+        n: String(i + 1), date: formatDateFR(r.claim_date), pdv: activePdvName, responsable: r.responsable ?? "",
         fournisseur: r.fournisseur ?? "", produit: r.produit ?? "", lot: r.lot_number ?? "",
         description: r.description ?? "", qte: r.quantite_nc ?? "", action: r.action_prise ?? "",
         statut: r.statut ?? "", pj: r.pieces_jointes ? "Photo" : "",
@@ -121,8 +121,18 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
       <div className="flex flex-wrap items-center gap-2 p-4 border-b">
         <div className="mr-auto">
           <h2 className="text-lg font-semibold">Suivi des réclamations</h2>
-          <p className="text-xs text-muted-foreground">QC-ENSR 001 — rempli par le service qualité · PDV : {pdv?.name ?? "—"}</p>
+          <p className="text-xs text-muted-foreground">QC-ENSR 001 — rempli par le service qualité · PDV : {activePdvName}</p>
         </div>
+        {standalone && (
+          <div className="w-56">
+            <Select value={selPdvId} onValueChange={setSelPdvId}>
+              <SelectTrigger><SelectValue placeholder="Choisir le PDV concerné" /></SelectTrigger>
+              <SelectContent>
+                {pdvs.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
         <Button variant="outline" size="sm" onClick={print}><Printer className="h-4 w-4 mr-1" /> Imprimer</Button>
       </div>
 
