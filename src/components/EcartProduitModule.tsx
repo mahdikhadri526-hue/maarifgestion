@@ -69,16 +69,22 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [hist, arts, imp] = await Promise.all([
+      const prevDate = shiftDate(date, -1);
+      const [hist, arts, imp, impPrev] = await Promise.all([
         fetchProduitDays(product, shiftDate(range.start, -60), range.end),
         fetchArticles(),
         fetchStockImport(product, date).catch(() => null),
+        fetchStockImport(product, prevDate).catch(() => null),
       ]);
       setHistory(hist);
       setArticles(arts.filter((a) => a.product === product));
       const base = hist.get(date) ?? emptyDay();
       setDay(imp ? { ...base, ENTREE: { EMP: imp.entrees, SP: null }, SF: { EMP: imp.sf, SP: null } } : base);
-      setPrev(lastFinal(hist, date));
+      // Stock initial = Total stock final de la veille (stock final importé + mise en place de la veille).
+      if (impPrev) {
+        const p = hist.get(prevDate) ?? emptyDay();
+        setPrev({ ...p, SF: { EMP: impPrev.sf, SP: null } });
+      } else setPrev(lastFinal(hist, date));
     } catch (e) {
       toast.error((e as Error).message);
     } finally {
