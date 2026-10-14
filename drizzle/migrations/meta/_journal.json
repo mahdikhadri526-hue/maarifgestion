@@ -78,6 +78,13 @@
       "when": 1791928061094,
       "tag": "0010_cleaning_quality_tasks",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792003873828,
+      "tag": "0011_supplier_claims_quality",
+      "breakpoints": true
     }
   ]
 }
