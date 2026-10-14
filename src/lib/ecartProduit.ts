@@ -169,7 +169,7 @@ export async function saveProduitDay(product: ProduitKey, date: string, day: Pro
 /** Produits du Stock restant liés à chaque écart, avec facteur vers l'unité de saisie. */
 export const STOCK_SOURCES: Record<ProduitKey, { productId: string; factor: number }[]> = {
   CAFE: [{ productId: "ali-7", factor: 1000 }], // Café Brésil : kg → grammes
-  SIDIALI: [{ productId: "ali-3", factor: 1 }, { productId: "ali-4", factor: 1 }], // bouteilles
+  SIDIALI: [{ productId: "ali-3", factor: 1 }], // Sidi Ali 0,33 uniquement (bouteilles)
 };
 
 /** Entrées du jour et stock restant fin de journée, lus dans le Stock restant. */
