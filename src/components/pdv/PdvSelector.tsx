@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, Pdv } from "@/contexts/AuthContext";
+import { SupplierClaims } from "@/components/SupplierClaims";
+import { QUALITY_ACCOUNT_EMAIL } from "@/lib/cleaningData";
 import logo from "@/assets/logo.jpeg";
 
 const HIDDEN_PDVS = ["admin mohammedia", "mohammedia", "miramar", "mansouria"];
@@ -19,6 +21,7 @@ export function PdvSelector() {
 
   const emailPrefix = (user?.email ?? "").toLowerCase().split("@")[0];
   const isHiddenAccount = HIDDEN_ACCOUNTS.includes(emailPrefix);
+  const isQualityAccount = (user?.email ?? "").toLowerCase() === QUALITY_ACCOUNT_EMAIL;
   const visiblePdvs = isHiddenAccount
     ? pdvs
     : pdvs.filter((p) => !HIDDEN_PDVS.includes(p.name.trim().toLowerCase()));
