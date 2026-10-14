@@ -2105,6 +2105,68 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_claims: {
+        Row: {
+          action_prise: string | null
+          claim_date: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          fournisseur: string | null
+          id: string
+          lot_number: string | null
+          pdv_id: string
+          pieces_jointes: string | null
+          produit: string | null
+          quantite_nc: string | null
+          responsable: string | null
+          statut: string
+          updated_at: string
+        }
+        Insert: {
+          action_prise?: string | null
+          claim_date?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fournisseur?: string | null
+          id?: string
+          lot_number?: string | null
+          pdv_id: string
+          pieces_jointes?: string | null
+          produit?: string | null
+          quantite_nc?: string | null
+          responsable?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Update: {
+          action_prise?: string | null
+          claim_date?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          fournisseur?: string | null
+          id?: string
+          lot_number?: string | null
+          pdv_id?: string
+          pieces_jointes?: string | null
+          produit?: string | null
+          quantite_nc?: string | null
+          responsable?: string | null
+          statut?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_claims_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tech_issue_events: {
         Row: {
           actor_name: string | null
