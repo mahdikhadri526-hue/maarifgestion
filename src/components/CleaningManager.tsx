@@ -156,6 +156,7 @@ export function CleaningManager() {
       });
       toast.success("Fiche enregistrée");
       setTasks({});
+      setProductionOff(false);
       setNotes("");
       setVisa("");
       setQualityValidator(null);
@@ -287,7 +288,17 @@ export function CleaningManager() {
           </div>
         </div>
 
-        {zone && (
+        {zone && zone.key === "production" && (
+          <label className="flex items-center gap-2 p-3 rounded-lg border bg-amber-50 border-amber-300 cursor-pointer">
+            <Checkbox
+              checked={productionOff}
+              onCheckedChange={(c) => setProductionOff(c === true)}
+            />
+            <span className="text-sm font-medium">Journée OFF — pas de production aujourd'hui</span>
+          </label>
+        )}
+
+        {zone && !productionOff && (
           <>
             <div className="flex flex-wrap gap-2">
               <Button type="button" size="sm" variant="outline" onClick={() => setAll("C")}>
