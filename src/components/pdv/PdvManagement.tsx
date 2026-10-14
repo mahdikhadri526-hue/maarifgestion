@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { CLEANING_ZONES, CLEANING_ZONE_OFF_PREFIX } from "@/lib/cleaningData";
 import { ALL_PERMISSIONS, publishedPermissionGroups, AppRole, useAuth } from "@/contexts/AuthContext";
 
 const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
@@ -88,7 +89,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
   const setPdvRole = async (id: string, role: AppRole) => {
     const { error } = await supabase.from("pdvs").update({ default_role: role } as any).eq("id", id);
     if (error) { toast.error("Erreur : " + error.message); return; }
-    await supabase.from("pdv_permissions" as any).delete().eq("pdv_id", id);
+    await supabase.from("pdv_permissions" as any).delete().eq("pdv_id", id).not("permission_key", "like", `${CLEANING_ZONE_OFF_PREFIX}%`);
     const keys = PDV_ROLE_PRESETS[role];
     if (keys.length > 0) {
       await supabase.from("pdv_permissions" as any).insert(
@@ -252,6 +253,25 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
                   })}
                 </div>
               ))}
+              <div className="space-y-1">
+                <div className="text-[11px] uppercase tracking-wide text-muted-foreground pt-2 border-t">
+                  Zones de nettoyage de ce PDV
+                </div>
+                {CLEANING_ZONES.map((z) => {
+                  const offKey = CLEANING_ZONE_OFF_PREFIX + z.key;
+                  const off = pdvPerms[editing.id]?.has(offKey) ?? false;
+                  return (
+                    <label key={z.key} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
+                      <Checkbox
+                        checked={!off}
+                        disabled={!canEditPerms}
+                        onCheckedChange={() => togglePdvPerm(editing.id, offKey, off)}
+                      />
+                      <div className="text-sm font-medium">{z.label}</div>
+                    </label>
+                  );
+                })}
+              </div>
             </div>
           )}
           <DialogFooter>
