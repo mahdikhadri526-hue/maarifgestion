@@ -191,7 +191,7 @@ export function EcartProduitModule({ product }: { product: ProduitKey }) {
 
   const stockTable = (part: Part, title: string) => {
     const locked = (part === "SI" && siAuto) || part === "ENTREE" || part === "SF";
-    const value = locked ? (prev ? finalTotal(prev) : null) : partValue(day, part);
+    const value = part === "SI" && siAuto ? (prev ? finalTotal(prev) : null) : partValue(day, part);
     const mep = part === "SF" ? partValue(day, "MEP") : null;
     return (
       <div className="bg-card border rounded-xl shadow-sm overflow-hidden">
