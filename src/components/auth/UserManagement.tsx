@@ -17,6 +17,7 @@ import { RosterManagement } from "@/components/roster/RosterManagement";
 import { setKioskPin } from "@/lib/kioskPin";
 import { VoiceScriptsSettings } from "@/components/auth/VoiceScriptsSettings";
 import { WelcomePhotosSettings } from "@/components/auth/WelcomePhotosSettings";
+import { ProductCatalogManager } from "@/components/inventory/ProductCatalogManager";
 
 const PROTECTED_EMAILS = ["gestionmaarif1@gmail.com"];
 
@@ -139,7 +140,7 @@ function KioskPinSettings() {
 }
 
 export function UserManagement({ onBack }: { onBack: () => void }) {
-  const { user: currentUser, multiPdvEnabled, pdvs, hasAdminRole, isRegionalAdmin, can } = useAuth();
+  const { user: currentUser, multiPdvEnabled, pdvs, hasAdminRole, isRegionalAdmin, isAdmin, can } = useAuth();
   const [users, setUsers] = useState<ProfileRow[]>([]);
   const [roles, setRoles] = useState<Record<string, AppRole | null>>({});
   const [perms, setPerms] = useState<Record<string, Set<string>>>({});
@@ -581,6 +582,11 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
           )}
           {(currentUser?.email ?? "").toLowerCase() === "khadri1982@gmail.com" && (
             <VoiceScriptsSettings />
+          )}
+          {isAdmin && (
+            <div className="flex justify-end">
+              <ProductCatalogManager conditionnementOnly />
+            </div>
           )}
           <Tabs defaultValue="users" className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
