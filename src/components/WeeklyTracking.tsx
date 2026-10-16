@@ -267,7 +267,7 @@ function LotExistantCell({
       existing.remaining += b.remaining;
       if (ed && (!existing.entryDate || ed < existing.entryDate)) existing.entryDate = ed;
     } else {
-      merged.push({ lot: label, remaining: b.remaining, entryDate: ed, lotDate: lotDateKey(label) ?? "", order: idx });
+      merged.push({ lot: label, remaining: b.remaining, entryDate: ed, lotDate: lotDateKey(label, ed || undefined) ?? "", order: idx });
     }
   });
   merged.sort((a, b) => {

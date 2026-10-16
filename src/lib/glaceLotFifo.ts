@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/db";
+import { sortFifoByLot } from "@/lib/lotAge";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
@@ -203,6 +204,7 @@ export async function fetchFifoLotChoices(article: string, limit = 3): Promise<s
       if (lots.length === 0) batches.push({ lot: "", remaining: q });
       else lots.forEach((l) => batches.push({ lot: l, remaining: q / lots.length }));
     }
+    sortFifoByLot(batches, dayRows[0]?.week_start);
     let need = dayRows.reduce((s, r) => s + num(r.sorties), 0);
     for (const b of batches) {
       if (need <= 0) break;
