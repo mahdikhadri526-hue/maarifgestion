@@ -13,14 +13,16 @@ interface Props {
   onChanged?: () => void;
   /** Catégorie sélectionnée dans l'écran parent (filtre initial du catalogue). */
   category?: Category | "all";
+  /** Mode admin : seul le conditionnement est modifiable (nom, ajout et suppression masqués). */
+  conditionnementOnly?: boolean;
 }
 
 const normalize = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
-export function ProductCatalogManager({ onChanged, category = "all" }: Props) {
-  const { can } = useAuth();
-  const canEdit = can("edit_products");
+export function ProductCatalogManager({ onChanged, category = "all", conditionnementOnly = false }: Props) {
+  const { can, isAdmin } = useAuth();
+  const canEdit = conditionnementOnly ? isAdmin : can("edit_products");
   const canDelete = can("delete_products");
   const canView = canEdit || canDelete || can("view_products");
 
