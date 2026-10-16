@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/db";
-import { Category, getProducts, getProductCatalog } from "@/lib/stockData";
+import { Category, getProducts, getProductCatalog, getProductPackOptions, addProductPackOption, deleteProductPackOption, type ProductPackOption } from "@/lib/stockData";
 import { loadProductCatalog, newCustomProductId } from "@/lib/productCatalog";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -40,6 +40,53 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
 
 
   const [dirty, setDirty] = useState(false);
+
+  // Conditionnements supplementaires (ex: « Paquet de 16 ») — mode admin uniquement.
+  const [packs, setPacks] = useState<Record<string, ProductPackOption[]>>({});
+  const [packsFor, setPacksFor] = useState<{ id: string; name: string } | null>(null);
+  const [newPack, setNewPack] = useState<{ label: string; pieces: string }>({ label: "", pieces: "" });
+
+  const reloadPacks = useCallback(async () => {
+    setPacks(await getProductPackOptions());
+  }, []);
+
+  useEffect(() => {
+    if (open && conditionnementOnly) void reloadPacks();
+  }, [open, conditionnementOnly, reloadPacks]);
+
+  const addPack = async () => {
+    if (!packsFor) return;
+    const label = newPack.label.trim();
+    const pieces = Number(newPack.pieces);
+    if (!label || !pieces || pieces < 1) {
+      toast.error("Nom et nombre de pièces obligatoires");
+      return;
+    }
+    setBusy(true);
+    try {
+      await addProductPackOption(packsFor.id, label, pieces);
+      setNewPack({ label: "", pieces: "" });
+      await reloadPacks();
+      toast.success("Conditionnement ajouté");
+    } catch (e: any) {
+      toast.error(e?.message || "Erreur lors de l'ajout");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const removePack = async (packId: string) => {
+    setBusy(true);
+    try {
+      await deleteProductPackOption(packId);
+      await reloadPacks();
+      toast.success("Conditionnement supprimé");
+    } catch (e: any) {
+      toast.error(e?.message || "Erreur lors de la suppression");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   // Recharge le catalogue sans prévenir le parent : notifier pendant que la
   // boîte de dialogue est ouverte la ferme (re-render/remontage du parent).
