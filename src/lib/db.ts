@@ -21,6 +21,7 @@ const PDV_SCOPED_TABLES = new Set<string>([
   "order_placed_products",
   "pep_tasks",
   "product_catalog",
+  "product_pack_options",
   "pep_holidays",
   "pep_occurrences",
   "pep_postponements",

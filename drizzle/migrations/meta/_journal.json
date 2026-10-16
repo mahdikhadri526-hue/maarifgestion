@@ -99,6 +99,13 @@
       "when": 1792016094071,
       "tag": "0013_fix_stock_period_aggregates_types",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792182300076,
+      "tag": "0014_create_product_pack_options",
+      "breakpoints": true
     }
   ]
 }

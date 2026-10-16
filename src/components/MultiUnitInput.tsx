@@ -5,6 +5,8 @@ export interface MultiUnitValues {
   cartons: string;
   paquets: string;
   pieces: string;
+  /** Quantites saisies par conditionnement supplementaire (cle = id du pack). */
+  packs?: Record<string, string>;
 }
 
 export const EMPTY_MULTI: MultiUnitValues = { cartons: "", paquets: "", pieces: "" };
@@ -13,7 +15,11 @@ export function totalPieces(values: MultiUnitValues, config: ProductUnitConfig):
   const c = config.cartonEnabled ? Number(values.cartons || 0) * config.piecesPerCarton : 0;
   const p = config.paquetEnabled ? Number(values.paquets || 0) * config.piecesPerPaquet : 0;
   const u = Number(values.pieces || 0);
-  return c + p + u;
+  const extra = (config.extraPacks ?? []).reduce(
+    (sum, pack) => sum + Number(values.packs?.[pack.id] || 0) * pack.piecesPerUnit,
+    0,
+  );
+  return c + p + u + extra;
 }
 
 export function dominantUnit(values: MultiUnitValues, config: ProductUnitConfig): "CARTON" | "PAQUET" | "PIECE" {
@@ -65,6 +71,18 @@ export function MultiUnitInput({ config, values, onChange, size = "md", disabled
             />
           </div>
         )}
+        {(config.extraPacks ?? []).map((pack) => (
+          <div className="flex flex-col" key={pack.id}>
+            <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">{pack.label}</label>
+            <Input
+              type="number" min="0" placeholder="0"
+              value={values.packs?.[pack.id] ?? ""}
+              disabled={disabled}
+              onChange={(e) => onChange({ ...values, packs: { ...(values.packs ?? {}), [pack.id]: e.target.value } })}
+              className={`font-mono text-right w-20 ${sizeCls}`}
+            />
+          </div>
+        ))}
         {!hidePiece && (
         <div className="flex flex-col">
           <label className="text-[10px] uppercase tracking-wider text-muted-foreground mb-0.5">{pieceLabel}</label>
