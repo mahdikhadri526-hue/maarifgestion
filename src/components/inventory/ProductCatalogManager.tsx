@@ -389,6 +389,61 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
           </table>
         </div>
       </DialogContent>
+
+      {/* Sous-fenetre : conditionnements supplementaires d'un produit (ex: paquet de 16) */}
+      <Dialog open={!!packsFor} onOpenChange={(o) => { if (!o) setPacksFor(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Conditionnements — {packsFor?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="rounded-md border p-3 space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase">Ajouter un conditionnement</p>
+            <div className="flex gap-2">
+              <Input
+                placeholder="Nom (ex: Paquet de 16)"
+                value={newPack.label}
+                onChange={(e) => setNewPack((v) => ({ ...v, label: e.target.value }))}
+              />
+              <Input
+                type="number" min="1" placeholder="Pieces"
+                value={newPack.pieces}
+                onChange={(e) => setNewPack((v) => ({ ...v, pieces: e.target.value }))}
+                className="w-24"
+              />
+              <Button onClick={addPack} disabled={busy} className="gap-2">
+                <Plus className="h-4 w-4" /> Ajouter
+              </Button>
+            </div>
+          </div>
+          <div className="max-h-[40vh] overflow-y-auto border rounded-md">
+            <table className="w-full text-sm">
+              <tbody>
+                {(packs[packsFor?.id ?? ""] ?? []).map((pack) => (
+                  <tr key={pack.id} className="border-b">
+                    <td className="p-2">{pack.label}</td>
+                    <td className="p-2 text-xs text-muted-foreground w-28">= {pack.piecesPerUnit} pieces</td>
+                    <td className="p-2 w-12 text-right">
+                      <Button
+                        size="icon" variant="ghost" className="h-8 w-8 text-destructive"
+                        disabled={busy}
+                        onClick={() => removePack(pack.id)}
+                        title="Supprimer"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+                {(packs[packsFor?.id ?? ""] ?? []).length === 0 && (
+                  <tr>
+                    <td className="p-4 text-center text-muted-foreground text-sm">Aucun conditionnement</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
