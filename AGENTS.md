@@ -19,5 +19,6 @@
 - Voice-guide generation in `supabase/functions/voice-tts` uses the built-in Lovable AI service when its key exists and falls back to Google AI Studio with `GOOGLE_API_KEY` (model from `GEMINI_TTS_MODEL`), so offline servers can generate voices without the Lovable service.
 - Le catalogue produits (product_catalog) est cloisonné par PDV (pdv_id) : ajout/suppression d’un produit n’affecte que le PDV courant ; les lignes sans pdv_id sont obsolètes.
 - Les zones de nettoyage désactivées pour un PDV sont stockées dans pdv_permissions avec la clé cleaning_zone_off:<zone> (absence = zone active), pour que tous les PDV gardent leurs zones par défaut et que le changement de rôle PDV ne les efface pas.
+- Les zones température désactivées pour un PDV suivent le même principe avec la clé fridge_zone_off:<zone> dans pdv_permissions.
 - Supplier claim sheet QC-ENSR 001 lives in supplier_claims (per PDV) with photos in private bucket supplier-claims; only the quality account writes and only it plus admin-role users can read (RLS), per user request.
 - Ice/tart FIFO consumes lots by the date in the lot number (src/lib/lotAge.ts), since deliveries can bring older lots.
