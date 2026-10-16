@@ -187,7 +187,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
       <DialogTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
           <Package className="h-4 w-4" />
-          Produits
+          {conditionnementOnly ? "Conditionnements" : "Produits"}
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl">
