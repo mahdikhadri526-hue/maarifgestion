@@ -5,6 +5,8 @@ export interface MultiUnitValues {
   cartons: string;
   paquets: string;
   pieces: string;
+  /** Quantites saisies par conditionnement supplementaire (cle = id du pack). */
+  packs?: Record<string, string>;
 }
 
 export const EMPTY_MULTI: MultiUnitValues = { cartons: "", paquets: "", pieces: "" };
@@ -13,7 +15,11 @@ export function totalPieces(values: MultiUnitValues, config: ProductUnitConfig):
   const c = config.cartonEnabled ? Number(values.cartons || 0) * config.piecesPerCarton : 0;
   const p = config.paquetEnabled ? Number(values.paquets || 0) * config.piecesPerPaquet : 0;
   const u = Number(values.pieces || 0);
-  return c + p + u;
+  const extra = (config.extraPacks ?? []).reduce(
+    (sum, pack) => sum + Number(values.packs?.[pack.id] || 0) * pack.piecesPerUnit,
+    0,
+  );
+  return c + p + u + extra;
 }
 
 export function dominantUnit(values: MultiUnitValues, config: ProductUnitConfig): "CARTON" | "PAQUET" | "PIECE" {
