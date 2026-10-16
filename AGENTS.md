@@ -6,8 +6,7 @@
 - Report mise en place : en filtre jour/mois/période, si la veille du début de période est un jour de comptage, la saisie mise en place de ce jour est ajoutée au Stock initial et au Stock restant affichés (SI du lendemain = Stock total) ; la vue « Tout » reste inchangée.
 - Voice guides attach to stable visible section headings, including weekly sheet and transfer headings, so guide keys do not change with dates; audio stays private in `voice-guides` and only admins manage it.
 - La génération des explications vocales utilise la même voix masculine darija préconfigurée côté fonction pour toutes les rubriques ; la création groupée conserve les enregistrements micro et la rubrique Bienvenue, afin de ne pas remplacer des voix personnelles.
-- Keep the brand logo in the shared application header in both standard and kiosk modes, and on standalone PDV selection screens; the fullscreen attendance camera remains camera-only as requested.
-- Render every main menu module with the shared branded page title (logo left, title right); keep the fullscreen attendance camera header-free.
+- Keep the logo in standard/kiosk headers and standalone PDV selection; main modules use the shared title (logo left, title right). Fullscreen attendance stays camera-only and header-free.
 - Trigger the welcome transition only from a successful password sign-in attempt and let the existing PDV gate decide the destination afterward, so restored sessions and PDV changes never replay it.
 - Store login welcome photos in a private bucket with an ordered database list; only the two designated admin accounts can manage them, because all signed-in users should see the same sequence after password sign-in.
 
