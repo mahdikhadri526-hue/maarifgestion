@@ -1732,6 +1732,47 @@ export type Database = {
           },
         ]
       }
+      product_pack_options: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          pdv_id: string
+          pieces_per_unit: number
+          product_id: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          pdv_id: string
+          pieces_per_unit: number
+          product_id: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          pdv_id?: string
+          pieces_per_unit?: number
+          product_id?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_pack_options_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       production_entries: {
         Row: {
           created_at: string
