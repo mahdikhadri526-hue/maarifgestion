@@ -55,6 +55,8 @@ export interface CtgExtraData {
     etatEmballage?: ConformityStatus;
     poids?: ConformityStatus;
     remplissage?: ConformityStatus;
+    aspectOdeur?: ConformityStatus;
+    conservation?: ConformityStatus;
     notes?: string;
   };
 }

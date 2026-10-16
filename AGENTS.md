@@ -20,4 +20,5 @@
 - Le catalogue produits (product_catalog) est cloisonné par PDV (pdv_id) : ajout/suppression d’un produit n’affecte que le PDV courant ; les lignes sans pdv_id sont obsolètes.
 - Zones désactivées par PDV (nettoyage `cleaning_zone_off:<zone>`, température `fridge_zone_off:<zone>`) vivent dans pdv_permissions (absence = active), pour garder les zones par défaut et survivre au changement de rôle PDV.
 - Supplier claim sheet QC-ENSR 001 lives in supplier_claims (per PDV) with photos in private bucket supplier-claims; only the quality account writes and only it plus admin-role users can read (RLS), per user request.
-- Ice/tart FIFO consumes lots by the date in the lot number (src/lib/lotAge.ts), since deliveries can bring older lots.
+- Ice/tart FIFO uses lot dates with explicit ice context for compact codes; keep other products unchanged.
+- Share pâte validation across creation/completion; store DLC in autocontrols and reuse pending-visa alerts.
