@@ -1,4 +1,4 @@
-import type { ConformityStatus, IngredientLine } from "@/lib/autocontrolData";
+import type { IngredientLine } from "@/lib/autocontrolData";
 export const PATE_MANAGER_CONTROLS = [
   { key: "etiquettes", label: "Étiquette" },
   { key: "aspectOdeur", label: "Aspect / odeur" },
@@ -12,7 +12,7 @@ export function validatePateIngredients(ingredients: IngredientLine[]): string[]
     return errors;
   });
 }
-export function validatePateManager(visa: string, controls: Record<string, ConformityStatus | boolean | undefined>): string[] {
+export function validatePateManager(visa: string, controls: Record<string, unknown>): string[] {
   if (!visa.trim()) return [];
   return PATE_MANAGER_CONTROLS.filter((c) => !controls[c.key]).map((c) => `${c.label} : cocher C ou NC`);
 }
