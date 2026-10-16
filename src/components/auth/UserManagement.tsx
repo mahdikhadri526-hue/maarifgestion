@@ -140,7 +140,7 @@ function KioskPinSettings() {
 }
 
 export function UserManagement({ onBack }: { onBack: () => void }) {
-  const { user: currentUser, multiPdvEnabled, pdvs, hasAdminRole, isRegionalAdmin, can } = useAuth();
+  const { user: currentUser, multiPdvEnabled, pdvs, hasAdminRole, isRegionalAdmin, isAdmin, can } = useAuth();
   const [users, setUsers] = useState<ProfileRow[]>([]);
   const [roles, setRoles] = useState<Record<string, AppRole | null>>({});
   const [perms, setPerms] = useState<Record<string, Set<string>>>({});
