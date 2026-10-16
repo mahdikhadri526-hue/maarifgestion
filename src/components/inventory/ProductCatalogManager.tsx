@@ -192,10 +192,10 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
       </DialogTrigger>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Catalogue produits – Alimentaire & Emballage</DialogTitle>
+          <DialogTitle>{conditionnementOnly ? "Conditionnements – Alimentaire & Emballage" : "Catalogue produits – Alimentaire & Emballage"}</DialogTitle>
         </DialogHeader>
 
-        {canEdit && (
+        {canEdit && !conditionnementOnly && (
           <div className="rounded-md border p-3 space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase">Ajouter un produit</p>
             <div className="flex flex-col sm:flex-row gap-2">
@@ -272,7 +272,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
                     <td className="p-2">
                       <Input
                         value={d.name}
-                        disabled={!canEdit || busy}
+                        disabled={conditionnementOnly || !canEdit || busy}
                         onChange={(e) => setDraft(p.id, { name: e.target.value }, base)}
                         className="h-8"
                       />
@@ -302,7 +302,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
                             <Save className="h-4 w-4" />
                           </Button>
                         )}
-                        {canDelete && (
+                        {canDelete && !conditionnementOnly && (
                           <Button
                             size="icon"
                             variant="ghost"
