@@ -648,7 +648,7 @@ export async function getProductUnitConfigs(): Promise<Record<string, ProductUni
 export async function getProductPackOptions(): Promise<Record<string, ProductPackOption[]>> {
   const pdvId = requireCurrentPdvId();
   return cached(`productPackOptions:${pdvId}`, ["product_pack_options"], async () => {
-    const rows = await fetchAllRows<any>((q) =>
+    const rows = await fetchAllRows<any>(() =>
       supabase.from("product_pack_options" as any).select("id, product_id, label, pieces_per_unit, sort_order")
         .order("sort_order", { ascending: true }).order("created_at", { ascending: true }),
     );
