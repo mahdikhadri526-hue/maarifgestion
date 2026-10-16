@@ -349,6 +349,18 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
                             <Save className="h-4 w-4" />
                           </Button>
                         )}
+                        {conditionnementOnly && canEdit && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 text-xs"
+                            disabled={busy}
+                            onClick={() => { setPacksFor({ id: p.id, name: p.name }); setNewPack({ label: "", pieces: "" }); }}
+                            title="Conditionnements supplementaires"
+                          >
+                            Paquets ({(packs[p.id] ?? []).length})
+                          </Button>
+                        )}
                         {canDelete && !conditionnementOnly && (
                           <Button
                             size="icon"
