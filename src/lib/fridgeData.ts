@@ -83,3 +83,5 @@ export function parseDisplayTemp(value: string): number | null {
   if (Number.isNaN(num)) return null;
   return num;
 }
+/** Clé pdv_permissions marquant une zone température désactivée pour un PDV (absence = active). */
+export const FRIDGE_ZONE_OFF_PREFIX = "fridge_zone_off:";

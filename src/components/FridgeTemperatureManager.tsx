@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Save, AlertTriangle, CheckCircle2, FileDown, Volume2, VolumeX } from "lucide-react";
-import { EQUIPMENTS as BASE_EQUIPMENTS, SLOTS, ZONES, formatDisplayTemp, parseDisplayTemp, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
+import { EQUIPMENTS as BASE_EQUIPMENTS, SLOTS, ZONES as ALL_ZONES, FRIDGE_ZONE_OFF_PREFIX, formatDisplayTemp, parseDisplayTemp, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
 import { OPERATORS } from "@/lib/operators";
 import { MANAGERS } from "@/lib/managers";
 import { useOperators, useManagers } from "@/lib/roster";
@@ -121,8 +121,17 @@ function formatTime(ts?: string): string {
 }
 
 export function FridgeTemperatureManager() {
-  const { can, user, isAdmin } = useAuth();
-  const { custom: customEquipments, equipments: EQUIPMENTS, reload: reloadEquipments } = useFridgeEquipments();
+  const { can, user, isAdmin, pdvId: zonesPdvId } = useAuth();
+  const { custom: customEquipments, equipments: ALL_EQUIPMENTS, reload: reloadEquipments } = useFridgeEquipments();
+  const [disabledZones, setDisabledZones] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    if (!zonesPdvId) { setDisabledZones(new Set()); return; }
+    supabase.from("pdv_permissions" as any).select("permission_key, allowed")
+      .eq("pdv_id", zonesPdvId).like("permission_key", `${FRIDGE_ZONE_OFF_PREFIX}%`)
+      .then(({ data }) => setDisabledZones(new Set(((data ?? []) as any[]).filter((r) => r.allowed).map((r) => String(r.permission_key).slice(FRIDGE_ZONE_OFF_PREFIX.length)))));
+  }, [zonesPdvId]);
+  const ZONES = useMemo(() => ALL_ZONES.filter((z) => !disabledZones.has(z)), [disabledZones]);
+  const EQUIPMENTS = useMemo(() => ALL_EQUIPMENTS.filter((e) => !disabledZones.has(e.zone)), [ALL_EQUIPMENTS, disabledZones]);
   const operatorOptions = useOperators();
   const managerOptions = useManagers();
   const isNoDeleteUser = user?.email === "gestionmaarif1@gmail.com";
@@ -133,6 +142,9 @@ export function FridgeTemperatureManager() {
   const [date, setDate] = useState<string>(serviceDateStr());
   const [slot, setSlot] = useState<FridgeSlot>(currentSlot());
   const [zoneFilter, setZoneFilter] = useState<FridgeZone | "">("Salle");
+  useEffect(() => {
+    if (zoneFilter && !ZONES.includes(zoneFilter)) setZoneFilter(ZONES[0] ?? "");
+  }, [ZONES, zoneFilter]);
 
   const [rows, setRows] = useState<Record<string, RowState>>({});
   const [loading, setLoading] = useState(false);

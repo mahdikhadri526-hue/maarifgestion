@@ -10,6 +10,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { CLEANING_ZONES, CLEANING_ZONE_OFF_PREFIX } from "@/lib/cleaningData";
+import { ZONES as FRIDGE_ZONES, FRIDGE_ZONE_OFF_PREFIX } from "@/lib/fridgeData";
+import { Thermometer } from "lucide-react";
 import { ALL_PERMISSIONS, publishedPermissionGroups, AppRole, useAuth } from "@/contexts/AuthContext";
 
 const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
@@ -59,6 +61,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
   const [pdvPerms, setPdvPerms] = useState<Record<string, Set<string>>>({});
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
   const [zonesFor, setZonesFor] = useState<{ id: string; name: string } | null>(null);
+  const [fridgeZonesFor, setFridgeZonesFor] = useState<{ id: string; name: string } | null>(null);
 
   const loadRights = async () => {
     const [{ data: rows }, { data: perms }] = await Promise.all([
@@ -90,7 +93,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
   const setPdvRole = async (id: string, role: AppRole) => {
     const { error } = await supabase.from("pdvs").update({ default_role: role } as any).eq("id", id);
     if (error) { toast.error("Erreur : " + error.message); return; }
-    await supabase.from("pdv_permissions" as any).delete().eq("pdv_id", id).not("permission_key", "like", `${CLEANING_ZONE_OFF_PREFIX}%`);
+    await supabase.from("pdv_permissions" as any).delete().eq("pdv_id", id).not("permission_key", "like", `${CLEANING_ZONE_OFF_PREFIX}%`).not("permission_key", "like", `${FRIDGE_ZONE_OFF_PREFIX}%`);
     const keys = PDV_ROLE_PRESETS[role];
     if (keys.length > 0) {
       await supabase.from("pdv_permissions" as any).insert(
@@ -204,7 +207,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
               onClick={() => setEditing({ id: p.id, name: p.name })}
             >
               {canEditPerms ? <Settings2 className="h-4 w-4 mr-1" /> : <Lock className="h-4 w-4 mr-1" />}
-              Permissions ({[...(pdvPerms[p.id] ?? [])].filter((k) => !k.startsWith(CLEANING_ZONE_OFF_PREFIX)).length})
+              Permissions ({[...(pdvPerms[p.id] ?? [])].filter((k) => !k.startsWith(CLEANING_ZONE_OFF_PREFIX) && !k.startsWith(FRIDGE_ZONE_OFF_PREFIX)).length})
             </Button>
             <Button
               variant="outline"
@@ -214,6 +217,15 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
             >
               <Sparkles className="h-4 w-4 mr-1" />
               Zones nettoyage ({CLEANING_ZONES.filter((z) => !pdvPerms[p.id]?.has(CLEANING_ZONE_OFF_PREFIX + z.key)).length}/{CLEANING_ZONES.length})
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="shrink-0"
+              onClick={() => setFridgeZonesFor({ id: p.id, name: p.name })}
+            >
+              <Thermometer className="h-4 w-4 mr-1" />
+              Zones température ({FRIDGE_ZONES.filter((z) => !pdvPerms[p.id]?.has(FRIDGE_ZONE_OFF_PREFIX + z)).length}/{FRIDGE_ZONES.length})
             </Button>
             {p.id === pdvId && <Badge className="shrink-0">Actuel</Badge>}
             <Button variant="ghost" size="icon" className="shrink-0" disabled={!hasAdminRole} onClick={() => remove(p.id)}>
@@ -251,6 +263,38 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
           )}
           <DialogFooter>
             <Button onClick={() => setZonesFor(null)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!fridgeZonesFor} onOpenChange={(o) => !o && setFridgeZonesFor(null)}>
+        <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Zones température — {fridgeZonesFor?.name}</DialogTitle>
+          </DialogHeader>
+          {fridgeZonesFor && (
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground pb-2">
+                Cochez les zones qui existent dans ce PDV. Les zones décochées n'apparaissent plus dans la prise de température de ce PDV.
+              </p>
+              {FRIDGE_ZONES.map((z) => {
+                const offKey = FRIDGE_ZONE_OFF_PREFIX + z;
+                const off = pdvPerms[fridgeZonesFor.id]?.has(offKey) ?? false;
+                return (
+                  <label key={z} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
+                    <Checkbox
+                      checked={!off}
+                      disabled={!canEditPerms}
+                      onCheckedChange={() => togglePdvPerm(fridgeZonesFor.id, offKey, off)}
+                    />
+                    <div className="text-sm font-medium">{z}</div>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setFridgeZonesFor(null)}>Fermer</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
