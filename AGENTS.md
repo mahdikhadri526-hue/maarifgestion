@@ -21,3 +21,4 @@
 - Le catalogue produits (product_catalog) est cloisonné par PDV (pdv_id) : ajout/suppression d’un produit n’affecte que le PDV courant ; les lignes sans pdv_id sont obsolètes.
 - Les zones de nettoyage désactivées pour un PDV sont stockées dans pdv_permissions avec la clé cleaning_zone_off:<zone> (absence = zone active), pour que tous les PDV gardent leurs zones par défaut et que le changement de rôle PDV ne les efface pas.
 - Supplier claim sheet QC-ENSR 001 lives in supplier_claims (per PDV) with photos in private bucket supplier-claims; only the quality account writes and only it plus admin-role users can read (RLS), per user request.
+- Glaces & tartes FIFO: lots are consumed by the date read from the lot number (src/lib/lotAge.ts), not by arrival order, because deliveries can bring older lots than those in stock.
