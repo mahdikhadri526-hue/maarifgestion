@@ -9,11 +9,19 @@ export type Category = "alimentaire" | "emballage";
 export type UnitType = "PIECE" | "KILO" | "LITRE" | "PAQUET" | "COLIS" | "ROULEAU";
 export type MovementUnit = "CARTON" | "PAQUET" | "PIECE";
 
+export interface ProductPackOption {
+  id: string;
+  label: string;
+  piecesPerUnit: number;
+}
+
 export interface ProductUnitConfig {
   cartonEnabled: boolean;
   paquetEnabled: boolean;
   piecesPerCarton: number;
   piecesPerPaquet: number;
+  /** Conditionnements supplementaires par produit (ex: paquet de 16). */
+  extraPacks?: ProductPackOption[];
 }
 
 export const DEFAULT_UNIT_CONFIG: ProductUnitConfig = {
@@ -622,16 +630,50 @@ export async function getProductUnitConfigs(): Promise<Record<string, ProductUni
   return cached(`productUnitConfigs:${pdvId}`, ["initial_stocks"], async () => {
   const data = await getInitialStockRecords();
   const result: Record<string, ProductUnitConfig> = {};
+  const packs = await getProductPackOptions();
   data.forEach((row) => {
     result[row.product_id] = {
       cartonEnabled: !!row.carton_enabled,
       paquetEnabled: !!row.paquet_enabled,
       piecesPerCarton: row.pieces_per_carton || 1,
       piecesPerPaquet: row.pieces_per_paquet || 1,
+      extraPacks: packs[row.product_id] ?? [],
     };
   });
   return result;
   });
+}
+
+/** Conditionnements supplementaires par produit (PDV courant), ex: « Paquet de 16 ». */
+export async function getProductPackOptions(): Promise<Record<string, ProductPackOption[]>> {
+  const pdvId = requireCurrentPdvId();
+  return cached(`productPackOptions:${pdvId}`, ["product_pack_options"], async () => {
+    const rows = await fetchAllRows<any>((q) =>
+      supabase.from("product_pack_options" as any).select("id, product_id, label, pieces_per_unit, sort_order")
+        .order("sort_order", { ascending: true }).order("created_at", { ascending: true }),
+    );
+    const result: Record<string, ProductPackOption[]> = {};
+    (rows ?? []).forEach((r: any) => {
+      (result[r.product_id] ??= []).push({ id: r.id, label: r.label, piecesPerUnit: Number(r.pieces_per_unit) || 1 });
+    });
+    return result;
+  });
+}
+
+export async function addProductPackOption(productId: string, label: string, piecesPerUnit: number) {
+  const { error } = await supabase.from("product_pack_options" as any).insert({
+    product_id: productId,
+    label: label.trim(),
+    pieces_per_unit: Math.max(1, piecesPerUnit),
+  } as any);
+  if (error) throw error;
+  invalidateTables(["product_pack_options", "initial_stocks"]);
+}
+
+export async function deleteProductPackOption(id: string) {
+  const { error } = await supabase.from("product_pack_options" as any).delete().eq("id", id);
+  if (error) throw error;
+  invalidateTables(["product_pack_options", "initial_stocks"]);
 }
 
 export async function setProductUnitConfig(productId: string, config: Partial<ProductUnitConfig>) {
