@@ -1,3 +1,4 @@
+import { sortFifoByLot, lotDateKey } from "@/lib/lotAge";
 import React, { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/db";
 import { supabase as rawSupabase } from "@/integrations/supabase/client";
@@ -70,14 +71,6 @@ function dayShort(iso: string, n: number) {
   return `${dd}.${mm}`;
 }
 
-function lotDateKey(lot: string): string | null {
-  const value = lot.trim();
-  const fr = value.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
-  if (fr) return `${fr[3]}-${fr[2].padStart(2, "0")}-${fr[1].padStart(2, "0")}`;
-  const iso = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
-  if (iso) return `${iso[1]}-${iso[2].padStart(2, "0")}-${iso[3].padStart(2, "0")}`;
-  return null;
-}
 
 type Row = Record<string, any>;
 
@@ -923,6 +916,7 @@ export function WeeklyTracking() {
         const computed = getSortie(d, article, wkStart);
         if (typeof computed === "number") sortie = computed;
       }
+      sortFifoByLot(batches, wkStart);
       let need = sortie;
       for (const b of batches) {
         if (need <= 0) break;
@@ -1009,6 +1003,7 @@ export function WeeklyTracking() {
         const computed = getSortie(d, article, wkStart);
         if (typeof computed === "number") sortie = computed;
       }
+      sortFifoByLot(out, dayDate);
       let need = sortie;
       for (const b of out) {
         if (need <= 0) break;
@@ -1149,6 +1144,7 @@ export function WeeklyTracking() {
             }
           }
 
+          sortFifoByLot(batches, dayDate);
           let need = sortie;
           for (const b of batches) {
             if (need <= 0) break;
