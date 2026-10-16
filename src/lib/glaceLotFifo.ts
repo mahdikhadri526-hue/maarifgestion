@@ -85,6 +85,7 @@ export async function fetchGlaceFifoLots(): Promise<Record<string, string>> {
         if (q > 0) batches.push({ lot: (r.lot_number ?? "").toString().trim(), remaining: q });
       }
 
+      sortFifoByLot(batches, dayRows[0]?.week_start, true);
       let need = dayRows.reduce((s, r) => s + num(r.sorties), 0);
       for (const b of [...batches.filter((b) => !!b.lot), ...batches.filter((b) => !b.lot)]) {
         if (need <= 0) break;
@@ -204,7 +205,7 @@ export async function fetchFifoLotChoices(article: string, limit = 3): Promise<s
       if (lots.length === 0) batches.push({ lot: "", remaining: q });
       else lots.forEach((l) => batches.push({ lot: l, remaining: q / lots.length }));
     }
-    sortFifoByLot(batches, dayRows[0]?.week_start);
+    sortFifoByLot(batches, dayRows[0]?.week_start, GLACE_PARFUMS.includes(article));
     let need = dayRows.reduce((s, r) => s + num(r.sorties), 0);
     for (const b of batches) {
       if (need <= 0) break;

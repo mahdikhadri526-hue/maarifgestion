@@ -267,7 +267,7 @@ function LotExistantCell({
       existing.remaining += b.remaining;
       if (ed && (!existing.entryDate || ed < existing.entryDate)) existing.entryDate = ed;
     } else {
-      merged.push({ lot: label, remaining: b.remaining, entryDate: ed, lotDate: lotDateKey(label, ed || undefined) ?? "", order: idx });
+      merged.push({ lot: label, remaining: b.remaining, entryDate: ed, lotDate: lotDateKey(label, ed || undefined, GLACE_ARTICLES.includes(article)) ?? "", order: idx });
     }
   });
   merged.sort((a, b) => {
@@ -916,7 +916,7 @@ export function WeeklyTracking() {
         const computed = getSortie(d, article, wkStart);
         if (typeof computed === "number") sortie = computed;
       }
-      sortFifoByLot(batches, wkStart);
+      sortFifoByLot(batches, wkStart, GLACE_ARTICLES.includes(article));
       let need = sortie;
       for (const b of batches) {
         if (need <= 0) break;
@@ -1003,7 +1003,7 @@ export function WeeklyTracking() {
         const computed = getSortie(d, article, wkStart);
         if (typeof computed === "number") sortie = computed;
       }
-      sortFifoByLot(out, dayDate);
+      sortFifoByLot(out, dayDate, GLACE_ARTICLES.includes(article));
       let need = sortie;
       for (const b of out) {
         if (need <= 0) break;
@@ -1144,7 +1144,7 @@ export function WeeklyTracking() {
             }
           }
 
-          sortFifoByLot(batches, dayDate);
+          sortFifoByLot(batches, dayDate, GLACE_ARTICLES.includes(article));
           let need = sortie;
           for (const b of batches) {
             if (need <= 0) break;

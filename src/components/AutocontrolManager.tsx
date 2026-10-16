@@ -60,6 +60,7 @@ import {
 import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableSection } from "@/lib/printExport";
 
 import { PateAutocontrolForm, isPateFiche } from "@/components/PateAutocontrolForm";
+import { PATE_MANAGER_CONTROLS, validatePateManager } from "@/lib/pateValidation";
 
 const CLAIMS_FICHE = "Réclamations & Retours";
 
@@ -2323,6 +2324,14 @@ export function AutocontrolManager() {
                 />
               )}
 
+              {isPateFiche(editEntry.ficheType) && (
+                <ManagerControlEditor
+                  extra={editExtra ?? { managerControl: {} }}
+                  onChange={setEditExtra}
+                  fields={PATE_MANAGER_CONTROLS.map((c) => [c.key, c.label])}
+                />
+              )}
+
               <div>
                 <label className="text-xs font-medium text-muted-foreground">Visa manager</label>
                 <Select
@@ -2353,6 +2362,10 @@ export function AutocontrolManager() {
                 setSavingEdit(true);
                 try {
                   const isCtgEdit = editEntry.ficheType === "Cornet/Tulipe/Gaufrette";
+                  if (isPateFiche(editEntry.ficheType)) {
+                    const errors = validatePateManager(editVisa, editExtra?.managerControl ?? {});
+                    if (errors.length) throw new Error(errors.join(" • "));
+                  }
                   let nextExtra: any = editExtra;
                   const patch: any = {
                     visaManager: editVisa.trim() || (null as any),

@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Corriger les fiches pâte : DLC, œuf sans lot et validation manager différée avec alerte.
+- [x] Reconnaître le format 2007cgng/26 uniquement pour le FIFO glace et vérifier les calculs.
 - [x] Séparer les validations manager/qualité du nettoyage, ajouter et vérifier la conformité qualité à droite.
 - [x] Créer une présentation PowerPoint française des seules rubriques publiées, avec objectifs, éléments et captures.
 - [x] Créer et vérifier la version arabe de la même présentation.

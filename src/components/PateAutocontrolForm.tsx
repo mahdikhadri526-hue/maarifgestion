@@ -8,6 +8,7 @@ import { useManagers } from "@/lib/roster";
 import { supabase } from "@/lib/db";
 import { addAutocontrol, type FicheType, type ConformityStatus } from "@/lib/autocontrolData";
 import { formatDateFR } from "@/lib/utils";
+import { PATE_MANAGER_CONTROLS as CONTROLS, validatePateIngredients, validatePateManager } from "@/lib/pateValidation";
 
 export const PATE_FICHES: Record<string, { article: string; ingredients: string[] }> = {
   "Pâte à crêpe": {
@@ -20,7 +21,7 @@ export const PATE_FICHES: Record<string, { article: string; ingredients: string[
   },
 };
 
-// Ingrédients dont le lot est importé automatiquement (FIFO Gestion des lots). L'œuf reste manuel.
+// Ingrédients dont le lot est importé automatiquement (FIFO Gestion des lots). Aucun lot demandé pour l'œuf.
 const LOT_PATTERN: Record<string, RegExp> = {
   "Sucre granulé": /SUCRE\s*GRANUL/i,
   "Beurre": /BEURRE/i,
@@ -32,11 +33,6 @@ const LOT_PATTERN: Record<string, RegExp> = {
 
 export const isPateFiche = (t: string) => t in PATE_FICHES;
 
-const CONTROLS: { key: "etiquettes" | "aspectOdeur" | "conservation"; label: string }[] = [
-  { key: "etiquettes", label: "Étiquette" },
-  { key: "aspectOdeur", label: "Aspect / odeur" },
-  { key: "conservation", label: "Conservation" },
-];
 
 const localIso = () => {
   const d = new Date();
@@ -62,6 +58,7 @@ export function PateAutocontrolForm({
   const [ings, setIngs] = useState(def.ingredients.map((name) => ({ name, quantity: "", lot: "" })));
   const [qty, setQty] = useState("");
   const [lot, setLot] = useState(todayFr());
+  const [dlc, setDlc] = useState("");
   const [controls, setControls] = useState<Record<string, ConformityStatus>>({});
   const [visa, setVisa] = useState("");
   const [notes, setNotes] = useState("");
@@ -70,7 +67,7 @@ export function PateAutocontrolForm({
 
   const [lotChoices, setLotChoices] = useState<Record<string, string[]>>({});
 
-  // Trois derniers lots enregistrés pour chaque matière première (sauf l'œuf, saisi à la main).
+  // Trois derniers lots enregistrés pour chaque matière première (sauf l'œuf).
   const autoFillLots = async () => {
     const products = getProducts("alimentaire");
     const entries = await Promise.all(
@@ -98,6 +95,7 @@ export function PateAutocontrolForm({
     setIngs(def.ingredients.map((name) => ({ name, quantity: "", lot: "" })));
     setControls({});
     setLot(todayFr());
+    setDlc("");
     autoFillLots();
   }, [ficheType]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -106,17 +104,11 @@ export function PateAutocontrolForm({
     const errors: string[] = [];
     if (!date) errors.push("Date obligatoire");
     if (!agent) errors.push("Agent de production obligatoire");
-    ings.forEach((i) => {
-      if (!(Number(i.quantity) > 0)) errors.push(`${i.name} : quantité (g) obligatoire`);
-      if (!i.lot.trim()) errors.push(`${i.name} : N° de lot obligatoire`);
-    });
+    errors.push(...validatePateIngredients(ings));
     if (!(Number(qty) > 0)) errors.push("Quantité produite obligatoire");
     if (!lot.trim()) errors.push("N° lot / date de production obligatoire");
-    if (visa.trim()) {
-      CONTROLS.forEach((c) => {
-        if (!controls[c.key]) errors.push(`${c.label} : cocher C ou NC`);
-      });
-    }
+    if (!dlc) errors.push("DLC obligatoire");
+    errors.push(...validatePateManager(visa, controls));
     if (errors.length) {
       toast.error("Fiche incomplète — remplissez tous les champs", {
         description: errors.slice(0, 6).join(" • ") + (errors.length > 6 ? "…" : ""),
@@ -132,10 +124,10 @@ export function PateAutocontrolForm({
         article: def.article,
         lotNumber: lot.trim(),
         quantity: Number(qty),
-        dlc: null,
+        dlc,
         visaManager: visa.trim() || null,
         notes:
-          [ings.map((i) => `${i.name} ${i.quantity} g (lot ${i.lot})`).join(" ; "), notes.trim()]
+          [ings.map((i) => `${i.name} ${i.quantity} g${i.lot ? ` (lot ${i.lot})` : ""}`).join(" ; "), notes.trim()]
             .filter(Boolean)
             .join(" — ") || null,
         extraData: {
@@ -147,6 +139,7 @@ export function PateAutocontrolForm({
       setIngs(def.ingredients.map((name) => ({ name, quantity: "", lot: "" })));
       setQty("");
       setLot(todayFr());
+    setDlc("");
       setControls({});
       setVisa("");
       setNotes("");
@@ -204,7 +197,9 @@ export function PateAutocontrolForm({
                   />
                 </td>
                 <td className="p-1">
-                  {LOT_PATTERN[i.name] ? (
+                  {i.name === "Œuf" ? (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  ) : LOT_PATTERN[i.name] ? (
                     (lotChoices[i.name]?.length ?? 0) > 0 ? (
                       <Select
                         value={i.lot}
@@ -247,6 +242,10 @@ export function PateAutocontrolForm({
         <div>
           <label className="text-xs font-medium text-muted-foreground">N° lot / Date de production *</label>
           <Input value={lot} onChange={(e) => setLot(e.target.value)} />
+        </div>
+        <div>
+          <label htmlFor="pate-dlc" className="text-xs font-medium text-muted-foreground">DLC *</label>
+          <Input id="pate-dlc" type="date" value={dlc} onChange={(e) => setDlc(e.target.value)} />
         </div>
       </div>
 
