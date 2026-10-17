@@ -456,7 +456,9 @@ export function GlaceStuffControl() {
                             onValueChange={(v) => update(slot, 0, { visa_manager: v })}
                           >
                             <SelectTrigger className="h-8 text-xs">
-                              <SelectValue placeholder="Visa" />
+                              <SelectValue placeholder="Visa">
+                                {get(slot, 0).visa_manager || "Visa"}
+                              </SelectValue>
                             </SelectTrigger>
                             <SelectContent>
                               {managerOptions.map((m) => (
