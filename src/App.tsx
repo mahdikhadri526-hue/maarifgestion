@@ -9,8 +9,11 @@ import { AuthPage } from "@/components/auth/AuthPage";
 import { PdvSelector } from "@/components/pdv/PdvSelector";
 import { WelcomeScreen } from "@/components/auth/WelcomeScreen";
 import { loadWelcomePhotos, type WelcomePhoto } from "@/lib/welcomePhotos";
-import voiceOverAsset from "@/assets/oliveri-voix-mature.mp3.asset.json";
-import introMusic from "@/assets/oliveri-intro-11s.mp3.asset.json";
+// Vrais fichiers audio embarqués dans le build : l'accueil fonctionne aussi sur le serveur autonome.
+import voiceOverUrl from "@/assets/oliveri-voix-mature.mp3";
+import introMusicUrl from "@/assets/oliveri-intro-11s.mp3";
+const voiceOverAsset = { url: voiceOverUrl };
+const introMusic = { url: introMusicUrl };
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
