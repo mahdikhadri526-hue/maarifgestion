@@ -21,3 +21,4 @@
 - Supplier claim sheet QC-ENSR 001 lives in supplier_claims (per PDV) with photos in private bucket supplier-claims; only the quality account writes and only it plus admin-role users can read (RLS), per user request.
 - Ice/tart FIFO uses lot dates with explicit ice context for compact codes; keep other products unchanged.
 - Share pâte validation across creation/completion; store DLC in autocontrols and reuse pending-visa alerts.
+- Welcome voice-over and intro music must be real imported .mp3 files under src/assets (not lovable-assets .asset.json pointers), because /__l5e URLs do not exist on the self-hosted server.
