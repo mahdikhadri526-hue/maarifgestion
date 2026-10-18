@@ -1183,6 +1183,7 @@ function ReportsView({
       "Retard pause": r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "",
       Présence: r.present ? "Présent" : r.absence ? "Absence à justifier" : "—",
       "Pointage manuel": r.manualTypes.length ? `Oui (${r.manualTypes.join(", ")})` : "",
+      "Correction (auteur / motif)": r.manualNotes.join(" | "),
     }));
     downloadCsv(`rapport-rh-${from}_${to}.csv`, toCsv(data));
   };
