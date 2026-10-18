@@ -48,6 +48,8 @@ export interface DayResult {
   absence: boolean;
   /** Types de pointage saisis/modifiés manuellement par un manager. */
   manualTypes: PunchType[];
+  /** Traçabilité des corrections : auteur, date et motif (device_label des pointages manuels). */
+  manualNotes: string[];
 }
 
 function hhmm(ts: number | null): string | null {
@@ -148,7 +150,10 @@ export function computeDay(params: {
     pauseLateMinutes,
     present,
     absence,
-    manualTypes: punches.filter((x) => x.method === "manual").map((x) => x.punch_type as PunchType),
+  manualTypes: punches.filter((x) => x.method === "manual").map((x) => x.punch_type as PunchType),
+    manualNotes: punches
+      .filter((x) => x.method === "manual" && x.device_label)
+      .map((x) => x.device_label as string),
   };
 }
 
