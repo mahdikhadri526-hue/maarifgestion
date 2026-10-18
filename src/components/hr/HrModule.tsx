@@ -1300,6 +1300,40 @@ function ReportsView({
         </Card>
       )}
 
+      {rows.length > 0 && (
+        <Card className="p-3 space-y-2">
+          <p className="text-sm font-semibold">Compteur d'heures supplémentaires (seuil 8 h/jour — plafond légal {ANNUAL_OVERTIME_CAP_HOURS} h/an)</p>
+          <div className="space-y-1">
+            {overtimeCounters.map((c) => (
+              <div key={c.agentId} className="flex flex-wrap items-center gap-2 text-xs border-b py-1">
+                <span className="font-medium w-48 truncate">{c.agentName}</span>
+                <Badge variant="secondary">Acquises {c.earned} h</Badge>
+                <Badge variant="outline">Récupérées {c.recovered} h</Badge>
+                <Badge variant="outline">Payées (juin–août) {c.paid} h</Badge>
+                {c.overCap && <Badge variant="destructive">Dépassement plafond {ANNUAL_OVERTIME_CAP_HOURS} h/an</Badge>}
+              </div>
+            ))}
+            {overtimeCounters.length === 0 && (
+              <p className="text-xs text-muted-foreground">Aucun salarié concerné (les managers sont exclus du compteur).</p>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {restAlerts.length > 0 && (
+        <Card className="p-3 space-y-1 border-destructive/40">
+          <p className="text-sm font-semibold text-destructive">Repos hebdomadaire manquant</p>
+          <p className="text-[11px] text-muted-foreground">
+            Semaines sans journée de repos complète (repos hebdomadaire obligatoire) :
+          </p>
+          {restAlerts.map((a) => (
+            <div key={`${a.agentId}-${a.week}`} className="text-xs border-b py-1">
+              {a.agentName} — semaine du {formatFr(a.week)}
+            </div>
+          ))}
+        </Card>
+      )}
+
       <div className="overflow-x-auto rounded-md border border-border bg-card shadow-sm">
         <table
           className="hr-sticky-table text-xs text-center [&_th]:text-center"
