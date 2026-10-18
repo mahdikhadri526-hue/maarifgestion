@@ -4,6 +4,11 @@ import type { DayType, HrBalanceEntry, HrSchedule } from "@/lib/hrData";
 
 /* ------------------------------------------------------------ Heures */
 
+/** Date locale au format YYYY-MM-DD. */
+function isoLocal(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function toMinutes(hhmm: string | null | undefined): number | null {
   if (!hhmm) return null;
   const m = /^(\d{1,2})[:hH.](\d{2})/.exec(hhmm.trim());
@@ -67,6 +72,8 @@ export function computeDay(params: {
   shiftStarts?: Record<string, string>;
   /** Rôle utilisé pour les horaires de shift : "manager" (défaut) ou "caissier". */
   shiftRole?: "manager" | "caissier";
+  /** Date du jour (YYYY-MM-DD) pour ne marquer l'absence que sur les journées passées. */
+  today?: string;
 }): DayResult {
   const { date, agentId, agentName, pdvId, punches, schedule } = params;
   const dayType = (schedule?.day_type as DayType | undefined) ?? null;
