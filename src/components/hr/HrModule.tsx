@@ -1095,6 +1095,7 @@ function ReportsView({
       });
       out.sort((x, y) => x.date.localeCompare(y.date) || x.agentName.localeCompare(y.agentName));
       setRows(out);
+      setReportSchedules(schedules);
     } catch (e: any) {
       toast.error(e?.message ?? "Rapport impossible");
     } finally {
