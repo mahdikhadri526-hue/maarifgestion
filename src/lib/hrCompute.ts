@@ -275,6 +275,93 @@ export function computeBalance(params: {
   };
 }
 
+/* ------------------------------------------------------------ Heures supplémentaires & repos */
+
+/** Plafond légal annuel d'heures supplémentaires par salarié (décret n° 2-04-570, art. 2). */
+export const ANNUAL_OVERTIME_CAP_HOURS = 80;
+
+export interface OvertimeCounter {
+  agentId: string;
+  agentName: string;
+  /** Heures sup. acquises sur la période (au-delà de 8 h/jour, managers exclus). */
+  earned: number;
+  /** Heures récupérées (jours de récupération × 8 h). */
+  recovered: number;
+  /** Heures payées (juin–août, au taux normal). */
+  paid: number;
+  /** Alerte si les heures acquises sur l'année dépassent le plafond légal. */
+  overCap: boolean;
+}
+
+/**
+ * Compteur d'heures supplémentaires par salarié (managers et direction exclus).
+ * Récupérées = journées « Récupération » du planning × 8 h ; payées = HS de juin à août.
+ */
+export function computeOvertimeCounters(params: {
+  days: DayResult[];
+  agents: { id: string; full_name: string; staff_level: string }[];
+  year: number;
+}): OvertimeCounter[] {
+  const eligible = params.agents.filter((a) => a.staff_level === "agent");
+  return eligible.map((a) => {
+    const days = params.days.filter((d) => d.agentId === a.id);
+    const earned = days.reduce((t, d) => t + d.overtimeHours, 0);
+    const paid = days
+      .filter((d) => {
+        const m = Number(d.date.slice(5, 7));
+        return m >= 6 && m <= 8;
+      })
+      .reduce((t, d) => t + d.overtimeHours, 0);
+    const recupDays = days.filter((d) => d.dayType === "recuperation").length;
+    const recovered = recupDays * OVERTIME_THRESHOLD_HOURS;
+    return {
+      agentId: a.id,
+      agentName: a.full_name,
+      earned: Number(earned.toFixed(2)),
+      recovered: Number(recovered.toFixed(2)),
+      paid: Number(paid.toFixed(2)),
+      overCap: earned > ANNUAL_OVERTIME_CAP_HOURS,
+    };
+  });
+}
+
+/** Semaines (lundi) sans journée de repos complète, par agent — repos hebdomadaire obligatoire. */
+export function missingWeeklyRest(params: {
+  schedules: HrSchedule[];
+  agents: { id: string; full_name: string }[];
+  from: string;
+  to: string;
+}): { agentId: string; agentName: string; week: string }[] {
+  const out: { agentId: string; agentName: string; week: string }[] = [];
+  const byAgent = new Map<string, Set<string>>();
+  params.schedules.forEach((s) => {
+    if (s.day_type === "travail") {
+      if (!byAgent.has(s.agent_id)) byAgent.set(s.agent_id, new Set());
+      byAgent.get(s.agent_id)!.add(s.work_date);
+    }
+  });
+  params.agents.forEach((a) => {
+    const worked = byAgent.get(a.id);
+    if (!worked) return;
+    let wk = weekStart(params.from);
+    while (wk <= params.to) {
+      const days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(`${wk}T12:00:00`);
+        d.setDate(d.getDate() + i);
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      }).filter((d) => d >= params.from && d <= params.to);
+      // Alerte seulement si les 7 jours de la semaine sont travaillés (aucun repos complet).
+      if (days.length === 7 && days.every((d) => worked.has(d))) {
+        out.push({ agentId: a.id, agentName: a.full_name, week: wk });
+      }
+      const nd = new Date(`${wk}T12:00:00`);
+      nd.setDate(nd.getDate() + 7);
+      wk = `${nd.getFullYear()}-${String(nd.getMonth() + 1).padStart(2, "0")}-${String(nd.getDate()).padStart(2, "0")}`;
+    }
+  });
+  return out;
+}
+
 /** Formate des minutes en « 00h00m ». */
 export function formatMinutes(min: number): string {
   const t = Math.round(min);
