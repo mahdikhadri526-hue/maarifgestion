@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type DayType =
   | "travail" | "repos" | "conge" | "recuperation"
-  | "maladie" | "accident_travail" | "conge_maternite" | "mariage" | "circoncision" | "naissance" | "deces";
+  | "maladie" | "accident_travail" | "conge_maternite" | "conge_paternite" | "conge_parental" | "mariage" | "circoncision" | "naissance" | "deces";
 
 export const DAY_TYPE_LABELS: Record<DayType, string> = {
   travail: "Travail",
@@ -14,6 +14,8 @@ export const DAY_TYPE_LABELS: Record<DayType, string> = {
   maladie: "Maladie",
   accident_travail: "AT",
   conge_maternite: "Congé maternité",
+  conge_paternite: "Congé paternité",
+  conge_parental: "Congé parental",
   mariage: "Mariage",
   circoncision: "Circoncision",
   naissance: "Naissance",
@@ -22,7 +24,7 @@ export const DAY_TYPE_LABELS: Record<DayType, string> = {
 
 /** Motifs supplémentaires affichés uniquement après un clic sur « Plus… ». */
 export const EXTRA_DAY_TYPES: DayType[] = [
-  "maladie", "accident_travail", "conge_maternite", "mariage", "circoncision", "naissance", "deces",
+  "maladie", "accident_travail", "conge_maternite", "conge_paternite", "conge_parental", "mariage", "circoncision", "naissance", "deces",
 ];
 
 export const DAY_TYPES: DayType[] = ["travail", "repos", "conge", "recuperation"];
