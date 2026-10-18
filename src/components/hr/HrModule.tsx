@@ -50,7 +50,7 @@ import {
   type HrHoliday,
   type HrSchedule,
 } from "@/lib/hrData";
-import { computeBalance, computeDay, downloadCsv, formatMinutes, toCsv } from "@/lib/hrCompute";
+import { ANNUAL_OVERTIME_CAP_HOURS, computeBalance, computeDay, computeOvertimeCounters, downloadCsv, formatMinutes, missingWeeklyRest, toCsv } from "@/lib/hrCompute";
 import { PlanningGrid, addWeek } from "./PlanningGrid";
 
 type View = "planning" | "agents" | "horaires" | "soldes" | "feries" | "suivi";
@@ -1036,6 +1036,7 @@ function ReportsView({
   const [pdvFilter, setPdvFilter] = useState("");
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState<ReturnType<typeof computeDay>[]>([]);
+  const [reportSchedules, setReportSchedules] = useState<HrSchedule[]>([]);
   const [loading, setLoading] = useState(false);
 
   const matchesName = (name: string) =>
