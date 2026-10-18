@@ -698,6 +698,23 @@ function BalancesView({
 }) {
   const { pdvs } = useAuth();
   const today = isoDate(new Date());
+  // Pointages de l'année : la récupération d'un férié n'est créditée que sur pointage réel.
+  const [punchedByAgent, setPunchedByAgent] = useState<Record<string, string[]>>({});
+  useEffect(() => {
+    const pdvIds = Array.from(new Set(agents.map((a) => a.pdv_id)));
+    if (pdvIds.length === 0) return;
+    const year = new Date().getFullYear();
+    void getPunchesRange(pdvIds, `${year}-01-01`, today)
+      .then((rows) => {
+        const map: Record<string, Set<string>> = {};
+        (rows as any[]).forEach((p) => {
+          if (!p.agent_id) return;
+          (map[p.agent_id] ??= new Set()).add(p.punch_date);
+        });
+        setPunchedByAgent(Object.fromEntries(Object.entries(map).map(([k, v]) => [k, Array.from(v)])));
+      })
+      .catch(() => {});
+  }, [agents, today]);
   const holidayDates = useMemo(() => holidays.map((h) => h.holiday_date), [holidays]);
   // Solde de départ (report à la date de démarrage de l'application)
   const [showOpening, setShowOpening] = useState(false);
@@ -862,6 +879,7 @@ function BalancesView({
             schedules: schedules.filter((s) => s.agent_id === a.id),
             entries: entries.filter((e) => e.agent_id === a.id),
             holidays: holidayDates,
+            punchedDates: punchedByAgent[a.id] ?? [],
           });
           return (
             <Card key={a.id} className="p-3 space-y-1.5">
