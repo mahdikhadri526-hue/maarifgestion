@@ -201,6 +201,8 @@ export function computeBalance(params: {
   entries: HrBalanceEntry[];
   /** Dates de jours fériés (YYYY-MM-DD) : un jour férié planifié « Travail » crédite 1 jour de récupération. */
   holidays?: string[];
+  /** Dates (YYYY-MM-DD) où l'agent a réellement pointé : le crédit férié n'est accordé que sur pointage réel. */
+  punchedDates?: string[];
   at?: Date;
 }): AgentBalance {
   const at = params.at ?? new Date();
@@ -233,8 +235,14 @@ export function computeBalance(params: {
   let debitRecup = 0;
 
   const holidaySet = new Set(params.holidays ?? []);
+  const punchedSet = new Set(params.punchedDates ?? []);
   const workedHolidays = params.schedules.filter(
-    (s) => s.day_type === "travail" && holidaySet.has(s.work_date) && afterRecup(s.work_date),
+    (s) =>
+      s.day_type === "travail" &&
+      holidaySet.has(s.work_date) &&
+      afterRecup(s.work_date) &&
+      // Récupération du férié uniquement si l'agent a réellement pointé ce jour-là.
+      punchedSet.has(s.work_date),
   ).length;
   creditRecup += workedHolidays;
 
