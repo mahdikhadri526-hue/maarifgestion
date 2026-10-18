@@ -76,12 +76,21 @@ export function computeDay(params: {
   const pe = punchAt(punches, "retour");
   const s = punchAt(punches, "sortie");
 
-  const pauseMs = ps && pe && pe > ps ? pe - ps : 0;
+  // Service de nuit : une sortie (ou un retour de pause) postérieure à minuit est
+  // rattachée à la journée de début — on ajoute 24 h quand l'heure est antérieure à l'entrée.
+  const DAY_MS = 24 * 3600 * 1000;
+  const adj = (t: number | null, ref: number | null) =>
+    t !== null && ref !== null && t < ref ? t + DAY_MS : t;
+  const psA = adj(ps, e);
+  const peA = adj(adj(pe, e), psA);
+  const sA = adj(adj(s, e), peA ?? psA);
+
+  const pauseMs = psA && peA && peA > psA ? peA - psA : 0;
   const pauseLateMinutes =
-    ps && pe ? Math.max(0, Math.round((pe - ps) / 60000) - PAUSE_ALLOWED_MINUTES) : 0;
+    psA && peA ? Math.max(0, Math.round((peA - psA) / 60000) - PAUSE_ALLOWED_MINUTES) : 0;
   let workedMs = 0;
-  if (e && s && s > e) workedMs = s - e - pauseMs;
-  else if (e && ps && ps > e) workedMs = ps - e;
+  if (e && sA && sA > e) workedMs = sA - e - pauseMs;
+  else if (e && psA && psA > e) workedMs = psA - e;
   const worked = Math.max(0, workedMs) / 3_600_000;
 
   let lateMinutes = 0;
@@ -106,7 +115,10 @@ export function computeDay(params: {
 
   const present = Boolean(e);
   const isHoliday = Boolean(params.holidayLabel);
-  const absence = dayType === "travail" && !present && !isHoliday;
+  // Absence automatique uniquement pour une journée passée : on attend la fin du jour en cours.
+  const todayIso = params.today ?? isoLocal(new Date());
+  const isPast = date < todayIso;
+  const absence = dayType === "travail" && !present && !isHoliday && isPast;
 
   return {
     date,
