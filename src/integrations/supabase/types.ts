@@ -101,6 +101,7 @@ export type Database = {
           id: string
           match_score: number | null
           method: string
+          original_punched_at: string | null
           pdv_id: string
           punch_date: string
           punch_type: string
@@ -116,6 +117,7 @@ export type Database = {
           id?: string
           match_score?: number | null
           method?: string
+          original_punched_at?: string | null
           pdv_id: string
           punch_date?: string
           punch_type: string
@@ -131,6 +133,7 @@ export type Database = {
           id?: string
           match_score?: number | null
           method?: string
+          original_punched_at?: string | null
           pdv_id?: string
           punch_date?: string
           punch_type?: string

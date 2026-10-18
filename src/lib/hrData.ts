@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type DayType =
   | "travail" | "repos" | "conge" | "recuperation"
-  | "maladie" | "accident_travail" | "conge_maternite" | "mariage" | "circoncision" | "naissance" | "deces";
+  | "maladie" | "accident_travail" | "conge_maternite" | "conge_paternite" | "conge_parental" | "mariage" | "circoncision" | "naissance" | "deces";
 
 export const DAY_TYPE_LABELS: Record<DayType, string> = {
   travail: "Travail",
@@ -14,6 +14,8 @@ export const DAY_TYPE_LABELS: Record<DayType, string> = {
   maladie: "Maladie",
   accident_travail: "AT",
   conge_maternite: "Congé maternité",
+  conge_paternite: "Congé paternité",
+  conge_parental: "Congé parental",
   mariage: "Mariage",
   circoncision: "Circoncision",
   naissance: "Naissance",
@@ -22,7 +24,7 @@ export const DAY_TYPE_LABELS: Record<DayType, string> = {
 
 /** Motifs supplémentaires affichés uniquement après un clic sur « Plus… ». */
 export const EXTRA_DAY_TYPES: DayType[] = [
-  "maladie", "accident_travail", "conge_maternite", "mariage", "circoncision", "naissance", "deces",
+  "maladie", "accident_travail", "conge_maternite", "conge_paternite", "conge_parental", "mariage", "circoncision", "naissance", "deces",
 ];
 
 export const DAY_TYPES: DayType[] = ["travail", "repos", "conge", "recuperation"];
@@ -359,6 +361,7 @@ export function fixedMoroccanHolidays(year: number): { holiday_date: string; lab
     { md: "08-14", label: "Oued Eddahab" },
     { md: "08-20", label: "Révolution du Roi et du Peuple" },
     { md: "08-21", label: "Fête de la Jeunesse" },
+    { md: "10-31", label: "Journée de l'Unité Nationale" },
     { md: "11-06", label: "Marche Verte" },
     { md: "11-18", label: "Fête de l'Indépendance" },
   ].map((h) => ({ holiday_date: `${year}-${h.md}`, label: h.label }));

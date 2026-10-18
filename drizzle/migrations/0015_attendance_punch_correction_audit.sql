@@ -1,0 +1,2 @@
+ALTER TABLE public.attendance_punches ADD COLUMN original_punched_at timestamp with time zone;
+COMMENT ON COLUMN public.attendance_punches.original_punched_at IS 'Horodatage avant correction manuelle (conservé, jamais écrasé)';

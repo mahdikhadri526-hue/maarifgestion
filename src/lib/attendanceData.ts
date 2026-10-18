@@ -148,6 +148,17 @@ export async function saveManualPunch(params: {
     method: "manual",
     device_label: label,
   };
+  // Correction : on conserve l'horodatage d'origine avant d'écraser (audit).
+  if (params.existingId) {
+    const { data: old } = await supabase
+      .from("attendance_punches" as any)
+      .select("punched_at, original_punched_at")
+      .eq("id", params.existingId)
+      .maybeSingle();
+    if (old && !(old as any).original_punched_at) {
+      (payload as any).original_punched_at = (old as any).punched_at;
+    }
+  }
   const q = params.existingId
     ? supabase.from("attendance_punches" as any).update(payload).eq("id", params.existingId)
     : supabase.from("attendance_punches" as any).insert({

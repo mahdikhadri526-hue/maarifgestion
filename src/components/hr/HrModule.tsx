@@ -50,7 +50,7 @@ import {
   type HrHoliday,
   type HrSchedule,
 } from "@/lib/hrData";
-import { computeBalance, computeDay, downloadCsv, formatMinutes, toCsv } from "@/lib/hrCompute";
+import { ANNUAL_OVERTIME_CAP_HOURS, computeBalance, computeDay, computeOvertimeCounters, downloadCsv, formatMinutes, missingWeeklyRest, toCsv } from "@/lib/hrCompute";
 import { PlanningGrid, addWeek } from "./PlanningGrid";
 
 type View = "planning" | "agents" | "horaires" | "soldes" | "feries" | "suivi";
@@ -698,6 +698,23 @@ function BalancesView({
 }) {
   const { pdvs } = useAuth();
   const today = isoDate(new Date());
+  // Pointages de l'année : la récupération d'un férié n'est créditée que sur pointage réel.
+  const [punchedByAgent, setPunchedByAgent] = useState<Record<string, string[]>>({});
+  useEffect(() => {
+    const pdvIds = Array.from(new Set(agents.map((a) => a.pdv_id)));
+    if (pdvIds.length === 0) return;
+    const year = new Date().getFullYear();
+    void getPunchesRange(pdvIds, `${year}-01-01`, today)
+      .then((rows) => {
+        const map: Record<string, Set<string>> = {};
+        (rows as any[]).forEach((p) => {
+          if (!p.agent_id) return;
+          (map[p.agent_id] ??= new Set()).add(p.punch_date);
+        });
+        setPunchedByAgent(Object.fromEntries(Object.entries(map).map(([k, v]) => [k, Array.from(v)])));
+      })
+      .catch(() => {});
+  }, [agents, today]);
   const holidayDates = useMemo(() => holidays.map((h) => h.holiday_date), [holidays]);
   // Solde de départ (report à la date de démarrage de l'application)
   const [showOpening, setShowOpening] = useState(false);
@@ -862,6 +879,7 @@ function BalancesView({
             schedules: schedules.filter((s) => s.agent_id === a.id),
             entries: entries.filter((e) => e.agent_id === a.id),
             holidays: holidayDates,
+            punchedDates: punchedByAgent[a.id] ?? [],
           });
           return (
             <Card key={a.id} className="p-3 space-y-1.5">
@@ -1018,6 +1036,7 @@ function ReportsView({
   const [pdvFilter, setPdvFilter] = useState("");
   const [search, setSearch] = useState("");
   const [rows, setRows] = useState<ReturnType<typeof computeDay>[]>([]);
+  const [reportSchedules, setReportSchedules] = useState<HrSchedule[]>([]);
   const [loading, setLoading] = useState(false);
 
   const matchesName = (name: string) =>
@@ -1076,6 +1095,7 @@ function ReportsView({
       });
       out.sort((x, y) => x.date.localeCompare(y.date) || x.agentName.localeCompare(y.agentName));
       setRows(out);
+      setReportSchedules(schedules);
     } catch (e: any) {
       toast.error(e?.message ?? "Rapport impossible");
     } finally {
@@ -1108,6 +1128,43 @@ function ReportsView({
     );
   }, [rows]);
 
+  // Compteur d'heures supplémentaires par salarié (managers exclus) + alerte plafond légal 80 h/an.
+  const overtimeCounters = useMemo(
+    () => computeOvertimeCounters({ days: rows, agents, year: new Date(from).getFullYear() }),
+    [rows, agents, from],
+  );
+
+  // Alerte repos hebdomadaire : semaines sans journée de repos complète.
+  const restAlerts = useMemo(
+    () => missingWeeklyRest({ schedules: reportSchedules, agents, from, to }),
+    [reportSchedules, agents, from, to],
+  );
+
+  /** Récapitulatif mensuel signé : heures, absences, récupérations, corrections (auteur/motif) par salarié. */
+  const exportMonthlySigned = () => {
+    const byAgent = new Map<string, { name: string; worked: number; ot: number; abs: number; recup: number; manual: number }>();
+    rows.forEach((r) => {
+      const cur = byAgent.get(r.agentId) ?? { name: r.agentName, worked: 0, ot: 0, abs: 0, recup: 0, manual: 0 };
+      cur.worked += r.workedHours;
+      cur.ot += r.overtimeHours;
+      if (r.absence) cur.abs += 1;
+      if (r.dayType === "recuperation") cur.recup += 1;
+      cur.manual += r.manualTypes.length;
+      byAgent.set(r.agentId, cur);
+    });
+    const data = Array.from(byAgent.values()).map((v) => ({
+      Employé: v.name,
+      "Heures travaillées": Number(v.worked.toFixed(2)),
+      "Heures sup.": Number(v.ot.toFixed(2)),
+      Absences: v.abs,
+      "Jours récupération": v.recup,
+      "Corrections manuelles": v.manual,
+      "Signature employé": "",
+      "Signature responsable": "",
+    }));
+    downloadCsv(`recapitulatif-mensuel-signe-${from}_${to}.csv`, toCsv(data));
+  };
+
   const exportCsv = () => {
     const data = rows.map((r) => ({
       Date: formatFr(r.date),
@@ -1126,6 +1183,7 @@ function ReportsView({
       "Retard pause": r.pauseLateMinutes > 0 ? formatMinutes(r.pauseLateMinutes) : "",
       Présence: r.present ? "Présent" : r.absence ? "Absence à justifier" : "—",
       "Pointage manuel": r.manualTypes.length ? `Oui (${r.manualTypes.join(", ")})` : "",
+      "Correction (auteur / motif)": r.manualNotes.join(" | "),
     }));
     downloadCsv(`rapport-rh-${from}_${to}.csv`, toCsv(data));
   };
@@ -1170,6 +1228,9 @@ function ReportsView({
           </Button>
           <Button size="sm" variant="outline" onClick={exportCsv} disabled={rows.length === 0}>
             <Download className="w-4 h-4 mr-1" /> Export
+          </Button>
+          <Button size="sm" variant="outline" onClick={exportMonthlySigned} disabled={rows.length === 0}>
+            <Download className="w-4 h-4 mr-1" /> Récap. mensuel signé
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1237,6 +1298,40 @@ function ReportsView({
           <Badge variant="destructive">Absences {totals.absences}</Badge>
           <Badge variant="outline">Congés {totals.conges}</Badge>
           <Badge variant="outline">Récup {totals.recups}</Badge>
+        </Card>
+      )}
+
+      {rows.length > 0 && (
+        <Card className="p-3 space-y-2">
+          <p className="text-sm font-semibold">Compteur d'heures supplémentaires (seuil 8 h/jour — plafond légal {ANNUAL_OVERTIME_CAP_HOURS} h/an)</p>
+          <div className="space-y-1">
+            {overtimeCounters.map((c) => (
+              <div key={c.agentId} className="flex flex-wrap items-center gap-2 text-xs border-b py-1">
+                <span className="font-medium w-48 truncate">{c.agentName}</span>
+                <Badge variant="secondary">Acquises {c.earned} h</Badge>
+                <Badge variant="outline">Récupérées {c.recovered} h</Badge>
+                <Badge variant="outline">Payées (juin–août) {c.paid} h</Badge>
+                {c.overCap && <Badge variant="destructive">Dépassement plafond {ANNUAL_OVERTIME_CAP_HOURS} h/an</Badge>}
+              </div>
+            ))}
+            {overtimeCounters.length === 0 && (
+              <p className="text-xs text-muted-foreground">Aucun salarié concerné (les managers sont exclus du compteur).</p>
+            )}
+          </div>
+        </Card>
+      )}
+
+      {restAlerts.length > 0 && (
+        <Card className="p-3 space-y-1 border-destructive/40">
+          <p className="text-sm font-semibold text-destructive">Repos hebdomadaire manquant</p>
+          <p className="text-[11px] text-muted-foreground">
+            Semaines sans journée de repos complète (repos hebdomadaire obligatoire) :
+          </p>
+          {restAlerts.map((a) => (
+            <div key={`${a.agentId}-${a.week}`} className="text-xs border-b py-1">
+              {a.agentName} — semaine du {formatFr(a.week)}
+            </div>
+          ))}
         </Card>
       )}
 
