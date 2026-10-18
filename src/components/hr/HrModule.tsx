@@ -1128,6 +1128,43 @@ function ReportsView({
     );
   }, [rows]);
 
+  // Compteur d'heures supplémentaires par salarié (managers exclus) + alerte plafond légal 80 h/an.
+  const overtimeCounters = useMemo(
+    () => computeOvertimeCounters({ days: rows, agents, year: new Date(from).getFullYear() }),
+    [rows, agents, from],
+  );
+
+  // Alerte repos hebdomadaire : semaines sans journée de repos complète.
+  const restAlerts = useMemo(
+    () => missingWeeklyRest({ schedules: reportSchedules, agents, from, to }),
+    [reportSchedules, agents, from, to],
+  );
+
+  /** Récapitulatif mensuel signé : heures, absences, récupérations, corrections (auteur/motif) par salarié. */
+  const exportMonthlySigned = () => {
+    const byAgent = new Map<string, { name: string; worked: number; ot: number; abs: number; recup: number; manual: number }>();
+    rows.forEach((r) => {
+      const cur = byAgent.get(r.agentId) ?? { name: r.agentName, worked: 0, ot: 0, abs: 0, recup: 0, manual: 0 };
+      cur.worked += r.workedHours;
+      cur.ot += r.overtimeHours;
+      if (r.absence) cur.abs += 1;
+      if (r.dayType === "recuperation") cur.recup += 1;
+      cur.manual += r.manualTypes.length;
+      byAgent.set(r.agentId, cur);
+    });
+    const data = Array.from(byAgent.values()).map((v) => ({
+      Employé: v.name,
+      "Heures travaillées": Number(v.worked.toFixed(2)),
+      "Heures sup.": Number(v.ot.toFixed(2)),
+      Absences: v.abs,
+      "Jours récupération": v.recup,
+      "Corrections manuelles": v.manual,
+      "Signature employé": "",
+      "Signature responsable": "",
+    }));
+    downloadCsv(`recapitulatif-mensuel-signe-${from}_${to}.csv`, toCsv(data));
+  };
+
   const exportCsv = () => {
     const data = rows.map((r) => ({
       Date: formatFr(r.date),
@@ -1190,6 +1227,9 @@ function ReportsView({
           </Button>
           <Button size="sm" variant="outline" onClick={exportCsv} disabled={rows.length === 0}>
             <Download className="w-4 h-4 mr-1" /> Export
+          </Button>
+          <Button size="sm" variant="outline" onClick={exportMonthlySigned} disabled={rows.length === 0}>
+            <Download className="w-4 h-4 mr-1" /> Récap. mensuel signé
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
