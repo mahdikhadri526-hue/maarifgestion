@@ -20,3 +20,6 @@
 - [x] Planning managers : liste d'affectation avec 3 choix par PDV (Nom du PDV / Nom du PDV — Matin / Nom du PDV — Après-midi), pour tous les PDV.
 - [x] Ajouter une aide vocale enregistrée par l’administrateur principal à chaque rubrique interne, écoutable par tous.
 - [x] Ajouter les explications vocales aux cinq fiches du suivi hebdomadaire et aux transferts.
+- [x] Appliquer les règles RH validées (fêtes, absences protégées, pointage corrigé tracé, congés, récupérations, compteur heures, récapitulatif mensuel).
+- [ ] Décision en attente : intégrer ou non les dépassements des managers au compteur d'heures.
+- [ ] Décision en attente : afficher ou non un indicateur de dépassement sur la référence 48 h/semaine.
