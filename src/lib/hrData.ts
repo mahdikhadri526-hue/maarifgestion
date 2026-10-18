@@ -359,6 +359,7 @@ export function fixedMoroccanHolidays(year: number): { holiday_date: string; lab
     { md: "08-14", label: "Oued Eddahab" },
     { md: "08-20", label: "Révolution du Roi et du Peuple" },
     { md: "08-21", label: "Fête de la Jeunesse" },
+    { md: "10-31", label: "Journée de l'Unité Nationale" },
     { md: "11-06", label: "Marche Verte" },
     { md: "11-18", label: "Fête de l'Indépendance" },
   ].map((h) => ({ holiday_date: `${year}-${h.md}`, label: h.label }));
