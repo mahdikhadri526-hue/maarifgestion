@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Alléger les répétitions de la table RH, sans changer les données ni les calculs, et vérifier la lecture.
 - [x] Compléter et vérifier la mise à jour serveur du 17/10 avec les vrais fichiers audio de bienvenue, sans toucher aux données, au scan ni aux guides vocaux.
 - [x] Corriger les fiches pâte : DLC, œuf sans lot et validation manager différée avec alerte.
 - [x] Reconnaître le format 2007cgng/26 uniquement pour le FIFO glace et vérifier les calculs.

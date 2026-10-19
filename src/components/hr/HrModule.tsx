@@ -135,7 +135,7 @@ export function HrModule() {
       {view === "horaires" && <ShiftTimesView canEdit={isRh} />}
       {view === "feries" && <HolidaysView holidays={holidays} canEdit={isRh} onChanged={reload} />}
       {view === "suivi" && (
-        <Card className="p-4 space-y-4">
+        <div className="space-y-4">
           <div className="flex flex-wrap items-center gap-2 border-b pb-3">
             <Button
               size="sm"
@@ -157,7 +157,7 @@ export function HrModule() {
           ) : (
             <ReportsView agents={agents} holidays={holidays} scopePdvIds={scopePdvIds} isRh={isRh} />
           )}
-        </Card>
+        </div>
       )}
     </div>
   );
@@ -872,7 +872,22 @@ function BalancesView({
       </Card>
 
 
-      <div className="space-y-2">
+      <div className="overflow-x-auto rounded-md border border-border">
+        <table className="w-full min-w-[850px] text-sm tabular-nums">
+          <thead>
+            <tr className="bg-primary text-primary-foreground">
+              <th rowSpan={2} className="sticky left-0 z-10 bg-primary px-3 py-3 text-left min-w-[180px]">Employé</th>
+              <th colSpan={3} className="px-3 py-2 text-center border-l border-primary-foreground/25">Congés (j)</th>
+              <th colSpan={3} className="px-3 py-2 text-center border-l border-primary-foreground/25">Récupération (j)</th>
+              <th rowSpan={2} className="px-3 py-3 text-right border-l border-primary-foreground/25">Total restant (j)</th>
+            </tr>
+            <tr className="bg-accent text-accent-foreground">
+              {["Acquis", "Pris", "Restants", "Acquise", "Prise", "Restante"].map((label) => (
+                <th key={label} className="px-3 py-2 text-right">{label}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
         {visibleAgents.map((a) => {
           const b = computeBalance({
             hireDate: a.hire_date,
@@ -882,55 +897,52 @@ function BalancesView({
             punchedDates: punchedByAgent[a.id] ?? [],
           });
           return (
-            <Card key={a.id} className="p-3 space-y-1.5">
-              <div>
+            <tr key={a.id} className="border-b border-border odd:bg-card even:bg-muted/30">
+              <td className="sticky left-0 z-10 bg-card px-3 py-3 border-b border-border">
                 <p className="font-medium">{a.full_name}</p>
                 <p className="text-xs text-muted-foreground">
                   Embauche : {a.hire_date ? formatFr(a.hire_date) : "non renseignée"}
                 </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="font-semibold w-24">Congés</span>
-                <Badge variant="secondary">Acquis {b.accrued}</Badge>
-                <Badge variant="secondary">Pris {b.leaveTaken}</Badge>
-                <Badge>Restants {b.leaveRemaining}</Badge>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="font-semibold w-24">Récupération</span>
-                <Badge variant="outline">Acquise {b.recupCredit}</Badge>
-                <Badge variant="outline">Prise {b.recupTaken}</Badge>
-                <Badge variant="outline">Restante {b.recupRemaining}</Badge>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 text-xs border-t pt-1.5">
-                <span className="font-semibold w-24">Total</span>
-                <Badge>Total restant {Number((b.leaveRemaining + b.recupRemaining).toFixed(2))} j</Badge>
-              </div>
-            </Card>
+              </td>
+              <td className="px-3 py-3 text-right border-b border-border">{b.accrued}</td>
+              <td className="px-3 py-3 text-right border-b border-border">{b.leaveTaken}</td>
+              <td className="px-3 py-3 text-right font-semibold text-primary border-b border-border">{b.leaveRemaining}</td>
+              <td className="px-3 py-3 text-right border-l border-b border-border">{b.recupCredit}</td>
+              <td className="px-3 py-3 text-right border-b border-border">{b.recupTaken}</td>
+              <td className="px-3 py-3 text-right font-semibold text-primary border-b border-border">{b.recupRemaining}</td>
+              <td className="px-3 py-3 text-right font-semibold border-l border-b border-border">{Number((b.leaveRemaining + b.recupRemaining).toFixed(2))}</td>
+            </tr>
           );
         })}
+          </tbody>
+        </table>
+        {visibleAgents.length === 0 && <p className="p-4 text-center text-sm text-muted-foreground">Aucun employé pour ces filtres.</p>}
       </div>
 
       {visibleEntries.length > 0 && (
-        <Card className="p-3 space-y-1">
-          <p className="text-sm font-semibold mb-1">Historique des mouvements ({visibleEntries.length})</p>
+        <details className="border-t border-border py-3 space-y-1">
+          <summary className="cursor-pointer text-sm font-semibold mb-1">Historique des mouvements ({visibleEntries.length})</summary>
           {visibleEntries.slice(0, 40).map((e) => (
             <div key={e.id} className="flex items-center justify-between gap-2 text-xs border-b py-1">
               <span>
                 {formatFr(e.entry_date)} — {agents.find((a) => a.id === e.agent_id)?.full_name ?? "?"} — {e.kind} — {e.days} j
                 {e.reason ? ` — ${e.reason}` : ""}
               </span>
-              <button
-                className="text-destructive"
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-destructive shrink-0"
+                aria-label="Supprimer le mouvement"
                 onClick={async () => {
                   await deleteBalanceEntry(e.id);
                   await onChanged();
                 }}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             </div>
           ))}
-        </Card>
+        </details>
       )}
     </div>
   );
@@ -1190,7 +1202,7 @@ function ReportsView({
 
   return (
     <div className="space-y-3">
-      <Card className="p-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="h-9" />
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="h-9" />
         <Input
@@ -1222,7 +1234,7 @@ function ReportsView({
         ) : (
           <div />
         )}
-        <div className="flex flex-wrap gap-2">
+        <div className="col-span-full flex flex-wrap gap-2 border-t border-border pt-3">
           <Button size="sm" onClick={() => void run()} disabled={loading}>
             {loading ? "…" : "Afficher"}
           </Button>
@@ -1287,24 +1299,24 @@ function ReportsView({
               : `${visibleAgents.length} employé${visibleAgents.length > 1 ? "s" : ""} dans la liste.`}
           </p>
         )}
-      </Card>
+      </div>
 
       {rows.length > 0 && (
-        <Card className="p-3 flex flex-wrap gap-2 text-xs">
-          <Badge variant="secondary">Heures {totals.worked.toFixed(2)}</Badge>
-          <Badge variant="secondary">Heures sup. {totals.overtime.toFixed(2)}</Badge>
-          <Badge variant="secondary">Retard {formatMinutes(totals.late)}</Badge>
-          <Badge variant="secondary">Retard pause {formatMinutes(totals.pauseLate)}</Badge>
+        <div className="flex flex-wrap gap-2 text-xs">
+          {!showHeures && <Badge variant="secondary">Heures {totals.worked.toFixed(2)}</Badge>}
+          {!showHSup && <Badge variant="secondary">Heures sup. {totals.overtime.toFixed(2)}</Badge>}
+          {!showRetard && <Badge variant="secondary">Retard {formatMinutes(totals.late)}</Badge>}
+          {!showRetardPause && <Badge variant="secondary">Retard pause {formatMinutes(totals.pauseLate)}</Badge>}
           <Badge variant="destructive">Absences {totals.absences}</Badge>
           <Badge variant="outline">Congés {totals.conges}</Badge>
           <Badge variant="outline">Récup {totals.recups}</Badge>
-        </Card>
+        </div>
       )}
 
       {rows.length > 0 && (
-        <Card className="p-3 space-y-2">
-          <p className="text-sm font-semibold">Compteur d'heures supplémentaires (seuil 8 h/jour — plafond légal {ANNUAL_OVERTIME_CAP_HOURS} h/an)</p>
-          <div className="space-y-1">
+        <details className="border-y border-border py-3 space-y-2" open={overtimeCounters.some((c) => c.overCap) || undefined}>
+          <summary className="cursor-pointer text-sm font-semibold">Compteur d'heures supplémentaires (seuil 8 h/jour — plafond légal {ANNUAL_OVERTIME_CAP_HOURS} h/an)</summary>
+          <div className="space-y-1 pt-2">
             {overtimeCounters.map((c) => (
               <div key={c.agentId} className="flex flex-wrap items-center gap-2 text-xs border-b py-1">
                 <span className="font-medium w-48 truncate">{c.agentName}</span>
@@ -1318,7 +1330,7 @@ function ReportsView({
               <p className="text-xs text-muted-foreground">Aucun salarié concerné (les managers sont exclus du compteur).</p>
             )}
           </div>
-        </Card>
+        </details>
       )}
 
       {restAlerts.length > 0 && (
