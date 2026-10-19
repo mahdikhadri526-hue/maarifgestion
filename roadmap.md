@@ -24,4 +24,4 @@
 - [x] Appliquer les règles RH validées (fêtes, absences protégées, pointage corrigé tracé, congés, récupérations, compteur heures, récapitulatif mensuel).
 - [x] Dépasser la question des dépassements managers dans le compteur : on garde le comportement actuel (non comptés).
 - [x] Dépasser la question de l'indicateur 48 h/semaine : on ne l'affiche pas.
-- [x] Retirer le bloc « Compteur d\u02BCheures supplémentaires » des rapports RH, la colonne H. sup. du tableau suffisant ; garder l\u02BCalerte plafond 80 h/an.
+- [x] Retirer le bloc « Compteur d'heures supplémentaires » des rapports RH (la colonne H. sup. du tableau suffit) ; garder l'alerte plafond 80 h/an.
