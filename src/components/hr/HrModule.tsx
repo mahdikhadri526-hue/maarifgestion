@@ -1313,25 +1313,16 @@ function ReportsView({
         </div>
       )}
 
-      {rows.length > 0 && (
-        <details className="border-y border-border py-3 space-y-2" open={overtimeCounters.some((c) => c.overCap) || undefined}>
-          <summary className="cursor-pointer text-sm font-semibold">Compteur d'heures supplémentaires (seuil 8 h/jour — plafond légal {ANNUAL_OVERTIME_CAP_HOURS} h/an)</summary>
-          <div className="space-y-1 pt-2">
-            {overtimeCounters.map((c) => (
-              <div key={c.agentId} className="flex flex-wrap items-center gap-2 text-xs border-b py-1">
-                <span className="font-medium w-48 truncate">{c.agentName}</span>
-                <Badge variant="secondary">Acquises {c.earned} h</Badge>
-                <Badge variant="outline">Récupérées {c.recovered} h</Badge>
-                <Badge variant="outline">Payées (juin–août) {c.paid} h</Badge>
-                {c.overCap && <Badge variant="destructive">Dépassement plafond {ANNUAL_OVERTIME_CAP_HOURS} h/an</Badge>}
-              </div>
-            ))}
-            {overtimeCounters.length === 0 && (
-              <p className="text-xs text-muted-foreground">Aucun salarié concerné (les managers sont exclus du compteur).</p>
-            )}
-          </div>
-        </details>
-      )}
+      {rows.length > 0 &&
+        overtimeCounters
+          .filter((c) => c.overCap)
+          .map((c) => (
+            <div key={c.agentId} className="text-xs">
+              <Badge variant="destructive">
+                {c.agentName} : plafond légal {ANNUAL_OVERTIME_CAP_HOURS} h/an dépassé
+              </Badge>
+            </div>
+          ))}
 
       {restAlerts.length > 0 && (
         <Card className="p-3 space-y-1 border-destructive/40">
