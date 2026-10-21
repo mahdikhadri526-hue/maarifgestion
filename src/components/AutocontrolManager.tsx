@@ -61,6 +61,7 @@ import { printElement, printStructuredPdf, downloadStructuredPdf, type PdfTableS
 
 import { PateAutocontrolForm, isPateFiche } from "@/components/PateAutocontrolForm";
 import { PATE_MANAGER_CONTROLS, validatePateManager } from "@/lib/pateValidation";
+import { getCtgProductionLot } from "@/lib/ctgProductionLot";
 
 const CLAIMS_FICHE = "Réclamations & Retours";
 
@@ -1070,6 +1071,7 @@ export function AutocontrolManager() {
       }
       if (isCtg) {
         const selected = CTG_PRODUCTS.filter((p) => ctgProducts[p].selected);
+        const productionLot = getCtgProductionLot(baseResult.data.controlDate);
         const perteKgNum = Number((extraData as any)?.perteKg);
         const hasPerte = Number.isFinite(perteKgNum) && perteKgNum > 0;
         for (const p of selected) {
@@ -1092,7 +1094,7 @@ export function AutocontrolManager() {
             controlDate: baseResult.data.controlDate,
             collaborateur: baseResult.data.collaborateur,
             article: p,
-            lotNumber: (() => { const [y, m, d] = form.controlDate.slice(0, 10).split("-"); return `${d}.${m}.${y}`; })(),
+            lotNumber: productionLot,
             quantity: Number(row.quantity),
             dlc: row.dlc || null,
             visaManager: baseResult.data.visaManager,
@@ -1102,14 +1104,14 @@ export function AutocontrolManager() {
           await syncTarteMovementEntry(
             p,
             Number(row.quantity),
-            row.lotNumber.trim(),
+            productionLot,
             baseResult.data.controlDate,
           );
           if (Number.isFinite(qty2) && qty2 > 0) {
             await syncTarteMovementEntry(
               p,
               qty2,
-              row.lotNumber.trim(),
+              productionLot,
               baseResult.data.controlDate,
             );
           }
@@ -1477,7 +1479,7 @@ export function AutocontrolManager() {
                           <div>
                             <label className="text-xs text-muted-foreground">N° de lot *</label>
                             <Input
-                              value={(() => { const [y, m, d] = form.controlDate.slice(0, 10).split("-"); return `${d}.${m}.${y}`; })()}
+                              value={getCtgProductionLot(form.controlDate)}
                               readOnly
                             />
                           </div>
