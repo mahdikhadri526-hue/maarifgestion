@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Corriger le transfert des numéros de lot cornets/tulipes/gaufrettes vers le suivi hebdo Tartes, sans modifier les autres fonctions.
 - [ ] Remplacer le pointage facial par empreinte sur la tablette Samsung Galaxy Tab A11+ : bloqué par l'absence de lecteur d'empreintes compatible identifié ; préserver le pointage existant en attendant.
 - [x] Alléger les répétitions de la table RH, sans changer les données ni les calculs, et vérifier la lecture.
 - [x] Compléter et vérifier la mise à jour serveur du 17/10 avec les vrais fichiers audio de bienvenue, sans toucher aux données, au scan ni aux guides vocaux.
