@@ -278,7 +278,7 @@ export function TechModule() {
             const soon = isDeadlineSoon(i, today);
             const dd = daysToDeadline(i, today);
             const rec = isRecurring(i, recurring);
-            const canHandle = canHandleTechIssue(i, canManage, canPep);
+            const canHandle = canHandleTechIssue(i, canManage, canViewTech);
             return (
               <div key={i.id} className={`rounded-lg border bg-card p-3 ${overdue ? "border-destructive" : soon ? "border-amber-500" : ""} ${i.priority === "critique" && i.status !== "cloture" ? "animate-pulse-border" : ""}`}>
                 <div className="flex items-start gap-2 flex-wrap">
