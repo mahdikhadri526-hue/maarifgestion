@@ -6,7 +6,7 @@
 - Les constantes et l'agrégation des articles hebdo (Macaron/Sirop/Chantilly/Amandes, dates des lignes du Suivi Hebdo) vivent dans `src/lib/stockWeeklyAggregates.ts`, utilisées par `StockTable`.
 - Report mise en place : en filtre jour/mois/période, si la veille du début de période est un jour de comptage, la saisie mise en place de ce jour est ajoutée au Stock initial et au Stock restant affichés (SI du lendemain = Stock total) ; la vue « Tout » reste inchangée.
 - Voice guides attach to stable visible section headings, including weekly sheet and transfer headings, so guide keys do not change with dates; audio stays private in `voice-guides` and only admins manage it.
-- La génération des explications vocales utilise la même voix masculine darija préconfigurée côté fonction pour toutes les rubriques ; la création groupée conserve les enregistrements micro et la rubrique Bienvenue, afin de ne pas remplacer des voix personnelles.
+- Voice generation shares the configured voice; bulk generation preserves microphone recordings and Welcome to avoid replacing personal audio.
 - Keep the logo in standard/kiosk headers and standalone PDV selection; main modules use the shared title (logo left, title right). Fullscreen attendance stays camera-only and header-free.
 - Trigger the welcome transition only from a successful password sign-in attempt and let the existing PDV gate decide the destination afterward, so restored sessions and PDV changes never replay it.
 - Store login welcome photos in a private bucket with an ordered database list; only the two designated admin accounts can manage them, because all signed-in users should see the same sequence after password sign-in.
@@ -21,4 +21,5 @@
 - Supplier claim sheet QC-ENSR 001 lives in supplier_claims (per PDV) with photos in private bucket supplier-claims; only the quality account writes and only it plus admin-role users can read (RLS), per user request.
 - Ice/tart FIFO uses lot dates with explicit ice context for compact codes; keep other products unchanged.
 - Share pâte validation across creation/completion; store DLC in autocontrols and reuse pending-visa alerts.
+- CTG creation shares getCtgProductionLot between the fiche, displayed lot and both weekly entries; disabled legacy inputs must not supply lots.
 - Welcome voice-over and intro music must be real imported .mp3 files under src/assets (not lovable-assets .asset.json pointers), because /__l5e URLs do not exist on the self-hosted server.
