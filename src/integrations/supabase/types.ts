@@ -2748,6 +2748,10 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
+      correct_tech_deadline: {
+        Args: { _deadline: string; _issue_id: string }
+        Returns: undefined
+      }
       extend_tech_deadline: {
         Args: { _deadline: string; _issue_id: string }
         Returns: undefined
