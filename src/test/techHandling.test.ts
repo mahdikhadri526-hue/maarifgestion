@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import { canHandleTechIssue } from "@/lib/techHandling";
+import { awaitingManager, canCloseIssue, requiresManagerVerification } from "@/lib/techData";
 
 it("le responsable technique (manage_tech) suit tous les dossiers", () => {
   expect(canHandleTechIssue({ processing_mode: "technique" }, true, false)).toBe(true);
