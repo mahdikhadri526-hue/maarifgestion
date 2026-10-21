@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import { canHandleTechIssue } from "@/lib/techHandling";
+import { awaitingManager, canCloseIssue, requiresManagerVerification } from "@/lib/techData";
 
 it("le responsable technique (manage_tech) suit tous les dossiers", () => {
   expect(canHandleTechIssue({ processing_mode: "technique" }, true, false)).toBe(true);
@@ -19,4 +20,16 @@ it("sans accès au Suivi Technique ni manage_tech, personne ne peut suivre un do
 it("les dossiers existants sans mode restent traités par le responsable technique", () => {
   expect(canHandleTechIssue({ processing_mode: null }, false, true)).toBe(false);
   expect(canHandleTechIssue({}, false, true)).toBe(false);
+});
+
+it("mode manager : pas d'étape de vérification du matériel, la réparation validée clôture le dossier", () => {
+  expect(requiresManagerVerification({ processing_mode: "manager" })).toBe(false);
+  expect(requiresManagerVerification({ processing_mode: "technique" })).toBe(true);
+  // Clôture possible dès la validation de la réparation, sans validation manager.
+  expect(canCloseIssue({ processing_mode: "manager", tech_validated_at: "2026-10-21T10:00:00Z", manager_validated_at: null })).toBe(true);
+  // Mode technique : la vérification du manager reste obligatoire.
+  expect(canCloseIssue({ processing_mode: "technique", tech_validated_at: "2026-10-21T10:00:00Z", manager_validated_at: null })).toBe(false);
+  expect(canCloseIssue({ processing_mode: "technique", tech_validated_at: "2026-10-21T10:00:00Z", manager_validated_at: "2026-10-21T12:00:00Z" })).toBe(true);
+  // Un dossier manager réparé n'apparaît jamais « en attente de vérification ».
+  expect(awaitingManager({ processing_mode: "manager", status: "repare", tech_validated_at: "2026-10-21T10:00:00Z", manager_validated_at: null } as any)).toBe(false);
 });

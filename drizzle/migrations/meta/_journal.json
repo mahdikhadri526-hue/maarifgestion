@@ -148,6 +148,13 @@
       "when": 1792617398531,
       "tag": "0020_tech_issue_manager_mode_pep_access",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1792617760129,
+      "tag": "0021_tech_manager_mode_skip_verification",
+      "breakpoints": true
     }
   ]
 }

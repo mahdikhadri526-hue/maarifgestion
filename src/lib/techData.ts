@@ -229,15 +229,31 @@ export async function updateTechIssue(
   if (error) throw error;
 }
 
-/** Validation du responsable technique : réparation terminée. */
+/** Dossiers confiés au manager du PDV : pas d'étape « Vérifier le matériel »,
+ *  la validation de la réparation clôture directement le dossier. */
+export function requiresManagerVerification(issue: Pick<TechIssue, "processing_mode">): boolean {
+  return issue.processing_mode !== "manager";
+}
+
+/** Clôture possible : validation de la réparation suffit en mode manager ;
+ *  sinon il faut aussi la vérification du manager. */
+export function canCloseIssue(issue: Pick<TechIssue, "processing_mode" | "tech_validated_at" | "manager_validated_at">): boolean {
+  if (!issue.tech_validated_at) return false;
+  return !requiresManagerVerification(issue) || !!issue.manager_validated_at;
+}
+
+/** Validation de la réparation. En mode « manager », le dossier est clôturé
+ *  directement (pas de vérification du matériel par le manager). */
 export async function validateRepair(
   id: string,
-  input: { validated_by: string; action_done: string; tech_comment?: string | null; repairPhotoUrls?: string[]; repaired_at?: string | null; parts_changed?: string | null; parts_price?: number | null; service_price?: number | null },
+  input: { validated_by: string; action_done: string; tech_comment?: string | null; repairPhotoUrls?: string[]; repaired_at?: string | null; parts_changed?: string | null; parts_price?: number | null; service_price?: number | null; processing_mode?: TechProcessingMode },
 ): Promise<void> {
   const now = new Date().toISOString();
+  const closeDirectly = input.processing_mode === "manager";
   const { error } = await rawTable()
     .update({
-      status: "repare",
+      status: closeDirectly ? "cloture" : "repare",
+      ...(closeDirectly ? { closed_at: now } : {}),
       action_done: input.action_done.trim(),
       tech_comment: input.tech_comment?.trim() || null,
       parts_changed: input.parts_changed?.trim() || null,
@@ -311,9 +327,10 @@ export function isTechLate(issue: TechIssue): boolean {
   return issue.tech_validated_at.slice(0, 10) > issue.deadline;
 }
 
-/** Réparé mais en attente de la validation du manager. */
+/** Réparé mais en attente de la validation du manager (jamais en mode manager :
+ *  la vérification du matériel est supprimée pour ces dossiers). */
 export function awaitingManager(issue: TechIssue): boolean {
-  return issue.status === "repare" && !!issue.tech_validated_at && !issue.manager_validated_at;
+  return requiresManagerVerification(issue) && issue.status === "repare" && !!issue.tech_validated_at && !issue.manager_validated_at;
 }
 
 const normEq = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");

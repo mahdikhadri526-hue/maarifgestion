@@ -40,6 +40,8 @@ import {
   techRepairPhotos,
   updateTechIssue,
   validateRepair,
+  canCloseIssue,
+  requiresManagerVerification,
   type TechEvent,
   type TechIssue,
   type TechStatus,
@@ -480,7 +482,9 @@ export function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; 
   const [notes, setNotes] = useState(issue.tech_notes ?? "");
   const [priority, setPriority] = useState(issue.priority);
   const [saving, setSaving] = useState(false);
-  const bothValidated = !!issue.tech_validated_at && !!issue.manager_validated_at;
+  // Mode « manager » : la vérification du matériel est supprimée, la validation
+  // de la réparation suffit pour clôturer.
+  const bothValidated = canCloseIssue(issue);
 
   const save = async () => {
     if ((status === "en_cours" || status === "repare") && !assignedKind) {
@@ -493,7 +497,7 @@ export function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; 
       return toast({ title: "Deadline obligatoire pour l'intervention", variant: "destructive" });
     }
     if (status === "cloture" && !bothValidated) {
-      return toast({ title: "Clôture impossible", description: "La validation du responsable technique et la vérification du manager sont obligatoires.", variant: "destructive" });
+      return toast({ title: "Clôture impossible", description: requiresManagerVerification(issue) ? "La validation du responsable technique et la vérification du manager sont obligatoires." : "La validation de la réparation est obligatoire.", variant: "destructive" });
     }
     setSaving(true);
     try {
@@ -526,7 +530,7 @@ export function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; 
                 );
               })}
             </div>
-            {!bothValidated && <p className="text-[11px] text-muted-foreground mt-1">« Clôturé » n'est possible qu'après validation du responsable technique et vérification du manager.</p>}
+            {!bothValidated && <p className="text-[11px] text-muted-foreground mt-1">{requiresManagerVerification(issue) ? "« Clôturé » n'est possible qu'après validation du responsable technique et vérification du manager." : "« Clôturé » n'est possible qu'après validation de la réparation."}</p>}
           </div>
           <div>
             <Label className="text-xs">Priorité</Label>
@@ -626,8 +630,11 @@ export function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; on
         service_price: servicePrice.trim() ? Number(servicePrice.replace(",", ".")) : null,
         repairPhotoUrls: photos,
         repaired_at: new Date(date).toISOString(),
+        processing_mode: issue.processing_mode,
       });
-      toast({ title: "Réparation validée", description: "En attente de la vérification du manager." });
+      toast(requiresManagerVerification(issue)
+        ? { title: "Réparation validée", description: "En attente de la vérification du manager." }
+        : { title: "Réparation validée", description: "Dossier clôturé (sans vérification du matériel)." });
       onSaved();
       onClose();
     } catch (e: any) {
@@ -672,7 +679,7 @@ export function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; on
               </div>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground">Le nom, la date et l'heure de validation sont enregistrés automatiquement. Le dossier passera en « Réparé » puis devra être vérifié par un manager.</p>
+          <p className="text-[11px] text-muted-foreground">Le nom, la date et l'heure de validation sont enregistrés automatiquement. {requiresManagerVerification(issue) ? "Le dossier passera en « Réparé » puis devra être vérifié par un manager." : "Le dossier sera clôturé directement, sans vérification du matériel."}</p>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>Annuler</Button>
