@@ -58,8 +58,9 @@ type View = "dossiers" | "controle" | "historique" | "planning";
 export function TechModule() {
   const { can, pdv, isAdmin, user } = useAuth();
   const canManage = can("manage_tech");
-  // Managers du PDV : peuvent suivre les dossiers dont le traitement leur est confié.
-  const canPep = can("view_pep") || can("manage_pep");
+  // Utilisateurs du PDV ayant accès au Suivi Technique : peuvent suivre les
+  // dossiers dont le traitement est confié au manager.
+  const canViewTech = can("view_tech");
   const canCorrect = canCorrectTechDeadline(user?.email, canManage);
   const canDelete = (user?.email ?? "").toLowerCase() === "khadri1982@gmail.com";
   // Responsable technique (permission manage_tech) : vue centralisée de tous
@@ -277,7 +278,7 @@ export function TechModule() {
             const soon = isDeadlineSoon(i, today);
             const dd = daysToDeadline(i, today);
             const rec = isRecurring(i, recurring);
-            const canHandle = canHandleTechIssue(i, canManage, canPep);
+            const canHandle = canHandleTechIssue(i, canManage, canViewTech);
             return (
               <div key={i.id} className={`rounded-lg border bg-card p-3 ${overdue ? "border-destructive" : soon ? "border-amber-500" : ""} ${i.priority === "critique" && i.status !== "cloture" ? "animate-pulse-border" : ""}`}>
                 <div className="flex items-start gap-2 flex-wrap">

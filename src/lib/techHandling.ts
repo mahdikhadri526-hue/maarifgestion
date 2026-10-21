@@ -12,11 +12,12 @@ export const TECH_PROCESSING_MODES: { key: TechProcessingMode; label: string }[]
 ];
 
 /** Qui peut suivre le dossier : le responsable technique (manage_tech) toujours,
- *  ou un manager du PDV (view_pep/manage_pep) quand le traitement lui est confié. */
+ *  ou un utilisateur du PDV ayant accès au Suivi Technique (view_tech) quand le
+ *  traitement est confié au manager. */
 export function canHandleTechIssue(
   issue: { processing_mode?: string | null },
   canManage: boolean,
-  canPep: boolean,
+  canViewTech: boolean,
 ): boolean {
-  return canManage || (issue.processing_mode === "manager" && canPep);
+  return canManage || (issue.processing_mode === "manager" && canViewTech);
 }
