@@ -1,14 +1,14 @@
 ---
-name: Choix du traitement des signalements techniques
-description: À la réception d'un signalement matériel, choix entre traitement par le responsable technique ou directement par le manager du PDV
+name: Traitement manager des signalements techniques
+description: Choix du traitement (responsable technique ou manager) à la réception d'un signalement matériel ; les dossiers manager se traitent dans l'Agenda PEP
 type: feature
 ---
 
-À la réception d'un problème technique (formulaire « Signaler un problème matériel »), l'utilisateur choisit qui traite le dossier : le responsable technique (défaut, comportement historique) ou directement le manager du PDV.
+# Traitement manager des signalements techniques
 
-Règles validées par l'utilisateur (21/10/2026) :
-- Le responsable choisi suit les mêmes étapes : désigner l'intervenant, fixer le délai, suivre la réparation et valider l'intervention.
-- Le manager confirme toujours la réparation à la fin (vérification du bon fonctionnement), quel que soit le mode.
-- Le responsable technique conserve l'accès à tous les dossiers pour l'historique et le suivi, y compris ceux traités par les managers.
-- Préserver le fonctionnement actuel : le mode « Responsable technique » reste le défaut et les dossiers existants ne changent pas.
-- La rectification d'un deadline déjà fixé reste réservée au responsable technique (règle existante inchangée).
+- À la réception d'un signalement matériel, choix du traitement : **responsable technique** (défaut, comportement historique) ou **manager du PDV**.
+- Le responsable choisi suit les mêmes étapes : désigner l'intervenant, fixer le délai, suivre la réparation, valider l'intervention.
+- **Les dossiers confiés au manager s'affichent et se traitent dans l'Agenda PEP** (tableau « Avancement des réparations », boutons « Prendre en charge » / « Valider la réparation »), **pas dans le Suivi Technique** — c'est le manager qui fait l'intervention (demande explicite de l'utilisateur, 21/10/2026).
+- Le Suivi Technique (vue PDV) masque les dossiers en mode manager ; le responsable technique (vue centralisée) conserve l'accès à tous les dossiers pour l'historique et le suivi.
+- Le manager confirme toujours le bon fonctionnement à la fin (vérification finale), quel que soit le mode.
+- La rectification d'un délai déjà fixé reste réservée au responsable technique (gestion-technique@oliveri.com).
