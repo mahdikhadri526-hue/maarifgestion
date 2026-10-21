@@ -497,7 +497,7 @@ export function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; 
       return toast({ title: "Deadline obligatoire pour l'intervention", variant: "destructive" });
     }
     if (status === "cloture" && !bothValidated) {
-      return toast({ title: "Clôture impossible", description: "La validation du responsable technique et la vérification du manager sont obligatoires.", variant: "destructive" });
+      return toast({ title: "Clôture impossible", description: requiresManagerVerification(issue) ? "La validation du responsable technique et la vérification du manager sont obligatoires." : "La validation de la réparation est obligatoire.", variant: "destructive" });
     }
     setSaving(true);
     try {
@@ -530,7 +530,7 @@ export function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; 
                 );
               })}
             </div>
-            {!bothValidated && <p className="text-[11px] text-muted-foreground mt-1">« Clôturé » n'est possible qu'après validation du responsable technique et vérification du manager.</p>}
+            {!bothValidated && <p className="text-[11px] text-muted-foreground mt-1">{requiresManagerVerification(issue) ? "« Clôturé » n'est possible qu'après validation du responsable technique et vérification du manager." : "« Clôturé » n'est possible qu'après validation de la réparation."}</p>}
           </div>
           <div>
             <Label className="text-xs">Priorité</Label>
