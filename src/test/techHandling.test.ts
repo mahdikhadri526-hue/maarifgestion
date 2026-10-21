@@ -11,7 +11,7 @@ it("un manager du PDV suit uniquement les dossiers dont le traitement lui est co
   expect(canHandleTechIssue({ processing_mode: "technique" }, false, true)).toBe(false);
 });
 
-it("sans droit PEP ni manage_tech, personne ne peut suivre un dossier", () => {
+it("sans accès au Suivi Technique ni manage_tech, personne ne peut suivre un dossier", () => {
   expect(canHandleTechIssue({ processing_mode: "manager" }, false, false)).toBe(false);
   expect(canHandleTechIssue({ processing_mode: "technique" }, false, false)).toBe(false);
 });

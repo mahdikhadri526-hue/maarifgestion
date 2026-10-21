@@ -58,8 +58,9 @@ type View = "dossiers" | "controle" | "historique" | "planning";
 export function TechModule() {
   const { can, pdv, isAdmin, user } = useAuth();
   const canManage = can("manage_tech");
-  // Managers du PDV : peuvent suivre les dossiers dont le traitement leur est confié.
-  const canPep = can("view_pep") || can("manage_pep");
+  // Utilisateurs du PDV ayant accès au Suivi Technique : peuvent suivre les
+  // dossiers dont le traitement est confié au manager.
+  const canViewTech = can("view_tech");
   const canCorrect = canCorrectTechDeadline(user?.email, canManage);
   const canDelete = (user?.email ?? "").toLowerCase() === "khadri1982@gmail.com";
   // Responsable technique (permission manage_tech) : vue centralisée de tous
