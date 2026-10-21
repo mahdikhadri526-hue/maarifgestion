@@ -40,6 +40,8 @@ import {
   techRepairPhotos,
   updateTechIssue,
   validateRepair,
+  canCloseIssue,
+  requiresManagerVerification,
   type TechEvent,
   type TechIssue,
   type TechStatus,
@@ -480,7 +482,9 @@ export function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; 
   const [notes, setNotes] = useState(issue.tech_notes ?? "");
   const [priority, setPriority] = useState(issue.priority);
   const [saving, setSaving] = useState(false);
-  const bothValidated = !!issue.tech_validated_at && !!issue.manager_validated_at;
+  // Mode « manager » : la vérification du matériel est supprimée, la validation
+  // de la réparation suffit pour clôturer.
+  const bothValidated = canCloseIssue(issue);
 
   const save = async () => {
     if ((status === "en_cours" || status === "repare") && !assignedKind) {
