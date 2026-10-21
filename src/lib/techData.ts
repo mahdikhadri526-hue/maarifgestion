@@ -327,9 +327,10 @@ export function isTechLate(issue: TechIssue): boolean {
   return issue.tech_validated_at.slice(0, 10) > issue.deadline;
 }
 
-/** Réparé mais en attente de la validation du manager. */
+/** Réparé mais en attente de la validation du manager (jamais en mode manager :
+ *  la vérification du matériel est supprimée pour ces dossiers). */
 export function awaitingManager(issue: TechIssue): boolean {
-  return issue.status === "repare" && !!issue.tech_validated_at && !issue.manager_validated_at;
+  return requiresManagerVerification(issue) && issue.status === "repare" && !!issue.tech_validated_at && !issue.manager_validated_at;
 }
 
 const normEq = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
