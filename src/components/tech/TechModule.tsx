@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Bell, Camera, CheckCircle2, ClipboardList, Plus, Repeat, Wrench } from "lucide-react";
+import { AlertTriangle, Bell, CalendarClock, Camera, CheckCircle2, ClipboardList, Plus, Repeat, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -48,6 +48,7 @@ import {
 import { ReportIssueDialog } from "./ReportIssueDialog";
 import { PlanningGrid } from "@/components/hr/PlanningGrid";
 import { getHolidays, getHrAgents, type HrAgent, type HrHoliday } from "@/lib/hrData";
+import { canExtendTechDeadline, isLaterDeadline } from "@/lib/techDeadline";
 
 const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 };
 
@@ -56,6 +57,7 @@ type View = "dossiers" | "controle" | "historique" | "planning";
 export function TechModule() {
   const { can, pdv, isAdmin, user } = useAuth();
   const canManage = can("manage_tech");
+  const canExtend = canExtendTechDeadline(user?.email, canManage);
   const canDelete = (user?.email ?? "").toLowerCase() === "khadri1982@gmail.com";
   // Responsable technique (permission manage_tech) : vue centralisée de tous
   // les PDV. L'admin principal garde la vue du PDV sélectionné.
@@ -71,6 +73,7 @@ export function TechModule() {
   const [reportOpen, setReportOpen] = useState(false);
   const [editing, setEditing] = useState<TechIssue | null>(null);
   const [repairing, setRepairing] = useState<TechIssue | null>(null);
+  const [extending, setExtending] = useState<TechIssue | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const today = todayISO();
   // Planning Ménage & Sécurité : établi par le responsable technique.
@@ -356,6 +359,11 @@ export function TechModule() {
                   <div className="flex flex-col gap-1">
                     {canManage && i.status === "a_traiter" && <Button size="sm" onClick={() => setEditing({ ...i, status: "en_cours" })}>Prendre en charge</Button>}
                     {canManage && i.status === "en_cours" && <Button size="sm" onClick={() => setRepairing(i)}>Valider la réparation</Button>}
+                    {canExtend && i.deadline && (i.status === "a_traiter" || i.status === "en_cours") && (
+                      <Button size="sm" variant="outline" onClick={() => setExtending(i)}>
+                        <CalendarClock className="h-4 w-4 mr-1" />Prolonger le deadline
+                      </Button>
+                    )}
 
                     {/* Le bouton « Suivi » est masqué : la saisie se fait via
                         « Prendre en charge », « Valider la réparation » et les
@@ -388,6 +396,7 @@ export function TechModule() {
 
       {editing && <FollowUpDialog issue={editing} onClose={() => setEditing(null)} onSaved={load} />}
       {repairing && <RepairDialog issue={repairing} onClose={() => setRepairing(null)} onSaved={load} />}
+      {extending && canExtend && <ExtendDeadlineDialog issue={extending} onClose={() => setExtending(null)} onSaved={load} />}
       
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
         <DialogContent className="max-w-2xl">
@@ -405,6 +414,45 @@ export function formatIssueTotal(i: { parts_price: number | null; service_price:
   const s = i.service_price != null ? Number(i.service_price) : null;
   if (p == null && s == null) return "—";
   return `${((p ?? 0) + (s ?? 0)).toFixed(2)}`;
+}
+
+function ExtendDeadlineDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
+  const [deadline, setDeadline] = useState("");
+  const [saving, setSaving] = useState(false);
+  const save = async () => {
+    if (!isLaterDeadline(issue.deadline, deadline)) {
+      toast({ title: "La nouvelle échéance doit être postérieure au deadline actuel", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const { error } = await supabase.rpc("extend_tech_deadline", { _issue_id: issue.id, _deadline: deadline });
+      if (error) throw error;
+      toast({ title: "Deadline prolongé" });
+      onSaved();
+      onClose();
+    } catch (e: any) {
+      toast({ title: "Prolongation impossible", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+  return (
+    <Dialog open onOpenChange={(open) => !open && !saving && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader><DialogTitle>Prolonger le deadline — {issue.equipment}</DialogTitle></DialogHeader>
+        <p className="text-sm text-muted-foreground">Deadline actuel : {issue.deadline ? fmtFR(issue.deadline) : "—"}</p>
+        <div className="space-y-1">
+          <Label htmlFor="extended-deadline">Nouvelle échéance</Label>
+          <Input id="extended-deadline" type="date" min={issue.deadline ?? undefined} value={deadline} onChange={(e) => setDeadline(e.target.value)} disabled={saving} />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} disabled={saving}>Annuler</Button>
+          <Button onClick={() => void save()} disabled={saving || !isLaterDeadline(issue.deadline, deadline)}>{saving ? "Enregistrement…" : "Prolonger"}</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
