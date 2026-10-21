@@ -22,5 +22,5 @@
 - Ice/tart FIFO uses lot dates with explicit ice context for compact codes; keep other products unchanged.
 - Share pâte validation across creation/completion; store DLC in autocontrols and reuse pending-visa alerts.
 - CTG uses getCtgProductionLot for fiches and weekly entries, never legacy inputs.
-- Deadline corrections use an invoker RPC and trigger to enforce technical-account authority; the existing audit tracks changes.
+- Deadline corrections use an invoker RPC and trigger to enforce technical-account authority; the existing audit tracks changes. Tech issues carry processing_mode (technique default / manager): manager-mode issues are handled by PDV managers through the same steps, manage_tech keeps full access; mode rules live in src/lib/techHandling.ts.
 - Bundle welcome audio as real src/assets .mp3 imports, not asset pointers: self-hosted servers lack /__l5e URLs.
