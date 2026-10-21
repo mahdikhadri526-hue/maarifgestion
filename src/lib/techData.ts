@@ -7,6 +7,7 @@ import { supabase } from "@/lib/db";
 import { supabase as rawSupabase } from "@/integrations/supabase/client";
 import { requireCurrentPdvId } from "@/lib/pdvStore";
 import { parsePhotos, serializePhotos } from "@/lib/pepData";
+import type { TechProcessingMode } from "@/lib/techHandling";
 
 export type TechPriority = "critique" | "urgente" | "normale";
 export type TechStatus = "a_traiter" | "en_cours" | "repare" | "cloture";
@@ -94,6 +95,10 @@ export interface TechIssue {
   manager_validated_by: string | null;
   manager_validated_at: string | null;
   manager_comment: string | null;
+  /** Traitement confié au responsable technique (défaut) ou au manager du PDV. */
+  processing_mode: TechProcessingMode;
+  /** Nom du manager traitant quand processing_mode = "manager". */
+  handler_name: string | null;
   /** Renseignés par getTechIssues (jointure pdvs). */
   pdv_name?: string | null;
   pdv_code?: string | null;
@@ -182,6 +187,9 @@ export interface NewTechIssue {
   source_occurrence_id?: string | null;
   /** PDV concerné (responsable technique : choisi dans le formulaire). */
   pdv_id?: string | null;
+  /** Traitement confié au manager du PDV (défaut : responsable technique). */
+  processing_mode?: TechProcessingMode;
+  handler_name?: string | null;
 }
 
 export async function reportTechIssue(input: NewTechIssue): Promise<TechIssue> {
@@ -197,6 +205,8 @@ export async function reportTechIssue(input: NewTechIssue): Promise<TechIssue> {
     status: "a_traiter",
     source_task_id: input.source_task_id ?? null,
     source_occurrence_id: input.source_occurrence_id ?? null,
+    processing_mode: input.processing_mode ?? "technique",
+    handler_name: input.handler_name?.trim() || null,
     ...(input.pdv_id ? { pdv_id: input.pdv_id } : {}),
   };
   // PDV choisi explicitement : client brut (le client cloisonné écraserait pdv_id).

@@ -9,12 +9,12 @@
 - Voice generation shares the configured voice; bulk generation preserves microphone recordings and Welcome to avoid replacing personal audio.
 - Keep the logo in standard/kiosk headers and standalone PDV selection; main modules use the shared title (logo left, title right). Fullscreen attendance stays camera-only and header-free.
 - Trigger the welcome transition only from a successful password sign-in attempt and let the existing PDV gate decide the destination afterward, so restored sessions and PDV changes never replay it.
-- Store login welcome photos in a private bucket with an ordered database list; only the two designated admin accounts can manage them, because all signed-in users should see the same sequence after password sign-in.
+- Store login welcome photos in a private bucket with an ordered database list; only the two designated admin accounts manage them.
 
 - Welcome music and voice-over are static bundled audio (no per-login synthesis or streaming): music plays once from the first photo, ducked under the voice-over, and stops before the welcome message.
 - Keep product discrepancy views separate from ice-cream logic and persist their existing prefixed sections in ecart_lines, so presentation changes preserve historical data and calculations.
 - Self-hosted copies: voice guides and welcome photos fall back to /stockage/<bucket>/<path> shipped beside the built app when storage signing or playback fails, so offline-server packages play without a storage service.
-- Photo-scan reading in `supabase/functions/scan-stock-entry` picks its provider by secret: `GOOGLE_API_KEY` (model from `GEMINI_MODEL`, cheapest tier by default) on self-hosted servers, otherwise the built-in Lovable AI service, so one build runs both online and on the offline server without shipping a key in the app.
+- Photo-scan reading in `supabase/functions/scan-stock-entry` picks its provider by secret: `GOOGLE_API_KEY` (model from `GEMINI_MODEL`) on self-hosted servers, otherwise the built-in Lovable AI service.
 - Voice-guide generation in `supabase/functions/voice-tts` uses the built-in Lovable AI service when its key exists and falls back to Google AI Studio with `GOOGLE_API_KEY` (model from `GEMINI_TTS_MODEL`), so offline servers can generate voices without the Lovable service.
 - Le catalogue produits (product_catalog) est cloisonné par PDV (pdv_id) : ajout/suppression d’un produit n’affecte que le PDV courant ; les lignes sans pdv_id sont obsolètes.
 - Zones désactivées par PDV (nettoyage `cleaning_zone_off:<zone>`, température `fridge_zone_off:<zone>`) vivent dans pdv_permissions (absence = active), pour garder les zones par défaut et survivre au changement de rôle PDV.
@@ -22,5 +22,5 @@
 - Ice/tart FIFO uses lot dates with explicit ice context for compact codes; keep other products unchanged.
 - Share pâte validation across creation/completion; store DLC in autocontrols and reuse pending-visa alerts.
 - CTG uses getCtgProductionLot for fiches and weekly entries, never legacy inputs.
-- Deadline corrections use an invoker RPC and trigger to enforce technical-account authority; the existing audit tracks changes.
+- Deadline corrections use an invoker RPC and trigger to enforce technical-account authority; the existing audit tracks changes. Tech issues carry processing_mode (technique default / manager): manager-mode issues are handled by PDV managers through the same steps, manage_tech keeps full access; mode rules live in src/lib/techHandling.ts.
 - Bundle welcome audio as real src/assets .mp3 imports, not asset pointers: self-hosted servers lack /__l5e URLs.

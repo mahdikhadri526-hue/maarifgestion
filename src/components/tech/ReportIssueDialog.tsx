@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { fileToCompressedDataUrl } from "@/lib/pepData";
 import { TECH_PRIORITIES, reportTechIssue, type TechPriority } from "@/lib/techData";
+import { TECH_PROCESSING_MODES, type TechProcessingMode } from "@/lib/techHandling";
 
 interface Props {
   open: boolean;
@@ -36,6 +37,7 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
   const [problem, setProblem] = useState("");
   const [manager, setManager] = useState("");
   const [priority, setPriority] = useState<TechPriority>("normale");
+  const [processingMode, setProcessingMode] = useState<TechProcessingMode>("technique");
   const [photos, setPhotos] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
@@ -47,6 +49,7 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
     setProblem("");
     setManager("");
     setPriority("normale");
+    setProcessingMode("technique");
     setPhotos([]);
   }, [open, defaults?.equipment, defaults?.location]);
 
@@ -79,6 +82,7 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
     if (!problem.trim()) return toast({ title: "Problème constaté obligatoire", variant: "destructive" });
     if (!isTechCentral && !manager.trim()) return toast({ title: "Manager signalant obligatoire", variant: "destructive" });
     if (isTechCentral && !pdvId) return toast({ title: "Point de vente obligatoire", variant: "destructive" });
+    if (processingMode === "manager" && !manager.trim()) return toast({ title: "Manager traitant obligatoire", variant: "destructive" });
     setSaving(true);
     try {
       await reportTechIssue({
@@ -92,6 +96,8 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
         source_task_id: defaults?.source_task_id ?? null,
         source_occurrence_id: defaults?.source_occurrence_id ?? null,
         pdv_id: isTechCentral ? pdvId : null,
+        processing_mode: processingMode,
+        handler_name: processingMode === "manager" ? manager : null,
       });
       toast({ title: "Signalement transféré au Suivi Technique" });
       onReported?.();
@@ -122,14 +128,32 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
           <div><Label className="text-xs">Matériel *</Label><Input value={equipment} onChange={(e) => setEquipment(e.target.value)} placeholder="Ex : Congélateur vitrine n°2" /></div>
           <div><Label className="text-xs">Emplacement</Label><Input value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Ex : Salle, Chambre froide, Emporter…" /></div>
           <div><Label className="text-xs">Problème constaté *</Label><Textarea rows={3} value={problem} onChange={(e) => setProblem(e.target.value)} /></div>
-          {isTechCentral ? (
+          <div>
+            <Label className="text-xs">Traitement du problème *</Label>
+            <div className="flex gap-2 flex-wrap mt-1">
+              {TECH_PROCESSING_MODES.map((m) => (
+                <button
+                  key={m.key}
+                  type="button"
+                  onClick={() => setProcessingMode(m.key)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${processingMode === m.key ? "bg-primary text-primary-foreground border-transparent" : "bg-background"}`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1">
+              Le responsable choisi désigne l'intervenant, fixe le délai, suit la réparation et valide l'intervention. Le manager confirme ensuite le bon fonctionnement.
+            </p>
+          </div>
+          {isTechCentral && processingMode !== "manager" ? (
             <div>
               <Label className="text-xs">Signalé par</Label>
               <Input value="Responsable Technique" disabled />
             </div>
           ) : (
             <div>
-              <Label className="text-xs">Manager signalant *</Label>
+              <Label className="text-xs">{isTechCentral ? "Manager traitant *" : "Manager signalant *"}</Label>
               <select className="w-full h-9 rounded-md border bg-background px-2 text-sm" value={manager} onChange={(e) => setManager(e.target.value)}>
                 <option value="">— Choisir —</option>
                 {managers.map((m) => <option key={m} value={m}>{m}</option>)}

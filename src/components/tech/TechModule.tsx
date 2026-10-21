@@ -49,6 +49,7 @@ import { ReportIssueDialog } from "./ReportIssueDialog";
 import { PlanningGrid } from "@/components/hr/PlanningGrid";
 import { getHolidays, getHrAgents, type HrAgent, type HrHoliday } from "@/lib/hrData";
 import { canCorrectTechDeadline, isChangedDeadline } from "@/lib/techDeadline";
+import { canHandleTechIssue } from "@/lib/techHandling";
 
 const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 };
 
@@ -57,6 +58,8 @@ type View = "dossiers" | "controle" | "historique" | "planning";
 export function TechModule() {
   const { can, pdv, isAdmin, user } = useAuth();
   const canManage = can("manage_tech");
+  // Managers du PDV : peuvent suivre les dossiers dont le traitement leur est confié.
+  const canPep = can("view_pep") || can("manage_pep");
   const canCorrect = canCorrectTechDeadline(user?.email, canManage);
   const canDelete = (user?.email ?? "").toLowerCase() === "khadri1982@gmail.com";
   // Responsable technique (permission manage_tech) : vue centralisée de tous
@@ -274,6 +277,7 @@ export function TechModule() {
             const soon = isDeadlineSoon(i, today);
             const dd = daysToDeadline(i, today);
             const rec = isRecurring(i, recurring);
+            const canHandle = canHandleTechIssue(i, canManage, canPep);
             return (
               <div key={i.id} className={`rounded-lg border bg-card p-3 ${overdue ? "border-destructive" : soon ? "border-amber-500" : ""} ${i.priority === "critique" && i.status !== "cloture" ? "animate-pulse-border" : ""}`}>
                 <div className="flex items-start gap-2 flex-wrap">
@@ -284,6 +288,9 @@ export function TechModule() {
                       <p className="text-sm font-semibold">{i.equipment}</p>
                       <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${prio.className}`}>{prio.label}</span>
                       <span className="px-2 py-0.5 rounded-full text-[11px] border">{st.label}</span>
+                      <span className="px-2 py-0.5 rounded-full text-[11px] border bg-muted/40">
+                        Traitement : {i.processing_mode === "manager" ? `Manager${i.handler_name ? ` (${i.handler_name})` : ""}` : "Responsable technique"}
+                      </span>
                       {overdue && <span className="px-2 py-0.5 rounded-full text-[11px] bg-destructive text-destructive-foreground">Deadline dépassée ({Math.abs(dd!)} j)</span>}
                       {soon && !overdue && <span className="px-2 py-0.5 rounded-full text-[11px] bg-amber-500 text-white">Deadline {dd === 0 ? "aujourd'hui" : `J-${dd}`}</span>}
                       {rec && <span className="px-2 py-0.5 rounded-full text-[11px] border border-amber-500 text-amber-700 flex items-center gap-1"><Repeat className="h-3 w-3" />Récurrent</span>}
@@ -357,8 +364,8 @@ export function TechModule() {
                     )}
                   </div>
                   <div className="flex flex-col gap-1">
-                    {canManage && i.status === "a_traiter" && <Button size="sm" onClick={() => setEditing({ ...i, status: "en_cours" })}>Prendre en charge</Button>}
-                    {canManage && i.status === "en_cours" && <Button size="sm" onClick={() => setRepairing(i)}>Valider la réparation</Button>}
+                    {canHandle && i.status === "a_traiter" && <Button size="sm" onClick={() => setEditing({ ...i, status: "en_cours" })}>Prendre en charge</Button>}
+                    {canHandle && i.status === "en_cours" && <Button size="sm" onClick={() => setRepairing(i)}>Valider la réparation</Button>}
                     {canCorrect && i.deadline && (
                       <Button size="sm" variant="outline" onClick={() => setExtending(i)}>
                         <CalendarClock className="h-4 w-4 mr-1" />Rectifier le deadline
