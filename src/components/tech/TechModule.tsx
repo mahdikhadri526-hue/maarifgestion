@@ -630,8 +630,11 @@ export function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; on
         service_price: servicePrice.trim() ? Number(servicePrice.replace(",", ".")) : null,
         repairPhotoUrls: photos,
         repaired_at: new Date(date).toISOString(),
+        processing_mode: issue.processing_mode,
       });
-      toast({ title: "Réparation validée", description: "En attente de la vérification du manager." });
+      toast(requiresManagerVerification(issue)
+        ? { title: "Réparation validée", description: "En attente de la vérification du manager." }
+        : { title: "Réparation validée", description: "Dossier clôturé (sans vérification du matériel)." });
       onSaved();
       onClose();
     } catch (e: any) {
@@ -676,7 +679,7 @@ export function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; on
               </div>
             )}
           </div>
-          <p className="text-[11px] text-muted-foreground">Le nom, la date et l'heure de validation sont enregistrés automatiquement. Le dossier passera en « Réparé » puis devra être vérifié par un manager.</p>
+          <p className="text-[11px] text-muted-foreground">Le nom, la date et l'heure de validation sont enregistrés automatiquement. {requiresManagerVerification(issue) ? "Le dossier passera en « Réparé » puis devra être vérifié par un manager." : "Le dossier sera clôturé directement, sans vérification du matériel."}</p>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>Annuler</Button>
