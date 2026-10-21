@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Ajouter et sécuriser la prolongation du deadline uniquement pour le responsable technique.
+- [ ] Ajouter et sécuriser la rectification des deadlines (avancer ou repousser la date) uniquement pour le responsable technique.
 - [x] Corriger le transfert des numéros de lot cornets/tulipes/gaufrettes vers le suivi hebdo Tartes ; 12 lots manquants rétablis, tests et affichage vérifiés, autres fonctions inchangées.
 - [ ] Remplacer le pointage facial par empreinte sur la tablette Samsung Galaxy Tab A11+ : bloqué par l'absence de lecteur d'empreintes compatible identifié ; préserver le pointage existant en attendant.
 - [x] Alléger les répétitions de la table RH, sans changer les données ni les calculs, et vérifier la lecture.

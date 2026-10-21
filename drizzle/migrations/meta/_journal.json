@@ -120,6 +120,13 @@
       "when": 1792580357540,
       "tag": "0016_restrict_tech_deadline_extensions",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792580519254,
+      "tag": "0017_allow_tech_deadline_corrections",
+      "breakpoints": true
     }
   ]
 }

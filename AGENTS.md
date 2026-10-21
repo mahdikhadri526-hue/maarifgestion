@@ -1,5 +1,5 @@
 # AGENTS.md
-- RH balances share column headings; report totals appear once, with history and overtime in expandable sections.
+- RH balances share headings; report totals appear once and history expands.
 - Cleaning quality checks are stored per task in cleaning_logs.quality_tasks and written only through the set_cleaning_quality function (quality account only, trigger-guarded) so manager C/NC stay untouched.
 - La page « Inventaire hebdomadaire » a été supprimée (30/09/2026) à la demande de l'utilisateur : ne pas la réintroduire. La table `mise_en_place_weekly` et ses données restent en base (l'utilisateur a refusé le DROP TABLE).
 - Le tableau « Stock restant » comporte une colonne « Stock mise en place » (saisie via `mise_en_place_stocks` / `useMiseEnPlace`) placée avant « Stock total » ; Stock total = Stock restant + Stock mise en place. Un sélecteur de semaine (calendrier lundi-dimanche, jours de comptage marqués) permet de saisir par semaine (`week_start`) ; chaque semaine a ses propres saisies (semaine suivie par le filtre de date) ; en filtre jour, la saisie ne s’affiche que le jour du comptage ; l’ancienne valeur unique ne sert qu’en repli pour la semaine courante sans saisie. La saisie est verrouillée sauf le jour du comptage (lundi, ou lendemain de fin de mois pour la semaine qui chevauche la fin du mois).
@@ -21,5 +21,6 @@
 - Supplier claim sheet QC-ENSR 001 lives in supplier_claims (per PDV) with photos in private bucket supplier-claims; only the quality account writes and only it plus admin-role users can read (RLS), per user request.
 - Ice/tart FIFO uses lot dates with explicit ice context for compact codes; keep other products unchanged.
 - Share pâte validation across creation/completion; store DLC in autocontrols and reuse pending-visa alerts.
-- CTG creation shares getCtgProductionLot between the fiche, displayed lot and both weekly entries; disabled legacy inputs must not supply lots.
-- Welcome voice-over and intro music must be real imported .mp3 files under src/assets (not lovable-assets .asset.json pointers), because /__l5e URLs do not exist on the self-hosted server.
+- CTG uses getCtgProductionLot for fiches and weekly entries, never legacy inputs.
+- Deadline corrections use an invoker RPC and trigger to enforce technical-account authority; the existing audit tracks changes.
+- Bundle welcome audio as real src/assets .mp3 imports, not asset pointers: self-hosted servers lack /__l5e URLs.
