@@ -19,5 +19,11 @@ export function canHandleTechIssue(
   canManage: boolean,
   canViewTech: boolean,
 ): boolean {
-  return canManage || (issue.processing_mode === "manager" && canViewTech);
+}
+
+/** Visibilité dans le Suivi Technique du PDV : les dossiers confiés au manager
+ *  se traitent dans l'Agenda PEP, mais une fois validés et clôturés ils
+ *  réapparaissent ici dans « Dossiers clôturés » pour l'historique. */
+export function visibleInPdvTech(issue: { processing_mode?: string | null; status: string }): boolean {
+  return issue.processing_mode !== "manager" || issue.status === "cloture";
 }

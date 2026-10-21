@@ -1,6 +1,13 @@
 import { expect, it } from "vitest";
-import { canHandleTechIssue } from "@/lib/techHandling";
+import { canHandleTechIssue, visibleInPdvTech } from "@/lib/techHandling";
 import { awaitingManager, canCloseIssue, requiresManagerVerification } from "@/lib/techData";
+
+it("les dossiers manager clôturés réapparaissent dans le Suivi Technique du PDV (dossiers clôturés)", () => {
+  expect(visibleInPdvTech({ processing_mode: "manager", status: "cloture" })).toBe(true);
+  expect(visibleInPdvTech({ processing_mode: "manager", status: "a_traiter" })).toBe(false);
+  expect(visibleInPdvTech({ processing_mode: "manager", status: "repare" })).toBe(false);
+  expect(visibleInPdvTech({ processing_mode: "technique", status: "a_traiter" })).toBe(true);
+});
 
 it("le responsable technique (manage_tech) suit tous les dossiers", () => {
   expect(canHandleTechIssue({ processing_mode: "technique" }, true, false)).toBe(true);
