@@ -127,6 +127,13 @@
       "when": 1792580519254,
       "tag": "0017_allow_tech_deadline_corrections",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792615491567,
+      "tag": "0018_tech_issue_processing_mode",
+      "breakpoints": true
     }
   ]
 }

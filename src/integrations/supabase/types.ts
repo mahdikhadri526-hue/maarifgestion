@@ -2267,6 +2267,7 @@ export type Database = {
           created_at: string
           deadline: string | null
           equipment: string
+          handler_name: string | null
           id: string
           location: string | null
           manager_comment: string | null
@@ -2278,6 +2279,7 @@ export type Database = {
           photo_url: string | null
           priority: string
           problem: string
+          processing_mode: string
           repair_photo_url: string | null
           repaired_at: string | null
           reported_at: string
@@ -2301,6 +2303,7 @@ export type Database = {
           created_at?: string
           deadline?: string | null
           equipment: string
+          handler_name?: string | null
           id?: string
           location?: string | null
           manager_comment?: string | null
@@ -2312,6 +2315,7 @@ export type Database = {
           photo_url?: string | null
           priority?: string
           problem: string
+          processing_mode?: string
           repair_photo_url?: string | null
           repaired_at?: string | null
           reported_at?: string
@@ -2335,6 +2339,7 @@ export type Database = {
           created_at?: string
           deadline?: string | null
           equipment?: string
+          handler_name?: string | null
           id?: string
           location?: string | null
           manager_comment?: string | null
@@ -2346,6 +2351,7 @@ export type Database = {
           photo_url?: string | null
           priority?: string
           problem?: string
+          processing_mode?: string
           repair_photo_url?: string | null
           repaired_at?: string | null
           reported_at?: string
