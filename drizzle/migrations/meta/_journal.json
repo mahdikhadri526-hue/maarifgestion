@@ -113,6 +113,13 @@
       "when": 1792325955489,
       "tag": "0015_attendance_punch_correction_audit",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792580357540,
+      "tag": "0016_restrict_tech_deadline_extensions",
+      "breakpoints": true
     }
   ]
 }

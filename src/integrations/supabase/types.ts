@@ -2748,6 +2748,10 @@ export type Database = {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean
       }
+      extend_tech_deadline: {
+        Args: { _deadline: string; _issue_id: string }
+        Returns: undefined
+      }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
       has_permission: {
         Args: { _permission_key: string; _user_id: string }
