@@ -51,7 +51,7 @@ import { ReportIssueDialog } from "./ReportIssueDialog";
 import { PlanningGrid } from "@/components/hr/PlanningGrid";
 import { getHolidays, getHrAgents, type HrAgent, type HrHoliday } from "@/lib/hrData";
 import { canCorrectTechDeadline, isChangedDeadline } from "@/lib/techDeadline";
-import { canHandleTechIssue } from "@/lib/techHandling";
+import { canHandleTechIssue, visibleInPdvTech } from "@/lib/techHandling";
 
 const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 };
 
@@ -127,9 +127,10 @@ export function TechModule() {
 
   const scoped = useMemo(() => {
     // Les dossiers confiés au manager (processing_mode = "manager") se traitent
-    // dans l'Agenda PEP, pas ici. Le responsable technique (vue centralisée)
-    // conserve l'accès à tous les dossiers pour le suivi et l'historique.
-    const base = central ? issues : issues.filter((i) => i.processing_mode !== "manager");
+    // dans l'Agenda PEP, pas ici. Une fois validés et clôturés, ils réapparaissent
+    // dans le Suivi Technique du PDV, partie « Dossiers clôturés ». Le responsable
+    // technique (vue centralisée) conserve l'accès à tous les dossiers.
+    const base = central ? issues : issues.filter(visibleInPdvTech);
     return central && pdvFilter !== "all" ? base.filter((i) => i.pdv_id === pdvFilter) : base;
   }, [issues, central, pdvFilter]);
 
