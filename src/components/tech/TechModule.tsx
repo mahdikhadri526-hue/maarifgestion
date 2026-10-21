@@ -123,10 +123,13 @@ export function TechModule() {
     return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [issues]);
 
-  const scoped = useMemo(
-    () => (central && pdvFilter !== "all" ? issues.filter((i) => i.pdv_id === pdvFilter) : issues),
-    [issues, central, pdvFilter],
-  );
+  const scoped = useMemo(() => {
+    // Les dossiers confiés au manager (processing_mode = "manager") se traitent
+    // dans l'Agenda PEP, pas ici. Le responsable technique (vue centralisée)
+    // conserve l'accès à tous les dossiers pour le suivi et l'historique.
+    const base = central ? issues : issues.filter((i) => i.processing_mode !== "manager");
+    return central && pdvFilter !== "all" ? base.filter((i) => i.pdv_id === pdvFilter) : base;
+  }, [issues, central, pdvFilter]);
 
   const recurring = useMemo(() => recurringEquipments(scoped), [scoped]);
 
