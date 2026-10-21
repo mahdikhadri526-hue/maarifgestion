@@ -111,7 +111,7 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Wrench className="h-4 w-4" />Signaler un problème matériel</DialogTitle>
         </DialogHeader>
