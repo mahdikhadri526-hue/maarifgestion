@@ -463,7 +463,7 @@ function CorrectDeadlineDialog({ issue, onClose, onSaved }: { issue: TechIssue; 
   );
 }
 
-function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
+export function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
   const [status, setStatus] = useState<TechStatus>(issue.status);
   const parseKind = (v: string | null): { kind: "" | "Interne" | "Externe"; name: string } => {
     if (!v) return { kind: "", name: "" };
@@ -558,7 +558,7 @@ function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose
   );
 }
 
-function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
+export function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
   const [name, setName] = useState(issue.tech_validated_by ?? "");
   const [action, setAction] = useState(issue.action_done ?? "");
   const [parts, setParts] = useState(issue.parts_changed ?? "");
