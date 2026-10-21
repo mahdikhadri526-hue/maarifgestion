@@ -123,10 +123,13 @@ export function TechModule() {
     return [...m.entries()].sort((a, b) => a[1].localeCompare(b[1]));
   }, [issues]);
 
-  const scoped = useMemo(
-    () => (central && pdvFilter !== "all" ? issues.filter((i) => i.pdv_id === pdvFilter) : issues),
-    [issues, central, pdvFilter],
-  );
+  const scoped = useMemo(() => {
+    // Les dossiers confiés au manager (processing_mode = "manager") se traitent
+    // dans l'Agenda PEP, pas ici. Le responsable technique (vue centralisée)
+    // conserve l'accès à tous les dossiers pour le suivi et l'historique.
+    const base = central ? issues : issues.filter((i) => i.processing_mode !== "manager");
+    return central && pdvFilter !== "all" ? base.filter((i) => i.pdv_id === pdvFilter) : base;
+  }, [issues, central, pdvFilter]);
 
   const recurring = useMemo(() => recurringEquipments(scoped), [scoped]);
 
@@ -463,7 +466,7 @@ function CorrectDeadlineDialog({ issue, onClose, onSaved }: { issue: TechIssue; 
   );
 }
 
-function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
+export function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
   const [status, setStatus] = useState<TechStatus>(issue.status);
   const parseKind = (v: string | null): { kind: "" | "Interne" | "Externe"; name: string } => {
     if (!v) return { kind: "", name: "" };
@@ -558,7 +561,7 @@ function FollowUpDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose
   );
 }
 
-function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
+export function RepairDialog({ issue, onClose, onSaved }: { issue: TechIssue; onClose: () => void; onSaved: () => void }) {
   const [name, setName] = useState(issue.tech_validated_by ?? "");
   const [action, setAction] = useState(issue.action_done ?? "");
   const [parts, setParts] = useState(issue.parts_changed ?? "");

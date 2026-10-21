@@ -14,7 +14,7 @@ import {
   isOverdue,
 } from "@/lib/techData";
 import { formatDateFR } from "@/lib/utils";
-import { ManagerValidateDialog, formatIssueTotal } from "./TechModule";
+import { FollowUpDialog, ManagerValidateDialog, RepairDialog, formatIssueTotal } from "./TechModule";
 
 const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 };
 
@@ -26,9 +26,14 @@ const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 
 export function PepRepairStatus({ refreshKey = 0 }: { refreshKey?: number }) {
   const { can, pdvId } = useAuth();
   const canValidate = can("manage_pep") || can("view_pep");
+  // Les dossiers confiés au manager se traitent ici (mêmes étapes que le
+  // responsable technique : intervenant, délai, suivi, validation).
+  const canHandle = canValidate || can("view_tech") || can("manage_tech");
   const [issues, setIssues] = useState<TechIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [validating, setValidating] = useState<TechIssue | null>(null);
+  const [taking, setTaking] = useState<TechIssue | null>(null);
+  const [repairing, setRepairing] = useState<TechIssue | null>(null);
   const [showClosed, setShowClosed] = useState(false);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -128,6 +133,9 @@ export function PepRepairStatus({ refreshKey = 0 }: { refreshKey?: number }) {
                 <tr key={i.id} className={`border-t ${late ? "bg-destructive/5" : wait ? "bg-primary/5" : ""}`}>
                   <td className="px-2 py-1.5 font-medium whitespace-nowrap">
                     {i.equipment}
+                    {i.processing_mode === "manager" && (
+                      <span className="ml-1 px-1.5 py-0.5 rounded text-[10px] border bg-muted/40 font-normal">Manager</span>
+                    )}
                     {i.location && <div className="text-[10px] text-muted-foreground font-normal">{i.location}</div>}
                   </td>
                   <td className="px-2 py-1.5 max-w-[220px] truncate" title={i.problem}>{i.problem}</td>
@@ -155,9 +163,17 @@ export function PepRepairStatus({ refreshKey = 0 }: { refreshKey?: number }) {
                     ) : "—"}
                   </td>
                   <td className="px-2 py-1.5">
-                    {canValidate && wait && (
-                      <Button size="sm" onClick={() => setValidating(i)}>Vérifier</Button>
-                    )}
+                    <div className="flex flex-col gap-1">
+                      {canHandle && i.processing_mode === "manager" && i.status === "a_traiter" && (
+                        <Button size="sm" onClick={() => setTaking({ ...i, status: "en_cours" })}>Prendre en charge</Button>
+                      )}
+                      {canHandle && i.processing_mode === "manager" && i.status === "en_cours" && (
+                        <Button size="sm" onClick={() => setRepairing(i)}>Valider la réparation</Button>
+                      )}
+                      {canValidate && wait && (
+                        <Button size="sm" onClick={() => setValidating(i)}>Vérifier</Button>
+                      )}
+                    </div>
                   </td>
                 </tr>
               );
@@ -166,6 +182,8 @@ export function PepRepairStatus({ refreshKey = 0 }: { refreshKey?: number }) {
         </table>
       </div>
       {validating && <ManagerValidateDialog issue={validating} onClose={() => setValidating(null)} onSaved={load} />}
+      {taking && <FollowUpDialog issue={taking} onClose={() => setTaking(null)} onSaved={load} />}
+      {repairing && <RepairDialog issue={repairing} onClose={() => setRepairing(null)} onSaved={load} />}
     </div>
   );
 }
