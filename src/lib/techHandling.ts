@@ -19,6 +19,7 @@ export function canHandleTechIssue(
   canManage: boolean,
   canViewTech: boolean,
 ): boolean {
+  return canManage || (issue.processing_mode === "manager" && canViewTech);
 }
 
 /** Visibilité dans le Suivi Technique du PDV : les dossiers confiés au manager
