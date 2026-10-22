@@ -6,7 +6,12 @@ it("l’Agenda PEP réserve la prise en charge et la validation au manager avec 
   expect(canHandlePepRepair("manager", "manager@example.com", true)).toBe(true);
   expect(canHandlePepRepair("manager", "manager@example.com", false)).toBe(false);
   expect(canHandlePepRepair("operator", "operator@example.com", true)).toBe(false);
-  expect(canHandlePepRepair("admin", "admin@example.com", true)).toBe(false);
+});
+
+it("l’administrateur peut aussi prendre en charge et valider les dossiers manager avec accès PEP", () => {
+  expect(canHandlePepRepair("admin", "admin@example.com", true)).toBe(true);
+  expect(canHandlePepRepair("admin", "admin@example.com", false)).toBe(false);
+  expect(canHandlePepRepair("admin", "gestion-technique@oliveri.com", true)).toBe(false);
 });
 
 it("le responsable technique ne peut pas prendre en charge ou valider dans l’Agenda PEP même avec le rôle manager", () => {
