@@ -696,6 +696,7 @@ export async function setProductUnitConfig(productId: string, config: Partial<Pr
     .from("initial_stocks")
     .upsert(payload, { onConflict: "product_id" });
   if (error) throw error;
+  invalidateTables(["initial_stocks"]);
 }
 
 export async function setProductUnit(productId: string, unit: UnitType) {

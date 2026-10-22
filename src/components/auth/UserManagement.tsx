@@ -583,7 +583,7 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
           {(currentUser?.email ?? "").toLowerCase() === "khadri1982@gmail.com" && (
             <VoiceScriptsSettings />
           )}
-          {isAdmin && (
+          {hasAdminRole && (
             <div className="flex justify-end">
               <ProductCatalogManager conditionnementOnly />
             </div>
