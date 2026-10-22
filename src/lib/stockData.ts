@@ -640,6 +640,10 @@ export async function getProductUnitConfigs(): Promise<Record<string, ProductUni
       extraPacks: packs[row.product_id] ?? [],
     };
   });
+  // Produits sans stock initial dans ce PDV : garder leurs conditionnements ajoutés.
+  for (const [productId, list] of Object.entries(packs)) {
+    if (!result[productId]) result[productId] = { ...DEFAULT_UNIT_CONFIG, extraPacks: list };
+  }
   return result;
   });
 }
