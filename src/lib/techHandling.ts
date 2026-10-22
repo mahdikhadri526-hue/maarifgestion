@@ -4,7 +4,18 @@
 // fixer le délai, suivre la réparation, valider l'intervention) ; le manager
 // confirme ensuite le bon fonctionnement. Le responsable technique conserve
 // l'accès à tous les dossiers pour l'historique et le suivi.
+import { TECH_ACCOUNT_EMAILS } from "@/lib/techFeature";
+
 export type TechProcessingMode = "technique" | "manager";
+
+/** PEP repair actions belong to the manager, never the technical account. */
+export function canHandlePepRepair(
+  role: string | null,
+  email: string | null | undefined,
+  hasPepAccess: boolean,
+): boolean {
+  return role === "manager" && hasPepAccess && !TECH_ACCOUNT_EMAILS.includes((email ?? "").toLowerCase());
+}
 
 export const TECH_PROCESSING_MODES: { key: TechProcessingMode; label: string }[] = [
   { key: "technique", label: "Responsable technique" },

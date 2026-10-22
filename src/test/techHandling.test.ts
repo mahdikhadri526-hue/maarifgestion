@@ -1,6 +1,18 @@
 import { expect, it } from "vitest";
-import { canHandleTechIssue, visibleInPdvTech } from "@/lib/techHandling";
+import { canHandlePepRepair, canHandleTechIssue, visibleInPdvTech } from "@/lib/techHandling";
 import { awaitingManager, canCloseIssue, requiresManagerVerification } from "@/lib/techData";
+
+it("l’Agenda PEP réserve la prise en charge et la validation au manager avec accès PEP", () => {
+  expect(canHandlePepRepair("manager", "manager@example.com", true)).toBe(true);
+  expect(canHandlePepRepair("manager", "manager@example.com", false)).toBe(false);
+  expect(canHandlePepRepair("operator", "operator@example.com", true)).toBe(false);
+  expect(canHandlePepRepair("admin", "admin@example.com", true)).toBe(false);
+});
+
+it("le responsable technique ne peut pas prendre en charge ou valider dans l’Agenda PEP même avec le rôle manager", () => {
+  expect(canHandlePepRepair("manager", "gestion-technique@oliveri.com", true)).toBe(false);
+  expect(canHandlePepRepair("manager", "GESTION-TECHNIQUE@OLIVERI.COM", true)).toBe(false);
+});
 
 it("les dossiers manager clôturés réapparaissent dans le Suivi Technique du PDV (dossiers clôturés)", () => {
   expect(visibleInPdvTech({ processing_mode: "manager", status: "cloture" })).toBe(true);

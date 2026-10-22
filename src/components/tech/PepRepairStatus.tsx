@@ -14,6 +14,7 @@ import {
   isOverdue,
 } from "@/lib/techData";
 import { formatDateFR } from "@/lib/utils";
+import { canHandlePepRepair } from "@/lib/techHandling";
 import { FollowUpDialog, ManagerValidateDialog, RepairDialog, formatIssueTotal } from "./TechModule";
 
 const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 };
@@ -24,11 +25,11 @@ const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 
  * vérification finale (matériel réparé → clôture).
  */
 export function PepRepairStatus({ refreshKey = 0 }: { refreshKey?: number }) {
-  const { can, pdvId } = useAuth();
-  const canValidate = can("manage_pep") || can("view_pep");
+  const { can, pdvId, role, user } = useAuth();
+  const canValidate = canHandlePepRepair(role, user?.email, can("manage_pep") || can("view_pep"));
   // Les dossiers confiés au manager se traitent ici (mêmes étapes que le
   // responsable technique : intervenant, délai, suivi, validation).
-  const canHandle = canValidate || can("view_tech") || can("manage_tech");
+  const canHandle = canValidate;
   const [issues, setIssues] = useState<TechIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [validating, setValidating] = useState<TechIssue | null>(null);
