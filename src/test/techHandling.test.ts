@@ -21,9 +21,10 @@ it("les dossiers manager clôturés réapparaissent dans le Suivi Technique du P
   expect(visibleInPdvTech({ processing_mode: "technique", status: "a_traiter" })).toBe(true);
 });
 
-it("le responsable technique (manage_tech) suit tous les dossiers", () => {
+it("le responsable technique traite seulement les dossiers en mode technique, sans actions sur les dossiers manager", () => {
   expect(canHandleTechIssue({ processing_mode: "technique" }, true, false)).toBe(true);
-  expect(canHandleTechIssue({ processing_mode: "manager" }, true, false)).toBe(true);
+  expect(canHandleTechIssue({ processing_mode: "manager" }, true, false)).toBe(false);
+  expect(canHandleTechIssue({ processing_mode: "manager" }, true, canHandlePepRepair("manager", "gestion-technique@oliveri.com", true))).toBe(false);
 });
 
 it("un manager du PDV suit uniquement les dossiers dont le traitement lui est confié", () => {
