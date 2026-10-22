@@ -1,7 +1,7 @@
 # AGENTS.md
 - RH balances share headings; report totals appear once and history expands.
 - Packaging edits retain option IDs and base-unit history; admin-only UI and database guards protect existing format fields without blocking unrelated stock/name edits.
-- Weekly Fruits/Tartes use display subsets only; retain the complete historical article list and existing weekly/transfer fiche keys to preserve orders and data.
+- Weekly, Stock and Order Fruits/Tartes use display subsets only; retain historical article identities and weekly/transfer fiche keys, and preserve stock-specific tartes entries and formulas.
 - Cleaning quality checks are stored per task in cleaning_logs.quality_tasks and written only through the set_cleaning_quality function (quality account only, trigger-guarded) so manager C/NC stay untouched.
 - La page « Inventaire hebdomadaire » a été supprimée (30/09/2026) à la demande de l'utilisateur : ne pas la réintroduire. La table `mise_en_place_weekly` et ses données restent en base (l'utilisateur a refusé le DROP TABLE).
 - Le tableau « Stock restant » comporte une colonne « Stock mise en place » (saisie via `mise_en_place_stocks` / `useMiseEnPlace`) placée avant « Stock total » ; Stock total = Stock restant + Stock mise en place. Un sélecteur de semaine (calendrier lundi-dimanche, jours de comptage marqués) permet de saisir par semaine (`week_start`) ; chaque semaine a ses propres saisies (semaine suivie par le filtre de date) ; en filtre jour, la saisie ne s’affiche que le jour du comptage ; l’ancienne valeur unique ne sert qu’en repli pour la semaine courante sans saisie. La saisie est verrouillée sauf le jour du comptage (lundi, ou lendemain de fin de mois pour la semaine qui chevauche la fin du mois).

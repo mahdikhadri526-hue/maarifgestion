@@ -24,4 +24,17 @@ describe("weekly fruit separation", () => {
     expect(historical).toEqual({ stockInitial: 60, entrees: 18, sorties: 30, stockRestant: 48 });
     expect(separated).toEqual(historical);
   });
+
+  it("preserves each fruit stock and order input when loaded without the tartes", () => {
+    const records: WeeklyTrackingOrderRecord[] = [
+      { article: "Orange fruits", week_start: "2026-10-19", day_of_week: "Lundi", stock_initial: 10, entrees: 3, sorties: null },
+      { article: "Orange fruits", week_start: "2026-10-19", day_of_week: "Mardi", stock_initial: 8, entrees: null, sorties: null },
+      { article: "Tarte 6", week_start: "2026-10-19", day_of_week: "Lundi", stock_initial: 100, entrees: 50, sorties: 20 },
+    ];
+    const fruitRows = records.filter(r => WEEKLY_FRUIT_ARTICLES.includes(r.article ?? ""));
+    const before = buildWeeklyAggregateTotals(records, ["Orange fruits"], () => true, true);
+    const after = buildWeeklyAggregateTotals(fruitRows, ["Orange fruits"], () => true, true);
+    expect(after).toEqual({ stockInitial: 10, entrees: 3, sorties: 5, stockRestant: 8 });
+    expect(after).toEqual(before);
+  });
 });

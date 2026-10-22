@@ -50,7 +50,7 @@ import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/lib/db";
 import { cn, formatDateFR } from "@/lib/utils";
 import { downloadStructuredPdf } from "@/lib/printExport";
-import { WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES, WEEKLY_ALL_ARTICLES as ALL_WEEKLY_ARTICLES } from "@/lib/weeklyArticles";
+import { WEEKLY_FRUIT_ARTICLES as FRUIT_ARTICLES, WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES, WEEKLY_ALL_ARTICLES as ALL_WEEKLY_ARTICLES } from "@/lib/weeklyArticles";
 
 const TARTE_ARTICLES = [
   "Tarte 6", "Tarte 8", "Tarte 10", "Tte Sp.", "Tte.Sp 8", "Tte Mac.", "Tte Sor.",
@@ -62,7 +62,6 @@ const TARTE_ARTICLES = [
   "Merg.trt", "Merg.Pt KG", "Merg.Pt SCH", "Merg.Glacé", "Org.Confit", "Biscuit",
   "Bigarreaux", "Cake Chocolat", "Cake.citron", "Pain Savoi", "Brownies.G", "Brownies.Top",
   "Amandes.Top", "Noix.Top", "Tulipes", "Cornet", "Gaufrette",
-  "Orange fruits", "Citron fruits", "POMME fruits", "POIRE fruits", "Ananas fruits", "Kiwi fruits",
 ];
 const GLACE_ARTICLES = [
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
@@ -194,7 +193,7 @@ const monthEndISO = (month: string) => {
 };
 
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
-  const [category, setCategory] = useState<Category | "all" | "tarte" | "glace" | "nettoyant" | "creme">(variant === "order" ? "alimentaire" : "all");
+  const [category, setCategory] = useState<Category | "all" | "tarte" | "fruits" | "glace" | "nettoyant" | "creme">(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
   // Saisie non bloquante : le filtrage de la longue liste suit la frappe sans la figer.
   const deferredSearch = useDeferredValue(search);
@@ -494,7 +493,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
   };
 
-  const isWeeklyCat = category === "tarte" || category === "glace" || category === "nettoyant" || category === "creme";
+  const isWeeklyCat = category === "tarte" || category === "fruits" || category === "glace" || category === "nettoyant" || category === "creme";
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
   // Un seul chargement pour toutes les catégories : le filtre Alim./Emb. est
   // appliqué côté client pour un basculement instantané (pas de refetch).
@@ -647,6 +646,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       try {
         const list =
           category === "tarte" ? TARTE_ARTICLES
+          : category === "fruits" ? FRUIT_ARTICLES
           : category === "nettoyant" ? NETTOYANT_ARTICLES
           : GLACE_ARTICLES;
         const ficheType = "Mouvement glaces & tartes";
@@ -703,6 +703,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       try {
         const list =
           category === "tarte" ? TARTE_ARTICLES
+          : category === "fruits" ? FRUIT_ARTICLES
           : category === "nettoyant" ? NETTOYANT_ARTICLES
           : category === "glace" ? GLACE_ARTICLES.filter((a) => a !== CHANTILLY_WEEKLY_ARTICLE)
           : [CHANTILLY_WEEKLY_ARTICLE];
@@ -1394,22 +1395,25 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 className="pl-9 w-48"
               />
             </div>
-            <div className="flex rounded-md border overflow-hidden">
+            <div className="flex flex-wrap rounded-md border overflow-hidden">
               {(variant === "order"
-                ? (["alimentaire", "emballage", "tarte", "glace", "nettoyant"] as const)
-                : (["all", "alimentaire", "emballage", "creme", "tarte", "glace", "nettoyant"] as const)
+                ? (["alimentaire", "emballage", "tarte", "fruits", "glace", "nettoyant"] as const)
+                : (["all", "alimentaire", "emballage", "creme", "tarte", "fruits", "glace", "nettoyant"] as const)
               ).map((cat) => (
-                <button
+                <Button
                   key={cat}
-                  onClick={() => setCategory(cat as any)}
-                  className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCategory(cat)}
+                  aria-pressed={category === cat}
+                  className={`h-auto rounded-none px-3 py-1.5 text-xs font-medium transition-colors ${
                     category === cat
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
                       : "bg-card text-muted-foreground hover:bg-muted"
                   }`}
                 >
-                  {cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : cat === "emballage" ? "Emballage" : cat === "creme" ? "Crème fraîche" : cat === "tarte" ? "Tartes" : cat === "nettoyant" ? "Nettoyants" : "Glaces"}
-                </button>
+                  {cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : cat === "emballage" ? "Emballage" : cat === "creme" ? "Crème fraîche" : cat === "tarte" ? "Tartes" : cat === "fruits" ? "Fruits" : cat === "nettoyant" ? "Nettoyants" : "Glaces"}
+                </Button>
               ))}
             </div>
           </div>

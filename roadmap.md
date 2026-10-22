@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Séparer Fruits de Tartes dans Stock restant et Calcul de la commande ; données et formules inchangées, trois tests réussis, sans publication.
+- [ ] Vérifier Fruits dans les deux tableaux de l’aperçu connecté : session absente et renouvellement automatique indisponible ; attendre une reconnexion de l’utilisateur.
 - [x] Ajouter la modification administrateur des formats existants (paquet/carton et formats ajoutés), conserver les identifiants et l’historique ; sept tests réussis, protections en base confirmées, sans publication.
 - [ ] Vérifier l’enregistrement des conditionnements dans l’aperçu : session expirée, renouvellement automatique indisponible ; attendre une reconnexion de l’utilisateur.
 - [x] Séparer les six fruits du suivi Tartes dans un suivi Fruits ; données et sources de commande conservées, calculs testés et deux vues vérifiées sur grand écran et téléphone, sans publication.
