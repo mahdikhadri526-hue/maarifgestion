@@ -1,4 +1,4 @@
-import { buildWeeklyAggregateTotals, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
+import { buildWeeklyAggregateTotals, buildWeeklyDailyStocks, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
 import { supabase } from "@/lib/db";
 import { supabase as rawSupabase } from "@/integrations/supabase/client";
 import { requireCurrentPdvId } from "@/lib/pdvStore";
@@ -767,13 +767,13 @@ export const TOPPINGS_WEEKLY_ARTICLES = [
 
 function getToppingsWeeklyRes(): Promise<any> {
   const pdvId = requireCurrentPdvId();
-  return cached(`weeklyToppingsRows:${pdvId}`, ["weekly_tracking"], async () =>
+  return cached(`weeklyToppingsRows:${pdvId}`, ["weekly_tracking"], async () => ({ data: await fetchAllRows<WeeklyTrackingOrderRecord>(() =>
     supabase
       .from("weekly_tracking")
       .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
       .eq("fiche_type", "Mouvement glaces & tartes")
       .in("article", TOPPINGS_WEEKLY_ARTICLES),
-  );
+  ) }));
 }
 
 export async function getToppingsAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockRestant: number }> {
@@ -957,39 +957,14 @@ export async function getToppingsDailyHistory(): Promise<DailyStockRecord[]> {
       });
   }
 
-  // 2) Suivi Hebdo : entrées/sorties par jour ; 1er SI saisi (par article) ajouté à l'initial global.
-  type WRow = { article: string; date: string; rowIndex: number; si: number | null; e: number; s: number };
-  const rows: WRow[] = ((weeklyRes as any).data || [])
-    .map((r: any) => {
-      const dayIdx = WEEKLY_DAY_INDEX[r.day_of_week];
-      if (r.week_start == null || dayIdx == null) return null;
-      return {
-        article: r.article,
-        date: addDaysISO(r.week_start, dayIdx),
-        rowIndex: r.row_index ?? 0,
-        si: r.stock_initial != null ? Number(r.stock_initial) : null,
-        e: r.entrees != null ? Number(r.entrees) : 0,
-        s: r.sorties != null ? Number(r.sorties) : 0,
-      } as WRow;
-    })
-    .filter(Boolean) as WRow[];
-
-  // 1er SI par article (ajouté au stockInitial global)
-  const firstSiByArticle = new Map<string, { date: string; rowIndex: number; si: number }>();
+  // Sorties calculées comme sur la fiche, pas la colonne brute souvent vide.
+  const rows = buildWeeklyDailyStocks((weeklyRes as any).data || [], TOPPINGS_WEEKLY_ARTICLES);
+  const seen = new Set<string>();
   for (const r of rows) {
-    if (r.si == null) continue;
-    const cur = firstSiByArticle.get(r.article);
-    const key = `${r.date}__${r.rowIndex}`;
-    const curKey = cur ? `${cur.date}__${cur.rowIndex}` : "";
-    if (!cur || key < curKey) firstSiByArticle.set(r.article, { date: r.date, rowIndex: r.rowIndex, si: r.si });
-  }
-  for (const v of firstSiByArticle.values()) totalInitial += v.si;
-
-  // E/S quotidiennes
-  for (const r of rows) {
+    if (!seen.has(r.article)) { totalInitial += r.stockInitial; seen.add(r.article); }
     if (!byDate[r.date]) byDate[r.date] = { entrees: 0, sorties: 0 };
-    byDate[r.date].entrees += r.e;
-    byDate[r.date].sorties += r.s;
+    byDate[r.date].entrees += r.entrees;
+    byDate[r.date].sorties += r.sorties;
   }
 
   const dates = Object.keys(byDate).sort();
@@ -1222,13 +1197,13 @@ async function computeGlaceAggregate(): Promise<{ entrees: number; sorties: numb
       let sortie: number | null = null;
       if (d < 6) {
         const next = getCell(weekStart, DAYS[d + 1]);
-        if (c.si != null && next.si != null) {
-          sortie = c.si + c.entries - next.si;
+        if ((c.si != null || c.entries > 0) && next.si != null) {
+          sortie = (c.si ?? 0) + c.entries - next.si;
         }
       } else {
         const siNextMon = getCell(nextWeekStart, "Lundi").si;
-        if (c.si != null && siNextMon != null) {
-          sortie = c.si + c.entries - siNextMon;
+        if ((c.si != null || c.entries > 0) && siNextMon != null) {
+          sortie = (c.si ?? 0) + c.entries - siNextMon;
         }
       }
       if (sortie == null) sortie = c.explicitSortie ?? 0;
@@ -1340,7 +1315,7 @@ export async function getGlaceAggregateForRange(startDate?: string, endDate?: st
       entrees += cell.entries * g;
       let sortie: number | null = null;
       const nextSi = days.get(nextDateISO(date))?.si;
-      if (cell.si != null && nextSi != null) sortie = cell.si + cell.entries - nextSi;
+      if ((cell.si != null || cell.entries > 0) && nextSi != null) sortie = (cell.si ?? 0) + cell.entries - nextSi;
       if (sortie == null) sortie = cell.explicitSortie ?? 0;
       sorties += sortie * g;
     }
@@ -1495,7 +1470,7 @@ export async function getGlaceBreakdownForRange(
       entrees += cell.entries * g;
       let sortie: number | null = null;
       const nextSi = days.get(nextDateISO(date))?.si;
-      if (cell.si != null && nextSi != null) sortie = cell.si + cell.entries - nextSi;
+      if ((cell.si != null || cell.entries > 0) && nextSi != null) sortie = (cell.si ?? 0) + cell.entries - nextSi;
       if (sortie == null) sortie = cell.explicitSortie ?? 0;
       sorties += sortie * g;
     }
