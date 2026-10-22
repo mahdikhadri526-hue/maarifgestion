@@ -155,6 +155,13 @@
       "when": 1792617760129,
       "tag": "0021_tech_manager_mode_skip_verification",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1792691723755,
+      "tag": "0022_guard_manager_repair_actions",
+      "breakpoints": true
     }
   ]
 }
