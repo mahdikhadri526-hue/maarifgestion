@@ -1,6 +1,6 @@
 # AGENTS.md
 - RH balances share headings; report totals appear once and history expands.
-- Packaging edits retain option IDs and base-unit history; admin-only UI and database guards protect existing format fields without blocking unrelated stock/name edits.
+- Packaging edits retain option IDs and base-unit history; deleting base formats disables choices without erasing conversions. Admin-only UI/database guards protect formats without blocking unrelated stock/name edits.
 - Weekly, Stock and Order Fruits/Tartes use display subsets only; retain historical article identities and weekly/transfer fiche keys, and preserve stock-specific tartes entries and formulas.
 - Cleaning quality checks are stored per task in cleaning_logs.quality_tasks and written only through the set_cleaning_quality function (quality account only, trigger-guarded) so manager C/NC stay untouched.
 - La page « Inventaire hebdomadaire » a été supprimée (30/09/2026) à la demande de l'utilisateur : ne pas la réintroduire. La table `mise_en_place_weekly` et ses données restent en base (l'utilisateur a refusé le DROP TABLE).
