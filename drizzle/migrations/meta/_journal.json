@@ -169,6 +169,13 @@
       "when": 1792692311031,
       "tag": "0023_allow_admin_manager_repairs",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792700750167,
+      "tag": "0024_guard_existing_packaging_admin",
+      "breakpoints": true
     }
   ]
 }

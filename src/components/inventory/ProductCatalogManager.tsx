@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/db";
-import { Category, getProducts, getProductCatalog, getProductPackOptions, addProductPackOption, deleteProductPackOption, type ProductPackOption } from "@/lib/stockData";
+import { Category, getProducts, getProductCatalog, getProductPackOptions, getProductUnitConfigs, setProductUnitConfig, DEFAULT_UNIT_CONFIG, addProductPackOption, updateProductPackOption, deleteProductPackOption, type ProductPackOption, type ProductUnitConfig } from "@/lib/stockData";
 import { loadProductCatalog, newCustomProductId } from "@/lib/productCatalog";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Package, Plus, Save, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -21,8 +22,8 @@ const normalize = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 export function ProductCatalogManager({ onChanged, category = "all", conditionnementOnly = false }: Props) {
-  const { can, isAdmin } = useAuth();
-  const canEdit = conditionnementOnly ? isAdmin : can("edit_products");
+  const { can, hasAdminRole } = useAuth();
+  const canEdit = conditionnementOnly ? hasAdminRole : can("edit_products");
   const canDelete = can("delete_products");
   const canView = canEdit || canDelete || can("view_products");
 
@@ -45,9 +46,14 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
   const [packs, setPacks] = useState<Record<string, ProductPackOption[]>>({});
   const [packsFor, setPacksFor] = useState<{ id: string; name: string } | null>(null);
   const [newPack, setNewPack] = useState<{ label: string; pieces: string }>({ label: "", pieces: "" });
+  const [packDrafts, setPackDrafts] = useState<Record<string, { label: string; pieces: string }>>({});
+  const [unitConfigs, setUnitConfigs] = useState<Record<string, ProductUnitConfig>>({});
+  const [basePackDraft, setBasePackDraft] = useState<ProductUnitConfig>(DEFAULT_UNIT_CONFIG);
 
   const reloadPacks = useCallback(async () => {
-    setPacks(await getProductPackOptions());
+    const [options, configs] = await Promise.all([getProductPackOptions(), getProductUnitConfigs()]);
+    setPacks(options);
+    setUnitConfigs(configs);
   }, []);
 
   useEffect(() => {
@@ -55,7 +61,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
   }, [open, conditionnementOnly, reloadPacks]);
 
   const addPack = async () => {
-    if (!packsFor) return;
+    if (!packsFor || !hasAdminRole) return;
     const label = newPack.label.trim();
     const pieces = Number(newPack.pieces);
     if (!label || !pieces || pieces < 1) {
@@ -67,6 +73,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
       await addProductPackOption(packsFor.id, label, pieces);
       setNewPack({ label: "", pieces: "" });
       await reloadPacks();
+      setDirty(true);
       toast.success("Conditionnement ajouté");
     } catch (e: any) {
       toast.error(e?.message || "Erreur lors de l'ajout");
@@ -76,16 +83,50 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
   };
 
   const removePack = async (packId: string) => {
+    if (!hasAdminRole) return;
     setBusy(true);
     try {
       await deleteProductPackOption(packId);
       await reloadPacks();
+      setDirty(true);
       toast.success("Conditionnement supprimé");
     } catch (e: any) {
       toast.error(e?.message || "Erreur lors de la suppression");
     } finally {
       setBusy(false);
     }
+  };
+
+  const savePack = async (pack: ProductPackOption) => {
+    if (!hasAdminRole) return;
+    const draft = packDrafts[pack.id] ?? { label: pack.label, pieces: String(pack.piecesPerUnit) };
+    setBusy(true);
+    try {
+      await updateProductPackOption(pack.id, draft.label, Number(draft.pieces));
+      await reloadPacks();
+      setDirty(true);
+      setPackDrafts(d => { const next = { ...d }; delete next[pack.id]; return next; });
+      toast.success("Conditionnement enregistré");
+    } catch (e: any) {
+      toast.error(e?.message || "Erreur lors de l'enregistrement");
+    } finally { setBusy(false); }
+  };
+
+  const saveBasePacks = async () => {
+    if (!hasAdminRole || !packsFor) return;
+    if (![basePackDraft.piecesPerCarton, basePackDraft.piecesPerPaquet].every(n => Number.isInteger(n) && n >= 1)) {
+      toast.error("Le nombre de pièces doit être un entier supérieur ou égal à 1");
+      return;
+    }
+    setBusy(true);
+    try {
+      await setProductUnitConfig(packsFor.id, basePackDraft);
+      await reloadPacks();
+      setDirty(true);
+      toast.success("Conditionnements enregistrés");
+    } catch (e: any) {
+      toast.error(e?.message || "Erreur lors de l'enregistrement");
+    } finally { setBusy(false); }
   };
 
   // Recharge le catalogue sans prévenir le parent : notifier pendant que la
@@ -145,7 +186,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
         product_id: productId,
         category,
         name,
-        conditionnement: draft.conditionnement.trim(),
+        conditionnement: hasAdminRole ? draft.conditionnement.trim() : base.conditionnement,
         hidden: false,
       };
       const { error } = existing
@@ -237,7 +278,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
           {conditionnementOnly ? "Conditionnements" : "Produits"}
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-3xl">
+      <DialogContent className="max-w-3xl max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{conditionnementOnly ? "Conditionnements – Alimentaire & Emballage" : "Catalogue produits – Alimentaire & Emballage"}</DialogTitle>
         </DialogHeader>
@@ -327,7 +368,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
                     <td className="p-2">
                       <Input
                         value={d.conditionnement}
-                        disabled={!canEdit || busy}
+                        disabled={!canEdit || !hasAdminRole || busy}
                         onChange={(e) => setDraft(p.id, { conditionnement: e.target.value }, base)}
                         className="h-8"
                       />
@@ -355,8 +396,8 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
                             variant="outline"
                             className="h-8 text-xs"
                             disabled={busy}
-                            onClick={() => { setPacksFor({ id: p.id, name: p.name }); setNewPack({ label: "", pieces: "" }); }}
-                            title="Conditionnements supplementaires"
+                            onClick={() => { setPacksFor({ id: p.id, name: p.name }); setNewPack({ label: "", pieces: "" }); setPackDrafts({}); setBasePackDraft(unitConfigs[p.id] ?? DEFAULT_UNIT_CONFIG); }}
+                            title="Modifier les conditionnements"
                           >
                             Paquets ({(packs[p.id] ?? []).length})
                           </Button>
@@ -392,13 +433,36 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
 
       {/* Sous-fenetre : conditionnements supplementaires d'un produit (ex: paquet de 16) */}
       <Dialog open={!!packsFor} onOpenChange={(o) => { if (!o) setPacksFor(null); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Conditionnements — {packsFor?.name}</DialogTitle>
           </DialogHeader>
+          <div className="space-y-3 border-b pb-4">
+            {(["paquet", "carton"] as const).map(kind => {
+              const enabledKey = kind === "paquet" ? "paquetEnabled" : "cartonEnabled";
+              const piecesKey = kind === "paquet" ? "piecesPerPaquet" : "piecesPerCarton";
+              const label = kind === "paquet" ? "Paquet" : "Carton";
+              return (
+                <div key={kind} className="flex flex-wrap items-center gap-2">
+                  <label className="flex items-center gap-2 min-w-24 text-sm">
+                    <Checkbox checked={basePackDraft[enabledKey]} disabled={busy || !hasAdminRole}
+                      onCheckedChange={v => setBasePackDraft(d => ({ ...d, [enabledKey]: v === true }))} />
+                    {label}
+                  </label>
+                  <Input type="number" min="1" step="1" aria-label={`Pièces par ${kind}`}
+                    value={basePackDraft[piecesKey]} disabled={busy || !hasAdminRole}
+                    onChange={e => setBasePackDraft(d => ({ ...d, [piecesKey]: Number(e.target.value) }))} className="w-24" />
+                  <span className="text-xs text-muted-foreground">pièces</span>
+                </div>
+              );
+            })}
+            <Button onClick={saveBasePacks} disabled={busy || !hasAdminRole} variant="outline" size="sm" className="gap-2">
+              <Save className="h-4 w-4" /> Enregistrer paquet / carton
+            </Button>
+          </div>
           <div className="rounded-md border p-3 space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase">Ajouter un conditionnement</p>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Input
                 placeholder="Nom (ex: Paquet de 16)"
                 value={newPack.label}
@@ -410,7 +474,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
                 onChange={(e) => setNewPack((v) => ({ ...v, pieces: e.target.value }))}
                 className="w-24"
               />
-              <Button onClick={addPack} disabled={busy} className="gap-2">
+              <Button onClick={addPack} disabled={busy || !hasAdminRole} className="gap-2">
                 <Plus className="h-4 w-4" /> Ajouter
               </Button>
             </div>
@@ -420,17 +484,27 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
               <tbody>
                 {(packs[packsFor?.id ?? ""] ?? []).map((pack) => (
                   <tr key={pack.id} className="border-b">
-                    <td className="p-2">{pack.label}</td>
-                    <td className="p-2 text-xs text-muted-foreground w-28">= {pack.piecesPerUnit} pieces</td>
-                    <td className="p-2 w-12 text-right">
+                    <td className="p-2"><Input aria-label={`Nom du format ${pack.label}`}
+                      value={packDrafts[pack.id]?.label ?? pack.label} disabled={busy || !hasAdminRole}
+                      onChange={e => setPackDrafts(d => ({ ...d, [pack.id]: { label: e.target.value, pieces: d[pack.id]?.pieces ?? String(pack.piecesPerUnit) } }))} /></td>
+                    <td className="p-2 w-24"><Input type="number" min="1" aria-label={`Pièces du format ${pack.label}`}
+                      value={packDrafts[pack.id]?.pieces ?? pack.piecesPerUnit} disabled={busy || !hasAdminRole}
+                      onChange={e => setPackDrafts(d => ({ ...d, [pack.id]: { label: d[pack.id]?.label ?? pack.label, pieces: e.target.value } }))} /></td>
+                    <td className="p-2 text-right">
+                      <div className="flex gap-1">
+                      <Button size="icon" variant="ghost" className="h-8 w-8" disabled={busy || !hasAdminRole}
+                        onClick={() => savePack(pack)} title="Enregistrer le conditionnement" aria-label={`Enregistrer ${pack.label}`}>
+                        <Save className="h-4 w-4" />
+                      </Button>
                       <Button
                         size="icon" variant="ghost" className="h-8 w-8 text-destructive"
-                        disabled={busy}
+                        disabled={busy || !hasAdminRole}
                         onClick={() => removePack(pack.id)}
                         title="Supprimer"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
