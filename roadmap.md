@@ -1,5 +1,6 @@
 # Roadmap
-- [ ] Permettre aux administrateurs de modifier les formats existants (paquet/carton et formats ajoutés), préserver l’historique et vérifier l’enregistrement.
+- [x] Ajouter la modification administrateur des formats existants (paquet/carton et formats ajoutés), conserver les identifiants et l’historique ; sept tests réussis, protections en base confirmées, sans publication.
+- [ ] Vérifier l’enregistrement des conditionnements dans l’aperçu : session expirée, renouvellement automatique indisponible ; attendre une reconnexion de l’utilisateur.
 - [x] Séparer les six fruits du suivi Tartes dans un suivi Fruits ; données et sources de commande conservées, calculs testés et deux vues vérifiées sur grand écran et téléphone, sans publication.
 - [x] Signalement matériel : choix du traitement (responsable technique ou manager du PDV) ; le responsable choisi suit les mêmes étapes (intervenant, délai, suivi, validation), le manager confirme la réparation, le responsable technique garde l'accès à tous les dossiers ; fonctionnement actuel préservé, tests et affichage vérifiés.
 - [x] Ajouter et sécuriser la rectification des deadlines (avancer ou repousser la date) uniquement pour le responsable technique ; deux corrections vérifiées avec son compte et historique conservé, intervention temporaire supprimée.
