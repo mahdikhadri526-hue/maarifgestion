@@ -676,6 +676,16 @@ export async function deleteProductPackOption(id: string) {
   invalidateTables(["product_pack_options", "initial_stocks"]);
 }
 
+export async function updateProductPackOption(id: string, label: string, piecesPerUnit: number) {
+  if (!label.trim() || !Number.isFinite(piecesPerUnit) || piecesPerUnit < 1) {
+    throw new Error("Nom et nombre de pièces valides obligatoires");
+  }
+  const { error } = await supabase.from("product_pack_options" as any)
+    .update({ label: label.trim(), pieces_per_unit: piecesPerUnit }).eq("id", id);
+  if (error) throw error;
+  invalidateTables(["product_pack_options", "initial_stocks"]);
+}
+
 export async function setProductUnitConfig(productId: string, config: Partial<ProductUnitConfig>) {
   const payload: any = { product_id: productId };
   if (config.cartonEnabled !== undefined) payload.carton_enabled = config.cartonEnabled;
