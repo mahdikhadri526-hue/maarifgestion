@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { ArrowDownLeft, ArrowUpRight, Plus, ChevronDown, Undo2 } from "lucide-react";
 import { cn, formatDateFR } from "@/lib/utils";
 import { useOperators } from "@/lib/roster";
+import { fetchFifoLotChoices } from "@/lib/glaceLotFifo";
 
 const TRANSFER_LOCATIONS = [
   "Dar Bouazza", "Corniche", "Almaz", "Sidi Maarouf", "Bouskoura", "Hassan 2",
@@ -88,6 +89,10 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
   const [location, setLocation] = useState("");
   const [performedBy, setPerformedBy] = useState("");
   const [notes, setNotes] = useState("");
+  // Retour en cours de saisie : choix du n° de lot (proposé selon FIFO)
+  const [returnFor, setReturnFor] = useState<string | null>(null);
+  const [returnLot, setReturnLot] = useState("");
+  const [returnChoices, setReturnChoices] = useState<string[]>([]);
 
   // Tous les transferts de toutes les périodes (pas seulement la semaine affichée)
   const load = useCallback(async () => {
@@ -190,6 +195,17 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
   };
 
   // Retour d'un transfert déjà effectué : crée le mouvement inverse
+  const startReturn = async (r: TransferRow) => {
+    setReturnFor(r.id);
+    setReturnLot(r.lot_number ?? "");
+    setReturnChoices([]);
+    if (!r.article) return;
+    const fifo = await fetchFifoLotChoices(r.article, 5);
+    setReturnChoices(fifo);
+    // Rendre un emprunt = sortie de stock : lot le plus ancien en premier (FIFO)
+    if (r.direction === "recu" && fifo.length > 0) setReturnLot(fifo[0]);
+  };
+
   const handleReturn = async (r: TransferRow) => {
     const who = performedBy || r.performed_by;
     if (!who) return toast.error("Choisissez d'abord qui effectue le retour");
@@ -201,7 +217,7 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
       direction: reverse,
       article: r.article,
       quantity: r.quantity,
-      lot_number: r.lot_number,
+      lot_number: returnLot.trim() || null,
       location: r.location,
       performed_by: who,
       notes: `${r.direction === "recu" ? "Retour d'emprunt" : "Retour de prêt"} du ${formatDateFR(r.transfer_date)}${r.notes ? ` — ${r.notes}` : ""}`,
@@ -214,6 +230,7 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
       return;
     }
     toast.success(reverse === "envoye" ? "Retour d'emprunt enregistré" : "Retour de prêt enregistré");
+    setReturnFor(null);
     load();
   };
 
@@ -381,12 +398,27 @@ export function WeeklyTransfers({ ficheKey, weekStart, articles = [] }: Props) {
                           {!r.is_return && (
                             returnedIds.has(r.id) ? (
                               <span className="mr-1 text-[10px] text-muted-foreground">{r.direction === "envoye" ? "Prêt rendu" : "Emprunt rendu"}</span>
+                            ) : returnFor === r.id ? (
+                              <span className="inline-flex items-center gap-1">
+                                <Input
+                                  list={`ret-lots-${r.id}`}
+                                  value={returnLot}
+                                  onChange={(e) => setReturnLot(e.target.value)}
+                                  placeholder="N° de lot retourné"
+                                  className="h-7 w-36 text-xs"
+                                />
+                                <datalist id={`ret-lots-${r.id}`}>
+                                  {returnChoices.map((l) => <option key={l} value={l} />)}
+                                </datalist>
+                                <Button size="sm" className="h-7 px-2 text-xs" onClick={() => handleReturn(r)}>Valider</Button>
+                                <Button variant="ghost" size="sm" className="h-7 px-2 text-xs" onClick={() => setReturnFor(null)}>Annuler</Button>
+                              </span>
                             ) : (
                               <Button
                                 variant="outline"
                                 size="sm"
                                 className="mr-1 h-7 px-2 text-xs"
-                                onClick={() => handleReturn(r)}
+                                onClick={() => startReturn(r)}
                                 title={r.direction === "recu" ? "Rendre cet emprunt" : "Enregistrer le retour de ce prêt"}
                               >
                                 <Undo2 className="h-3.5 w-3.5 mr-1" />
