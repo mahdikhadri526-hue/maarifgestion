@@ -28,7 +28,8 @@ const SHOW_KG_BAC = false; // colonne Kg/bac masquée
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
 import {
-  WEEKLY_TARTE_ARTICLES as TARTE_ARTICLES,
+  WEEKLY_TARTE_DISPLAY_ARTICLES as TARTE_ARTICLES,
+  WEEKLY_FRUIT_ARTICLES as FRUIT_ARTICLES,
   WEEKLY_GLACE_ARTICLES as GLACE_ARTICLES,
   WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES,
   WEEKLY_ALL_ARTICLES as ARTICLES,
@@ -314,7 +315,7 @@ function LotExistantCell({
 
 export function WeeklyTracking() {
   const [weekStart, setWeekStart] = useState<string>(fmt(getMonday(new Date())));
-  const [tab, setTab] = useState<"creme" | "glace" | "tarte" | "nettoyant" | "materiel">("creme");
+  const [tab, setTab] = useState<"creme" | "glace" | "tarte" | "fruits" | "nettoyant" | "materiel">("creme");
   const [rows, setRows] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
   // Toutes les entrées "Crème fraîche (mousse fouettée)" du mouvement glaces,
@@ -371,14 +372,14 @@ export function WeeklyTracking() {
   const isRestrictedUser = (user?.email ?? "").toLowerCase() === restrictedEmail;
   const ficheRef = useRef<HTMLDivElement>(null);
   const handlePrintFiche = () => {
-    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : tab === "nettoyant" ? "produits-nettoyants" : "mouvement-tartes";
+    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : tab === "fruits" ? "fruits" : tab === "nettoyant" ? "produits-nettoyants" : "mouvement-tartes";
     printStructuredPdf(buildWeeklyPdf(label)).catch((err: any) => {
       toast.error("Erreur impression", { description: err?.message ?? String(err) });
       if (ficheRef.current) printElement(ficheRef.current);
     });
   };
   const handleDownloadFiche = async () => {
-    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : tab === "nettoyant" ? "produits-nettoyants" : "mouvement-tartes";
+    const label = tab === "creme" ? "creme-fraiche" : tab === "glace" ? "mouvement-glaces" : tab === "fruits" ? "fruits" : tab === "nettoyant" ? "produits-nettoyants" : "mouvement-tartes";
     toast.info("Génération du PDF...");
     try {
       await downloadStructuredPdf(buildWeeklyPdf(label));
@@ -400,9 +401,9 @@ export function WeeklyTracking() {
   };
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
-  const activeArticles = tab === "glace" ? GLACE_ARTICLES : tab === "tarte" ? TARTE_ARTICLES : tab === "nettoyant" ? NETTOYANT_ARTICLES : ARTICLES;
-  const tabArticles = (t: string) => (t === "glace" ? GLACE_ARTICLES : t === "nettoyant" ? NETTOYANT_ARTICLES : TARTE_ARTICLES);
-  const tabLabel = tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : tab === "nettoyant" ? "Mouvement produits nettoyants" : "Mouvement tartes";
+  const activeArticles = tab === "glace" ? GLACE_ARTICLES : tab === "tarte" ? TARTE_ARTICLES : tab === "fruits" ? FRUIT_ARTICLES : tab === "nettoyant" ? NETTOYANT_ARTICLES : ARTICLES;
+  const tabArticles = (t: string) => (t === "glace" ? GLACE_ARTICLES : t === "fruits" ? FRUIT_ARTICLES : t === "nettoyant" ? NETTOYANT_ARTICLES : TARTE_ARTICLES);
+  const tabLabel = tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : tab === "fruits" ? "Fruits" : tab === "nettoyant" ? "Mouvement produits nettoyants" : "Mouvement tartes";
 
   // Compute the list of week-starts to load (covers period filter)
   const weeksToLoad = useMemo(() => {
@@ -1445,7 +1446,7 @@ export function WeeklyTracking() {
       });
     } else {
       sections.push({
-        title: `Tableau restructuré pour impression — ${tab === "glace" ? "glaces" : tab === "nettoyant" ? "produits nettoyants" : "tartes"}`,
+        title: `Tableau restructuré pour impression — ${tab === "glace" ? "glaces" : tab === "fruits" ? "fruits" : tab === "nettoyant" ? "produits nettoyants" : "tartes"}`,
         columns: [
           { header: "Article", dataKey: "article", width: 48 },
           { header: "Jour", dataKey: "jour", width: 18, halign: "center" },
@@ -1640,7 +1641,7 @@ export function WeeklyTracking() {
         )}
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+      <Tabs value={tab} onValueChange={(v) => { setTab(v as typeof tab); setFilterArticle("all"); }}>
         <TabsList className="bg-muted/60 p-1.5 gap-1.5 rounded-xl flex-wrap h-auto justify-start">
           <TabsTrigger
             value="creme"
@@ -1659,6 +1660,12 @@ export function WeeklyTracking() {
             className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-rose-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-rose-700 data-[state=inactive]:hover:bg-rose-100 transition-all"
           >
             Mouvement tartes
+          </TabsTrigger>
+          <TabsTrigger
+            value="fruits"
+            className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-success data-[state=active]:text-success-foreground data-[state=active]:shadow-md transition-all"
+          >
+            Fruits
           </TabsTrigger>
           <TabsTrigger
             value="nettoyant"
@@ -1852,9 +1859,9 @@ export function WeeklyTracking() {
           <WeeklyTransfers ficheKey="Crème fraîche" weekStart={weekStart} articles={["Crème fraîche (mousse fouettée)"]} />
         </TabsContent>
 
-        {(["glace", "tarte", "nettoyant"] as const).map((t) => (
+        {(["glace", "tarte", "fruits", "nettoyant"] as const).map((t) => (
         <TabsContent key={t} value={t} className="mt-4 space-y-3 min-w-0">
-          <h3 className="text-base font-semibold">{t === "glace" ? "Mouvement glaces" : t === "tarte" ? "Mouvement tartes" : "Mouvement produits nettoyants"}</h3>
+          <h3 className="text-base font-semibold">{t === "glace" ? "Mouvement glaces" : t === "tarte" ? "Mouvement tartes" : t === "fruits" ? "Fruits" : "Mouvement produits nettoyants"}</h3>
           {/* FILTERS BAR */}
           {showControls && (
           <div className="bg-card rounded-lg border p-3 flex flex-wrap items-end gap-3">
@@ -1869,7 +1876,7 @@ export function WeeklyTracking() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Tous les produits</SelectItem>
-                  {ARTICLES.map((a) => (
+                  {tabArticles(t).map((a) => (
                     <SelectItem key={a} value={a}>{a}</SelectItem>
                   ))}
                 </SelectContent>

@@ -78,6 +78,10 @@ export const WEEKLY_TARTE_ARTICLES = [
   "Amandes.Top", "Noix.Top", "Tulipes", "Cornet", "Gaufrette",
   "Orange fruits", "Citron fruits", "POMME fruits", "POIRE fruits", "Ananas fruits", "Kiwi fruits",
 ];
+// Sous-ensembles de présentation uniquement : la liste historique Tartes reste
+// complète pour les consommateurs de stock, commande et autocontrôles.
+export const WEEKLY_FRUIT_ARTICLES = WEEKLY_TARTE_ARTICLES.slice(-6);
+export const WEEKLY_TARTE_DISPLAY_ARTICLES = WEEKLY_TARTE_ARTICLES.slice(0, -6);
 export const WEEKLY_NETTOYANT_ARTICLES = [
   "Rc 20", "Chlorane", "Solnet", "Flexi", "Mitard A", "Renovac", "Clean plack",
   "Handonet", "Rince Matic", "Wach Matic", "Handobac",
