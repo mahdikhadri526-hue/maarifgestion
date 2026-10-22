@@ -699,6 +699,11 @@ export async function setProductUnitConfig(productId: string, config: Partial<Pr
   invalidateTables(["initial_stocks"]);
 }
 
+/** Retire le format des nouvelles saisies sans effacer sa conversion historique. */
+export async function removeBaseProductPack(productId: string, kind: "paquet" | "carton") {
+  await setProductUnitConfig(productId, kind === "paquet" ? { paquetEnabled: false } : { cartonEnabled: false });
+}
+
 export async function setProductUnit(productId: string, unit: UnitType) {
   const { error } = await supabase
     .from("initial_stocks")

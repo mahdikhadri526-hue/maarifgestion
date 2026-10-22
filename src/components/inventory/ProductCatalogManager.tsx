@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/db";
-import { Category, getProducts, getProductCatalog, getProductPackOptions, getProductUnitConfigs, setProductUnitConfig, DEFAULT_UNIT_CONFIG, addProductPackOption, updateProductPackOption, deleteProductPackOption, type ProductPackOption, type ProductUnitConfig } from "@/lib/stockData";
+import { Category, getProducts, getProductCatalog, getProductPackOptions, getProductUnitConfigs, setProductUnitConfig, removeBaseProductPack, DEFAULT_UNIT_CONFIG, addProductPackOption, updateProductPackOption, deleteProductPackOption, type ProductPackOption, type ProductUnitConfig } from "@/lib/stockData";
 import { loadProductCatalog, newCustomProductId } from "@/lib/productCatalog";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -84,6 +84,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
 
   const removePack = async (packId: string) => {
     if (!hasAdminRole) return;
+    if (!confirm("Supprimer ce conditionnement ? Le produit et son historique seront conservés.")) return;
     setBusy(true);
     try {
       await deleteProductPackOption(packId);
@@ -129,6 +130,21 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
     } finally { setBusy(false); }
   };
 
+  const removeBasePack = async (kind: "paquet" | "carton") => {
+    if (!hasAdminRole || !packsFor) return;
+    if (!confirm(`Supprimer le format ${kind} ? Le produit et son historique seront conservés.`)) return;
+    setBusy(true);
+    try {
+      await removeBaseProductPack(packsFor.id, kind);
+      setBasePackDraft(d => ({ ...d, [kind === "paquet" ? "paquetEnabled" : "cartonEnabled"]: false }));
+      await reloadPacks();
+      setDirty(true);
+      toast.success("Conditionnement supprimé");
+    } catch (e: any) {
+      toast.error(e?.message || "Erreur lors de la suppression");
+    } finally { setBusy(false); }
+  };
+
   // Recharge le catalogue sans prévenir le parent : notifier pendant que la
   // boîte de dialogue est ouverte la ferme (re-render/remontage du parent).
   const refresh = useCallback(async () => {
@@ -171,8 +187,9 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
   const setDraft = (id: string, patch: Partial<{ name: string; conditionnement: string }>, base: { name: string; conditionnement: string }) =>
     setDrafts((d) => ({ ...d, [id]: { ...(d[id] ?? base), ...patch } }));
 
-  const saveProduct = async (productId: string, category: Category, base: { name: string; conditionnement: string }) => {
+  const saveProduct = async (productId: string, category: Category, base: { name: string; conditionnement: string }, clearConditionnement = false) => {
     if (!canEdit) return;
+    if (clearConditionnement && (!hasAdminRole || !confirm("Supprimer ce conditionnement ? Le produit et son historique seront conservés."))) return;
     const draft = drafts[productId] ?? base;
     const name = draft.name.trim();
     if (!name) {
@@ -186,7 +203,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
         product_id: productId,
         category,
         name,
-        conditionnement: hasAdminRole ? draft.conditionnement.trim() : base.conditionnement,
+        conditionnement: hasAdminRole ? (clearConditionnement ? "" : draft.conditionnement.trim()) : base.conditionnement,
         hidden: false,
       };
       const { error } = existing
@@ -366,12 +383,21 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
                       />
                     </td>
                     <td className="p-2">
+                      <div className="flex items-center gap-1">
                       <Input
                         value={d.conditionnement}
                         disabled={!canEdit || !hasAdminRole || busy}
                         onChange={(e) => setDraft(p.id, { conditionnement: e.target.value }, base)}
                         className="h-8"
                       />
+                      {hasAdminRole && canEdit && !!base.conditionnement && (
+                        <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0 text-destructive" disabled={busy}
+                          title="Supprimer le conditionnement" aria-label={`Supprimer le conditionnement de ${p.name}`}
+                          onClick={() => saveProduct(p.id, p.category as Category, base, true)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                      </div>
                     </td>
                     <td className="p-2 text-xs text-muted-foreground">
                       {p.category === "alimentaire" ? "Alim." : "Emb."}
@@ -453,6 +479,11 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
                     value={basePackDraft[piecesKey]} disabled={busy || !hasAdminRole}
                     onChange={e => setBasePackDraft(d => ({ ...d, [piecesKey]: Number(e.target.value) }))} className="w-24" />
                   <span className="text-xs text-muted-foreground">pièces</span>
+                  <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" disabled={busy || !hasAdminRole || !basePackDraft[enabledKey]}
+                    title={`Supprimer le format ${kind}`} aria-label={`Supprimer le format ${kind}`}
+                    onClick={() => removeBasePack(kind)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               );
             })}
@@ -500,7 +531,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
                         size="icon" variant="ghost" className="h-8 w-8 text-destructive"
                         disabled={busy || !hasAdminRole}
                         onClick={() => removePack(pack.id)}
-                        title="Supprimer"
+                        title="Supprimer le conditionnement" aria-label={`Supprimer ${pack.label}`}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

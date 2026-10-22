@@ -1,11 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { ProductCatalogManager } from "@/components/inventory/ProductCatalogManager";
-import { updateProductPackOption } from "@/lib/stockData";
+import { updateProductPackOption, removeBaseProductPack } from "@/lib/stockData";
 
-const state = vi.hoisted(() => ({ admin: false, update: vi.fn(), eq: vi.fn(), invalidate: vi.fn() }));
+const state = vi.hoisted(() => ({ admin: false, update: vi.fn(), upsert: vi.fn(), eq: vi.fn(), invalidate: vi.fn() }));
 vi.mock("@/contexts/AuthContext", () => ({ useAuth: () => ({ hasAdminRole: state.admin, can: () => false }) }));
-vi.mock("@/lib/db", () => ({ supabase: { from: () => ({ update: state.update }) } }));
+vi.mock("@/lib/db", () => ({ supabase: { from: () => ({ update: state.update, upsert: state.upsert }) } }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {} }));
 vi.mock("@/lib/requestCache", () => ({ cached: vi.fn(), invalidateTables: state.invalidate }));
 vi.mock("@/lib/stockData", async importOriginal => {
@@ -15,6 +15,14 @@ vi.mock("@/lib/stockData", async importOriginal => {
 afterEach(() => { cleanup(); vi.clearAllMocks(); });
 
 describe("existing packaging", () => {
+  it.each(["paquet", "carton"] as const)("removes %s only from future choices, preserving quantity and historical conversions", async kind => {
+    state.upsert.mockResolvedValue({ error: null });
+    await removeBaseProductPack("ali-2", kind);
+    expect(state.upsert).toHaveBeenCalledWith(
+      { product_id: "ali-2", [kind === "paquet" ? "paquet_enabled" : "carton_enabled"]: false },
+      { onConflict: "product_id" },
+    );
+  });
   it("allows an admin to open the editor even without custom product permissions", () => {
     state.admin = true;
     render(<ProductCatalogManager conditionnementOnly />);
