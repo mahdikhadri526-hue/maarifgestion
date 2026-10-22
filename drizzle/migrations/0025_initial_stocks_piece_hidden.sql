@@ -1,0 +1,1 @@
+ALTER TABLE public.initial_stocks ADD COLUMN IF NOT EXISTS piece_hidden boolean NOT NULL DEFAULT false;
