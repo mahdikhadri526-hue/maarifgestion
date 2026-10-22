@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/db";
-import { Category, getProducts, getProductCatalog, getProductPackOptions, getProductUnitConfigs, setProductUnitConfig, removeBaseProductPack, DEFAULT_UNIT_CONFIG, addProductPackOption, updateProductPackOption, deleteProductPackOption, type ProductPackOption, type ProductUnitConfig } from "@/lib/stockData";
+import { Category, getProducts, getProductCatalog, getProductPackOptions, getProductUnitConfigs, setProductUnitConfig, removeBaseProductPack, DEFAULT_UNIT_CONFIG, addProductPackOption, updateProductPackOption, deleteProductPackOption, type ProductPackOption, type ProductUnitConfig, getProductUnits, setProductUnit, type UnitType } from "@/lib/stockData";
 import { loadProductCatalog, newCustomProductId } from "@/lib/productCatalog";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -49,9 +49,24 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
   const [packDrafts, setPackDrafts] = useState<Record<string, { label: string; pieces: string }>>({});
   const [unitConfigs, setUnitConfigs] = useState<Record<string, ProductUnitConfig>>({});
   const [basePackDraft, setBasePackDraft] = useState<ProductUnitConfig>(DEFAULT_UNIT_CONFIG);
+  const [productUnits, setProductUnits] = useState<Record<string, UnitType>>({});
+
+  const changeUnit = async (unit: UnitType) => {
+    if (!hasAdminRole || !packsFor) return;
+    setBusy(true);
+    try {
+      await setProductUnit(packsFor.id, unit);
+      setProductUnits(u => ({ ...u, [packsFor.id]: unit }));
+      setDirty(true);
+      toast.success("Unité enregistrée");
+    } catch (e: any) {
+      toast.error(e?.message || "Erreur lors de l'enregistrement");
+    } finally { setBusy(false); }
+  };
 
   const reloadPacks = useCallback(async () => {
-    const [options, configs] = await Promise.all([getProductPackOptions(), getProductUnitConfigs()]);
+    const [options, configs, units] = await Promise.all([getProductPackOptions(), getProductUnitConfigs(), getProductUnits()]);
+    setProductUnits(units);
     setPacks(options);
     setUnitConfigs(configs);
   }, []);
@@ -463,6 +478,14 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
           <DialogHeader>
             <DialogTitle>Conditionnements — {packsFor?.name}</DialogTitle>
           </DialogHeader>
+          <div className="flex flex-wrap items-center gap-2 border-b pb-3">
+            <span className="text-sm font-medium">Unité du produit :</span>
+            {([["PIECE", "Pièce"], ["LITRE", "Litre"], ["KILO", "Kg"]] as const).map(([u, l]) => (
+              <Button key={u} size="sm" disabled={busy || !hasAdminRole}
+                variant={(packsFor ? productUnits[packsFor.id] ?? "PIECE" : "PIECE") === u ? "default" : "outline"}
+                onClick={() => changeUnit(u)}>{l}</Button>
+            ))}
+          </div>
           <div className="space-y-3 border-b pb-4">
             {(["paquet", "carton"] as const).map(kind => {
               const enabledKey = kind === "paquet" ? "paquetEnabled" : "cartonEnabled";
