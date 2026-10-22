@@ -97,11 +97,11 @@ export function buildWeeklyDailyStocks(records: WeeklyTrackingOrderRecord[], art
       const entrees = bucket?.entrees ?? 0;
       // Même SI effectif que Suivi hebdo pour un nouvel article réceptionné.
       const si = bucket?.si ?? (entrees > 0 ? 0 : null);
-      const stockInitial = si ?? stock;
+      const stockInitial = bucket?.si ?? stock;
       const sorties = si != null && nextSI != null
         ? si + entrees - nextSI
         : (bucket?.explicitSorties ?? 0);
-      stock = stockInitial + entrees - sorties;
+      stock = si != null && nextSI != null ? nextSI : stockInitial + entrees - sorties;
       out.push({ article, date, stockInitial, entrees, sorties, stockRestant: stock });
     }
   }

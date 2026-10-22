@@ -58,6 +58,11 @@ describe("weekly outgoing stock matches the daily tracking sheet", () => {
     expect(dayTotals([row("A", "Lundi", 10)], "A", "2026-10-22")).toEqual({ stockInitial: 10, entrees: 0, sorties: 0, stockRestant: 10 });
   });
 
+  it("adds later receipts to the last known stock when there is no closing count", () => {
+    const records = [row("Cornet", "Mercredi", 870), row("Cornet", "Mardi", null, 20, null, 1, "2026-10-19"), row("Cornet", "Mercredi", null, 40, null, 1, "2026-10-19")];
+    expect(buildWeeklyAggregateTotals(records, ["Cornet"], () => true, true).stockRestant).toBe(930);
+  });
+
   it("calculates history sorties even when the stored sorties column is empty", () => {
     const days = buildWeeklyDailyStocks([row("Biscuit", "Lundi", 10, 3), row("Biscuit", "Mardi", 8)], ["Biscuit"]);
     expect(days[0]).toMatchObject({ sorties: 5, stockRestant: 8 });
