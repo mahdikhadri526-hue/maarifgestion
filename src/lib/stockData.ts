@@ -526,7 +526,7 @@ function getInitialStockRecords(): Promise<InitialStockRecord[]> {
   return cached(`initialStockRecords:${pdvId}`, ["initial_stocks"], async () => {
     const { data, error } = await supabase
       .from("initial_stocks")
-      .select("product_id, quantity, unit, carton_enabled, paquet_enabled, pieces_per_carton, pieces_per_paquet");
+      .select("product_id, quantity, unit, carton_enabled, paquet_enabled, pieces_per_carton, pieces_per_paquet, piece_hidden");
     if (error) throw error;
     return (data || []) as InitialStockRecord[];
   });
