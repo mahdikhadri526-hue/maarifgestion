@@ -51,18 +51,16 @@ import { ReportIssueDialog } from "./ReportIssueDialog";
 import { PlanningGrid } from "@/components/hr/PlanningGrid";
 import { getHolidays, getHrAgents, type HrAgent, type HrHoliday } from "@/lib/hrData";
 import { canCorrectTechDeadline, isChangedDeadline } from "@/lib/techDeadline";
-import { canHandleTechIssue, visibleInPdvTech } from "@/lib/techHandling";
+import { canHandlePepRepair, canHandleTechIssue, visibleInPdvTech } from "@/lib/techHandling";
 
 const PRIO_RANK: Record<string, number> = { critique: 0, urgente: 1, normale: 2 };
 
 type View = "dossiers" | "controle" | "historique" | "planning";
 
 export function TechModule() {
-  const { can, pdv, isAdmin, user } = useAuth();
+  const { can, pdv, isAdmin, user, role } = useAuth();
   const canManage = can("manage_tech");
-  // Utilisateurs du PDV ayant accès au Suivi Technique : peuvent suivre les
-  // dossiers dont le traitement est confié au manager.
-  const canViewTech = can("view_tech");
+  const canHandleAsManager = canHandlePepRepair(role, user?.email, can("manage_pep") || can("view_pep"));
   const canCorrect = canCorrectTechDeadline(user?.email, canManage);
   const canDelete = (user?.email ?? "").toLowerCase() === "khadri1982@gmail.com";
   // Responsable technique (permission manage_tech) : vue centralisée de tous
@@ -284,7 +282,7 @@ export function TechModule() {
             const soon = isDeadlineSoon(i, today);
             const dd = daysToDeadline(i, today);
             const rec = isRecurring(i, recurring);
-            const canHandle = canHandleTechIssue(i, canManage, canViewTech);
+            const canHandle = canHandleTechIssue(i, canManage, canHandleAsManager);
             return (
               <div key={i.id} className={`rounded-lg border bg-card p-3 ${overdue ? "border-destructive" : soon ? "border-amber-500" : ""} ${i.priority === "critique" && i.status !== "cloture" ? "animate-pulse-border" : ""}`}>
                 <div className="flex items-start gap-2 flex-wrap">

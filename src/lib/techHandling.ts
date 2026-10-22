@@ -22,15 +22,13 @@ export const TECH_PROCESSING_MODES: { key: TechProcessingMode; label: string }[]
   { key: "manager", label: "Manager du PDV" },
 ];
 
-/** Qui peut suivre le dossier : le responsable technique (manage_tech) toujours,
- *  ou un utilisateur du PDV ayant accès au Suivi Technique (view_tech) quand le
- *  traitement est confié au manager. */
+/** Handling follows the selected mode; central visibility does not grant actions. */
 export function canHandleTechIssue(
   issue: { processing_mode?: string | null },
   canManage: boolean,
-  canViewTech: boolean,
+  canHandleAsManager: boolean,
 ): boolean {
-  return canManage || (issue.processing_mode === "manager" && canViewTech);
+  return issue.processing_mode === "manager" ? canHandleAsManager : canManage;
 }
 
 /** Visibilité dans le Suivi Technique du PDV : les dossiers confiés au manager
