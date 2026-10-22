@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useMovements, useProductUnitConfigs, useAllRequisitions } from "@/hooks/useStockData";
 import { deleteMovement, formatQuantityForProduct, saveMovement } from "@/lib/stockData";
+import { addLotEntry, getProductLots } from "@/lib/lotData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send, Undo2, CheckCircle2, ClipboardList, Settings2 } from "lucide-react";
 import { toast } from "sonner";
@@ -40,6 +41,10 @@ interface MovementHistoryProps {
 export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [reintegratingId, setReintegratingId] = useState<string | null>(null);
+  const [returnFor, setReturnFor] = useState<string | null>(null);
+  const [returnLot, setReturnLot] = useState("");
+  const [returnDlc, setReturnDlc] = useState("");
+  const [returnChoices, setReturnChoices] = useState<string[]>([]);
   const { can } = useAuth();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filterDate, setFilterDate] = useState<string>("");
@@ -187,17 +192,44 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     onMovementDeleted?.();
   };
 
+  // Ouvre la saisie du lot pour le retour ; propose les lots en stock du plus ancien au plus récent (FIFO)
+  const startReturn = async (m: typeof filtered[number]) => {
+    if (!m.destination || m.destination.startsWith("✓")) {
+      toast.info("Ce mouvement a déjà été traité");
+      return;
+    }
+    setReturnFor(m.id);
+    setReturnLot("");
+    setReturnDlc("");
+    setReturnChoices([]);
+    try {
+      const lots = (await getProductLots(m.productId))
+        .filter((l) => Number(l.remainingQuantity) > 0)
+        .sort((a, b) => (a.expiryDate || a.entryDate).localeCompare(b.expiryDate || b.entryDate));
+      setReturnChoices(Array.from(new Set(lots.map((l) => l.lotNumber).filter(Boolean))));
+      // Renvoi d'un emprunt = sortie : le lot le plus ancien sort en premier
+      if (m.type === "entree" && lots[0]) setReturnLot(lots[0].lotNumber);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleReintegrate = async (m: typeof filtered[number]) => {
     if (!m.destination) return;
     if (m.destination.startsWith("✓")) {
       toast.info("Ce mouvement a déjà été traité");
       return;
     }
+    const lot = returnLot.trim();
+    const isReceived = m.type === "entree" && m.destination.startsWith("Reçu de ");
+    if (!isReceived && lot && !returnDlc) {
+      toast.error("Indiquez la DLC du lot retourné");
+      return;
+    }
     setReintegratingId(m.id);
     try {
-      const isReceived = m.type === "entree" && m.destination.startsWith("Reçu de ");
       if (isReceived) {
-        // Renvoyer un produit reçu = créer une sortie équivalente
+        // Renvoyer un produit reçu = créer une sortie équivalente (déduite en FIFO des lots les plus anciens)
         const origin = m.destination.replace(/^Reçu de\s+/, "");
         await saveMovement({
           date: new Date().toISOString().split("T")[0],
@@ -210,11 +242,12 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
           unitUsed: m.unitUsed,
           destination: `Renvoi → ${origin}`,
         });
-        toast.success(`Produit renvoyé à ${origin} (-${formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])})`);
+        toast.success(`Produit renvoyé à ${origin} (-${formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])})${lot ? ` — lot ${lot}` : ""}`);
       } else {
         // Recevoir un produit transféré = créer une entrée équivalente
+        const today = new Date().toISOString().split("T")[0];
         await saveMovement({
-          date: new Date().toISOString().split("T")[0],
+          date: today,
           productId: m.productId,
           productName: m.productName,
           category: m.category,
@@ -224,7 +257,11 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
           unitUsed: m.unitUsed,
           destination: `Retour ${m.destination}`,
         });
-        toast.success(`Quantité réintégrée au stock (+${formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])})`);
+        // Le lot retourné rejoint le stock et sera consommé selon le FIFO
+        if (lot) {
+          await addLotEntry({ productId: m.productId, lotNumber: lot, expiryDate: returnDlc, quantity: m.quantity, entryDate: today });
+        }
+        toast.success(`Quantité réintégrée au stock (+${formatQuantityForProduct(m.productId, m.quantity, configs?.[m.productId])})${lot ? ` — lot ${lot}` : ""}`);
       }
       // Marque le mouvement d'origine comme traité
       const { error } = await supabase
@@ -232,6 +269,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
         .update({ destination: `✓ ${m.destination}` })
         .eq("id", m.id);
       if (error) throw error;
+      setReturnFor(null);
       onMovementDeleted?.();
     } catch (e) {
       console.error(e);
@@ -525,8 +563,27 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                     (m.type === "sortie" && !m.destination.replace(/^✓\s*/, "").startsWith("Renvoi → ")) ||
                     (m.type === "entree" && m.destination.replace(/^✓\s*/, "").startsWith("Reçu de "))
                   ) && (
+                    returnFor === m.id ? (
+                      <span className="inline-flex flex-wrap items-center justify-end gap-1">
+                        <Input
+                          list={`mv-lots-${m.id}`}
+                          value={returnLot}
+                          onChange={(e) => setReturnLot(e.target.value)}
+                          placeholder="N° de lot"
+                          className="h-7 w-32 text-xs"
+                        />
+                        <datalist id={`mv-lots-${m.id}`}>
+                          {returnChoices.map((l) => <option key={l} value={l} />)}
+                        </datalist>
+                        {m.type === "sortie" && (
+                          <Input type="date" value={returnDlc} onChange={(e) => setReturnDlc(e.target.value)} title="DLC du lot retourné" className="h-7 w-32 text-xs" />
+                        )}
+                        <button onClick={() => handleReintegrate(m)} disabled={reintegratingId === m.id} className="h-7 px-2 rounded-md bg-primary text-primary-foreground text-xs">Valider</button>
+                        <button onClick={() => setReturnFor(null)} className="h-7 px-2 rounded-md text-xs text-muted-foreground">Annuler</button>
+                      </span>
+                    ) : (
                     <button
-                      onClick={() => handleReintegrate(m)}
+                      onClick={() => startReturn(m)}
                       disabled={m.destination.startsWith("✓") || reintegratingId === m.id}
                       className="p-1.5 rounded-md text-muted-foreground hover:text-success hover:bg-success/10 transition-colors disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-muted-foreground"
                       title={
@@ -539,6 +596,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                     >
                       <Undo2 className="h-4 w-4" />
                     </button>
+                    )
                   )}
                   <button
                     onClick={() => {
