@@ -118,7 +118,7 @@ export function useProductUnits() {
 }
 
 export function useProductUnitConfigs() {
-  return useRealtimeData(getProductUnitConfigs, ["initial_stocks"]);
+  return useRealtimeData(getProductUnitConfigs, ["initial_stocks", "product_pack_options"]);
 }
 
 export function useExpiringLots(days: number = 30) {

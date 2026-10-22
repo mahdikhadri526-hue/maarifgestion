@@ -627,7 +627,7 @@ export async function getProductUnits(): Promise<Record<string, UnitType>> {
 
 export async function getProductUnitConfigs(): Promise<Record<string, ProductUnitConfig>> {
   const pdvId = requireCurrentPdvId();
-  return cached(`productUnitConfigs:${pdvId}`, ["initial_stocks"], async () => {
+  return cached(`productUnitConfigs:${pdvId}`, ["initial_stocks", "product_pack_options"], async () => {
   const data = await getInitialStockRecords();
   const result: Record<string, ProductUnitConfig> = {};
   const packs = await getProductPackOptions();
