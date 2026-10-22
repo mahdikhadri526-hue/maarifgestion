@@ -116,6 +116,7 @@ export function buildWeeklyAggregateTotals(
   isInSelectedPeriod: (iso: string) => boolean,
   matchAll: boolean,
   closeOnNextDayCount = false,
+  periodStart?: string,
 ) {
   void closeOnNextDayCount; // conservé pour les anciens appelants
   const daily = buildWeeklyDailyStocks(records, articleList);
@@ -132,11 +133,7 @@ export function buildWeeklyAggregateTotals(
       // Période après la dernière saisie : reporter le stock, sans sorties.
       const latest = days[days.length - 1];
       if (latest) {
-        const probe = parseISODate(latest.date);
-        probe.setDate(probe.getDate() + 1);
-        // Les filtres peuvent être plus tardifs : la sonde est complétée
-        // par l'appelant avec des bornes explicites (voir argument ci-dessous).
-        if (isInSelectedPeriod(formatISODate(probe))) {
+        if (periodStart && latest.date < periodStart) {
           aggStockInitial += latest.stockRestant;
           aggRestant += latest.stockRestant;
         }

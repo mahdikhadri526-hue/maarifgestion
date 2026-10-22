@@ -205,6 +205,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [month, setMonth] = useState<string>(currentMonthISO());
   const [start, setStart] = useState<string>("");
   const [end, setEnd] = useState<string>(todayISO());
+  const weeklyPeriodStart = mode === "day" ? day : mode === "month" ? `${month}-01` : mode === "period" ? start : undefined;
   const [periodTotals, setPeriodTotals] = useState<Record<string, { stockInitial: number; entrees: number; sorties: number; stockRestant: number }>>({});
   const [periodLoading, setPeriodLoading] = useState(false);
   const [weeklyRows, setWeeklyRows] = useState<Array<{ article: string; sorties: number; stockActuel: number }>>([]);
@@ -708,18 +709,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           : category === "glace" ? GLACE_ARTICLES.filter((a) => a !== CHANTILLY_WEEKLY_ARTICLE)
           : [CHANTILLY_WEEKLY_ARTICLE];
         const ficheType = "Mouvement glaces & tartes";
-        const wr = weekRangeFilter(mode, day, month, start, end);
         const data = await cached(
-          `st_weekly_stock_${category}_${wr.from ?? "all"}`,
+          `st_weekly_stock_${category}_all`,
           ["weekly_tracking"],
           () =>
             fetchAllRows<WeeklyTrackingOrderRecord>(() => {
               let q = supabase
                 .from("weekly_tracking")
-                .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
+                .select("article, sorties, entrees, stock_initial, day_of_week, week_start, row_index")
                 .eq("fiche_type", ficheType)
                 .in("article", list as unknown as string[]);
-              if (wr.from) q = q.gte("week_start", wr.from);
               return q;
             }),
         );
@@ -734,23 +733,12 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           }
           return true;
         };
-        // Le stock restant doit refléter le dernier SI saisi dans le suivi hebdo
-        // (les écarts de saisie ne doivent pas s'accumuler) : on borne les données
-        // à la fin de la période puis on prend le stock réel (matchAll = true).
-        const periodEnd =
-          mode === "day" ? (day || "") :
-          mode === "month" ? (month ? monthEndISO(month) : "") :
-          mode === "period" ? (end || "") : "";
-        const bounded = (data || []).filter((r) => {
-          if (!periodEnd) return true;
-          const dayIdx = DAYS.indexOf(r.day_of_week as typeof DAYS[number]);
-          if (dayIdx < 0 || !r.week_start) return false;
-          return trackingDate(r.week_start, dayIdx) <= periodEnd;
-        });
+        // Garder le comptage du lendemain pour fermer les sorties du dernier
+        // jour, mais ne jamais inclure ses entrées dans la période sélectionnée.
         const rows = (list as readonly string[])
           .map((article) => ({
             article,
-            ...buildWeeklyAggregateTotals(bounded, [article], isInSelectedPeriod, true),
+            ...buildWeeklyAggregateTotals(data || [], [article], isInSelectedPeriod, mode === "all", false, weeklyPeriodStart),
           }))
           .filter((r) => r.stockInitial !== 0 || r.entrees !== 0 || r.sorties !== 0 || r.stockRestant !== 0);
 
@@ -784,18 +772,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           CHANTILLY_WEEKLY_ARTICLE,
           AMANDES_WEEKLY_ARTICLE,
         ];
-        const wr = weekRangeFilter(mode, day, month, start, end);
         const data = await cached(
-          `st_weekly_aggs_${wr.from ?? "all"}`,
+          `st_weekly_aggs_all`,
           ["weekly_tracking"],
           () =>
             fetchAllRows<WeeklyTrackingOrderRecord>(() => {
               let q = supabase
                 .from("weekly_tracking")
-                .select("article, sorties, entrees, stock_initial, day_of_week, week_start")
+                .select("article, sorties, entrees, stock_initial, day_of_week, week_start, row_index")
                 .eq("fiche_type", "Mouvement glaces & tartes")
                 .in("article", [...MACARON_ARTICLES, ...extraArticles] as unknown as string[]);
-              if (wr.from) q = q.gte("week_start", wr.from);
               return q;
             }),
         );
@@ -816,16 +802,17 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           MACARON_ARTICLES,
           isInSelectedPeriod,
           mode === "all",
+          false, weeklyPeriodStart,
         );
         setMacaronAgg(totals);
         setSiropWeekly(buildWeeklyAggregateTotals(
-          data || [], [SIROP_CARAMEL_WEEKLY_ARTICLE], isInSelectedPeriod, mode === "all",
+          data || [], [SIROP_CARAMEL_WEEKLY_ARTICLE], isInSelectedPeriod, mode === "all", false, weeklyPeriodStart,
         ));
         setChantillyAgg(buildWeeklyAggregateTotals(
-          data || [], [CHANTILLY_WEEKLY_ARTICLE], isInSelectedPeriod, mode === "all",
+          data || [], [CHANTILLY_WEEKLY_ARTICLE], isInSelectedPeriod, mode === "all", false, weeklyPeriodStart,
         ));
         setAmandesAgg(buildWeeklyAggregateTotals(
-          data || [], [AMANDES_WEEKLY_ARTICLE], isInSelectedPeriod, mode === "all",
+          data || [], [AMANDES_WEEKLY_ARTICLE], isInSelectedPeriod, mode === "all", false, weeklyPeriodStart,
         ));
       } catch {
         if (!cancelled) {
@@ -1330,7 +1317,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           return true;
         };
         const rows: AggregateBreakdownRow[] = MACARON_ARTICLES.map((art) => {
-          const t = buildWeeklyAggregateTotals(data || [], [art], isInPeriod, mode === "all");
+          const t = buildWeeklyAggregateTotals(data || [], [art], isInPeriod, mode === "all", false, weeklyPeriodStart);
           return { name: art, ...t };
         });
         setDetailsRows(rows);
