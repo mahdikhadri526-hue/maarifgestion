@@ -22,6 +22,20 @@ export interface ProductUnitConfig {
   piecesPerPaquet: number;
   /** Conditionnements supplementaires par produit (ex: paquet de 16). */
   extraPacks?: ProductPackOption[];
+  /** Unité de base choisie par l'admin (Pièce / Litre / Kg). */
+  baseUnit?: UnitType;
+  /** Masque la saisie de l'unité de base (produit seulement en paquet/carton). */
+  pieceHidden?: boolean;
+}
+
+/** Libellé de l'unité de base selon le choix admin, sinon le libellé par défaut. */
+export function applyBaseUnitLabel(
+  fallback: { singular: string; plural: string; short: string },
+  config?: ProductUnitConfig,
+): { singular: string; plural: string; short: string } {
+  if (config?.baseUnit === "KILO") return { singular: "Kg", plural: "Kg", short: "kg" };
+  if (config?.baseUnit === "LITRE") return { singular: "Litre", plural: "Litres", short: "L" };
+  return fallback;
 }
 
 export const DEFAULT_UNIT_CONFIG: ProductUnitConfig = {
@@ -638,6 +652,8 @@ export async function getProductUnitConfigs(): Promise<Record<string, ProductUni
       piecesPerCarton: row.pieces_per_carton || 1,
       piecesPerPaquet: row.pieces_per_paquet || 1,
       extraPacks: packs[row.product_id] ?? [],
+      baseUnit: ((row as any).unit as UnitType) || "PIECE",
+      pieceHidden: (row as any).piece_hidden === true,
     };
   });
   return result;
@@ -692,6 +708,7 @@ export async function setProductUnitConfig(productId: string, config: Partial<Pr
   if (config.paquetEnabled !== undefined) payload.paquet_enabled = config.paquetEnabled;
   if (config.piecesPerCarton !== undefined) payload.pieces_per_carton = Math.max(1, config.piecesPerCarton);
   if (config.piecesPerPaquet !== undefined) payload.pieces_per_paquet = Math.max(1, config.piecesPerPaquet);
+  if (config.pieceHidden !== undefined) payload.piece_hidden = config.pieceHidden;
   const { error } = await supabase
     .from("initial_stocks")
     .upsert(payload, { onConflict: "product_id" });
@@ -709,6 +726,7 @@ export async function setProductUnit(productId: string, unit: UnitType) {
     .from("initial_stocks")
     .upsert({ product_id: productId, unit }, { onConflict: "product_id" });
   if (error) throw error;
+  invalidateTables(["initial_stocks"]);
 }
 
 export async function setInitialStock(productId: string, quantity: number) {

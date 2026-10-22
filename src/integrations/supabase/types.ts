@@ -864,6 +864,7 @@ export type Database = {
           min_quantity: number
           paquet_enabled: boolean
           pdv_id: string
+          piece_hidden: boolean
           pieces_per_carton: number
           pieces_per_paquet: number
           product_id: string
@@ -879,6 +880,7 @@ export type Database = {
           min_quantity?: number
           paquet_enabled?: boolean
           pdv_id?: string
+          piece_hidden?: boolean
           pieces_per_carton?: number
           pieces_per_paquet?: number
           product_id: string
@@ -894,6 +896,7 @@ export type Database = {
           min_quantity?: number
           paquet_enabled?: boolean
           pdv_id?: string
+          piece_hidden?: boolean
           pieces_per_carton?: number
           pieces_per_paquet?: number
           product_id?: string

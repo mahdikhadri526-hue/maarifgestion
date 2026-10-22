@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, getPieceLabelForProduct, getProductAvailableStockInBasePieces, formatQuantityForProduct } from "@/lib/stockData";
+import { Category, getProducts, saveMovement, DEFAULT_UNIT_CONFIG, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, getPieceLabelForProduct, applyBaseUnitLabel, getProductAvailableStockInBasePieces, formatQuantityForProduct } from "@/lib/stockData";
 import { addLotEntry } from "@/lib/lotData";
 import { useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
@@ -58,7 +58,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const config = configs?.[productId] || DEFAULT_UNIT_CONFIG;
   const totalQty = totalPieces(multi, config);
   const unitLabel = selectedProduct
-    ? getPieceLabelForProduct(selectedProduct.id, selectedProduct.name, selectedProduct.category).plural
+    ? applyBaseUnitLabel(getPieceLabelForProduct(selectedProduct.id, selectedProduct.name, selectedProduct.category), config).plural
     : "Pièces";
   const paquetLabel = productId ? (PAQUET_LABEL_OVERRIDES[productId] || "Paquets") : "Paquets";
 
@@ -274,7 +274,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
             Quantité
           </label>
           {productId ? (
-            <MultiUnitInput config={config} values={multi} onChange={setMulti} pieceLabel={unitLabel} paquetLabel={paquetLabel} showTotal={false} hidePiece={HIDE_PIECE_PRODUCTS.has(productId)} />
+            <MultiUnitInput config={config} values={multi} onChange={setMulti} pieceLabel={unitLabel} paquetLabel={paquetLabel} showTotal={false} hidePiece={HIDE_PIECE_PRODUCTS.has(productId) || (config.pieceHidden === true && (config.paquetEnabled || config.cartonEnabled || (config.extraPacks?.length ?? 0) > 0))} />
           ) : (
             <p className="text-xs text-muted-foreground italic">Sélectionnez un produit d'abord</p>
           )}

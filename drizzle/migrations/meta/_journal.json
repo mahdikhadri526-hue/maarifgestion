@@ -176,6 +176,13 @@
       "when": 1792700750167,
       "tag": "0024_guard_existing_packaging_admin",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792703589646,
+      "tag": "0025_initial_stocks_piece_hidden",
+      "breakpoints": true
     }
   ]
 }
