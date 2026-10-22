@@ -8,13 +8,13 @@ import { TECH_ACCOUNT_EMAILS } from "@/lib/techFeature";
 
 export type TechProcessingMode = "technique" | "manager";
 
-/** PEP repair actions belong to the manager, never the technical account. */
+/** Managers and administrators handle PEP repairs, never the technical account. */
 export function canHandlePepRepair(
   role: string | null,
   email: string | null | undefined,
   hasPepAccess: boolean,
 ): boolean {
-  return role === "manager" && hasPepAccess && !TECH_ACCOUNT_EMAILS.includes((email ?? "").toLowerCase());
+  return (role === "manager" || role === "admin") && hasPepAccess && !TECH_ACCOUNT_EMAILS.includes((email ?? "").toLowerCase());
 }
 
 export const TECH_PROCESSING_MODES: { key: TechProcessingMode; label: string }[] = [
