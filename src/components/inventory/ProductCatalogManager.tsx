@@ -485,6 +485,18 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
                 variant={(packsFor ? productUnits[packsFor.id] ?? "PIECE" : "PIECE") === u ? "default" : "outline"}
                 onClick={() => changeUnit(u)}>{l}</Button>
             ))}
+            <label className="flex items-center gap-2 text-sm w-full pt-1">
+              <Checkbox checked={basePackDraft.pieceHidden === true} disabled={busy || !hasAdminRole}
+                onCheckedChange={async v => {
+                  if (!packsFor) return;
+                  const hidden = v === true;
+                  setBasePackDraft(d => ({ ...d, pieceHidden: hidden }));
+                  setBusy(true);
+                  try { await setProductUnitConfig(packsFor.id, { pieceHidden: hidden }); await reloadPacks(); setDirty(true); toast.success(hidden ? "Unité masquée dans les saisies" : "Unité affichée dans les saisies"); }
+                  catch (e: any) { toast.error(e?.message || "Erreur"); } finally { setBusy(false); }
+                }} />
+              Masquer pièce / kg / litre (produit seulement en paquet ou carton)
+            </label>
           </div>
           <div className="space-y-3 border-b pb-4">
             {(["paquet", "carton"] as const).map(kind => {

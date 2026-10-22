@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabelForProduct, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, formatQuantityForProduct, getProductAvailableStockInBasePieces } from "@/lib/stockData";
+import { getProducts, DEFAULT_UNIT_CONFIG, getPieceLabelForProduct, applyBaseUnitLabel, PAQUET_LABEL_OVERRIDES, HIDE_PIECE_PRODUCTS, formatQuantityForProduct, getProductAvailableStockInBasePieces } from "@/lib/stockData";
 import { saveRequisition, setRequisitionTotal, getRequisitionSalleIds, getRequisitionEmporterIds } from "@/lib/requisitionData";
 import { useRequisitionsByDate, useProductUnitConfigs } from "@/hooks/useStockData";
 import { getOperators, rememberOperator } from "@/lib/operators";
@@ -350,7 +350,7 @@ export function RequisitionForm({ onUpdated }: Props) {
               const cfg = configs?.[p.id] || DEFAULT_UNIT_CONFIG;
               const val = quantities[p.id] || EMPTY_MULTI;
               const total = totalPieces(val, cfg);
-              const pieceLbl = getPieceLabelForProduct(p.id, p.name, p.category);
+              const pieceLbl = applyBaseUnitLabel(getPieceLabelForProduct(p.id, p.name, p.category), configs?.[p.id]);
               return (
               <tr key={p.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                 <td className="p-3 text-sm font-medium">{p.name}</td>
@@ -364,7 +364,7 @@ export function RequisitionForm({ onUpdated }: Props) {
                       pieceLabel={pieceLbl.plural}
                       paquetLabel={(PAQUET_LABEL_OVERRIDES[p.id] || "Paquets")}
                       showTotal={false}
-                      hidePiece={HIDE_PIECE_PRODUCTS.has(p.id)}
+                      hidePiece={HIDE_PIECE_PRODUCTS.has(p.id) || (cfg.pieceHidden === true && (cfg.paquetEnabled || cfg.cartonEnabled || (cfg.extraPacks?.length ?? 0) > 0))}
                       disabled={isLocked}
                     />
                     <Button
