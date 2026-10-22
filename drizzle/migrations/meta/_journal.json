@@ -162,6 +162,13 @@
       "when": 1792691723755,
       "tag": "0022_guard_manager_repair_actions",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1792692311031,
+      "tag": "0023_allow_admin_manager_repairs",
+      "breakpoints": true
     }
   ]
 }
