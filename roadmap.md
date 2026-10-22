@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Corriger les sorties de Stock restant issues du Suivi hebdo, comparer les jours et les agrégats, préserver les saisies et vérifier les régressions sans publication.
 - [x] Ajouter la suppression confirmée des conditionnements existants pour l’administrateur ; paquet/carton désactivés sans effacer les conversions, produits et historique conservés ; neuf tests réussis, sans publication.
 - [x] Séparer Fruits de Tartes dans Stock restant et Calcul de la commande ; données et formules inchangées, trois tests réussis, sans publication.
 - [ ] Vérifier Fruits dans les deux tableaux de l’aperçu connecté : session absente et renouvellement automatique indisponible ; attendre une reconnexion de l’utilisateur.
