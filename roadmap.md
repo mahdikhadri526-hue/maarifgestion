@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Séparer les six fruits du suivi Tartes dans un suivi Fruits, sans modifier les données ni les calculs de commande ; vérifier les deux vues.
+- [x] Séparer les six fruits du suivi Tartes dans un suivi Fruits ; données et sources de commande conservées, calculs testés et deux vues vérifiées sur grand écran et téléphone, sans publication.
 - [x] Signalement matériel : choix du traitement (responsable technique ou manager du PDV) ; le responsable choisi suit les mêmes étapes (intervenant, délai, suivi, validation), le manager confirme la réparation, le responsable technique garde l'accès à tous les dossiers ; fonctionnement actuel préservé, tests et affichage vérifiés.
 - [x] Ajouter et sécuriser la rectification des deadlines (avancer ou repousser la date) uniquement pour le responsable technique ; deux corrections vérifiées avec son compte et historique conservé, intervention temporaire supprimée.
 - [x] Corriger le transfert des numéros de lot cornets/tulipes/gaufrettes vers le suivi hebdo Tartes ; 12 lots manquants rétablis, tests et affichage vérifiés, autres fonctions inchangées.
