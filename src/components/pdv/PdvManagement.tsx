@@ -11,7 +11,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { supabase } from "@/integrations/supabase/client";
 import { CLEANING_ZONES, CLEANING_ZONE_OFF_PREFIX } from "@/lib/cleaningData";
 import { ZONES as FRIDGE_ZONES, FRIDGE_ZONE_OFF_PREFIX } from "@/lib/fridgeData";
-import { Thermometer } from "lucide-react";
+import { Thermometer, Plus, RotateCcw } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { addCustomZone, deleteCustomZone, fetchCustomZones, type CustomZone } from "@/lib/pdvZones";
 import { ALL_PERMISSIONS, publishedPermissionGroups, AppRole, useAuth } from "@/contexts/AuthContext";
 
 const PDV_ROLE_PRESETS: Record<AppRole, string[]> = {
@@ -62,6 +64,41 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
   const [editing, setEditing] = useState<{ id: string; name: string } | null>(null);
   const [zonesFor, setZonesFor] = useState<{ id: string; name: string } | null>(null);
   const [fridgeZonesFor, setFridgeZonesFor] = useState<{ id: string; name: string } | null>(null);
+
+  const [customZones, setCustomZones] = useState<CustomZone[]>([]);
+  const [newZone, setNewZone] = useState("");
+  const [newTasks, setNewTasks] = useState("");
+  const loadCustomZones = async () => {
+    const ids = pdvs.map((p) => p.id);
+    const all: CustomZone[] = [];
+    for (const id of ids) { try { all.push(...(await fetchCustomZones(id))); } catch { /* ignore */ } }
+    setCustomZones(all);
+  };
+  useEffect(() => { void loadCustomZones(); }, [pdvs.length]);
+  const zonesOf = (pdv: string, kind: "cleaning" | "fridge") => customZones.filter((z) => z.pdvId === pdv && z.kind === kind);
+
+  const submitZone = async (pdv: string, kind: "cleaning" | "fridge") => {
+    const label = newZone.trim();
+    if (!label) return;
+    const tasks = newTasks.split("\n").map((t) => t.trim()).filter(Boolean);
+    if (kind === "cleaning" && tasks.length === 0) { toast.error("Ajoutez au moins une tâche (une par ligne)."); return; }
+    const exists = kind === "cleaning"
+      ? CLEANING_ZONES.some((z) => z.label.toLowerCase() === label.toLowerCase()) || zonesOf(pdv, kind).some((z) => z.label.toLowerCase() === label.toLowerCase())
+      : FRIDGE_ZONES.some((z) => z.toLowerCase() === label.toLowerCase()) || zonesOf(pdv, kind).some((z) => z.label.toLowerCase() === label.toLowerCase());
+    if (exists) { toast.error("Cette zone existe déjà."); return; }
+    try {
+      await addCustomZone(pdv, kind, label, kind === "cleaning" ? tasks : []);
+      setNewZone(""); setNewTasks("");
+      toast.success("Zone ajoutée");
+      await loadCustomZones();
+    } catch (e: any) { toast.error("Erreur : " + (e?.message ?? "ajout impossible")); }
+  };
+
+  const removeCustomZone = async (z: CustomZone) => {
+    if (!confirm(`Supprimer la zone « ${z.label} » ? L'historique déjà saisi est conservé.`)) return;
+    try { await deleteCustomZone(z.id); toast.success("Zone supprimée"); await loadCustomZones(); }
+    catch (e: any) { toast.error("Erreur : " + (e?.message ?? "suppression impossible")); }
+  };
 
   const loadRights = async () => {
     const [{ data: rows }, { data: perms }] = await Promise.all([
@@ -216,7 +253,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
               onClick={() => setZonesFor({ id: p.id, name: p.name })}
             >
               <Sparkles className="h-4 w-4 mr-1" />
-              Zones nettoyage ({CLEANING_ZONES.filter((z) => !pdvPerms[p.id]?.has(CLEANING_ZONE_OFF_PREFIX + z.key)).length}/{CLEANING_ZONES.length})
+              Zones nettoyage ({CLEANING_ZONES.filter((z) => !pdvPerms[p.id]?.has(CLEANING_ZONE_OFF_PREFIX + z.key)).length + zonesOf(p.id, "cleaning").length})
             </Button>
             <Button
               variant="outline"
@@ -225,7 +262,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
               onClick={() => setFridgeZonesFor({ id: p.id, name: p.name })}
             >
               <Thermometer className="h-4 w-4 mr-1" />
-              Zones température ({FRIDGE_ZONES.filter((z) => !pdvPerms[p.id]?.has(FRIDGE_ZONE_OFF_PREFIX + z)).length}/{FRIDGE_ZONES.length})
+              Zones température ({FRIDGE_ZONES.filter((z) => !pdvPerms[p.id]?.has(FRIDGE_ZONE_OFF_PREFIX + z)).length + zonesOf(p.id, "fridge").length})
             </Button>
             {p.id === pdvId && <Badge className="shrink-0">Actuel</Badge>}
             <Button variant="ghost" size="icon" className="shrink-0" disabled={!hasAdminRole} onClick={() => remove(p.id)}>
@@ -243,22 +280,48 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
           {zonesFor && (
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground pb-2">
-                Cochez les zones qui existent dans ce PDV. Les zones décochées n'apparaissent plus dans le Suivi nettoyage de ce PDV.
+                Ajoutez ou supprimez les zones de nettoyage de ce PDV. Les saisies déjà faites sont conservées.
               </p>
               {CLEANING_ZONES.map((z) => {
                 const offKey = CLEANING_ZONE_OFF_PREFIX + z.key;
                 const off = pdvPerms[zonesFor.id]?.has(offKey) ?? false;
                 return (
-                  <label key={z.key} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
-                    <Checkbox
-                      checked={!off}
-                      disabled={!canEditPerms}
-                      onCheckedChange={() => togglePdvPerm(zonesFor.id, offKey, off)}
-                    />
-                    <div className="text-sm font-medium">{z.label}</div>
-                  </label>
+                  <div key={z.key} className="flex items-center justify-between gap-3 p-2 rounded border">
+                    <div className={"text-sm font-medium " + (off ? "line-through text-muted-foreground" : "")}>{z.label}</div>
+                    {canEditPerms && (off ? (
+                      <Button variant="ghost" size="sm" onClick={() => togglePdvPerm(zonesFor.id, offKey, off)}>
+                        <RotateCcw className="h-4 w-4 mr-1" />Restaurer
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Supprimer cette zone de ce PDV ? L'historique est conservé.")) togglePdvPerm(zonesFor.id, offKey, off); }}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    ))}
+                  </div>
                 );
               })}
+              {zonesOf(zonesFor.id, "cleaning").map((z) => (
+                <div key={z.id} className="flex items-center justify-between gap-3 p-2 rounded border">
+                  <div className="text-sm font-medium">{z.label}{z.tasks.length > 0 && <span className="text-xs text-muted-foreground"> — {z.tasks.length} tâche(s)</span>}</div>
+                  {canEditPerms && (
+                    <Button variant="ghost" size="icon" onClick={() => removeCustomZone(z)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {canEditPerms && (
+                <div className="space-y-2 pt-3 border-t mt-2">
+                  <div className="text-sm font-medium">Ajouter une zone</div>
+                  <Input placeholder="Nom de la zone" value={newZone} onChange={(e) => setNewZone(e.target.value)} />
+                  {"cleaning" === "cleaning" && (
+                    <Textarea placeholder="Tâches (une par ligne)" rows={4} value={newTasks} onChange={(e) => setNewTasks(e.target.value)} />
+                  )}
+                  <Button size="sm" onClick={() => submitZone(zonesFor.id, "cleaning")} disabled={!newZone.trim()}>
+                    <Plus className="h-4 w-4 mr-1" />Ajouter
+                  </Button>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
@@ -275,22 +338,48 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
           {fridgeZonesFor && (
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground pb-2">
-                Cochez les zones qui existent dans ce PDV. Les zones décochées n'apparaissent plus dans la prise de température de ce PDV.
+                Ajoutez ou supprimez les zones température de ce PDV. Les relevés déjà faits sont conservés.
               </p>
               {FRIDGE_ZONES.map((z) => {
                 const offKey = FRIDGE_ZONE_OFF_PREFIX + z;
                 const off = pdvPerms[fridgeZonesFor.id]?.has(offKey) ?? false;
                 return (
-                  <label key={z} className="flex items-center gap-3 p-2 rounded hover:bg-muted/50 cursor-pointer">
-                    <Checkbox
-                      checked={!off}
-                      disabled={!canEditPerms}
-                      onCheckedChange={() => togglePdvPerm(fridgeZonesFor.id, offKey, off)}
-                    />
-                    <div className="text-sm font-medium">{z}</div>
-                  </label>
+                  <div key={z} className="flex items-center justify-between gap-3 p-2 rounded border">
+                    <div className={"text-sm font-medium " + (off ? "line-through text-muted-foreground" : "")}>{z}</div>
+                    {canEditPerms && (off ? (
+                      <Button variant="ghost" size="sm" onClick={() => togglePdvPerm(fridgeZonesFor.id, offKey, off)}>
+                        <RotateCcw className="h-4 w-4 mr-1" />Restaurer
+                      </Button>
+                    ) : (
+                      <Button variant="ghost" size="icon" onClick={() => { if (confirm("Supprimer cette zone de ce PDV ? L'historique est conservé.")) togglePdvPerm(fridgeZonesFor.id, offKey, off); }}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    ))}
+                  </div>
                 );
               })}
+              {zonesOf(fridgeZonesFor.id, "fridge").map((z) => (
+                <div key={z.id} className="flex items-center justify-between gap-3 p-2 rounded border">
+                  <div className="text-sm font-medium">{z.label}{z.tasks.length > 0 && <span className="text-xs text-muted-foreground"> — {z.tasks.length} tâche(s)</span>}</div>
+                  {canEditPerms && (
+                    <Button variant="ghost" size="icon" onClick={() => removeCustomZone(z)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  )}
+                </div>
+              ))}
+              {canEditPerms && (
+                <div className="space-y-2 pt-3 border-t mt-2">
+                  <div className="text-sm font-medium">Ajouter une zone</div>
+                  <Input placeholder="Nom de la zone" value={newZone} onChange={(e) => setNewZone(e.target.value)} />
+                  {"fridge" === "cleaning" && (
+                    <Textarea placeholder="Tâches (une par ligne)" rows={4} value={newTasks} onChange={(e) => setNewTasks(e.target.value)} />
+                  )}
+                  <Button size="sm" onClick={() => submitZone(fridgeZonesFor.id, "fridge")} disabled={!newZone.trim()}>
+                    <Plus className="h-4 w-4 mr-1" />Ajouter
+                  </Button>
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
