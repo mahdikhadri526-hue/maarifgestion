@@ -314,7 +314,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
                 <div className="space-y-2 pt-3 border-t mt-2">
                   <div className="text-sm font-medium">Ajouter une zone</div>
                   <Input placeholder="Nom de la zone" value={newZone} onChange={(e) => setNewZone(e.target.value)} />
-                  {"cleaning" === "cleaning" && (
+                  {true && (
                     <Textarea placeholder="Tâches (une par ligne)" rows={4} value={newTasks} onChange={(e) => setNewTasks(e.target.value)} />
                   )}
                   <Button size="sm" onClick={() => submitZone(zonesFor.id, "cleaning")} disabled={!newZone.trim()}>
@@ -372,7 +372,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
                 <div className="space-y-2 pt-3 border-t mt-2">
                   <div className="text-sm font-medium">Ajouter une zone</div>
                   <Input placeholder="Nom de la zone" value={newZone} onChange={(e) => setNewZone(e.target.value)} />
-                  {"fridge" === "cleaning" && (
+                  {false && (
                     <Textarea placeholder="Tâches (une par ligne)" rows={4} value={newTasks} onChange={(e) => setNewTasks(e.target.value)} />
                   )}
                   <Button size="sm" onClick={() => submitZone(fridgeZonesFor.id, "fridge")} disabled={!newZone.trim()}>
