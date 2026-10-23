@@ -183,6 +183,13 @@
       "when": 1792703589646,
       "tag": "0025_initial_stocks_piece_hidden",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1792779789916,
+      "tag": "0026_pdv_custom_zones",
+      "breakpoints": true
     }
   ]
 }

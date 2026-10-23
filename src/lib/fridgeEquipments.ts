@@ -58,6 +58,7 @@ export function mergeEquipments(custom: CustomEquipmentRow[]): FridgeEquipment[]
     EQUIPMENTS.filter((e) => e.zone === z && !hiddenCodes.has(e.code)).forEach((e) => list.push(e));
     extras.filter((e) => e.zone === z).forEach((e) => list.push({ code: e.code, name: e.name, type: e.type, zone: e.zone }));
   });
+  extras.filter((e) => !ZONES.includes(e.zone)).forEach((e) => list.push({ code: e.code, name: e.name, type: e.type, zone: e.zone }));
   return list;
 }
 
