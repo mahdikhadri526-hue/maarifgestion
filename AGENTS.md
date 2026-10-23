@@ -19,7 +19,7 @@
 - Photo-scan reading in `supabase/functions/scan-stock-entry` picks its provider by secret: `GOOGLE_API_KEY` (model from `GEMINI_MODEL`) on self-hosted servers, otherwise the built-in Lovable AI service.
 - Voice-guide generation in `supabase/functions/voice-tts` uses the built-in Lovable AI service when its key exists and falls back to Google AI Studio with `GOOGLE_API_KEY` (model from `GEMINI_TTS_MODEL`), so offline servers can generate voices without the Lovable service.
 - Le catalogue produits (product_catalog) est cloisonné par PDV (pdv_id) : ajout/suppression d’un produit n’affecte que le PDV courant ; les lignes sans pdv_id sont obsolètes.
-- Zones désactivées par PDV (nettoyage `cleaning_zone_off:<zone>`, température `fridge_zone_off:<zone>`) vivent dans pdv_permissions (absence = active), pour garder les zones par défaut et survivre au changement de rôle PDV.
+- Zones désactivées par PDV (nettoyage `cleaning_zone_off:<zone>`, température `fridge_zone_off:<zone>`) vivent dans pdv_permissions (absence = active), pour garder les zones par défaut et survivre au changement de rôle PDV ; « supprimer » une zone par défaut pose ce drapeau (restaurable). Les zones ajoutées par PDV vivent dans pdv_custom_zones (tâches nettoyage en jsonb) ; leur suppression efface la ligne sans toucher l’historique.
 - Supplier claim sheet QC-ENSR 001 lives in supplier_claims (per PDV) with photos in private bucket supplier-claims; only the quality account writes and only it plus admin-role users can read (RLS), per user request.
 - Ice/tart FIFO uses lot dates with explicit ice context for compact codes; keep other products unchanged.
 - Share pâte validation across creation/completion; store DLC in autocontrols and reuse pending-visa alerts.
