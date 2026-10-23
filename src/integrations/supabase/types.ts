@@ -1292,6 +1292,47 @@ export type Database = {
           },
         ]
       }
+      pdv_custom_zones: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          label: string
+          pdv_id: string
+          tasks: Json
+          updated_at: string
+          zone_key: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          label: string
+          pdv_id: string
+          tasks?: Json
+          updated_at?: string
+          zone_key: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          label?: string
+          pdv_id?: string
+          tasks?: Json
+          updated_at?: string
+          zone_key?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pdv_custom_zones_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pdv_permissions: {
         Row: {
           allowed: boolean
