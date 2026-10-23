@@ -15,9 +15,11 @@ import { useAuth } from "@/contexts/AuthContext";
 export function FridgeEquipmentManager({
   custom,
   onChanged,
+  zones = ZONES,
 }: {
   custom: CustomEquipmentRow[];
   onChanged: () => void;
+  zones?: FridgeZone[];
 }) {
   const { can, isAdmin } = useAuth();
   const { toast } = useToast();
@@ -144,7 +146,7 @@ export function FridgeEquipmentManager({
                 <Select value={zone} onValueChange={(v) => setZone(v as FridgeZone)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {ZONES.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
+                    {zones.map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

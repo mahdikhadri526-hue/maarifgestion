@@ -664,7 +664,7 @@ export function FridgeTemperatureManager() {
               </Select>
             </div>
             <div className="flex gap-2">
-              <FridgeEquipmentManager custom={customEquipments} onChanged={reloadEquipments} />
+              <FridgeEquipmentManager zones={ZONES} custom={customEquipments} onChanged={reloadEquipments} />
               <Button variant="outline" onClick={exportPdf}>
                 <FileDown className="h-4 w-4 mr-1" /> Exporter PDF
               </Button>
