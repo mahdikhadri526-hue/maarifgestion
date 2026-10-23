@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useCustomZones } from "@/lib/pdvZones";
 import { CLEANING_ZONES as ALL_CLEANING_ZONES, CLEANING_ZONE_OFF_PREFIX, CleaningLog, CleaningStatus, addCleaningLog, deleteCleaningLog, getCleaningLogs, updateCleaningLog, arOf } from "@/lib/cleaningData";
 import { OPERATORS } from "@/lib/operators";
 import { MANAGERS } from "@/lib/managers";
@@ -86,7 +87,12 @@ export function CleaningManager() {
       .eq("pdv_id", zonesPdvId).like("permission_key", `${CLEANING_ZONE_OFF_PREFIX}%`)
       .then(({ data }) => setDisabledZones(new Set(((data ?? []) as any[]).filter((r) => r.allowed).map((r) => String(r.permission_key).slice(CLEANING_ZONE_OFF_PREFIX.length)))));
   }, [zonesPdvId]);
-  const CLEANING_ZONES = useMemo(() => ALL_CLEANING_ZONES.filter((z) => !disabledZones.has(z.key)), [disabledZones]);
+  const { zones: customCleaningZones } = useCustomZones(zonesPdvId, "cleaning");
+  const MERGED_CLEANING_ZONES = useMemo(
+    () => [...ALL_CLEANING_ZONES, ...customCleaningZones.map((c) => ({ key: c.key, label: c.label, tasks: c.tasks }))],
+    [customCleaningZones],
+  );
+  const CLEANING_ZONES = useMemo(() => MERGED_CLEANING_ZONES.filter((z) => !disabledZones.has(z.key)), [disabledZones, MERGED_CLEANING_ZONES]);
   const [zoneKey, setZoneKey] = useState("");
   const zone = useMemo(() => CLEANING_ZONES.find((z) => z.key === zoneKey), [zoneKey, CLEANING_ZONES]);
 
@@ -420,7 +426,7 @@ export function CleaningManager() {
           return (
             <div className="space-y-2">
               {displayedLogs.map((l) => {
-                const z = ALL_CLEANING_ZONES.find((x) => x.key === l.zone);
+                const z = MERGED_CLEANING_ZONES.find((x) => x.key === l.zone);
                 const zoneTasks = z?.tasks ?? Object.keys(l.tasks);
                 const total = zoneTasks.length;
                 const conf = zoneTasks.filter((t) => l.tasks[t] === "C").length;

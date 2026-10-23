@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Save, AlertTriangle, CheckCircle2, FileDown, Volume2, VolumeX } from "lucide-react";
+import { useCustomZones } from "@/lib/pdvZones";
 import { EQUIPMENTS as BASE_EQUIPMENTS, SLOTS, ZONES as ALL_ZONES, FRIDGE_ZONE_OFF_PREFIX, formatDisplayTemp, parseDisplayTemp, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
 import { OPERATORS } from "@/lib/operators";
 import { MANAGERS } from "@/lib/managers";
@@ -130,8 +131,12 @@ export function FridgeTemperatureManager() {
       .eq("pdv_id", zonesPdvId).like("permission_key", `${FRIDGE_ZONE_OFF_PREFIX}%`)
       .then(({ data }) => setDisabledZones(new Set(((data ?? []) as any[]).filter((r) => r.allowed).map((r) => String(r.permission_key).slice(FRIDGE_ZONE_OFF_PREFIX.length)))));
   }, [zonesPdvId]);
-  const ZONES = useMemo(() => ALL_ZONES.filter((z) => !disabledZones.has(z)), [disabledZones]);
-  const EQUIPMENTS = useMemo(() => ALL_EQUIPMENTS.filter((e) => !disabledZones.has(e.zone)), [ALL_EQUIPMENTS, disabledZones]);
+  const { zones: customFridgeZones } = useCustomZones(zonesPdvId, "fridge");
+  const ZONES = useMemo(
+    () => [...ALL_ZONES, ...customFridgeZones.map((c) => c.key as FridgeZone).filter((k) => !ALL_ZONES.includes(k))].filter((z) => !disabledZones.has(z)),
+    [disabledZones, customFridgeZones],
+  );
+  const EQUIPMENTS = useMemo(() => ALL_EQUIPMENTS.filter((e) => !disabledZones.has(e.zone) && ZONES.includes(e.zone)), [ALL_EQUIPMENTS, disabledZones, ZONES]);
   const operatorOptions = useOperators();
   const managerOptions = useManagers();
   const isNoDeleteUser = user?.email === "gestionmaarif1@gmail.com";
