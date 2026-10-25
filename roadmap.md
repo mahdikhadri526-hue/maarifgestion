@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Ajouter et tester Actif/Inactif dans Stock Initial → Produits, séparément par PDV, sans modifier les stocks ni historiques.
 - [x] Corriger les sorties de Stock restant issues du Suivi hebdo : contexte du lendemain conservé, lots cumulés et articles indépendants ; 27 tests réussis, cornets/fruits/glaces/crème et cumul mensuel vérifiés avec le compte admin du PDV principal ; aucune saisie modifiée ni publication.
 - [x] Ajouter la suppression confirmée des conditionnements existants pour l’administrateur ; paquet/carton désactivés sans effacer les conversions, produits et historique conservés ; neuf tests réussis, sans publication.
 - [x] Séparer Fruits de Tartes dans Stock restant et Calcul de la commande ; données et formules inchangées, trois tests réussis, sans publication.
