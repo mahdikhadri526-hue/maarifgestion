@@ -1,0 +1,2 @@
+ALTER TABLE public.product_catalog ADD COLUMN active boolean NOT NULL DEFAULT true;
+COMMENT ON COLUMN public.product_catalog.active IS 'Reversible per-PDV availability for new stock entries; does not affect historical stock calculations or deletion flags.';

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ClipboardList, Search, Pencil, Check, X, Eye, EyeOff, Trash2 } from "lucide-react";
 import logo from "@/assets/logo.jpeg";
 import { MultiUnitInput, MultiUnitValues, EMPTY_MULTI, totalPieces, dominantUnit } from "./MultiUnitInput";
+import { isProductActive } from "@/lib/stockData";
 
 interface Props {
   onUpdated: () => void;
@@ -55,13 +56,13 @@ export function RequisitionForm({ onUpdated }: Props) {
     .map((id) => allProducts.find((p) => p.id === id))
     .filter(Boolean) as typeof allProducts;
 
-  const filtered = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
-  );
-
   const { data: existing } = useRequisitionsByDate(date, reqType);
   const existingMap: Record<string, number> = {};
   (existing || []).forEach((r) => { existingMap[r.productId] = (existingMap[r.productId] || 0) + r.quantity; });
+
+  const filtered = products.filter((p) =>
+    (isProductActive(p.id) || (existingMap[p.id] ?? 0) > 0) && p.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   // Verrou J : on peut modifier/supprimer uniquement le jour même (J).
   // Dès le lendemain, lecture seule.
@@ -365,13 +366,13 @@ export function RequisitionForm({ onUpdated }: Props) {
                       paquetLabel={(PAQUET_LABEL_OVERRIDES[p.id] || "Paquets")}
                       showTotal={false}
                       hidePiece={HIDE_PIECE_PRODUCTS.has(p.id) || (cfg.pieceHidden === true && (cfg.paquetEnabled || cfg.cartonEnabled || (cfg.extraPacks?.length ?? 0) > 0))}
-                      disabled={isLocked}
+                      disabled={isLocked || !isProductActive(p.id)}
                     />
                     <Button
                       size="sm"
                       variant="outline"
                       className="h-9 px-2 text-xs"
-                      disabled={total <= 0 || isLocked || savingId === p.id || submitting}
+                      disabled={total <= 0 || isLocked || !isProductActive(p.id) || savingId === p.id || submitting}
                       onClick={() => handleSingleSave(p.id)}
                     >
                       {savingId === p.id ? "…" : "✓"}

@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/lib/db";
-import { setProductCatalog, type Category, type ProductCatalogRow } from "@/lib/stockData";
+import { getProductCatalog, getProducts, setProductCatalog, type Category, type ProductCatalogRow } from "@/lib/stockData";
 
 export type { ProductCatalogRow };
 
 export async function fetchProductCatalog(): Promise<ProductCatalogRow[]> {
   const { data, error } = await supabase
     .from("product_catalog" as any)
-    .select("id, product_id, category, name, conditionnement, hidden, sort_order")
+    .select("id, product_id, category, name, conditionnement, hidden, active, sort_order")
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: true });
   if (error) throw error;
@@ -18,8 +18,23 @@ export async function fetchProductCatalog(): Promise<ProductCatalogRow[]> {
     name: r.name as string,
     conditionnement: r.conditionnement ?? "",
     hidden: r.hidden === true,
+    active: r.active !== false,
     sortOrder: r.sort_order ?? 0,
   }));
+}
+
+/** Writes only availability on existing rows; stock, lots and history are untouched. */
+export async function setProductActive(productId: string, active: boolean): Promise<void> {
+  const existing = getProductCatalog().find(row => row.productId === productId);
+  const product = getProducts().find(row => row.id === productId);
+  if (!product) throw new Error("Produit introuvable");
+  const { error } = existing
+    ? await supabase.from("product_catalog").update({ active }).eq("product_id", productId)
+    : await supabase.from("product_catalog").insert({
+        product_id: productId, category: product.category, name: product.name,
+        conditionnement: product.conditionnement ?? "", hidden: false, active,
+      });
+  if (error) throw error;
 }
 
 /** Charge le catalogue (overrides + produits ajoutés) dans le cache synchrone. */

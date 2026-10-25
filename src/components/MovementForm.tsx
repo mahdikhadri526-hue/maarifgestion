@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { MultiUnitInput, MultiUnitValues, EMPTY_MULTI, totalPieces, dominantUnit } from "./MultiUnitInput";
 import { ENABLE_TRANSFERTS } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
+import { isProductActive } from "@/lib/stockData";
 
 const TRANSFER_LOCATIONS = [
   "Dar Bouazza",
@@ -51,7 +52,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const operators = useOperators();
   const [submitting, setSubmitting] = useState(false);
 
-  const products = getProducts(category);
+  const products = getProducts(category).filter(p => isProductActive(p.id));
   const selectedProduct = products.find((p) => p.id === productId);
   const isAlimentaire = category === "alimentaire";
   const { data: configs } = useProductUnitConfigs();
