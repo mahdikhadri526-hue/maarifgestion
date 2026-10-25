@@ -10,6 +10,8 @@ import {
 } from "@/lib/stockWeeklyAggregates";
 import {
   Category,
+  visibleProductRows,
+  visibleOrderItems,
   UnitType,
   setProductUnit,
   getMovements,
@@ -628,10 +630,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const filtered = useMemo(() => {
     const searchQuery = deferredSearch
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const visible = visibleProductRows(withAgg);
     return searchQuery
-      ? withAgg.filter((l) =>
+      ? visible.filter((l) =>
           l.productName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().includes(searchQuery))
-      : withAgg;
+      : visible;
   }, [withAgg, deferredSearch]);
 
 
@@ -1974,7 +1977,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         size="sm"
                         variant="outline"
                         onClick={() =>
-                          exportOrderPdf(o.items || [], {
+                          exportOrderPdf(visibleOrderItems(o.items || [], o.category), {
                             date: o.order_date,
                             category: o.category,
                             performedBy: o.performed_by,
@@ -1985,7 +1988,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       </Button>
                     </div>
                     <div className="text-xs grid grid-cols-2 gap-x-4 gap-y-0.5 max-h-40 overflow-auto">
-                      {(o.items || []).map((it, i) => (
+                      {visibleOrderItems(o.items || [], o.category).map((it, i) => (
                         <div key={i} className="flex justify-between border-b last:border-0 py-0.5">
                           <span>{it.name}</span>
                           <span className="font-mono font-semibold">{it.quantity}</span>
@@ -2021,7 +2024,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       Par {o.performed_by || "—"} · {o.total_items} unité(s) · {(o.items || []).length} article(s)
                     </div>
                     <div className="text-xs grid grid-cols-2 gap-x-4 gap-y-0.5 max-h-32 overflow-auto">
-                      {(o.items || []).map((it, i) => (
+                      {visibleOrderItems(o.items || [], o.category).map((it, i) => (
                         <div key={i} className="flex justify-between border-b last:border-0 py-0.5">
                           <span className="truncate">{it.name}</span>
                           <span className="font-mono font-semibold">{it.quantity}</span>
@@ -2059,7 +2062,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 </tr>
               </thead>
               <tbody>
-                {detailsRows.map((r, i) => (
+                {visibleOrderItems(detailsRows, "all").map((r, i) => (
                   <tr key={`${r.name}-${i}`} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-2 font-medium">{r.name}</td>
                     <td className="p-2 text-right font-mono text-primary">{r.stockInitial}</td>

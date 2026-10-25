@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Category, getProducts } from "@/lib/stockData";
+import { Category, getProducts, isProductActive } from "@/lib/stockData";
 import { useProductDailyHistory, useInitialStocks } from "@/hooks/useStockData";
 import { useMiseEnPlace, MiseEnPlaceInput } from "@/components/MiseEnPlaceCell";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -57,7 +57,7 @@ function AllProductsSummary({
   start: string;
   end: string;
 }) {
-  const products = getProducts(category);
+  const products = getProducts(category).filter(p => isProductActive(p.id));
   const { data: initialStocks } = useInitialStocks();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -285,7 +285,7 @@ export function ProductHistory() {
   const [start, setStart] = useState<string>("");
   const [end, setEnd] = useState<string>(todayISO());
 
-  const products = getProducts(category);
+  const products = getProducts(category).filter(p => isProductActive(p.id));
 
   return (
     <div className="bg-card rounded-lg border animate-fade-in">

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { getProducts, isProductActive, setProductCatalog } from "@/lib/stockData";
+import { getProducts, isProductActive, setProductCatalog, visibleProductRows, visibleOrderItems } from "@/lib/stockData";
 import { setProductActive } from "@/lib/productCatalog";
 
 const state = vi.hoisted(() => ({ pdv: "pdv-a", writes: [] as any[], update: vi.fn(), insert: vi.fn(), eq: vi.fn() }));
@@ -12,6 +12,21 @@ afterEach(() => { setProductCatalog([]); state.writes = []; vi.clearAllMocks(); 
 const row = { id: "row-a", productId: "ali-2", category: "alimentaire" as const, name: "Produit", conditionnement: "24 P", hidden: false, sortOrder: 0 };
 
 describe("product availability without historical changes", () => {
+  it("hides inactive rows in movement, history, stock, requisition and lot lists without mutating source data", () => {
+    setProductCatalog([{ ...row, active: false }]);
+    const rows = [{ productId: "ali-2", quantity: 24 }, { productId: "emb-1", quantity: 16 }];
+    expect(visibleProductRows(rows)).toEqual([{ productId: "emb-1", quantity: 16 }]);
+    expect(rows).toEqual([{ productId: "ali-2", quantity: 24 }, { productId: "emb-1", quantity: 16 }]);
+    setProductCatalog([{ ...row, active: true }]);
+    expect(visibleProductRows(rows)).toEqual(rows);
+  });
+  it("hides inactive names in saved orders without modifying saved quantities or unrelated weekly categories", () => {
+    setProductCatalog([{ ...row, active: false }]);
+    const items = [{ name: "Produit", quantity: 24 }, { name: "Orange", quantity: 6 }];
+    expect(visibleOrderItems(items, "alimentaire")).toEqual([{ name: "Orange", quantity: 6 }]);
+    expect(visibleOrderItems(items, "tarte")).toEqual(items);
+    expect(items[0].quantity).toBe(24);
+  });
   it("keeps inactive products in the full catalogue used by stock calculations", () => {
     setProductCatalog([{ ...row, active: true }]);
     const before = getProducts();

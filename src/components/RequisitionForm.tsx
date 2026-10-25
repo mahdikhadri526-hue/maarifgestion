@@ -61,7 +61,7 @@ export function RequisitionForm({ onUpdated }: Props) {
   (existing || []).forEach((r) => { existingMap[r.productId] = (existingMap[r.productId] || 0) + r.quantity; });
 
   const filtered = products.filter((p) =>
-    (isProductActive(p.id) || (existingMap[p.id] ?? 0) > 0) && p.name.toLowerCase().includes(search.toLowerCase())
+    isProductActive(p.id) && p.name.toLowerCase().includes(search.toLowerCase())
   );
 
   // Verrou J : on peut modifier/supprimer uniquement le jour même (J).

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useMovements, useProductUnitConfigs, useAllRequisitions } from "@/hooks/useStockData";
-import { deleteMovement, formatQuantityForProduct, saveMovement } from "@/lib/stockData";
+import { deleteMovement, formatQuantityForProduct, saveMovement, visibleProductRows } from "@/lib/stockData";
 import { addLotEntry, getProductLots } from "@/lib/lotData";
 import { isRequisitionProduct } from "@/lib/requisitionData";
 import { ArrowDownCircle, ArrowUpCircle, Trash2, Filter, X, ChevronDown, Send, Undo2, CheckCircle2, ClipboardList, Settings2 } from "lucide-react";
@@ -80,7 +80,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
 
   const sorted = useMemo(
     () =>
-      [...(movements || [])].sort(
+      visibleProductRows(movements || []).sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       ),
     [movements]

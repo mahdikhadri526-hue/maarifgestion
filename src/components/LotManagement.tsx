@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { updateLotEntry, deleteLotEntry, LotEntry } from "@/lib/lotData";
-import { formatQuantityForProduct, getProducts, getMinStocks } from "@/lib/stockData";
+import { formatQuantityForProduct, getProducts, getMinStocks, isProductActive, visibleProductRows } from "@/lib/stockData";
 import { useExpiringLots, useProductLots, useProductUnitConfigs, useStockLevels } from "@/hooks/useStockData";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -170,7 +170,7 @@ export function StockOutAlerts() {
   const { state: placed, mark, unmark } = useOrderPlaced();
   const isAdmin = true; // Marquage "Commande passée" ouvert à tous les PDV
   if (loading || !levels) return null;
-  const outOfStock = levels.filter((l) => l.stockRestant <= 0 && !isExcludedFromRupture(l.productName));
+  const outOfStock = visibleProductRows(levels).filter((l) => l.stockRestant <= 0 && !isExcludedFromRupture(l.productName));
   if (outOfStock.length === 0) return null;
 
   return (
@@ -251,7 +251,7 @@ export function LowStockAlerts() {
   }, []);
 
   if (loading || !levels) return null;
-  const low = levels.filter((l) => {
+  const low = visibleProductRows(levels).filter((l) => {
     const min = minStocks[l.productId] || 0;
     return min > 0 && l.stockRestant > 0 && l.stockRestant <= min;
   });
@@ -311,7 +311,8 @@ export function LowStockAlerts() {
 }
 
 export function ExpiryAlerts() {
-  const { data: expiringLots, loading } = useExpiringLots(30);
+  const { data: allExpiringLots, loading } = useExpiringLots(30);
+  const expiringLots = allExpiringLots ? visibleProductRows(allExpiringLots) : null;
 
   if (loading || !expiringLots || expiringLots.length === 0) return null;
 
@@ -366,8 +367,9 @@ export function LotManager() {
   const [editExpiryDate, setEditExpiryDate] = useState("");
   const { can } = useAuth();
 
-  const products = getProducts("alimentaire");
-  const { data: lots, loading } = useProductLots(selectedProductId);
+  const products = getProducts("alimentaire").filter(p => isProductActive(p.id));
+  const { data: allLots, loading } = useProductLots(selectedProductId);
+  const lots = allLots ? visibleProductRows(allLots) : null;
   const { data: configs } = useProductUnitConfigs();
 
   const startEdit = (lot: LotEntry) => {
