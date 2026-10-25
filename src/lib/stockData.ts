@@ -313,9 +313,24 @@ export function getProductCatalog(): ProductCatalogRow[] {
   return PRODUCT_CATALOG;
 }
 
-/** Availability affects new inputs only, never stock/history calculations. */
+/** Availability is a presentation filter, never a stock/history calculation filter. */
 export function isProductActive(productId: string): boolean {
   return PRODUCT_CATALOG.find(row => row.productId === productId)?.active !== false;
+}
+
+/** Keep source rows intact; only hide inactive products in displayed lists. */
+export function visibleProductRows<T extends { productId: string }>(rows: readonly T[]): T[] {
+  return rows.filter(row => isProductActive(row.productId));
+}
+
+/** Older saved orders store names instead of IDs; scope matching to catalog categories. */
+export function visibleOrderItems<T extends { name: string }>(items: readonly T[], category: string): T[] {
+  if (!["all", "alimentaire", "emballage"].includes(category)) return [...items];
+  const normalize = (value: string) => value.trim().toLocaleLowerCase("fr");
+  const inactiveNames = new Set(getProducts().filter(p =>
+    !isProductActive(p.id) && (category === "all" || p.category === category)
+  ).map(p => normalize(p.name)));
+  return items.filter(item => !inactiveNames.has(normalize(item.name)));
 }
 
 /** Applique les modifications, masquages et ajouts du catalogue aux produits d'origine. */

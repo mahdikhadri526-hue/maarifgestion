@@ -18,6 +18,7 @@ import {
 import { formatMaybeDate } from "@/lib/utils";
 import { toast } from "sonner";
 import { CheckCircle2 } from "lucide-react";
+import { visibleProductRows } from "@/lib/stockData";
 
 export function CountingView({ session }: { session: InventorySession }) {
   const { user } = useAuth();
@@ -56,7 +57,7 @@ export function CountingView({ session }: { session: InventorySession }) {
 
   const grouped = useMemo(() => {
     const map = new Map<string, InventoryLine[]>();
-    for (const l of lines) {
+    for (const l of visibleProductRows(lines)) {
       const arr = map.get(l.category) ?? [];
       arr.push(l);
       map.set(l.category, arr);

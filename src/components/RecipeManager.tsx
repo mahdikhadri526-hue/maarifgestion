@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabasePaginate";
-import { getProducts, type Category, type UnitType } from "@/lib/stockData";
+import { getProducts, isProductActive, type Category, type UnitType } from "@/lib/stockData";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -443,7 +443,7 @@ export function RecipeManager() {
                           <SelectValue placeholder="— Choisir un produit du stock —" />
                         </SelectTrigger>
                         <SelectContent className="max-h-64">
-                          {stockProducts.map((p) => (
+                          {stockProducts.filter(p => isProductActive(p.id)).map((p) => (
                             <SelectItem key={p.id} value={p.id}>
                               {p.name} {p.conditionnement && <span className="text-muted-foreground text-xs">({p.conditionnement})</span>}
                             </SelectItem>

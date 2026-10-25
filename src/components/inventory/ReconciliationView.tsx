@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 import { formatMaybeDate } from "@/lib/utils";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { isProductActive } from "@/lib/stockData";
 
 interface RowData {
   line: InventoryLine;
@@ -93,6 +94,7 @@ export function ReconciliationView({ session }: { session: InventorySession }) {
   }, [lines, counts, resolutions]);
 
   const filteredRows = rows.filter((r) => {
+    if (!isProductActive(r.line.productId)) return false;
     if (filter === "all") return true;
     const stockMismatch = r.stockDiff !== null && r.stockDiff !== 0;
     const mepMismatch = r.mepDiff !== null && r.mepDiff !== 0;
