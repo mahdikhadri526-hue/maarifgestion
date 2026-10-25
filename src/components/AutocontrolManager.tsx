@@ -31,7 +31,7 @@ import { useOperators, useManagers } from "@/lib/roster";
 const ClaimsReturns = lazy(() =>
   import("@/components/ClaimsReturns").then((m) => ({ default: m.ClaimsReturns })),
 );
-import { getProducts } from "@/lib/stockData";
+import { getProducts, isProductActive } from "@/lib/stockData";
 import {
   MATERIEL_ARTICLES,
   WEEKLY_TARTE_ARTICLES,
@@ -748,7 +748,7 @@ export function AutocontrolManager() {
   const perteOptions = useMemo(() => {
     if (!isPerte) return [] as string[];
     if (perteType === "materiel") return MATERIEL_ARTICLES.map((a) => a.name);
-    const stock = [...getProducts("alimentaire"), ...getProducts("emballage")].map((p) => p.name);
+    const stock = [...getProducts("alimentaire"), ...getProducts("emballage")].filter(p => isProductActive(p.id)).map((p) => p.name);
     const all = [
       ...stock,
       ...WEEKLY_TARTE_ARTICLES,
