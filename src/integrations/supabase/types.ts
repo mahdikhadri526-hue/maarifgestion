@@ -1734,6 +1734,7 @@ export type Database = {
       }
       product_catalog: {
         Row: {
+          active: boolean
           category: string
           conditionnement: string
           created_at: string
@@ -1746,6 +1747,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active?: boolean
           category: string
           conditionnement?: string
           created_at?: string
@@ -1758,6 +1760,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active?: boolean
           category?: string
           conditionnement?: string
           created_at?: string
