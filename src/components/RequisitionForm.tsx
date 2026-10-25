@@ -56,13 +56,13 @@ export function RequisitionForm({ onUpdated }: Props) {
     .map((id) => allProducts.find((p) => p.id === id))
     .filter(Boolean) as typeof allProducts;
 
-  const filtered = products.filter((p) =>
-    (isProductActive(p.id) || (existingMap[p.id] ?? 0) > 0) && p.name.toLowerCase().includes(search.toLowerCase())
-  );
-
   const { data: existing } = useRequisitionsByDate(date, reqType);
   const existingMap: Record<string, number> = {};
   (existing || []).forEach((r) => { existingMap[r.productId] = (existingMap[r.productId] || 0) + r.quantity; });
+
+  const filtered = products.filter((p) =>
+    (isProductActive(p.id) || (existingMap[p.id] ?? 0) > 0) && p.name.toLowerCase().includes(search.toLowerCase())
+  );
 
   // Verrou J : on peut modifier/supprimer uniquement le jour même (J).
   // Dès le lendemain, lecture seule.
