@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProductCatalogManager } from "@/components/inventory/ProductCatalogManager";
+import { isProductActive } from "@/lib/stockData";
 
 interface Props {
   onUpdated: () => void;
@@ -55,7 +56,7 @@ export function InitialStockForm({ onUpdated }: Props) {
   void catalogTick;
   const products = getProducts(category === "all" ? undefined : category);
   const filtered = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase())
+    isProductActive(p.id) && p.name.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleSave = async (productId: string, productCategory: Category) => {

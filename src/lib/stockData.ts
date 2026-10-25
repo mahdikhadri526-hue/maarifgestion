@@ -289,6 +289,7 @@ export interface ProductCatalogRow {
   name: string;
   conditionnement: string;
   hidden: boolean;
+  active?: boolean;
   sortOrder: number;
 }
 
@@ -310,6 +311,11 @@ const PRODUCTS_CACHE = new Map<string, Product[]>();
 
 export function getProductCatalog(): ProductCatalogRow[] {
   return PRODUCT_CATALOG;
+}
+
+/** Availability affects new inputs only, never stock/history calculations. */
+export function isProductActive(productId: string): boolean {
+  return PRODUCT_CATALOG.find(row => row.productId === productId)?.active !== false;
 }
 
 /** Applique les modifications, masquages et ajouts du catalogue aux produits d'origine. */

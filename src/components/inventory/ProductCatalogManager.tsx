@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/db";
 import { Category, getProducts, getProductCatalog, getProductPackOptions, getProductUnitConfigs, setProductUnitConfig, removeBaseProductPack, DEFAULT_UNIT_CONFIG, addProductPackOption, updateProductPackOption, deleteProductPackOption, type ProductPackOption, type ProductUnitConfig, getProductUnits, setProductUnit, type UnitType } from "@/lib/stockData";
-import { loadProductCatalog, newCustomProductId } from "@/lib/productCatalog";
+import { loadProductCatalog, newCustomProductId, setProductActive } from "@/lib/productCatalog";
+import { isProductActive } from "@/lib/stockData";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -199,6 +201,18 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
   const draftOf = (id: string, name: string, cond: string) =>
     drafts[id] ?? { name, conditionnement: cond ?? "" };
 
+  const changeActive = async (productId: string, active: boolean) => {
+    if (!canEdit || conditionnementOnly) return;
+    setBusy(true);
+    try {
+      await setProductActive(productId, active);
+      await refresh();
+      toast.success(active ? "Produit activé" : "Produit désactivé");
+    } catch (e: any) {
+      toast.error(e?.message || "Erreur lors de l'enregistrement du statut");
+    } finally { setBusy(false); }
+  };
+
   const setDraft = (id: string, patch: Partial<{ name: string; conditionnement: string }>, base: { name: string; conditionnement: string }) =>
     setDrafts((d) => ({ ...d, [id]: { ...(d[id] ?? base), ...patch } }));
 
@@ -373,13 +387,14 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
         </div>
 
 
-        <div className="max-h-[45vh] overflow-y-auto border rounded-md">
+        <div className="max-h-[45vh] overflow-auto border rounded-md">
           <table className="w-full text-sm">
             <thead className="sticky top-0 bg-card">
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-2 text-xs font-semibold text-muted-foreground uppercase">Produit</th>
                 <th className="text-left p-2 text-xs font-semibold text-muted-foreground uppercase w-40">Conditionnement</th>
                 <th className="text-left p-2 text-xs font-semibold text-muted-foreground uppercase w-24">Catégorie</th>
+                {!conditionnementOnly && <th className="text-left p-2 text-xs font-semibold text-muted-foreground uppercase w-28">Statut</th>}
                 <th className="p-2 w-24"></th>
               </tr>
             </thead>
@@ -417,6 +432,16 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
                     <td className="p-2 text-xs text-muted-foreground">
                       {p.category === "alimentaire" ? "Alim." : "Emb."}
                     </td>
+                    {!conditionnementOnly && (
+                      <td className="p-2">
+                        <label className="flex items-center gap-2 text-xs whitespace-nowrap">
+                          <Switch checked={isProductActive(p.id)} disabled={!canEdit || busy}
+                            aria-label={`Actif : ${p.name}`}
+                            onCheckedChange={active => void changeActive(p.id, active)} />
+                          {isProductActive(p.id) ? "Actif" : "Inactif"}
+                        </label>
+                      </td>
+                    )}
                     <td className="p-2">
                       <div className="flex gap-1 justify-end">
                         {canEdit && (
@@ -462,7 +487,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
               })}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="p-4 text-center text-muted-foreground text-sm">
+                  <td colSpan={conditionnementOnly ? 4 : 5} className="p-4 text-center text-muted-foreground text-sm">
                     Aucun produit
                   </td>
                 </tr>
