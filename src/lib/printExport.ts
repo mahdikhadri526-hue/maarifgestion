@@ -36,7 +36,7 @@ export type StructuredPdfOptions = {
   sections: PdfTableSection[];
   orientation?: "landscape" | "portrait";
   singlePage?: boolean;
-  imageSections?: { title: string; images: { src: string; caption?: string }[] }[];
+  imageSections?: { title: string; rowIndex?: number; columnKey?: string; images: { src: string; caption?: string }[] }[];
 };
 
 const BRAND_BLUE: [number, number, number] = [30, 64, 124];
@@ -83,6 +83,29 @@ async function createStructuredPdf(options: StructuredPdfOptions) {
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 10;
   let y = margin;
+  const prepared = new Map<string, { data: string; width: number; height: number }>();
+  await Promise.all([...new Set((options.imageSections ?? []).flatMap(section => section.images.map(image => image.src)))].map(async src => {
+    const response = await fetch(src);
+    if (!response.ok) throw new Error("Impossible de charger une photo du document");
+    const objectUrl = URL.createObjectURL(await response.blob());
+    try {
+      const bitmap = new Image();
+      bitmap.src = objectUrl;
+      await bitmap.decode();
+      const canvas = document.createElement("canvas");
+      const scale = Math.min(1, 1600 / Math.max(bitmap.naturalWidth, bitmap.naturalHeight));
+      canvas.width = Math.max(1, Math.round(bitmap.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.naturalHeight * scale));
+      const ctx = canvas.getContext("2d");
+      if (!ctx) throw new Error("Impossible de préparer les photos du document");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      prepared.set(src, { data: canvas.toDataURL("image/jpeg", 0.85), width: canvas.width, height: canvas.height });
+    } finally { URL.revokeObjectURL(objectUrl); }
+  }));
+  const photoLinks: { src: string; page: number; x: number; y: number; width: number; height: number }[] = [];
+  const photoPages = new Map<string, number>();
 
   doc.setProperties({ title: options.title, subject: options.subtitle ?? options.title });
   doc.setFillColor(...BRAND_BLUE);
@@ -176,6 +199,11 @@ async function createStructuredPdf(options: StructuredPdfOptions) {
       showHead: "everyPage",
       didParseCell: (data: any) => {
         if (data.section !== "body") return;
+        const photos = options.imageSections?.find(s => s.rowIndex === data.row.index && s.columnKey === String(data.column.dataKey));
+        if (photos?.images.length) {
+          data.cell.text = [];
+          data.cell.styles.minCellHeight = Math.ceil(photos.images.length / 2) * 21 + 3;
+        }
         const tone = tones.get(String(data.column.dataKey));
         if (tone === "entry") {
           data.cell.styles.textColor = ENTRY_GREEN;
@@ -195,12 +223,53 @@ async function createStructuredPdf(options: StructuredPdfOptions) {
           data.cell.styles.fontStyle = "bold";
         }
       },
+      didDrawCell: (data: any) => {
+        if (data.section !== "body") return;
+        const photos = options.imageSections?.find(s => s.rowIndex === data.row.index && s.columnKey === String(data.column.dataKey));
+        if (!photos) return;
+        const tileWidth = (data.cell.width - 4) / 2;
+        photos.images.forEach((image, i) => {
+          const photo = prepared.get(image.src);
+          if (!photo) return;
+          const fit = Math.min(tileWidth / photo.width, 18 / photo.height);
+          const width = photo.width * fit;
+          const height = photo.height * fit;
+          const x = data.cell.x + 2 + (i % 2) * tileWidth + (tileWidth - width) / 2;
+          const y = data.cell.y + 2 + Math.floor(i / 2) * 21;
+          doc.addImage(photo.data, "JPEG", x, y, width, height, image.src);
+          photoLinks.push({ src: image.src, page: doc.getNumberOfPages(), x, y, width, height });
+        });
+      },
     });
     y = ((doc as any).lastAutoTable?.finalY ?? y) + 8;
   }
 
   // Photo annexes are embedded, not linked, so downloaded PDFs retain them.
   for (const section of options.imageSections ?? []) {
+    if (section.columnKey) {
+      for (const image of section.images) {
+        const photo = prepared.get(image.src);
+        if (!photo) continue;
+        doc.addPage();
+        photoPages.set(image.src, doc.getNumberOfPages());
+        doc.setTextColor(...BRAND_BLUE);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        const lines = doc.splitTextToSize(section.title, pageWidth - margin * 2);
+        doc.text(lines, margin, 25);
+        const top = 30 + lines.length * 4;
+        const fit = Math.min((pageWidth - margin * 2) / photo.width, (pageHeight - top - 18) / photo.height);
+        const width = photo.width * fit;
+        const height = photo.height * fit;
+        doc.addImage(photo.data, "JPEG", (pageWidth - width) / 2, top, width, height, image.src);
+        const origin = photoLinks.find(link => link.src === image.src);
+        if (origin) {
+          doc.setFontSize(9);
+          doc.textWithLink("Retour à la réclamation", margin, pageHeight - 13, { pageNumber: origin.page, top: origin.y });
+        }
+      }
+      continue;
+    }
     const titleLines = doc.splitTextToSize(section.title, pageWidth - margin * 2);
     const startPage = () => {
       doc.addPage();
@@ -251,6 +320,12 @@ async function createStructuredPdf(options: StructuredPdfOptions) {
     }
   }
 
+  for (const link of photoLinks) {
+    const pageNumber = photoPages.get(link.src);
+    if (!pageNumber) continue;
+    doc.setPage(link.page);
+    doc.link(link.x, link.y, link.width, link.height, { pageNumber, top: 0 });
+  }
   addHeaderAndFooter(doc, options.title, options.subtitle);
   return doc;
 }
