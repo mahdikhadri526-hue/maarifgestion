@@ -9,6 +9,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { fileToCompressedDataUrl } from "@/lib/pepData";
+import { TechVideo, isTechVideo, uploadTechVideo } from "./TechMedia";
 import { TECH_PRIORITIES, reportTechIssue, type TechPriority } from "@/lib/techData";
 import { TECH_PROCESSING_MODES, type TechProcessingMode } from "@/lib/techHandling";
 
@@ -77,20 +78,23 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
     }
   };
 
+  const [uploadingVideo, setUploadingVideo] = useState(false);
   const addVideos = async (files: FileList | null) => {
     if (!files) return;
-    for (const f of Array.from(files)) {
-      if (f.size > 15 * 1024 * 1024) {
-        toast({ title: "Vidéo trop lourde", description: "Maximum 15 Mo (≈ 30 secondes).", variant: "destructive" });
-        continue;
+    setUploadingVideo(true);
+    try {
+      for (const f of Array.from(files)) {
+        if (f.size > 50 * 1024 * 1024) {
+          toast({ title: "Vidéo trop lourde", description: "Maximum 50 Mo.", variant: "destructive" });
+          continue;
+        }
+        const ref = await uploadTechVideo(f);
+        setPhotos((p) => [...p, ref]);
       }
-      const url = await new Promise<string>((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(String(r.result));
-        r.onerror = () => rej(r.error);
-        r.readAsDataURL(f);
-      });
-      setPhotos((p) => [...p, url]);
+    } catch (e: any) {
+      toast({ title: "Vidéo", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setUploadingVideo(false);
     }
   };
 
@@ -196,12 +200,13 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
             <Label className="text-xs flex items-center gap-1"><Camera className="h-3.5 w-3.5" />Photo(s)</Label>
             <Input type="file" accept="image/*" capture="environment" multiple onChange={(e) => void addPhotos(e.target.files)} />
             <Label className="text-xs flex items-center gap-1 mt-2"><Video className="h-3.5 w-3.5" />Courte vidéo (max 30 s)</Label>
-            <Input type="file" accept="video/*" capture="environment" onChange={(e) => { void addVideos(e.target.files); e.target.value = ""; }} />
+            <Input type="file" accept="video/*" capture="environment" onChange={(e) => { void addVideos(e.target.files); e.target.value = ""; }} disabled={uploadingVideo} />
+            {uploadingVideo && <p className="text-[11px] text-muted-foreground">Chargement de la vidéo…</p>}
             {photos.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {photos.map((url, i) => (
                   <div key={i} className="relative">
-                    {url.startsWith("data:video") ? <video src={url} className="h-16 w-16 rounded border object-cover" muted /> : <img src={url} alt={`Photo ${i + 1}`} className="h-16 w-16 rounded border object-cover" />}
+                    {isTechVideo(url) ? <TechVideo src={url} className="h-16 w-16 rounded border object-cover" /> : <img src={url} alt={`Photo ${i + 1}`} className="h-16 w-16 rounded border object-cover" />}
                     <button type="button" className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full h-5 w-5 text-xs" onClick={() => setPhotos((p) => p.filter((_, j) => j !== i))}>×</button>
                   </div>
                 ))}
@@ -212,7 +217,7 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={saving}>Annuler</Button>
-          <Button onClick={() => void submit()} disabled={saving}>{saving ? "Envoi…" : "Signaler"}</Button>
+          <Button onClick={() => void submit()} disabled={saving || uploadingVideo}>{saving ? "Envoi…" : "Signaler"}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

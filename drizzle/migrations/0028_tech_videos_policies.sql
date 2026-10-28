@@ -1,0 +1,2 @@
+CREATE POLICY "tech videos read" ON storage.objects FOR SELECT TO authenticated USING (bucket_id = 'tech-videos');
+CREATE POLICY "tech videos upload" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'tech-videos');
