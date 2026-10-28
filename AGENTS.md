@@ -20,7 +20,7 @@
 - Voice-guide generation in `supabase/functions/voice-tts` uses the built-in Lovable AI service when its key exists and falls back to Google AI Studio with `GOOGLE_API_KEY` (model from `GEMINI_TTS_MODEL`), so offline servers can generate voices without the Lovable service.
 - Catalog writes use the PDV-scoped client; null-PDV rows are obsolete. product_catalog.active filters all displayed product rows, never getProducts or stock/history calculations; the management list retains inactive products for reactivation.
 - Zones désactivées par PDV (nettoyage `cleaning_zone_off:<zone>`, température `fridge_zone_off:<zone>`) vivent dans pdv_permissions (absence = active), pour garder les zones par défaut et survivre au changement de rôle PDV ; « supprimer » une zone par défaut pose ce drapeau (restaurable). Les zones ajoutées par PDV vivent dans pdv_custom_zones (tâches nettoyage en jsonb) ; leur suppression efface la ligne sans toucher l’historique.
-- Supplier claim sheet QC-ENSR 001 lives in supplier_claims (per PDV) with photos in private bucket supplier-claims; only the quality account writes and only it plus admin-role users can read (RLS), per user request.
+- Supplier claims: per-PDV supplier_claims, private photos, quality-only writes, quality/admin reads. PDFs embed every photo in claim annexes via imageSections, refreshing signed URLs and reporting missing photos.
 - Ice/tart FIFO uses lot dates with explicit ice context for compact codes; keep other products unchanged.
 - Share pâte validation across creation/completion; store DLC in autocontrols and reuse pending-visa alerts.
 - CTG uses getCtgProductionLot for fiches and weekly entries, never legacy inputs.
