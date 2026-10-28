@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Camera, Wrench } from "lucide-react";
+import { Camera, Video, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,6 +74,23 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
       setPhotos((p) => [...p, ...urls]);
     } catch (e: any) {
       toast({ title: "Photo", description: e?.message ?? String(e), variant: "destructive" });
+    }
+  };
+
+  const addVideos = async (files: FileList | null) => {
+    if (!files) return;
+    for (const f of Array.from(files)) {
+      if (f.size > 15 * 1024 * 1024) {
+        toast({ title: "Vidéo trop lourde", description: "Maximum 15 Mo (≈ 30 secondes).", variant: "destructive" });
+        continue;
+      }
+      const url = await new Promise<string>((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result));
+        r.onerror = () => rej(r.error);
+        r.readAsDataURL(f);
+      });
+      setPhotos((p) => [...p, url]);
     }
   };
 
@@ -178,11 +195,13 @@ export function ReportIssueDialog({ open, onClose, onReported, defaults }: Props
           <div>
             <Label className="text-xs flex items-center gap-1"><Camera className="h-3.5 w-3.5" />Photo(s)</Label>
             <Input type="file" accept="image/*" capture="environment" multiple onChange={(e) => void addPhotos(e.target.files)} />
+            <Label className="text-xs flex items-center gap-1 mt-2"><Video className="h-3.5 w-3.5" />Courte vidéo (max 30 s)</Label>
+            <Input type="file" accept="video/*" capture="environment" onChange={(e) => { void addVideos(e.target.files); e.target.value = ""; }} />
             {photos.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-2">
                 {photos.map((url, i) => (
                   <div key={i} className="relative">
-                    <img src={url} alt={`Photo ${i + 1}`} className="h-16 w-16 rounded border object-cover" />
+                    {url.startsWith("data:video") ? <video src={url} className="h-16 w-16 rounded border object-cover" muted /> : <img src={url} alt={`Photo ${i + 1}`} className="h-16 w-16 rounded border object-cover" />}
                     <button type="button" className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full h-5 w-5 text-xs" onClick={() => setPhotos((p) => p.filter((_, j) => j !== i))}>×</button>
                   </div>
                 ))}
