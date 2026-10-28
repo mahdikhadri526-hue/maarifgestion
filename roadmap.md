@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Notifications Android du responsable technique à chaque signalement, site fermé : connexion Firebase non autorisée ; attendre le choix de l’utilisateur avant toute intégration.
 - [x] Photos des réclamations dans la même ligne du PDF, miniatures cliquables vers une page agrandie avec retour ; trois photos réelles vérifiées, quatre pages inspectées sans chevauchement ni coupure, liens internes contrôlés, aucune donnée modifiée, sans publication ni paquet préparé.
 - [x] Masquer les produits inactifs dans les tableaux par PDV (historique, stock, commande, réquisition, lots, rapports et inventaire) sans changer les données ni calculs ; masquage vérifié dans l’aperçu connecté, réactivation restaure l’affichage, données et autres PDV inchangés, 31 tests réussis ; non publié.
 - [x] Ajouter Actif/Inactif dans Stock Initial → Produits par PDV : désactivation, persistance et réactivation testées avec le compte admin ; stocks, lots, mouvements, réquisitions et autres PDV inchangés, 32 tests réussis ; sans publication ni fichier préparé.
