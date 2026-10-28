@@ -117,7 +117,7 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
         { header: "Fournisseur", dataKey: "fournisseur" }, { header: "Produit", dataKey: "produit" },
         { header: "N° lot", dataKey: "lot" }, { header: "Description", dataKey: "description" },
         { header: "Qté NC", dataKey: "qte" }, { header: "Action prise", dataKey: "action" },
-        { header: "Statut", dataKey: "statut" }, { header: "Pièces jointes", dataKey: "pj" },
+        { header: "Statut", dataKey: "statut" }, { header: "Photos", dataKey: "pj", width: 34 },
       ],
       rows: rows.map((r, i) => ({
         n: String(i + 1), date: formatDateFR(r.claim_date), pdv: pdvName(r.pdv_id), responsable: r.responsable ?? "",
@@ -129,6 +129,8 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
     imageSections: rows.flatMap((r, i) => {
       const attachments = splitPj(r.pieces_jointes);
       return attachments.length ? [{
+        rowIndex: i,
+        columnKey: "pj",
         title: `Réclamation n° ${i + 1} - ${formatDateFR(r.claim_date)} - ${pdvName(r.pdv_id)} - ${r.produit ?? ""}`,
         images: attachments.map((path, index) => ({ src: photoUrls[path], caption: `Photo ${index + 1}` })),
       }] : [];
