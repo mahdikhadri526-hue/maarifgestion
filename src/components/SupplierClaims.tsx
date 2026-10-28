@@ -26,26 +26,32 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
   const [form, setForm] = useState(empty());
   const [saving, setSaving] = useState(false);
   const db = supabase as any;
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [photos, setPhotos] = useState<File[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
   const [selPdvId, setSelPdvId] = useState<string>("");
-  const activePdvId = getCurrentPdvId() ?? (selPdvId || null);
-  const activePdvName = pdv?.name ?? pdvs.find((p) => p.id === activePdvId)?.name ?? "—";
+  const ALL = "__all__";
+  const viewAll = selPdvId === ALL;
+  const activePdvId = getCurrentPdvId() ?? (selPdvId && !viewAll ? selPdvId : null);
+  const viewPdvId = viewAll ? null : (selPdvId || activePdvId);
+  const pdvName = (id: string | null) => pdvs.find((p) => p.id === id)?.name ?? (id === activePdvId ? pdv?.name : undefined) ?? "—";
+  const activePdvName = viewAll ? "Tous les PDV" : pdvName(viewPdvId);
+  const splitPj = (v: string | null) => (v ?? "").split("\n").map((x) => x.trim()).filter(Boolean);
 
   const load = useCallback(async () => {
-    if (!activePdvId) { setRows([]); return; }
-    const { data, error } = await db.from("supplier_claims").select("*")
-      .eq("pdv_id", activePdvId).order("claim_date", { ascending: true }).order("created_at");
+    if (!viewAll && !viewPdvId) { setRows([]); return; }
+    let q = db.from("supplier_claims").select("*");
+    if (!viewAll) q = q.eq("pdv_id", viewPdvId);
+    const { data, error } = await q.order("claim_date", { ascending: true }).order("created_at");
     if (error) return toast.error("Erreur de chargement", { description: error.message });
     setRows(data ?? []);
-    const paths = (data ?? []).map((r: any) => r.pieces_jointes).filter(Boolean);
+    const paths = (data ?? []).flatMap((r: any) => splitPj(r.pieces_jointes));
     if (paths.length) {
       const { data: signed } = await supabase.storage.from("supplier-claims").createSignedUrls(paths, 3600);
       const m: Record<string, string> = {};
       (signed ?? []).forEach((x: any) => { if (x.signedUrl && x.path) m[x.path] = x.signedUrl; });
       setUrls(m);
     }
-  }, [activePdvId]);
+  }, [viewAll, viewPdvId]);
   useEffect(() => { load(); }, [load]);
 
   const set = (k: string, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -55,19 +61,20 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
     if (!form.produit || !form.description) return toast.error("Produit et description obligatoires");
     if (!activePdvId) return toast.error("Choisissez d'abord le point de vente");
     setSaving(true);
-    let pj: string | null = null;
-    if (photo) {
-      const path = `${activePdvId}/${Date.now()}-${photo.name.replace(/[^\w.-]/g, "_")}`;
+    const paths: string[] = [];
+    for (const [i, photo] of photos.entries()) {
+      const path = `${activePdvId}/${Date.now()}-${i}-${photo.name.replace(/[^\w.-]/g, "_")}`;
       const up = await supabase.storage.from("supplier-claims").upload(path, photo, { contentType: photo.type });
       if (up.error) { setSaving(false); return toast.error("Photo non envoyée", { description: up.error.message }); }
-      pj = path;
+      paths.push(path);
     }
+    const pj = paths.length ? paths.join("\n") : null;
     const { error } = await db.from("supplier_claims").insert({ ...form, pieces_jointes: pj, pdv_id: activePdvId, created_by: user?.id });
     setSaving(false);
     if (error) return toast.error("Erreur", { description: error.message });
     toast.success("Réclamation enregistrée");
     setForm(empty());
-    setPhoto(null);
+    setPhotos([]);
     load();
   };
 
@@ -99,10 +106,10 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
         { header: "Statut", dataKey: "statut" }, { header: "Pièces jointes", dataKey: "pj" },
       ],
       rows: rows.map((r, i) => ({
-        n: String(i + 1), date: formatDateFR(r.claim_date), pdv: activePdvName, responsable: r.responsable ?? "",
+        n: String(i + 1), date: formatDateFR(r.claim_date), pdv: pdvName(r.pdv_id), responsable: r.responsable ?? "",
         fournisseur: r.fournisseur ?? "", produit: r.produit ?? "", lot: r.lot_number ?? "",
         description: r.description ?? "", qte: r.quantite_nc ?? "", action: r.action_prise ?? "",
-        statut: r.statut ?? "", pj: r.pieces_jointes ? "Photo" : "",
+        statut: r.statut ?? "", pj: splitPj(r.pieces_jointes).length ? `${splitPj(r.pieces_jointes).length} photo(s)` : "",
       })),
     }],
   });
@@ -123,11 +130,12 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
           <h2 className="text-lg font-semibold">Suivi des réclamations</h2>
           <p className="text-xs text-muted-foreground">QC-ENSR 001 — rempli par le service qualité · PDV : {activePdvName}</p>
         </div>
-        {standalone && (
+        {(
           <div className="w-56">
             <Select value={selPdvId} onValueChange={setSelPdvId}>
               <SelectTrigger><SelectValue placeholder="Choisir le PDV concerné" /></SelectTrigger>
               <SelectContent>
+                <SelectItem value={ALL}>Tous les PDV</SelectItem>
                 {pdvs.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -160,13 +168,27 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
             </Select>
           </div>
           <div className="sm:col-span-3">
-            <label className="text-xs font-medium text-muted-foreground">Pièce jointe (photo)</label>
-            <label className="flex items-center gap-2 border rounded-md p-2 cursor-pointer text-sm">
-              <Camera className="h-4 w-4 text-primary" />
-              {photo ? photo.name : "Prendre une photo"}
-              <input type="file" accept="image/*" capture="environment" className="hidden"
-                onChange={(e) => setPhoto(e.target.files?.[0] ?? null)} />
-            </label>
+            <label className="text-xs font-medium text-muted-foreground">Pièces jointes (photos)</label>
+            <div className="flex flex-wrap gap-2">
+              {photos.map((f, i) => (
+                <div key={i} className="relative">
+                  <img src={URL.createObjectURL(f)} alt="" className="h-16 w-16 object-cover rounded border" />
+                  <button type="button" className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full h-5 w-5 text-xs"
+                    onClick={() => setPhotos((p) => p.filter((_, j) => j !== i))}>×</button>
+                </div>
+              ))}
+              <label className="flex items-center gap-2 border rounded-md p-2 cursor-pointer text-sm">
+                <Camera className="h-4 w-4 text-primary" />
+                {photos.length ? "Ajouter une photo" : "Prendre une photo"}
+                <input type="file" accept="image/*" capture="environment" className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) setPhotos((p) => [...p, f]); e.target.value = ""; }} />
+              </label>
+              <label className="flex items-center gap-2 border rounded-md p-2 cursor-pointer text-sm">
+                Galerie (plusieurs)
+                <input type="file" accept="image/*" multiple className="hidden"
+                  onChange={(e) => { const fs = Array.from(e.target.files ?? []); setPhotos((p) => [...p, ...fs]); e.target.value = ""; }} />
+              </label>
+            </div>
           </div>
           <div className="sm:col-span-3">
             <Button type="submit" disabled={saving}>{saving ? "Enregistrement..." : "Enregistrer"}</Button>
@@ -194,7 +216,7 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
               <tr key={r.id}>
                 <td className="border p-2 text-center">{i + 1}</td>
                 <td className="border p-2 whitespace-nowrap">{formatDateFR(r.claim_date)}</td>
-                <td className="border p-2">{activePdvName}</td>
+                <td className="border p-2">{pdvName(r.pdv_id)}</td>
                 <td className="border p-2">{r.responsable || "—"}</td>
                 <td className="border p-2">{r.fournisseur || "—"}</td>
                 <td className="border p-2">{r.produit || "—"}</td>
@@ -210,8 +232,10 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
                     </Select>
                   ) : r.statut}
                 </td>
-                <td className="border p-2">{r.pieces_jointes && urls[r.pieces_jointes] ? (
-                  <a href={urls[r.pieces_jointes]} target="_blank" rel="noreferrer"><img src={urls[r.pieces_jointes]} alt="Pièce jointe" className="h-12 w-12 object-cover rounded" /></a>
+                <td className="border p-2">{splitPj(r.pieces_jointes).some((p) => urls[p]) ? (
+                  <div className="flex flex-wrap gap-1">{splitPj(r.pieces_jointes).filter((p) => urls[p]).map((p) => (
+                    <a key={p} href={urls[p]} target="_blank" rel="noreferrer"><img src={urls[p]} alt="Pièce jointe" className="h-12 w-12 object-cover rounded" /></a>
+                  ))}</div>
                 ) : "—"}</td>
                 {isQuality && (
                   <td className="border p-1 text-center">
