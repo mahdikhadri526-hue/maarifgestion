@@ -1,3 +1,4 @@
+import { TechVideo, isTechVideo } from "./TechMedia";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Bell, CalendarClock, Camera, CheckCircle2, ClipboardList, Plus, Repeat, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -334,7 +335,7 @@ export function TechModule() {
                     {techPhotos(i).length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {techPhotos(i).map((u, k) => (
-                          <button key={k} type="button" onClick={() => setPreview(u)}>{u.startsWith("data:video") ? <video src={u} muted className="h-14 w-14 rounded border object-cover" /> : <img src={u} alt={`Photo ${k + 1}`} className="h-14 w-14 rounded border object-cover" />}</button>
+                          <button key={k} type="button" onClick={() => setPreview(u)}>{isTechVideo(u) ? <TechVideo src={u} className="h-14 w-14 rounded border object-cover" /> : <img src={u} alt={`Photo ${k + 1}`} className="h-14 w-14 rounded border object-cover" />}</button>
                         ))}
                       </div>
                     )}
@@ -354,7 +355,7 @@ export function TechModule() {
                             {techRepairPhotos(i).length > 0 && (
                               <div className="flex flex-wrap gap-2 mt-1">
                                 {techRepairPhotos(i).map((u, k) => (
-                                  <button key={k} type="button" onClick={() => setPreview(u)}>{u.startsWith("data:video") ? <video src={u} muted className="h-14 w-14 rounded border object-cover" /> : <img src={u} alt={`Photo réparation ${k + 1}`} className="h-14 w-14 rounded border object-cover" />}</button>
+                                  <button key={k} type="button" onClick={() => setPreview(u)}>{isTechVideo(u) ? <TechVideo src={u} className="h-14 w-14 rounded border object-cover" /> : <img src={u} alt={`Photo réparation ${k + 1}`} className="h-14 w-14 rounded border object-cover" />}</button>
                                 ))}
                               </div>
                             )}
@@ -413,7 +414,7 @@ export function TechModule() {
       <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
         <DialogContent className="max-w-2xl">
           <DialogHeader><DialogTitle>Photo</DialogTitle></DialogHeader>
-          {preview && (preview.startsWith("data:video") ? <video src={preview} controls autoPlay className="w-full rounded" /> : <img src={preview} alt="Photo signalement" className="w-full rounded" />)}
+          {preview && (isTechVideo(preview) ? <TechVideo src={preview} controls className="w-full rounded" /> : <img src={preview} alt="Photo signalement" className="w-full rounded" />)}
         </DialogContent>
       </Dialog>
     </div>
