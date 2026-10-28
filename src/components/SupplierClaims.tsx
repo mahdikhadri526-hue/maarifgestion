@@ -25,6 +25,7 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
   const [rows, setRows] = useState<any[]>([]);
   const [form, setForm] = useState(empty());
   const [saving, setSaving] = useState(false);
+  const [printing, setPrinting] = useState(false);
   const db = supabase as any;
   const [photos, setPhotos] = useState<File[]>([]);
   const [urls, setUrls] = useState<Record<string, string>>({});
@@ -90,7 +91,20 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
     load();
   };
 
-  const print = () => printStructuredPdf({
+  const print = async () => {
+    setPrinting(true);
+    try {
+      const paths = [...new Set(rows.flatMap((r) => splitPj(r.pieces_jointes)))];
+      const photoUrls: Record<string, string> = {};
+      if (paths.length) {
+        const { data, error } = await supabase.storage.from("supplier-claims").createSignedUrls(paths, 3600);
+        if (error) throw error;
+        for (const item of data ?? []) {
+          if (item.path && item.signedUrl) photoUrls[item.path] = item.signedUrl;
+        }
+        if (paths.some((path) => !photoUrls[path])) throw new Error("Une photo est indisponible. Réessayez avant de télécharger le PDF.");
+      }
+      await printStructuredPdf({
     filename: `QC-ENSR-001-${today()}`,
     title: "Suivi des réclamations (QC-ENSR 001)",
     subtitle: activePdvName,
@@ -112,7 +126,20 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
         statut: r.statut ?? "", pj: splitPj(r.pieces_jointes).length ? `${splitPj(r.pieces_jointes).length} photo(s)` : "",
       })),
     }],
+    imageSections: rows.flatMap((r, i) => {
+      const attachments = splitPj(r.pieces_jointes);
+      return attachments.length ? [{
+        title: `Réclamation n° ${i + 1} - ${formatDateFR(r.claim_date)} - ${pdvName(r.pdv_id)} - ${r.produit ?? ""}`,
+        images: attachments.map((path, index) => ({ src: photoUrls[path], caption: `Photo ${index + 1}` })),
+      }] : [];
+    }),
   });
+    } catch (error) {
+      toast.error("PDF non généré", { description: error instanceof Error ? error.message : "Impossible de charger les photos. Réessayez." });
+    } finally {
+      setPrinting(false);
+    }
+  };
 
   const field = (k: keyof ReturnType<typeof empty>, label: string, type = "text") => (
     <div>
@@ -141,7 +168,7 @@ export function SupplierClaims({ standalone = false }: { standalone?: boolean })
             </Select>
           </div>
         )}
-        <Button variant="outline" size="sm" onClick={print}><Printer className="h-4 w-4 mr-1" /> Imprimer</Button>
+        <Button variant="outline" size="sm" onClick={print} disabled={printing}><Printer className="h-4 w-4 mr-1" /> {printing ? "Préparation des photos…" : "Imprimer"}</Button>
       </div>
 
       {isQuality ? (
