@@ -36,6 +36,7 @@ export type StructuredPdfOptions = {
   sections: PdfTableSection[];
   orientation?: "landscape" | "portrait";
   singlePage?: boolean;
+  imageSections?: { title: string; images: { src: string; caption?: string }[] }[];
 };
 
 const BRAND_BLUE: [number, number, number] = [30, 64, 124];
@@ -196,6 +197,58 @@ async function createStructuredPdf(options: StructuredPdfOptions) {
       },
     });
     y = ((doc as any).lastAutoTable?.finalY ?? y) + 8;
+  }
+
+  // Photo annexes are embedded, not linked, so downloaded PDFs retain them.
+  for (const section of options.imageSections ?? []) {
+    const titleLines = doc.splitTextToSize(section.title, pageWidth - margin * 2);
+    const startPage = () => {
+      doc.addPage();
+      doc.setTextColor(...BRAND_BLUE);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text(titleLines, margin, 25);
+      return 28 + titleLines.length * 4;
+    };
+    if (!section.images.length) continue;
+    let photoY = startPage();
+    const gap = 6;
+    const cellWidth = (pageWidth - margin * 2 - gap) / 2;
+    const imageHeight = 62;
+    for (let i = 0; i < section.images.length; i++) {
+      if (i % 2 === 0 && photoY + imageHeight + 16 > pageHeight - 12) photoY = startPage();
+      const image = section.images[i];
+      const response = await fetch(image.src);
+      if (!response.ok) throw new Error("Impossible de charger une photo du document");
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      try {
+        const bitmap = new Image();
+        bitmap.src = objectUrl;
+        await bitmap.decode();
+        const canvas = document.createElement("canvas");
+        const scale = Math.min(1, 1600 / Math.max(bitmap.naturalWidth, bitmap.naturalHeight));
+        canvas.width = Math.max(1, Math.round(bitmap.naturalWidth * scale));
+        canvas.height = Math.max(1, Math.round(bitmap.naturalHeight * scale));
+        const ctx = canvas.getContext("2d");
+        if (!ctx) throw new Error("Impossible de préparer les photos du document");
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        const fit = Math.min(cellWidth / canvas.width, imageHeight / canvas.height);
+        const width = canvas.width * fit;
+        const height = canvas.height * fit;
+        const x = margin + (i % 2) * (cellWidth + gap);
+        doc.addImage(canvas.toDataURL("image/jpeg", 0.85), "JPEG", x + (cellWidth - width) / 2, photoY, width, height);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.setTextColor(71, 85, 105);
+        doc.text(image.caption ?? `Photo ${i + 1}`, x, photoY + imageHeight + 4, { maxWidth: cellWidth });
+        if (i % 2 === 1) photoY += imageHeight + 16;
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    }
   }
 
   addHeaderAndFooter(doc, options.title, options.subtitle);
