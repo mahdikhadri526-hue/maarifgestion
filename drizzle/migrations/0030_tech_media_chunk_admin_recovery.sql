@@ -1,0 +1,4 @@
+CREATE OR REPLACE FUNCTION public.tech_media_chunk(_issue_id uuid, _offset integer DEFAULT 0) RETURNS text LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$ BEGIN IF auth.uid() IS NULL OR NOT public.is_admin(auth.uid()) THEN RAISE EXCEPTION 'Accès administrateur requis'; END IF; RETURN (SELECT substring(photo_url from greatest(_offset, 0) + 1 for 262144) FROM public.tech_issues WHERE id = _issue_id); END $$;
+REVOKE ALL ON FUNCTION public.tech_media_chunk(uuid, integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.tech_media_chunk(uuid, integer) TO authenticated, service_role;
+COMMENT ON FUNCTION public.tech_media_chunk(uuid, integer) IS 'Admin-only bounded recovery of legacy media; checks authenticated administrator before reading.';
