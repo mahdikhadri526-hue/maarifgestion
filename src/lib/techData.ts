@@ -8,6 +8,7 @@ import { supabase as rawSupabase } from "@/integrations/supabase/client";
 import { requireCurrentPdvId } from "@/lib/pdvStore";
 import { parsePhotos, serializePhotos } from "@/lib/pepData";
 import type { TechProcessingMode } from "@/lib/techHandling";
+import { storeTechMedia } from "@/lib/techMedia";
 
 export type TechPriority = "critique" | "urgente" | "normale";
 export type TechStatus = "a_traiter" | "en_cours" | "repare" | "cloture";
@@ -197,7 +198,7 @@ export async function reportTechIssue(input: NewTechIssue): Promise<TechIssue> {
     equipment: input.equipment.trim(),
     location: input.location?.trim() || null,
     problem: input.problem.trim(),
-    photo_url: serializePhotos(input.photoUrls ?? []),
+    photo_url: serializePhotos(await storeTechMedia(input.photoUrls ?? [])),
     reported_by: input.reported_by.trim(),
     reported_by_user: input.reported_by_user ?? null,
     priority: input.priority,
@@ -259,7 +260,7 @@ export async function validateRepair(
       parts_changed: input.parts_changed?.trim() || null,
       parts_price: input.parts_price ?? null,
       service_price: input.service_price ?? null,
-      repair_photo_url: serializePhotos(input.repairPhotoUrls ?? []),
+      repair_photo_url: serializePhotos(await storeTechMedia(input.repairPhotoUrls ?? [])),
       tech_validated_by: input.validated_by.trim(),
       tech_validated_at: now,
       repaired_at: input.repaired_at || now,

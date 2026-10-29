@@ -2888,6 +2888,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      tech_media_chunk: {
+        Args: { _issue_id: string; _offset?: number }
+        Returns: string
+      }
       user_pdv_ids: { Args: { _user_id: string }; Returns: string[] }
       verify_kiosk_pin: { Args: { _pin: string }; Returns: boolean }
       verify_pdv_code: {

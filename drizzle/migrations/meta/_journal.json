@@ -204,6 +204,20 @@
       "when": 1793180869206,
       "tag": "0028_tech_videos_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1793316328028,
+      "tag": "0029_tech_media_bounded_read",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1793316400626,
+      "tag": "0030_tech_media_chunk_admin_recovery",
+      "breakpoints": true
     }
   ]
 }

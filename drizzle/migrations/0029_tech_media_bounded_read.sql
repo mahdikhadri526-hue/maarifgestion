@@ -1,0 +1,4 @@
+CREATE OR REPLACE FUNCTION public.tech_media_chunk(_issue_id uuid, _offset integer DEFAULT 0) RETURNS text LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$ SELECT substring(photo_url from greatest(_offset, 0) + 1 for 262144) FROM public.tech_issues WHERE id = _issue_id $$;
+REVOKE ALL ON FUNCTION public.tech_media_chunk(uuid, integer) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.tech_media_chunk(uuid, integer) TO authenticated, service_role;
+COMMENT ON FUNCTION public.tech_media_chunk(uuid, integer) IS 'Bounded legacy media read preserving tech_issues RLS; permits lossless transfer of large legacy videos to private storage.';
