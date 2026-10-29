@@ -24,14 +24,10 @@ export function useTechMediaUrl(u: string | null) {
 
 export function TechVideo({ src, className, controls }: { src: string; className?: string; controls?: boolean }) {
   const url = useTechMediaUrl(src);
+  const [fallback, setFallback] = useState(false);
+  useEffect(() => setFallback(false), [src, url]);
   if (!url) return <div className={className + " bg-muted"} />;
-  return <video src={url} className={className} muted={!controls} controls={controls} autoPlay={controls} playsInline preload={controls ? "metadata" : "none"} onError={() => {
-    if (src.startsWith(VIDEO_PREFIX) && !url.startsWith("/stockage/")) setFallback();
+  return <video src={fallback ? `/stockage/tech-videos/${src.slice(VIDEO_PREFIX.length)}` : url} className={className} muted={!controls} controls={controls} autoPlay={controls} playsInline preload={controls ? "metadata" : "none"} onError={() => {
+    if (src.startsWith(VIDEO_PREFIX) && !fallback) setFallback(true);
   }} />;
-
-  function setFallback() {
-    // The static server copy remains available when signed playback fails.
-    const element = document.querySelector<HTMLVideoElement>(`video[src="${CSS.escape(url ?? "")}"]`);
-    if (element) element.src = `/stockage/tech-videos/${src.slice(VIDEO_PREFIX.length)}`;
-  }
 }
