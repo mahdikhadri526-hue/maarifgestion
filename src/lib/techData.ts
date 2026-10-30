@@ -212,9 +212,21 @@ export async function reportTechIssue(input: NewTechIssue): Promise<TechIssue> {
   };
   // PDV choisi explicitement : client brut (le client cloisonné écraserait pdv_id).
   const target = input.pdv_id ? rawTable() : table();
-  const { data, error } = await target.insert(payload).select("*").single();
-  if (error) throw error;
-  return data as TechIssue;
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      const { data, error } = await target.insert(payload).select("*").single();
+      if (!error) return data as TechIssue;
+      lastError = error;
+      if (error.message && !/fetch|network|timeout|failed/i.test(error.message)) throw error;
+    } catch (e) {
+      lastError = e;
+      if (e instanceof Error && e.message && !/fetch|network|timeout|failed/i.test(e.message)) throw e;
+    }
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+  }
+  const msg = lastError instanceof Error ? lastError.message : String(lastError ?? "");
+  throw new Error(`Enregistrement impossible (connexion interrompue). Vérifiez votre connexion et réessayez. ${msg}`.trim());
 }
 
 export async function updateTechIssue(
