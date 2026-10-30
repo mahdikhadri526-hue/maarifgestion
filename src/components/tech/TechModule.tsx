@@ -335,7 +335,10 @@ export function TechModule() {
                     {techPhotos(i).length > 0 && (
                       <div className="flex flex-wrap gap-2 mt-2">
                         {techPhotos(i).map((u, k) => (
-                          <button key={k} type="button" onClick={() => setPreview(u)}>{isTechVideo(u) ? <TechVideo src={u} className="h-14 w-14 rounded border object-cover" /> : <img src={u} alt={`Photo ${k + 1}`} className="h-14 w-14 rounded border object-cover" />}</button>
+                          <button key={k} type="button" onClick={() => setPreview(u)} className="relative">
+                            {isTechVideo(u) ? <TechVideo src={u} className="h-14 w-14 rounded border object-cover" /> : <img src={u} alt={`Photo ${k + 1}`} className="h-14 w-14 rounded border object-cover" />}
+                            <span className="absolute bottom-0 left-0 rounded-tr rounded-bl bg-background/85 px-1 text-[9px] font-medium text-foreground">{isTechVideo(u) ? "Vidéo" : "Photo"}</span>
+                          </button>
                         ))}
                       </div>
                     )}
@@ -355,7 +358,10 @@ export function TechModule() {
                             {techRepairPhotos(i).length > 0 && (
                               <div className="flex flex-wrap gap-2 mt-1">
                                 {techRepairPhotos(i).map((u, k) => (
-                                  <button key={k} type="button" onClick={() => setPreview(u)}>{isTechVideo(u) ? <TechVideo src={u} className="h-14 w-14 rounded border object-cover" /> : <img src={u} alt={`Photo réparation ${k + 1}`} className="h-14 w-14 rounded border object-cover" />}</button>
+                                  <button key={k} type="button" onClick={() => setPreview(u)} className="relative">
+                                    {isTechVideo(u) ? <TechVideo src={u} className="h-14 w-14 rounded border object-cover" /> : <img src={u} alt={`Photo réparation ${k + 1}`} className="h-14 w-14 rounded border object-cover" />}
+                                    <span className="absolute bottom-0 left-0 rounded-tr rounded-bl bg-background/85 px-1 text-[9px] font-medium text-foreground">{isTechVideo(u) ? "Vidéo" : "Photo"}</span>
+                                  </button>
                                 ))}
                               </div>
                             )}
