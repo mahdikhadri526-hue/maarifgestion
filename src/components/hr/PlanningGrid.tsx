@@ -392,7 +392,7 @@ export function PlanningGrid({
               <col className="w-[220px]" />
               {days.map((d) => <col key={d} className="w-[123px]" />)}
             </colgroup>
-            <thead className="bg-card">
+            {!groupByPoste && <thead className="bg-card">
               <tr>
                 <th className="sticky left-0 z-30 !bg-sidebar !px-4 !py-3 text-left text-[11px] font-bold uppercase text-sidebar-foreground border-r border-sidebar-border">
                   Collaborateur
@@ -408,7 +408,7 @@ export function PlanningGrid({
                   );
                 })}
               </tr>
-            </thead>
+            </thead>}
             <tbody>
               {list.map((a) => (
                 <Fragment key={a.id}>
@@ -421,7 +421,7 @@ export function PlanningGrid({
                         </span>
                       </td>
                     </tr>
-                    {a.id !== list[0]?.id && dateHeaderRow(`dates-poste-${a.id}`)}
+                    {dateHeaderRow(`dates-poste-${a.id}`)}
                   </>
                 )}
                 {!groupByPoste && a.id === firstMenageId && (
