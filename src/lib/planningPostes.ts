@@ -15,7 +15,10 @@ export function groupPlanningByPoste(agents: HrAgent[]) {
     if (group) group.agents.push(agent);
     else groups.set(key, { poste, agents: [agent] });
   }
-  const order = POSTES.map(normalize);
+  const order = [
+    ...POSTES.filter((poste) => poste !== "Caissier" && poste !== "Passe" && poste !== "Ménage" && poste !== "Agent de sécurité"),
+    "Passe", "Caissier", "Ménage", "Agent de sécurité",
+  ].map(normalize);
   return [...groups.entries()]
     .sort(([a], [b]) => {
       const ai = order.indexOf(a);
