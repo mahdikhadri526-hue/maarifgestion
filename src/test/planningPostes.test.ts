@@ -7,6 +7,13 @@ const agent = (id: string, poste: string | null, pdv_id = "maarif", active = tru
 });
 
 describe("planning grouped by employees' RH posts", () => {
+  it("places Passe before Caissier in the planning without changing the roster", () => {
+    const employees = [agent("c", "Caissier"), agent("p", "Passe"), agent("s", "Service"), agent("m", "Ménage")];
+    const before = JSON.stringify(employees);
+    expect(groupPlanningByPoste(employees).map((g) => g.poste)).toEqual(["Service", "Passe", "Caissier", "Ménage"]);
+    expect(JSON.stringify(employees)).toBe(before);
+  });
+
   it("separates Service, Comptoir and Passe even when employees are interleaved", () => {
     const groups = groupPlanningByPoste([
       agent("service-1", "Service"), agent("passe", "Passe"),
