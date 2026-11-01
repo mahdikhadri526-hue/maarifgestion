@@ -8,7 +8,7 @@
 - Weekly stock categories, combined aggregates and TOPPINGS history use normalized daily stocks in `stockWeeklyAggregates.ts`: root-row counts, all lot receipts, adjacent next-day counts as calculation context, and independent article state keep sorties aligned with the weekly sheet without rewriting data; order-specific calculations stay separate.
 - Report mise en place : en filtre jour/mois/période, si la veille du début de période est un jour de comptage, la saisie mise en place de ce jour est ajoutée au Stock initial et au Stock restant affichés (SI du lendemain = Stock total) ; la vue « Tout » reste inchangée.
 - Voice guides attach to stable visible section headings, including weekly sheet and transfer headings, so guide keys do not change with dates; audio stays private in `voice-guides` and only admins manage it.
-- Voice generation shares the configured voice; bulk generation preserves microphone recordings and Welcome to avoid replacing personal audio.
+- Voice generation shares the configured voice; bulk preserves microphone recordings and Welcome. Read nested AGENTS.md before edits.
 - Keep the logo in standard/kiosk headers and standalone PDV selection; main modules use the shared title (logo left, title right). Fullscreen attendance stays camera-only and header-free.
 - Trigger the welcome transition only from a successful password sign-in attempt and let the existing PDV gate decide the destination afterward, so restored sessions and PDV changes never replay it.
 - Store login welcome photos in a private bucket with an ordered database list; only the two designated admin accounts manage them.

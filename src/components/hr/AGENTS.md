@@ -1,0 +1,1 @@
+- Planning post sections derive from the scoped active roster and RH POSTES via planningPostes; preserve shared-staff weekly assignment filters and editing rules, and never create empty post sections or rewrite schedules for grouping.
