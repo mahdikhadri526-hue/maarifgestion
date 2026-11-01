@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { groupPlanningByPoste } from "@/lib/planningPostes";
 import {
   DAY_TYPES,
   EXTRA_DAY_TYPES,
@@ -42,6 +43,7 @@ export function PlanningGrid({
   techMode = "exclude",
   techCategorySeparators = false,
   groupedCategories = false,
+  groupByPoste = false,
   planningPdvId = null,
   title = "Planning hebdomadaire",
 }: {
@@ -63,6 +65,8 @@ export function PlanningGrid({
   techCategorySeparators?: boolean;
   /** Affiche les catégories dans une grille unique ; le mode RH inclut aussi les managers. */
   groupedCategories?: boolean | "rh";
+  /** Separate the scoped roster by the posts selected in RH. */
+  groupByPoste?: boolean;
   /** PDV dont le planning est affiché ; limite les catégories partagées à leurs lignes planifiées. */
   planningPdvId?: string | null;
   title?: string;
@@ -102,7 +106,7 @@ export function PlanningGrid({
   const shiftLabel = (shift: WorkShift | null | undefined) =>
     shift === "matin" ? "Matin" : shift === "apres_midi" ? "Après-midi" : "";
   /** Les caissiers sont planifiés par la RH : affichés en bas, verrouillés pour les managers. */
-  const list = useMemo(() => {
+  const eligibleAgents = useMemo(() => {
     const actives = agents.filter((a) => a.active);
     if (groupedCategories) {
       const agentRows = actives.filter((a) => (a.staff_level ?? "agent") === "agent");
@@ -142,6 +146,18 @@ export function PlanningGrid({
     if (level === "manager") return [...base, ...caissiers];
     return base.filter((a) => !isCaissier(a));
   }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows, showReadOnly, readOnlyPdvId]);
+  const posteGroups = useMemo(
+    () => groupByPoste ? groupPlanningByPoste(eligibleAgents) : [],
+    [eligibleAgents, groupByPoste],
+  );
+  const list = useMemo(
+    () => groupByPoste ? posteGroups.flatMap((g) => g.agents) : eligibleAgents,
+    [eligibleAgents, groupByPoste, posteGroups],
+  );
+  const posteHeaders = useMemo(
+    () => new Map(posteGroups.flatMap((g) => g.agents[0] ? [[g.agents[0].id, g.poste] as const] : [])),
+    [posteGroups],
+  );
   const firstCaissierId = useMemo(
     () => ((groupedCategories || (caissierMode === "bottom" && techMode !== "only")) ? list.find(isCaissier)?.id ?? null : null),
     [list, caissierMode, techMode, groupedCategories],
@@ -396,7 +412,19 @@ export function PlanningGrid({
             <tbody>
               {list.map((a) => (
                 <Fragment key={a.id}>
-                {a.id === firstMenageId && (
+                {groupByPoste && posteHeaders.has(a.id) && (
+                  <>
+                    <tr>
+                      <td colSpan={days.length + 1} className="border-y border-sidebar-border !bg-sidebar !px-4 !py-2 text-sidebar-foreground">
+                        <span className="sticky left-4 inline-block max-w-[190px] whitespace-normal break-words text-[11px] font-bold">
+                          {posteHeaders.get(a.id)}{rowReadOnly(a) && " — lecture seule"}
+                        </span>
+                      </td>
+                    </tr>
+                    {a.id !== list[0]?.id && dateHeaderRow(`dates-poste-${a.id}`)}
+                  </>
+                )}
+                {!groupByPoste && a.id === firstMenageId && (
                   <Fragment key={`sep-menage-${a.id}`}>
                     <tr>
                       <td
@@ -409,7 +437,7 @@ export function PlanningGrid({
                     {a.id !== list[0]?.id && dateHeaderRow(`dates-menage-${a.id}`)}
                   </Fragment>
                 )}
-                {a.id === firstSecuriteId && (
+                {!groupByPoste && a.id === firstSecuriteId && (
                   <Fragment key={`sep-securite-${a.id}`}>
                     <tr>
                       <td
@@ -422,7 +450,7 @@ export function PlanningGrid({
                     {a.id !== list[0]?.id && dateHeaderRow(`dates-securite-${a.id}`)}
                   </Fragment>
                 )}
-                {a.id === firstManagerId && (
+                {!groupByPoste && a.id === firstManagerId && (
                   <Fragment key={`sep-manager-${a.id}`}>
                     <tr>
                       <td
@@ -435,7 +463,7 @@ export function PlanningGrid({
                     {a.id !== list[0]?.id && dateHeaderRow(`dates-manager-${a.id}`)}
                   </Fragment>
                 )}
-                {a.id === firstCaissierId && (
+                {!groupByPoste && a.id === firstCaissierId && (
                   <Fragment key={`sep-caissier-${a.id}`}>
                     <tr>
                       <td
@@ -448,7 +476,7 @@ export function PlanningGrid({
                     {a.id !== list[0]?.id && dateHeaderRow(`dates-caissier-${a.id}`)}
                   </Fragment>
                 )}
-                {a.id === firstRegularAgentId && (
+                {!groupByPoste && a.id === firstRegularAgentId && (
                   <Fragment key={`sep-agent-${a.id}`}>
                     <tr>
                       <td
@@ -461,7 +489,7 @@ export function PlanningGrid({
                     {a.id !== list[0]?.id && dateHeaderRow(`dates-agent-${a.id}`)}
                   </Fragment>
                 )}
-                {a.id === firstTechId && (
+                {!groupByPoste && a.id === firstTechId && (
                   <Fragment key={`sep-tech-${a.id}`}>
                     <tr>
                       <td

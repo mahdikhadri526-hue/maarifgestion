@@ -65,12 +65,13 @@ export function PlanningModule() {
     return p === "caissier" || p === "menage" || p.includes("securite");
   };
 
+  const effectivePdvFilter = isRh ? pdvFilter : pdvId;
   const visibleAgents = useMemo(
     () =>
       agents.filter(
-        (a) => pdvFilter === "all" || a.pdv_id === pdvFilter || a.multi_pdv || isShared(a.poste),
+        (a) => effectivePdvFilter === "all" || a.pdv_id === effectivePdvFilter || a.multi_pdv || isShared(a.poste),
       ),
-    [agents, pdvFilter],
+    [agents, effectivePdvFilter],
   );
 
   const planningPdvId = isRh ? (pdvFilter === "all" ? null : pdvFilter) : pdvId;
@@ -88,6 +89,7 @@ export function PlanningModule() {
         <div className="ml-auto">
           {isRh ? (
             <select
+              aria-label="Point de vente du planning"
               className="h-9 rounded border bg-background px-2 text-sm"
               value={pdvFilter}
               onChange={(e) => setPdvFilter(e.target.value)}
@@ -112,6 +114,7 @@ export function PlanningModule() {
         onChanged={reload}
         showLevelToggle={false}
         groupedCategories
+        groupByPoste
         planningPdvId={planningPdvId}
       />
     </div>
