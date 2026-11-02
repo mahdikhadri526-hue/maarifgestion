@@ -392,7 +392,7 @@ export function PlanningGrid({
               <col className="w-[220px]" />
               {days.map((d) => <col key={d} className="w-[123px]" />)}
             </colgroup>
-            {!groupByPoste && <thead className="bg-card">
+            {!groupByPoste && groupedCategories !== "rh" && <thead className="bg-card">
               <tr>
                 <th className="sticky left-0 z-30 !bg-sidebar !px-4 !py-3 text-left text-[11px] font-bold uppercase text-sidebar-foreground border-r border-sidebar-border">
                   Collaborateur
@@ -460,12 +460,11 @@ export function PlanningGrid({
                         Managers — planning établi par la RH
                       </td>
                     </tr>
-                    {a.id !== list[0]?.id && dateHeaderRow(`dates-manager-${a.id}`)}
+                    {(groupedCategories === "rh" || a.id !== list[0]?.id) && dateHeaderRow(`dates-manager-${a.id}`)}
                   </Fragment>
                 )}
                 {!groupByPoste && a.id === firstCaissierId && (
                   <Fragment key={`sep-caissier-${a.id}`}>
-                    {a.id !== list[0]?.id && dateHeaderRow(`dates-caissier-${a.id}`)}
                     <tr>
                       <td
                         colSpan={days.length + 1}
@@ -474,6 +473,7 @@ export function PlanningGrid({
                         Caissiers — planning établi par la RH{groupedCategories === true && " (lecture seule)"}
                       </td>
                     </tr>
+                    {(groupedCategories === "rh" || a.id !== list[0]?.id) && dateHeaderRow(`dates-caissier-${a.id}`)}
                   </Fragment>
                 )}
                 {!groupByPoste && a.id === firstRegularAgentId && (
