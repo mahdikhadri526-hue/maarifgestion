@@ -465,6 +465,7 @@ export function PlanningGrid({
                 )}
                 {!groupByPoste && a.id === firstCaissierId && (
                   <Fragment key={`sep-caissier-${a.id}`}>
+                    {a.id !== list[0]?.id && dateHeaderRow(`dates-caissier-${a.id}`)}
                     <tr>
                       <td
                         colSpan={days.length + 1}
@@ -473,7 +474,6 @@ export function PlanningGrid({
                         Caissiers — planning établi par la RH{groupedCategories === true && " (lecture seule)"}
                       </td>
                     </tr>
-                    {a.id !== list[0]?.id && dateHeaderRow(`dates-caissier-${a.id}`)}
                   </Fragment>
                 )}
                 {!groupByPoste && a.id === firstRegularAgentId && (
