@@ -392,7 +392,7 @@ export function PlanningGrid({
               <col className="w-[220px]" />
               {days.map((d) => <col key={d} className="w-[123px]" />)}
             </colgroup>
-            {!groupByPoste && groupedCategories !== "rh" && <thead className="bg-card">
+            {!groupByPoste && groupedCategories !== "rh" && !techCategorySeparators && <thead className="bg-card">
               <tr>
                 <th className="sticky left-0 z-30 !bg-sidebar !px-4 !py-3 text-left text-[11px] font-bold uppercase text-sidebar-foreground border-r border-sidebar-border">
                   Collaborateur
@@ -434,7 +434,7 @@ export function PlanningGrid({
                         Ménage
                       </td>
                     </tr>
-                    {a.id !== list[0]?.id && dateHeaderRow(`dates-menage-${a.id}`)}
+                    {(techCategorySeparators || a.id !== list[0]?.id) && dateHeaderRow(`dates-menage-${a.id}`)}
                   </Fragment>
                 )}
                 {!groupByPoste && a.id === firstSecuriteId && (
@@ -447,7 +447,7 @@ export function PlanningGrid({
                         Sécurité
                       </td>
                     </tr>
-                    {a.id !== list[0]?.id && dateHeaderRow(`dates-securite-${a.id}`)}
+                    {(techCategorySeparators || a.id !== list[0]?.id) && dateHeaderRow(`dates-securite-${a.id}`)}
                   </Fragment>
                 )}
                 {!groupByPoste && a.id === firstManagerId && (
