@@ -337,6 +337,16 @@ export function PlanningGrid({
               )}
             </>
           )}
+          {((groupedCategories === "rh" && isRh) || (techMode === "only" && !readOnly)) && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-8"
+              onClick={() => setShowUnplanned((v) => !v)}
+            >
+              {showUnplanned ? "Masquer les non planifiés" : "Afficher les non planifiés"}
+            </Button>
+          )}
           {showLevelToggle && (
           <div className="flex rounded-md border border-sidebar-border bg-sidebar-accent p-0.5">
             {isRh && (
@@ -390,7 +400,9 @@ export function PlanningGrid({
       {list.length === 0 ? (
         <div className="p-8 text-center text-sm text-muted-foreground">
           {techMode === "only"
-            ? "Aucun agent Ménage / Sécurité enregistré pour ce périmètre."
+            ? showUnplanned
+              ? "Aucun agent Ménage / Sécurité enregistré pour ce périmètre."
+              : "Aucun collaborateur Ménage / Sécurité planifié cette semaine."
             : `Aucun ${level === "manager" ? "manager" : "agent"} enregistré pour ce périmètre.`}
         </div>
       ) : (
