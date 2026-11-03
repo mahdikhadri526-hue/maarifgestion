@@ -108,15 +108,19 @@ export function PlanningGrid({
   const shiftLabel = (shift: WorkShift | null | undefined) =>
     shift === "matin" ? "Matin" : shift === "apres_midi" ? "Après-midi" : "";
   /** Les caissiers sont planifiés par la RH : affichés en bas, verrouillés pour les managers. */
+  /** Identifiants des agents ayant au moins un planning sur la semaine affichée. */
+  const plannedIds = useMemo(() => new Set(rows.map((r) => r.agent_id)), [rows]);
   const eligibleAgents = useMemo(() => {
     const actives = agents.filter((a) => a.active);
     if (groupedCategories) {
       const agentRows = actives.filter((a) => (a.staff_level ?? "agent") === "agent");
       const regular = agentRows.filter((a) => !isCaissier(a) && !isTechPoste(a));
-      const isPlannedHere = (a: HrAgent) =>
-        !planningPdvId || rows.some((r) => r.agent_id === a.id && r.pdv_id === planningPdvId);
-      const caissiers = agentRows.filter((a) => isCaissier(a) && isPlannedHere(a));
-      const technical = agentRows.filter((a) => isTechPoste(a) && isPlannedHere(a));
+      // Ménage / Sécurité / Caissiers : masqués sauf si un collaborateur est planifié cette semaine.
+      const isPlannedHereWeek = (a: HrAgent) => isPlannedHere(a.id, rows, planningPdvId);
+      const caissiers = agentRows.filter(
+        (a) => isCaissier(a) && (showUnplanned || isPlannedHereWeek(a)),
+      );
+      const technical = agentRows.filter((a) => isTechPoste(a) && isPlannedHereWeek(a));
       const managers = actives.filter((a) => (a.staff_level ?? "agent") !== "agent");
       if (groupedCategories === "rh") {
         const editable = [...managers, ...caissiers];
