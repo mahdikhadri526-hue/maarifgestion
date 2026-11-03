@@ -6,10 +6,27 @@ const normalize = (poste: string) =>
 /** True when the agent has at least one schedule row in the displayed week (optionally scoped to one PDV). */
 export function isPlannedHere(
   agentId: string,
-  rows: { agent_id: string; pdv_id: string | null }[],
+  rows: PlanRow[],
   planningPdvId: string | null,
 ): boolean {
-  return rows.some((r) => r.agent_id === agentId && (!planningPdvId || r.pdv_id === planningPdvId));
+  return rows.some(
+    (r) => r.agent_id === agentId && (!planningPdvId || r.pdv_id === planningPdvId) && isFilledRow(r),
+  );
+}
+
+type PlanRow = {
+  agent_id: string;
+  pdv_id: string | null;
+  day_type?: string | null;
+  start_time?: string | null;
+  end_time?: string | null;
+  work_shift?: string | null;
+};
+
+/** A schedule row counts as planned only when it carries a day type, hours or a shift (empty cells don't). */
+export function isFilledRow(r: PlanRow): boolean {
+  if (!("day_type" in r) && !("start_time" in r)) return true;
+  return !!((r.day_type ?? "").trim() || r.start_time || r.end_time || r.work_shift);
 }
 
 /** Group only the roster already scoped by the planning, without creating empty posts. */
