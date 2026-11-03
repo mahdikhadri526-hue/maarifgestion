@@ -134,7 +134,9 @@ export function PlanningGrid({
       return [...regular, ...caissiers, ...technical];
     }
     if (techMode === "only") {
-      const technical = actives.filter(isTechPoste);
+      const technical = actives.filter(
+        (a) => isTechPoste(a) && (showUnplanned || plannedIds.has(a.id)),
+      );
       if (!techCategorySeparators) return technical;
       const menage = technical.filter((a) => norm(a.poste) === "menage");
       const securite = technical.filter((a) => norm(a.poste).includes("securite"));
@@ -151,7 +153,7 @@ export function PlanningGrid({
     const caissiers = pool.filter((a) => (a.staff_level ?? "agent") === "agent" && isCaissier(a));
     if (level === "manager") return [...base, ...caissiers];
     return base.filter((a) => !isCaissier(a));
-  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows, showReadOnly, readOnlyPdvId]);
+  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows, showReadOnly, readOnlyPdvId, showUnplanned]);
   const posteGroups = useMemo(
     () => groupByPoste ? groupPlanningByPoste(eligibleAgents) : [],
     [eligibleAgents, groupByPoste],
