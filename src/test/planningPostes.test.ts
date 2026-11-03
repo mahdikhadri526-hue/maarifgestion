@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupPlanningByPoste } from "@/lib/planningPostes";
+import { groupPlanningByPoste, isPlannedHere } from "@/lib/planningPostes";
 import type { HrAgent } from "@/lib/hrData";
 
 const agent = (id: string, poste: string | null, pdv_id = "maarif", active = true): HrAgent => ({
@@ -38,5 +38,23 @@ describe("planning grouped by employees' RH posts", () => {
     expect(groups.map((g) => g.poste)).toEqual(["Ménage", "Ancien poste", "Sans poste"]);
     expect(groups.flatMap((g) => g.agents).length).toBe(3);
     expect(JSON.stringify(employees)).toBe(before);
+  });
+});
+
+describe("sections hidden unless a collaborator is planned this week", () => {
+  const row = (agent_id: string, pdv_id: string | null) => ({ agent_id, pdv_id });
+
+  it("shows caissier / menage / securite only when a schedule exists in the displayed week", () => {
+    const rows = [row("c", "maarif"), row("m", null)];
+    expect(isPlannedHere("c", rows, "maarif")).toBe(true);
+    expect(isPlannedHere("m", rows, null)).toBe(true);
+    expect(isPlannedHere("s", rows, "maarif")).toBe(false);
+    expect(isPlannedHere("c", [], "maarif")).toBe(false);
+  });
+
+  it("keeps the PDV scope: a schedule in another PDV does not plan the agent here", () => {
+    const rows = [row("c", "autre")];
+    expect(isPlannedHere("c", rows, "maarif")).toBe(false);
+    expect(isPlannedHere("c", rows, null)).toBe(true);
   });
 });
