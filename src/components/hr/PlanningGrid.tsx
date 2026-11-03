@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { groupPlanningByPoste } from "@/lib/planningPostes";
+import { groupPlanningByPoste, isPlannedHere } from "@/lib/planningPostes";
 import {
   DAY_TYPES,
   EXTRA_DAY_TYPES,
@@ -80,6 +80,8 @@ export function PlanningGrid({
   const [showReadOnly, setShowReadOnly] = useState(false);
   /** PDV choisi pour afficher les plannings en lecture seule (mode RH). */
   const [readOnlyPdvId, setReadOnlyPdvId] = useState<string>("");
+  /** Révéler les collaborateurs non planifiés de la semaine (caissiers, ménage/sécurité) pour les planifier. */
+  const [showUnplanned, setShowUnplanned] = useState(false);
 
   const days = useMemo(() => weekDays(start), [start]);
   const norm = (s: string | null | undefined) =>
