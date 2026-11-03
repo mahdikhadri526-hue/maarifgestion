@@ -58,3 +58,10 @@ describe("sections hidden unless a collaborator is planned this week", () => {
     expect(isPlannedHere("c", rows, null)).toBe(true);
   });
 });
+import { isPlannedHere as _iph } from "@/lib/planningPostes";
+import { it as _it, expect as _ex } from "vitest";
+_it("une case vide (sans type ni horaire) ne compte pas comme planifiée", () => {
+  const empty = [{ agent_id: "a", pdv_id: "p", day_type: "", start_time: null, end_time: null, work_shift: null }];
+  _ex(_iph("a", empty, "p")).toBe(false);
+  _ex(_iph("a", [{ ...empty[0], start_time: "08:00" }], "p")).toBe(true);
+});
