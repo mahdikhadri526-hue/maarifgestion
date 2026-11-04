@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { groupPlanningByPoste } from "@/lib/planningPostes";
+import { groupPlanningByPoste, keepPlannedShared } from "@/lib/planningPostes";
 import {
   DAY_TYPES,
   EXTRA_DAY_TYPES,
@@ -67,6 +67,8 @@ export function PlanningGrid({
   groupedCategories?: boolean | "rh";
   /** Separate the scoped roster by the posts selected in RH. */
   groupByPoste?: boolean;
+  /** Table Planning : caissiers / ménage / sécurité affichés seulement s'ils sont planifiés dans la semaine. */
+  plannedSharedOnly?: boolean;
   /** PDV dont le planning est affiché ; limite les catégories partagées à leurs lignes planifiées. */
   planningPdvId?: string | null;
   title?: string;
