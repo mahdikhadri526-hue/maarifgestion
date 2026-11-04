@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { groupPlanningByPoste, isFilledRow, isPlannedHere } from "@/lib/planningPostes";
+import { groupPlanningByPoste } from "@/lib/planningPostes";
 import {
   DAY_TYPES,
   EXTRA_DAY_TYPES,
@@ -106,8 +106,6 @@ export function PlanningGrid({
   const shiftLabel = (shift: WorkShift | null | undefined) =>
     shift === "matin" ? "Matin" : shift === "apres_midi" ? "Après-midi" : "";
   /** Les caissiers sont planifiés par la RH : affichés en bas, verrouillés pour les managers. */
-  /** Identifiants des agents ayant au moins un planning sur la semaine affichée. */
-  const plannedIds = useMemo(() => new Set(rows.filter(isFilledRow).map((r) => r.agent_id)), [rows]);
   const eligibleAgents = useMemo(() => {
     const actives = agents.filter((a) => a.active);
     if (groupedCategories) {
@@ -146,7 +144,7 @@ export function PlanningGrid({
     const caissiers = pool.filter((a) => (a.staff_level ?? "agent") === "agent" && isCaissier(a));
     if (level === "manager") return [...base, ...caissiers];
     return base.filter((a) => !isCaissier(a));
-  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows, showReadOnly, readOnlyPdvId, plannedIds]);
+  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows, showReadOnly, readOnlyPdvId]);
   const posteGroups = useMemo(
     () => groupByPoste ? groupPlanningByPoste(eligibleAgents) : [],
     [eligibleAgents, groupByPoste],
