@@ -44,6 +44,7 @@ export function PlanningGrid({
   techCategorySeparators = false,
   groupedCategories = false,
   groupByPoste = false,
+  plannedSharedOnly = false,
   planningPdvId = null,
   title = "Planning hebdomadaire",
 }: {
@@ -113,9 +114,11 @@ export function PlanningGrid({
     if (groupedCategories) {
       const agentRows = actives.filter((a) => (a.staff_level ?? "agent") === "agent");
       const regular = agentRows.filter((a) => !isCaissier(a) && !isTechPoste(a));
-      // Ménage / Sécurité / Caissiers : toujours affichés.
+      // Ménage / Sécurité / Caissiers : dans la table Planning, seulement les planifiés de la semaine.
       const caissiers = agentRows.filter((a) => isCaissier(a));
       const technical = agentRows.filter((a) => isTechPoste(a));
+      const sharedVisible = (shared: HrAgent[]) =>
+        plannedSharedOnly ? keepPlannedShared(shared, rows, planningPdvId) : shared;
       const managers = actives.filter((a) => (a.staff_level ?? "agent") !== "agent");
       if (groupedCategories === "rh") {
         const editable = [...managers, ...caissiers];
