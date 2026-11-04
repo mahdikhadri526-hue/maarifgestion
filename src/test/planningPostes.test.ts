@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupPlanningByPoste, isPlannedHere } from "@/lib/planningPostes";
+import { groupPlanningByPoste, isPlannedHere, keepPlannedShared } from "@/lib/planningPostes";
 import type { HrAgent } from "@/lib/hrData";
 
 const agent = (id: string, poste: string | null, pdv_id = "maarif", active = true): HrAgent => ({
