@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { groupPlanningByPoste, isFilledRow, isPlannedHere } from "@/lib/planningPostes";
+import { groupPlanningByPoste } from "@/lib/planningPostes";
 import {
   DAY_TYPES,
   EXTRA_DAY_TYPES,
@@ -106,19 +106,14 @@ export function PlanningGrid({
   const shiftLabel = (shift: WorkShift | null | undefined) =>
     shift === "matin" ? "Matin" : shift === "apres_midi" ? "Après-midi" : "";
   /** Les caissiers sont planifiés par la RH : affichés en bas, verrouillés pour les managers. */
-  /** Identifiants des agents ayant au moins un planning sur la semaine affichée. */
-  const plannedIds = useMemo(() => new Set(rows.filter(isFilledRow).map((r) => r.agent_id)), [rows]);
   const eligibleAgents = useMemo(() => {
     const actives = agents.filter((a) => a.active);
     if (groupedCategories) {
       const agentRows = actives.filter((a) => (a.staff_level ?? "agent") === "agent");
       const regular = agentRows.filter((a) => !isCaissier(a) && !isTechPoste(a));
-      // Ménage / Sécurité / Caissiers : seuls les collaborateurs planifiés cette semaine s'affichent.
-      const isPlannedHereWeek = (a: HrAgent) => isPlannedHere(a.id, rows, planningPdvId);
-      const caissiers = agentRows.filter(
-        (a) => isCaissier(a) && isPlannedHereWeek(a),
-      );
-      const technical = agentRows.filter((a) => isTechPoste(a) && isPlannedHereWeek(a));
+      // Ménage / Sécurité / Caissiers : toujours affichés.
+      const caissiers = agentRows.filter((a) => isCaissier(a));
+      const technical = agentRows.filter((a) => isTechPoste(a));
       const managers = actives.filter((a) => (a.staff_level ?? "agent") !== "agent");
       if (groupedCategories === "rh") {
         const editable = [...managers, ...caissiers];
@@ -132,9 +127,7 @@ export function PlanningGrid({
       return [...regular, ...caissiers, ...technical];
     }
     if (techMode === "only") {
-      const technical = actives.filter(
-        (a) => isTechPoste(a) && plannedIds.has(a.id),
-      );
+      const technical = actives.filter((a) => isTechPoste(a));
       if (!techCategorySeparators) return technical;
       const menage = technical.filter((a) => norm(a.poste) === "menage");
       const securite = technical.filter((a) => norm(a.poste).includes("securite"));
@@ -151,7 +144,7 @@ export function PlanningGrid({
     const caissiers = pool.filter((a) => (a.staff_level ?? "agent") === "agent" && isCaissier(a));
     if (level === "manager") return [...base, ...caissiers];
     return base.filter((a) => !isCaissier(a));
-  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows, showReadOnly, readOnlyPdvId, plannedIds]);
+  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows, showReadOnly, readOnlyPdvId]);
   const posteGroups = useMemo(
     () => groupByPoste ? groupPlanningByPoste(eligibleAgents) : [],
     [eligibleAgents, groupByPoste],
@@ -388,7 +381,7 @@ export function PlanningGrid({
       {list.length === 0 ? (
         <div className="p-8 text-center text-sm text-muted-foreground">
           {techMode === "only"
-            ? "Aucun collaborateur Ménage / Sécurité planifié cette semaine."
+            ? "Aucun agent Ménage / Sécurité enregistré pour ce périmètre."
             : `Aucun ${level === "manager" ? "manager" : "agent"} enregistré pour ce périmètre.`}
         </div>
       ) : (
