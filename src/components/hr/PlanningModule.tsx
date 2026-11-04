@@ -27,7 +27,7 @@ export function PlanningModule() {
   const [agents, setAgents] = useState<HrAgent[]>([]);
   const [holidays, setHolidays] = useState<HrHoliday[]>([]);
   const [loading, setLoading] = useState(true);
-  const [pdvFilter, setPdvFilter] = useState<string>(pdvId ?? "all");
+  const [pdvFilter, setPdvFilter] = useState<string>("all");
 
   const reload = useCallback(async () => {
     if (scopePdvIds && scopePdvIds.length === 0) return;
@@ -115,6 +115,7 @@ export function PlanningModule() {
         showLevelToggle={false}
         groupedCategories
         groupByPoste
+        plannedSharedOnly
         planningPdvId={planningPdvId}
       />
     </div>

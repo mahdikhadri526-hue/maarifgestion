@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { groupPlanningByPoste, isPlannedHere } from "@/lib/planningPostes";
+import { groupPlanningByPoste, isPlannedHere, keepPlannedShared } from "@/lib/planningPostes";
 import type { HrAgent } from "@/lib/hrData";
 
 const agent = (id: string, poste: string | null, pdv_id = "maarif", active = true): HrAgent => ({
@@ -64,4 +64,26 @@ _it("une case vide (sans type ni horaire) ne compte pas comme planifiée", () =>
   const empty = [{ agent_id: "a", pdv_id: "p", day_type: "", start_time: null, end_time: null, work_shift: null }];
   _ex(_iph("a", empty, "p")).toBe(false);
   _ex(_iph("a", [{ ...empty[0], start_time: "08:00" }], "p")).toBe(true);
+});
+
+describe("table Planning : caissiers / ménage / sécurité planifiés seulement", () => {
+  const filled = (agent_id: string, pdv_id: string | null) => ({ agent_id, pdv_id, day_type: "travail" });
+
+  it("keeps a shared collaborator only when planned in the displayed week", () => {
+    const shared = [agent("c1", "Caissier"), agent("c2", "Caissier"), agent("m1", "Ménage"), agent("s1", "Agent de sécurité")];
+    const rows = [filled("c1", "maarif"), filled("m1", null)];
+    const kept = keepPlannedShared(shared, rows, null).map((a) => a.id);
+    expect(kept).toEqual(["c1", "m1"]);
+  });
+
+  it("respects the PDV scope when one PDV is selected", () => {
+    const shared = [agent("c1", "Caissier")];
+    expect(keepPlannedShared(shared, [filled("c1", "autre")], "maarif")).toEqual([]);
+    expect(keepPlannedShared(shared, [filled("c1", "maarif")], "maarif").map((a) => a.id)).toEqual(["c1"]);
+  });
+
+  it("keeps a filled schedule and drops an empty cell", () => {
+    const shared = [agent("c1", "Caissier")];
+    expect(keepPlannedShared(shared, [{ agent_id: "c1", pdv_id: "maarif", day_type: "", start_time: null, end_time: null, work_shift: null }], "maarif")).toEqual([]);
+  });
 });

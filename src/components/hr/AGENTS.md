@@ -1,1 +1,2 @@
 - Planning post sections derive from the scoped active roster and RH POSTES via planningPostes; preserve shared-staff weekly assignment filters and editing rules, and never create empty post sections or rewrite schedules for grouping.
+- In the Planning module only (groupedCategories true, not "rh"), caissiers / ménage / sécurité rows show via keepPlannedShared only when planned in the displayed week (plannedSharedOnly), and its PDV filter defaults to "Tous les PDV".
