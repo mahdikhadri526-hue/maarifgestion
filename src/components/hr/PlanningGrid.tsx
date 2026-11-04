@@ -80,8 +80,6 @@ export function PlanningGrid({
   const [showReadOnly, setShowReadOnly] = useState(false);
   /** PDV choisi pour afficher les plannings en lecture seule (mode RH). */
   const [readOnlyPdvId, setReadOnlyPdvId] = useState<string>("");
-  /** Révéler les collaborateurs non planifiés de la semaine (caissiers, ménage/sécurité) pour les planifier. */
-  const [showUnplanned, setShowUnplanned] = useState(false);
 
   const days = useMemo(() => weekDays(start), [start]);
   const norm = (s: string | null | undefined) =>
@@ -118,7 +116,7 @@ export function PlanningGrid({
       // Ménage / Sécurité / Caissiers : masqués sauf si un collaborateur est planifié cette semaine.
       const isPlannedHereWeek = (a: HrAgent) => isPlannedHere(a.id, rows, planningPdvId);
       const caissiers = agentRows.filter(
-        (a) => isCaissier(a) && (showUnplanned || isPlannedHereWeek(a)),
+        (a) => isCaissier(a) && isPlannedHereWeek(a),
       );
       const technical = agentRows.filter((a) => isTechPoste(a) && isPlannedHereWeek(a));
       const managers = actives.filter((a) => (a.staff_level ?? "agent") !== "agent");
@@ -135,7 +133,7 @@ export function PlanningGrid({
     }
     if (techMode === "only") {
       const technical = actives.filter(
-        (a) => isTechPoste(a) && (showUnplanned || plannedIds.has(a.id)),
+        (a) => isTechPoste(a) && plannedIds.has(a.id),
       );
       if (!techCategorySeparators) return technical;
       const menage = technical.filter((a) => norm(a.poste) === "menage");
@@ -153,7 +151,7 @@ export function PlanningGrid({
     const caissiers = pool.filter((a) => (a.staff_level ?? "agent") === "agent" && isCaissier(a));
     if (level === "manager") return [...base, ...caissiers];
     return base.filter((a) => !isCaissier(a));
-  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows, showReadOnly, readOnlyPdvId, showUnplanned]);
+  }, [agents, level, caissierMode, techMode, techCategorySeparators, groupedCategories, planningPdvId, rows, showReadOnly, readOnlyPdvId]);
   const posteGroups = useMemo(
     () => groupByPoste ? groupPlanningByPoste(eligibleAgents) : [],
     [eligibleAgents, groupByPoste],
@@ -337,16 +335,6 @@ export function PlanningGrid({
               )}
             </>
           )}
-          {((groupedCategories === "rh" && isRh) || (techMode === "only" && !readOnly)) && (
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-8"
-              onClick={() => setShowUnplanned((v) => !v)}
-            >
-              {showUnplanned ? "Masquer les non planifiés" : "Afficher les non planifiés"}
-            </Button>
-          )}
           {showLevelToggle && (
           <div className="flex rounded-md border border-sidebar-border bg-sidebar-accent p-0.5">
             {isRh && (
@@ -400,9 +388,7 @@ export function PlanningGrid({
       {list.length === 0 ? (
         <div className="p-8 text-center text-sm text-muted-foreground">
           {techMode === "only"
-            ? showUnplanned
-              ? "Aucun agent Ménage / Sécurité enregistré pour ce périmètre."
-              : "Aucun collaborateur Ménage / Sécurité planifié cette semaine."
+            ? "Aucun collaborateur Ménage / Sécurité planifié cette semaine."
             : `Aucun ${level === "manager" ? "manager" : "agent"} enregistré pour ce périmètre.`}
         </div>
       ) : (
