@@ -14,6 +14,19 @@ export function isPlannedHere(
   );
 }
 
+/** In the Planning table, caissiers / ménage / sécurité appear only when planned in the displayed week. */
+export function keepPlannedShared<T extends { id: string; poste?: string | null }>(
+  agents: T[],
+  rows: PlanRow[],
+  planningPdvId: string | null,
+): T[] {
+  const isShared = (poste?: string | null) => {
+    const p = normalize(poste ?? "");
+    return p === "caissier" || p === "menage" || p.includes("securite");
+  };
+  return agents.filter((a) => !isShared(a.poste) || isPlannedHere(a.id, rows, planningPdvId));
+}
+
 type PlanRow = {
   agent_id: string;
   pdv_id: string | null;
