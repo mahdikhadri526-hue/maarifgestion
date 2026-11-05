@@ -127,7 +127,8 @@ export function computeDay(params: {
   // Absence automatique uniquement pour une journée passée : on attend la fin du jour en cours.
   const todayIso = params.today ?? isoLocal(new Date());
   const isPast = date < todayIso;
-  const absence = dayType === "travail" && !present && !isHoliday && isPast;
+  // Férié planifié « Travail » : présence obligatoire, sinon absence.
+  const absence = dayType === "travail" && !present && isPast;
 
   return {
     date,
@@ -247,7 +248,9 @@ export function computeBalance(params: {
       holidaySet.has(s.work_date) &&
       afterRecup(s.work_date) &&
       // Récupération du férié uniquement si l'agent a réellement pointé ce jour-là.
-      punchedSet.has(s.work_date),
+      punchedSet.has(s.work_date) &&
+      // Juin, juillet, août : férié travaillé payé, pas récupéré.
+      ![6, 7, 8].includes(Number(s.work_date.slice(5, 7))),
   ).length;
   creditRecup += workedHolidays;
 
