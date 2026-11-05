@@ -64,6 +64,35 @@ describe("computeBalance — récupération férié sur pointage réel", () => {
     const withPunch = computeBalance({ ...params, punchedDates: ["2026-05-01"] });
     expect(withPunch.recupCredit).toBe(1);
   });
+
+  it("ne crédite pas les fériés travaillés en juin, juillet et août (payés)", () => {
+    const days = ["2026-06-15", "2026-07-30", "2026-08-14"];
+    const r = computeBalance({
+      hireDate: null,
+      entries: [],
+      schedules: days.map(sched),
+      holidays: days,
+      punchedDates: days,
+      at: new Date("2026-10-18T12:00:00"),
+    });
+    expect(r.recupCredit).toBe(0);
+  });
+});
+
+describe("computeDay — férié planifié", () => {
+  it("marque absent un employé planifié un jour férié sans pointage", () => {
+    const r = computeDay({
+      agentId: "a1",
+      agentName: "Agent",
+      pdvId: "p1",
+      schedule: { day_type: "travail" } as any,
+      date: "2026-05-01",
+      holidayLabel: "Fête du travail",
+      punches: [],
+      today: "2026-10-18",
+    });
+    expect(r.absence).toBe(true);
+  });
 });
 
 describe("computeOvertimeCounters", () => {
