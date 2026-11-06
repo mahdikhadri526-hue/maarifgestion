@@ -47,6 +47,40 @@ describe("computeDay", () => {
     const sameDay = computeDay({ ...base, date: "2026-10-18", punches: [], today: "2026-10-18" });
     expect(sameDay.absence).toBe(false);
   });
+
+  const dayWithPause = (returnTime: string, exitTime = "16:00:00") => computeDay({
+    ...base,
+    date: "2026-11-06",
+    punches: [
+      punch("entree", "2026-11-06T08:00:00"),
+      punch("pause", "2026-11-06T12:00:00"),
+      punch("retour", `2026-11-06T${returnTime}`),
+      punch("sortie", `2026-11-06T${exitTime}`),
+    ],
+  });
+
+  it("compte 7 h 30 de travail effectif et 30 minutes de pause comme 8 heures", () => {
+    const r = dayWithPause("12:30:00");
+    expect(r.pauseMinutes).toBe(30);
+    expect(r.workedHours).toBe(8);
+    expect(r.overtimeHours).toBe(0);
+  });
+
+  it("déduit uniquement le dépassement des 30 minutes de pause", () => {
+    const r = dayWithPause("12:45:00");
+    expect(r.workedHours).toBe(7.75);
+    expect(r.pauseLateMinutes).toBe(15);
+  });
+
+  it("inclut une pause courte sans ajouter de minutes fictives", () => {
+    expect(dayWithPause("12:10:00").workedHours).toBe(8);
+  });
+
+  it("calcule les heures supplémentaires au-delà de 8 heures pause incluse", () => {
+    const r = dayWithPause("12:30:00", "17:00:00");
+    expect(r.workedHours).toBe(9);
+    expect(r.overtimeHours).toBe(1);
+  });
 });
 
 describe("computeBalance — récupération férié sur pointage réel", () => {
