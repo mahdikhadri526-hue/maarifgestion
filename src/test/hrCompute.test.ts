@@ -72,8 +72,26 @@ describe("computeDay", () => {
     expect(r.pauseLateMinutes).toBe(15);
   });
 
-  it("inclut une pause courte sans ajouter de minutes fictives", () => {
-    expect(dayWithPause("12:10:00").workedHours).toBe(8);
+  it("compte une pause de 20 minutes comme 30 minutes incluses dans les 8 heures", () => {
+    const r = dayWithPause("12:20:00");
+    expect(r.pauseMinutes).toBe(30);
+    expect(r.workedHours).toBe(8);
+    expect(r.pauseLateMinutes).toBe(0);
+    expect(r.overtimeHours).toBe(0);
+  });
+
+  it("compte une pause et un retour simultanés comme 30 minutes", () => {
+    expect(dayWithPause("12:00:00").pauseMinutes).toBe(30);
+  });
+
+  it("n'ajoute pas de pause en l'absence de pointages de pause", () => {
+    const r = computeDay({
+      ...base,
+      date: "2026-11-06",
+      punches: [punch("entree", "2026-11-06T08:00:00"), punch("sortie", "2026-11-06T16:00:00")],
+    });
+    expect(r.pauseMinutes).toBe(0);
+    expect(r.workedHours).toBe(8);
   });
 
   it("calcule les heures supplémentaires au-delà de 8 heures pause incluse", () => {
