@@ -96,7 +96,11 @@ export function computeDay(params: {
   const sA = adj(adj(s, e), peA ?? psA);
 
   const pauseMs = psA && peA && peA > psA ? peA - psA : 0;
-  const unpaidPauseMs = Math.max(0, pauseMs - PAUSE_ALLOWED_MINUTES * 60000);
+  // Une pause complète pointée compte au minimum 30 minutes, incluses dans la journée.
+  const countedPauseMs = psA !== null && peA !== null && peA >= psA
+    ? Math.max(pauseMs, PAUSE_ALLOWED_MINUTES * 60000)
+    : pauseMs;
+  const unpaidPauseMs = Math.max(0, countedPauseMs - PAUSE_ALLOWED_MINUTES * 60000);
   const pauseLateMinutes =
     psA && peA ? Math.max(0, Math.round((peA - psA) / 60000) - PAUSE_ALLOWED_MINUTES) : 0;
   let workedMs = 0;
@@ -146,7 +150,7 @@ export function computeDay(params: {
     pauseStart: hhmm(ps),
     pauseEnd: hhmm(pe),
     sortie: hhmm(s),
-    pauseMinutes: Math.round(pauseMs / 60000),
+    pauseMinutes: Math.round(countedPauseMs / 60000),
     workedHours: Number(worked.toFixed(2)),
     overtimeHours: Number(Math.max(0, worked - OVERTIME_THRESHOLD_HOURS).toFixed(2)),
     lateMinutes,
