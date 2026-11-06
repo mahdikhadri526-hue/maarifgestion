@@ -59,7 +59,8 @@ function hhmm(ts: number | null): string | null {
 }
 
 /**
- * Calcule la journée d'un agent : heures travaillées (sortie − entrée − pause),
+ * Calcule la journée d'un agent : heures comptées (sortie − entrée − dépassement de pause),
+ * avec jusqu'à 30 minutes de pause incluses dans les 8 heures quotidiennes,
  * heures supplémentaires au-delà de 8 h, retard vs planning et absence.
  */
 export function computeDay(params: {
@@ -95,10 +96,11 @@ export function computeDay(params: {
   const sA = adj(adj(s, e), peA ?? psA);
 
   const pauseMs = psA && peA && peA > psA ? peA - psA : 0;
+  const unpaidPauseMs = Math.max(0, pauseMs - PAUSE_ALLOWED_MINUTES * 60000);
   const pauseLateMinutes =
     psA && peA ? Math.max(0, Math.round((peA - psA) / 60000) - PAUSE_ALLOWED_MINUTES) : 0;
   let workedMs = 0;
-  if (e && sA && sA > e) workedMs = sA - e - pauseMs;
+  if (e && sA && sA > e) workedMs = sA - e - unpaidPauseMs;
   else if (e && psA && psA > e) workedMs = psA - e;
   const worked = Math.max(0, workedMs) / 3_600_000;
 
