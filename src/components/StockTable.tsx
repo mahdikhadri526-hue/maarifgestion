@@ -51,6 +51,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/lib/db";
 import { cn, formatDateFR } from "@/lib/utils";
+import { stockReferenceQuantity } from "@/lib/stockReference";
 import { downloadStructuredPdf } from "@/lib/printExport";
 import { WEEKLY_FRUIT_ARTICLES as FRUIT_ARTICLES, WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES, WEEKLY_ALL_ARTICLES as ALL_WEEKLY_ARTICLES } from "@/lib/weeklyArticles";
 
@@ -193,6 +194,15 @@ const monthEndISO = (month: string) => {
   const [year, monthNumber] = month.split("-").map(Number);
   return formatISODate(new Date(year, monthNumber, 0));
 };
+
+function StockReferenceValue({ quantity, reference }: {
+  quantity: number;
+  reference?: { conversion: string; unitRef: string };
+}) {
+  const value = stockReferenceQuantity(quantity, reference?.conversion ?? "");
+  if (value === null) return <span className="text-muted-foreground">—</span>;
+  return <>{value}{reference?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{reference.unitRef}</span> : null}</>;
+}
 
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
   const [category, setCategory] = useState<Category | "all" | "tarte" | "fruits" | "glace" | "nettoyant" | "creme">(variant === "order" ? "alimentaire" : "all");
@@ -1711,8 +1721,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 {showMepCols && (
                   <>
                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
+                 {showRefCols && <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place Réf.</th>}
                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties total</th>
+                 {showRefCols && <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties total Réf.</th>}
                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total</th>
+                 {showRefCols && <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total Réf.</th>}
                   </>
                 )}
 
@@ -1865,14 +1878,29 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       <span className="text-muted-foreground">{roundStockQuantity(mepMap[level.productId] ?? 0)}</span>
                     )}
                   </td>
+                  {showRefCols && (
+                    <td className="p-3 text-right font-mono text-sm text-muted-foreground">
+                      <StockReferenceValue quantity={mepMap[level.productId] ?? 0} reference={refMap[level.productId]} />
+                    </td>
+                  )}
                    <td className="p-3 text-right font-mono text-sm font-bold">
                      <span className={sortiesTotal < 0 ? "text-destructive" : "text-accent-foreground"}>
                        {sortiesTotal}
                      </span>
                    </td>
+                   {showRefCols && (
+                     <td className="p-3 text-right font-mono text-sm font-bold text-muted-foreground">
+                       <StockReferenceValue quantity={sortiesTotal} reference={refMap[level.productId]} />
+                     </td>
+                   )}
                    <td className="p-3 text-right font-mono text-sm font-bold text-primary">
                      {roundStockQuantity((Number(v.stockRestant) || 0) + (mepMap[level.productId] ?? 0))}
                    </td>
+                   {showRefCols && (
+                     <td className="p-3 text-right font-mono text-sm font-bold text-muted-foreground">
+                       <StockReferenceValue quantity={stockTotal} reference={refMap[level.productId]} />
+                     </td>
+                   )}
                     </>
                   )}
                 </tr>
