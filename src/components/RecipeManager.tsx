@@ -229,10 +229,7 @@ export function RecipeManager() {
       if (e2) throw e2;
       const unitChanges = changedRecipeIngredientUnits(originalIngs, editingIngs);
       if (unitChanges.length > 0) {
-        const unitClient = supabase as unknown as {
-          rpc: (name: "sync_recipe_ingredient_units", args: { _changes: typeof unitChanges }) => PromiseLike<{ error: { message: string } | null }>;
-        };
-        const { error: unitError } = await unitClient.rpc("sync_recipe_ingredient_units", { _changes: unitChanges });
+        const { error: unitError } = await supabase.rpc("sync_recipe_ingredient_units", { _changes: unitChanges });
         if (unitError) throw unitError;
       }
       // replace ingredients

@@ -16,7 +16,8 @@ describe("shared recipe ingredient units", () => {
   });
   it("sends only the unit and identity, never a quantity", () => {
     const original = { product_id: "emb-3", category: "emballage", unit: "UA", quantity: 2 };
-    expect(changedRecipeIngredientUnits([original], [{ ...original, unit: "PIECE", quantity: 2 }]))
+    const edited = { ...original, unit: "PIECE", quantity: 2 };
+    expect(changedRecipeIngredientUnits([original], [edited]))
       .toEqual([{ product_id: "emb-3", category: "emballage", unit: "PIECE" }]);
   });
 });
