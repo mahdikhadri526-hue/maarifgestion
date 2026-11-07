@@ -5,12 +5,13 @@ import { latestRecipeVersions } from "@/lib/recipeVersions";
 import { changedRecipeIngredientUnits } from "@/lib/recipeIngredientUnits";
 import { getProducts, isProductActive, type Category, type UnitType } from "@/lib/stockData";
 import { useAuth } from "@/contexts/AuthContext";
+import { WEEKLY_FRUIT_ARTICLES, WEEKLY_TARTE_DISPLAY_ARTICLES } from "@/lib/weeklyArticles";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, ChefHat, Plus, Save, Search, Trash2, Link2 } from "lucide-react";
@@ -51,6 +52,16 @@ const CAT_LABELS: Record<string, string> = {
   autres: "Autres",
 };
 
+// Articles suivis dans le Suivi Hebdo (hors table stock) : liables aux recettes.
+const weeklyGroups: { label: string; items: string[] }[] = [
+  { label: "Tartes", items: WEEKLY_TARTE_DISPLAY_ARTICLES },
+  { label: "Fruits", items: WEEKLY_FRUIT_ARTICLES },
+  { label: "Crème fraîche", items: ["Crème fraîche (mousse fouettée)"] },
+];
+const weeklyOptions = weeklyGroups.flatMap((g) =>
+  g.items.map((name) => ({ id: `weekly:${name}`, name, group: g.label })),
+);
+
 function isCustom(productId: string) {
   return productId.startsWith("custom:");
 }
@@ -63,6 +74,7 @@ export function RecipeManager() {
   const stockMap = useMemo(() => {
     const m = new Map<string, { name: string; category: Category }>();
     stockProducts.forEach((p) => m.set(p.id, { name: p.name, category: p.category }));
+    weeklyOptions.forEach((o) => m.set(o.id, { name: o.name, category: "alimentaire" }));
     return m;
   }, [stockProducts]);
 
@@ -460,6 +472,14 @@ export function RecipeManager() {
                             <SelectItem key={p.id} value={p.id}>
                               {p.name} {p.conditionnement && <span className="text-muted-foreground text-xs">({p.conditionnement})</span>}
                             </SelectItem>
+                          ))}
+                          {weeklyGroups.map((g) => (
+                            <SelectGroup key={g.label}>
+                              <SelectLabel>{g.label} (Suivi hebdo)</SelectLabel>
+                              {g.items.map((name) => (
+                                <SelectItem key={`weekly:${name}`} value={`weekly:${name}`}>{name}</SelectItem>
+                              ))}
+                            </SelectGroup>
                           ))}
                         </SelectContent>
                       </Select>
