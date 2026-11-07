@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { latestRecipeVersions } from "@/lib/recipeVersions";
+import { changedRecipeIngredientUnits } from "@/lib/recipeIngredientUnits";
 import { getProducts, isProductActive, type Category, type UnitType } from "@/lib/stockData";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
@@ -78,6 +79,7 @@ export function RecipeManager() {
   const [editingProduct, setEditingProduct] = useState<FinishedProduct | null>(null);
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [editingIngs, setEditingIngs] = useState<Ingredient[]>([]);
+  const [originalIngs, setOriginalIngs] = useState<Ingredient[]>([]);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
@@ -132,6 +134,7 @@ export function RecipeManager() {
       setRecipes((prev) => [...prev, data as Recipe]);
       setEditingRecipe(data as Recipe);
       setEditingIngs([]);
+      setOriginalIngs([]);
     } else {
       setEditingRecipe({ ...recipe });
       const { data, error } = await supabase
@@ -140,6 +143,7 @@ export function RecipeManager() {
         .eq("recipe_id", recipe.id);
       if (error) toast.error("Erreur", { description: error.message });
       setEditingIngs((data ?? []) as Ingredient[]);
+      setOriginalIngs((data ?? []) as Ingredient[]);
     }
     setDirty(false);
   };
@@ -150,6 +154,7 @@ export function RecipeManager() {
     setEditingProduct(null);
     setEditingRecipe(null);
     setEditingIngs([]);
+    setOriginalIngs([]);
     setDirty(false);
   };
 
@@ -222,6 +227,11 @@ export function RecipeManager() {
         })
         .eq("id", editingRecipe.id);
       if (e2) throw e2;
+      const unitChanges = changedRecipeIngredientUnits(originalIngs, editingIngs);
+      if (unitChanges.length > 0) {
+        const { error: unitError } = await supabase.rpc("sync_recipe_ingredient_units", { _changes: unitChanges });
+        if (unitError) throw unitError;
+      }
       // replace ingredients
       const { error: eDel } = await supabase
         .from("recipe_ingredients")
@@ -242,6 +252,7 @@ export function RecipeManager() {
       }
       toast.success("Recette enregistrée");
       setDirty(false);
+      setOriginalIngs(editingIngs.map(ingredient => ({ ...ingredient })));
       // refresh local data
       setProducts((arr) =>
         arr.map((p) => (p.id === editingProduct.id ? { ...p, ...editingProduct } : p))
