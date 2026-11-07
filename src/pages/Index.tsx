@@ -92,6 +92,10 @@ const Index = () => {
     { id: "stuffs-glace" as Tab, label: "Contrôle STUFFS de glace", icon: Snowflake, perm: "view_glace", alt: "view_autocontrol" },
     { id: "hebdo" as Tab, label: "Suivi hebdomadaire", icon: CalendarDays, perm: "view_weekly" },
     { id: "temperatures" as Tab, label: "Températures frigos", icon: Thermometer, perm: "view_temperatures" },
+    ...(isPreviewHost() ? [
+      { id: "recettes" as Tab, label: "Recettes des produits finis", icon: ChefHat, perm: "view_recipes" },
+      { id: "inventaire" as Tab, label: "Inventaire", icon: PackageCheck, perm: "view_inventory" },
+    ] : []),
     { id: "nettoyage" as Tab, label: "Nettoyage", icon: Sparkles, perm: "view_cleaning" },
     { id: "ecarts" as Tab, label: "Calcul des écarts", icon: Scale, perm: "view_ecarts" },
     { id: "pep" as Tab, label: "Agenda PEP", icon: CalendarClock, perm: "view_pep" },
@@ -102,7 +106,7 @@ const Index = () => {
   ];
   const ATTENDANCE_ENABLED = isPreviewHost();
   const tabs = allTabs.filter(
-    (t) => (can(t.perm) || (!!(t as { alt?: string }).alt && can((t as { alt?: string }).alt!))) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED) && (t.id !== "rh" || ATTENDANCE_ENABLED) && (t.id !== "planning" || ATTENDANCE_ENABLED)
+    (t) => (can(t.perm) || ("alt" in t && typeof t.alt === "string" && can(t.alt))) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED) && (t.id !== "rh" || ATTENDANCE_ENABLED) && (t.id !== "planning" || ATTENDANCE_ENABLED)
   );
   const pageTitles: Partial<Record<Tab, string>> = {
     "stock-initial": "Stock Initial",
