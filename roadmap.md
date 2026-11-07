@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Ajouter Analyse des écarts matières : période, ventes manuelles par produit fini, ingrédients des recettes courantes et sorties total Réf. existantes, tests et aperçu connecté ; sans import Excel ni changement des modules actuels.
 - [x] Ajouter les conversions Réf. de Sorties total, Stock mise en place et Stock total ; 29 tests réussis et conversions vérifiées sur 99 produits dans l’aperçu connecté ; données et calculs inchangés, non publié.
 - [x] Recettes Excel : 133 recettes / 911 ingrédients importés et relus à l’identique (59 Sur place, 51 Emporter, 13 Tartes, 10 Autres) ; quatre produits manquants ajoutés, anciennes versions conservées, doses en unités d’achat sans conversion supposée, préparations non identifiées gardées avec leur nom exact ; quatre fiches vérifiées dans l’aperçu connecté, deux tests réussis, aucune publication. L’ancienne fiche hors fichier « PRIX TTC » reste conservée.
 - [x] Séparer le planning par postes renseignés dans RH, uniquement pour les employés présents dans le périmètre du PDV ; données et droits inchangés, 8 tests réussis, compilation valide, sans publication.
