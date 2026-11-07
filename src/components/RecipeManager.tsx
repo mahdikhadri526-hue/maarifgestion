@@ -5,7 +5,7 @@ import { latestRecipeVersions } from "@/lib/recipeVersions";
 import { changedRecipeIngredientUnits } from "@/lib/recipeIngredientUnits";
 import { getProducts, isProductActive, type Category, type UnitType } from "@/lib/stockData";
 import { useAuth } from "@/contexts/AuthContext";
-import { WEEKLY_FRUIT_ARTICLES, WEEKLY_TARTE_DISPLAY_ARTICLES } from "@/lib/weeklyArticles";
+import { canonicalStockIngredientId, stockRecipeGroups, stockRecipeIngredients, stockRecipeIngredientId } from "@/lib/stockRecipeIngredients";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,23 +44,13 @@ type Ingredient = {
   notes: string | null;
 };
 
-const UNITS: string[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU", "UA"];
+const UNITS: string[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU", "UA", "STOCK"];
 const CAT_LABELS: Record<string, string> = {
   emporter: "Emporter",
   surplace: "Sur place",
   tartes: "Tartes",
   autres: "Autres",
 };
-
-// Articles suivis dans le Suivi Hebdo (hors table stock) : liables aux recettes.
-const weeklyGroups: { label: string; items: string[] }[] = [
-  { label: "Tartes", items: WEEKLY_TARTE_DISPLAY_ARTICLES },
-  { label: "Fruits", items: WEEKLY_FRUIT_ARTICLES },
-  { label: "Crème fraîche", items: ["Crème fraîche (mousse fouettée)"] },
-];
-const weeklyOptions = weeklyGroups.flatMap((g) =>
-  g.items.map((name) => ({ id: `weekly:${name}`, name, group: g.label })),
-);
 
 function isCustom(productId: string) {
   return productId.startsWith("custom:");
@@ -74,7 +64,7 @@ export function RecipeManager() {
   const stockMap = useMemo(() => {
     const m = new Map<string, { name: string; category: Category }>();
     stockProducts.forEach((p) => m.set(p.id, { name: p.name, category: p.category }));
-    weeklyOptions.forEach((o) => m.set(o.id, { name: o.name, category: "alimentaire" }));
+    stockRecipeIngredients.forEach((o) => m.set(o.id, { name: o.name, category: o.category }));
     return m;
   }, [stockProducts]);
 
@@ -154,8 +144,8 @@ export function RecipeManager() {
         .select("*")
         .eq("recipe_id", recipe.id);
       if (error) toast.error("Erreur", { description: error.message });
-      setEditingIngs((data ?? []) as Ingredient[]);
-      setOriginalIngs((data ?? []) as Ingredient[]);
+      setEditingIngs(((data ?? []) as Ingredient[]).map(ing => ({ ...ing, product_id: canonicalStockIngredientId(ing.product_id) })));
+      setOriginalIngs(((data ?? []) as Ingredient[]).map(ing => ({ ...ing, product_id: canonicalStockIngredientId(ing.product_id) })));
     }
     setDirty(false);
   };
@@ -448,7 +438,7 @@ export function RecipeManager() {
                       >
                         <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {UNITS.map((u) => <SelectItem key={u} value={u}>{u === "UA" ? "Unité d’achat" : u}</SelectItem>)}
+                          {UNITS.map((u) => <SelectItem key={u} value={u}>{u === "UA" ? "Unité d’achat" : u === "STOCK" ? "Unité stock" : u}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
@@ -473,11 +463,11 @@ export function RecipeManager() {
                               {p.name} {p.conditionnement && <span className="text-muted-foreground text-xs">({p.conditionnement})</span>}
                             </SelectItem>
                           ))}
-                          {weeklyGroups.map((g) => (
+                          {stockRecipeGroups.map((g) => (
                             <SelectGroup key={g.label}>
-                              <SelectLabel>{g.label} (Suivi hebdo)</SelectLabel>
+                              <SelectLabel>{g.label} (Stock restant)</SelectLabel>
                               {g.items.map((name) => (
-                                <SelectItem key={`weekly:${name}`} value={`weekly:${name}`}>{name}</SelectItem>
+                                <SelectItem key={stockRecipeIngredientId(name)} value={stockRecipeIngredientId(name)}>{name}</SelectItem>
                               ))}
                             </SelectGroup>
                           ))}
