@@ -44,7 +44,7 @@ type Ingredient = {
   notes: string | null;
 };
 
-const UNITS: string[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU", "UA"];
+const UNITS: string[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU", "UA", "STOCK"];
 const CAT_LABELS: Record<string, string> = {
   emporter: "Emporter",
   surplace: "Sur place",
@@ -145,7 +145,7 @@ export function RecipeManager() {
         .eq("recipe_id", recipe.id);
       if (error) toast.error("Erreur", { description: error.message });
       setEditingIngs(((data ?? []) as Ingredient[]).map(ing => ({ ...ing, product_id: canonicalStockIngredientId(ing.product_id) })));
-      setOriginalIngs((data ?? []) as Ingredient[]);
+      setOriginalIngs(((data ?? []) as Ingredient[]).map(ing => ({ ...ing, product_id: canonicalStockIngredientId(ing.product_id) })));
     }
     setDirty(false);
   };
@@ -438,7 +438,7 @@ export function RecipeManager() {
                       >
                         <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {UNITS.map((u) => <SelectItem key={u} value={u}>{u === "UA" ? "Unité d’achat" : u}</SelectItem>)}
+                          {UNITS.map((u) => <SelectItem key={u} value={u}>{u === "UA" ? "Unité d’achat" : u === "STOCK" ? "Unité stock" : u}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>

@@ -1,7 +1,32 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { computeMaterialVariance, materialActualReference, materialSalesSection } from "@/lib/materialVariance";
+import { canonicalStockIngredientId, stockRecipeIngredients, stockRecipePeriodTotals } from "@/lib/stockRecipeIngredients";
+
+vi.mock("@/lib/stockData", () => ({ roundStockQuantity: (n: number) => Math.round(n * 1000) / 1000 }));
 
 describe("Analyse des écarts matières", () => {
+  it("links tartes and fruits to exact Stock restant article identities and cream to its existing aggregate", () => {
+    expect(stockRecipeIngredients.find(row => row.name === "Bûche")?.id).toBe("Bûche");
+    expect(stockRecipeIngredients.find(row => row.name === "Orange fruits")?.id).toBe("Orange fruits");
+    expect(stockRecipeIngredients.find(row => row.name === "Crème fraîche (mousse fouettée)")?.id).toBe("__chantilly_agg__");
+    expect(stockRecipeIngredients.find(row => row.name === "Chanty.Fruit confits")?.id).toBe("Chanty.Fruit confits");
+    expect(canonicalStockIngredientId("ali-3")).toBe("ali-3");
+  });
+  it.each(["Bûche", "Orange fruits", "Crème fraîche (mousse fouettée)"])("uses the Stock restant period outputs in recipe calculations for %s", article => {
+    const rows = stockRecipePeriodTotals([
+      { article, week_start: "2026-11-02", day_of_week: "Lundi", row_index: 0, stock_initial: 20, entrees: 5, sorties: null },
+      { article, week_start: "2026-11-02", day_of_week: "Mardi", row_index: 0, stock_initial: 18, entrees: 999, sorties: null },
+    ], "2026-11-02", "2026-11-02");
+    const stock = rows.find(row => row.name === article);
+    expect(stock?.sorties).toBe(7);
+    if (!stock) throw new Error("Missing stock ingredient");
+    const result = computeMaterialVariance([{ id: "recipe", finished_product_id: "sold", version: 1, active: true }],
+      [{ recipe_id: "recipe", product_id: `weekly:${article}`, category: "alimentaire", quantity: 0.5, unit: "STOCK", notes: null }],
+      { sold: 10 }, { [stock.id]: { name: stock.name, category: stock.category, quantity: stock.sorties, unit: "STOCK" } });
+    expect(result[0].actual).toBe(7);
+    expect(result[0].theoretical).toBe(5);
+    expect(result[0].variance).toBe(2);
+  });
   const recipes = [{ id: "surplace", finished_product_id: "sp", version: 1, active: true }, { id: "emporter", finished_product_id: "emp", version: 1, active: true }, { id: "old", finished_product_id: "sp", version: 0, active: false }];
   const ingredients = [{ recipe_id: "surplace", product_id: "sidi", category: "alimentaire", quantity: 1, unit: "PIECE", notes: null }, { recipe_id: "emporter", product_id: "sidi", category: "alimentaire", quantity: 1, unit: "PIECE", notes: null }, { recipe_id: "old", product_id: "sidi", category: "alimentaire", quantity: 99, unit: "PIECE", notes: null }];
   it("cumulates sold quantity times recipe dose across categories, excluding old recipes", () => {

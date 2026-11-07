@@ -40,8 +40,8 @@ export function computeMaterialVariance(recipes: MaterialRecipe[], ingredients: 
     const compatible = !!actual && unitKey(actual.unit) === unitKey(ingredient.unit);
     const issue = !actual ? "Non lié au stock" : actual.quantity === null ? "Conversion Réf. manquante" : !compatible ? "Unités différentes" : null;
     return { id, name: actual?.name ?? ingredient.notes ?? ingredient.product_id.replace(/^custom:/, ""), category: actual?.category ?? ingredient.category,
-      actual: actual?.quantity ?? null, theoretical: round(theoretical), unit: ingredient.unit === "UA" ? "UA" : ingredient.unit,
-      actualUnit: actual?.unit ?? "", variance: issue ? null : round((actual?.quantity ?? 0) - theoretical), issue };
+      actual: actual?.quantity ?? null, theoretical: round(theoretical), unit: ingredient.unit === "STOCK" ? "Unité stock" : ingredient.unit,
+      actualUnit: actual?.unit === "STOCK" ? "Unité stock" : actual?.unit ?? "", variance: issue ? null : round((actual?.quantity ?? 0) - theoretical), issue };
   }).sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name, "fr"));
 }
 

@@ -72,7 +72,7 @@ export async function loadMaterialAnalysis(start: string, end: string) {
     // Cream's general stock row explicitly uses kg; other unlabelled units need checking.
     actuals[row.id] = { name: row.name, category: row.category,
       quantity: ref ? materialActualReference(row.stockInitial, row.entrees, row.stockRestant, mep[row.id] ?? 0, ref.conversion) : row.sorties,
-      unit: ref?.unit_ref ?? (row.id === CHANTILLY_AGG_ID ? "kg" : "Unité stock"),
+      unit: ref?.unit_ref ?? (row.id === CHANTILLY_AGG_ID ? "kg" : "STOCK"),
     };
   }
   return { products, recipes: latestRecipeVersions(recipeRows).filter(row => row.active), ingredients, actuals, sales: Object.fromEntries(salesRows.map(row => [row.item, Number(row.qty)])) as Record<string, number> };
