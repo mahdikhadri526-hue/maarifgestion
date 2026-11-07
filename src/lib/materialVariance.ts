@@ -16,7 +16,7 @@ const round = (value: number) => Math.round(value * 10000) / 10000;
 
 /** Same arithmetic as Stock restant's Sorties total Réf. column. */
 export function materialActualReference(initial: number, receipts: number, remaining: number, miseEnPlace: number, conversion: string) {
-  const outputs = Math.round((initial + receipts - (remaining + miseEnPlace)) * 1000) / 1000;
+  const outputs = Number((initial + receipts - (remaining + miseEnPlace)).toFixed(2));
   return stockReferenceQuantity(outputs, conversion);
 }
 
