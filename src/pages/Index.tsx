@@ -12,6 +12,7 @@ const AutocontrolManager = lazy(() => import("@/components/AutocontrolManager").
 const WeeklyTracking = lazy(() => import("@/components/WeeklyTracking").then((m) => ({ default: m.WeeklyTracking })));
 const FridgeTemperatureManager = lazy(() => import("@/components/FridgeTemperatureManager").then((m) => ({ default: m.FridgeTemperatureManager })));
 const RecipeManager = lazy(() => import("@/components/RecipeManager").then((m) => ({ default: m.RecipeManager })));
+const MaterialVarianceModule = lazy(() => import("@/components/MaterialVarianceModule").then((m) => ({ default: m.MaterialVarianceModule })));
 const CleaningManager = lazy(() => import("@/components/CleaningManager").then((m) => ({ default: m.CleaningManager })));
 const GlaceStuffControl = lazy(() => import("@/components/GlaceStuffControl").then((m) => ({ default: m.GlaceStuffControl })));
 const InventoryModule = lazy(() => import("@/components/inventory/InventoryModule").then((m) => ({ default: m.InventoryModule })));
@@ -37,7 +38,7 @@ import { KioskToggle } from "@/components/KioskToggle";
 import { VoiceGuideManager } from "@/components/VoiceGuideManager";
 import { PageTitle } from "@/components/PageTitle";
 
-type Tab = "dashboard" | "rh" | "planning" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "pep" | "tech" | "pointage";
+type Tab = "dashboard" | "rh" | "planning" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "ecarts-matieres" | "pep" | "tech" | "pointage";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -98,6 +99,7 @@ const Index = () => {
     ] : []),
     { id: "nettoyage" as Tab, label: "Nettoyage", icon: Sparkles, perm: "view_cleaning" },
     { id: "ecarts" as Tab, label: "Calcul des écarts", icon: Scale, perm: "view_ecarts" },
+    { id: "ecarts-matieres" as Tab, label: "Analyse des écarts matières", icon: BarChart3, perm: "view_ecarts" },
     { id: "pep" as Tab, label: "Agenda PEP", icon: CalendarClock, perm: "view_pep" },
     { id: "tech" as Tab, label: "Suivi Technique", icon: Wrench, perm: "view_tech" },
     { id: "pointage" as Tab, label: "Pointage", icon: ScanFace, perm: "view_attendance" },
@@ -123,6 +125,7 @@ const Index = () => {
     nettoyage: "Suivi de nettoyage quotidien",
     inventaire: "Inventaire",
     ecarts: "Calcul des écarts",
+    "ecarts-matieres": "Analyse des écarts matières",
     pep: "Agenda PEP",
     tech: "Suivi Technique",
     rh: "RH — Plannings",
@@ -330,6 +333,7 @@ const Index = () => {
             {tab === "hebdo" && <WeeklyTracking />}
             {tab === "temperatures" && <FridgeTemperatureManager />}
             {tab === "recettes" && <RecipeManager />}
+            {tab === "ecarts-matieres" && <MaterialVarianceModule />}
             {tab === "nettoyage" && <CleaningManager />}
             {tab === "inventaire" && <InventoryModule />}
             {tab === "ecarts" && <EcartHub glace={<EcartModule />} />}
