@@ -218,6 +218,13 @@
       "when": 1793316400626,
       "tag": "0030_tech_media_chunk_admin_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1794080150499,
+      "tag": "0031_sync_recipe_ingredient_units",
+      "breakpoints": true
     }
   ]
 }
