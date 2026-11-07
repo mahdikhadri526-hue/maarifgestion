@@ -6,13 +6,15 @@ import { getProducts, getMovements, getInitialStocks, getGlaceAggregateForRange,
 import { getMiseEnPlaceStocksForWeek, getMiseEnPlaceStocks, weekStartOf, inventoryDayOfWeek } from "@/lib/miseEnPlaceData";
 import { formatISODate } from "@/lib/stockWeeklyAggregates";
 import { materialActualReference, materialSalesSection, type MaterialActual, type MaterialRecipe, type MaterialIngredient } from "@/lib/materialVariance";
+import { stockRecipeIngredients, stockRecipePeriodTotals } from "@/lib/stockRecipeIngredients";
+import { CHANTILLY_AGG_ID, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
 
 export interface MaterialFinishedProduct { id: string; name: string; category: string | null; active: boolean }
 
 export async function loadMaterialAnalysis(start: string, end: string) {
   const pdvId = requireCurrentPdvId();
   const week = weekStartOf(new Date(`${end}T00:00:00`));
-  const [products, recipeRows, ingredients, movements, initial, references, salesRows, weeklyMep] = await Promise.all([
+  const [products, recipeRows, ingredients, movements, initial, references, salesRows, weeklyMep, stockArticleRows] = await Promise.all([
     fetchAllRows<MaterialFinishedProduct>(() => supabase.from("finished_products").select("id,name,category,active").order("name")),
     fetchAllRows<MaterialRecipe>(() => supabase.from("recipes").select("id,finished_product_id,version,active")),
     fetchAllRows<MaterialIngredient>(() => supabase.from("recipe_ingredients").select("recipe_id,product_id,category,quantity,unit,notes")),
@@ -20,6 +22,9 @@ export async function loadMaterialAnalysis(start: string, end: string) {
     fetchAllRows<{ product_id: string; conversion: string; unit_ref: string }>(() => supabase.from("stock_ref_conversions").select("product_id,conversion,unit_ref")),
     fetchAllRows<{ item: string; qty: number }>(() => supabase.from("ecart_lines").select("item,qty").eq("pdv_id", pdvId).eq("entry_date", start).eq("section", materialSalesSection(end))),
     getMiseEnPlaceStocksForWeek(week),
+    fetchAllRows<WeeklyTrackingOrderRecord>(() => supabase.from("weekly_tracking")
+      .select("article,sorties,entrees,stock_initial,day_of_week,week_start,row_index")
+      .eq("fiche_type", "Mouvement glaces & tartes").in("article", stockRecipeIngredients.map(row => row.name))),
   ]);
   const inventoryDate = formatISODate(inventoryDayOfWeek(week));
   let mep = weeklyMep;
@@ -60,6 +65,15 @@ export async function loadMaterialAnalysis(start: string, end: string) {
     const remaining = roundStockQuantity(override?.stockRestant ?? row.initial + row.receipts - row.outputs);
     const ref = refs.get(product.id);
     actuals[product.id] = { name: product.name, category: product.category, unit: ref?.unit_ref ?? "", quantity: materialActualReference(si, receipts, remaining, mep[product.id] ?? 0, ref?.conversion ?? "") };
+  }
+  for (const row of stockRecipePeriodTotals(stockArticleRows, start, end)) {
+    const ref = refs.get(row.id);
+    // Stock article rows display native quantities, not invented kg/piece conversions.
+    // Cream's general stock row explicitly uses kg; other unlabelled units need checking.
+    actuals[row.id] = { name: row.name, category: row.category,
+      quantity: ref ? materialActualReference(row.stockInitial, row.entrees, row.stockRestant, mep[row.id] ?? 0, ref.conversion) : row.sorties,
+      unit: ref?.unit_ref ?? (row.id === CHANTILLY_AGG_ID ? "kg" : "Unité stock"),
+    };
   }
   return { products, recipes: latestRecipeVersions(recipeRows).filter(row => row.active), ingredients, actuals, sales: Object.fromEntries(salesRows.map(row => [row.item, Number(row.qty)])) as Record<string, number> };
 }

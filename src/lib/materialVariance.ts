@@ -1,4 +1,5 @@
 import { stockReferenceQuantity } from "@/lib/stockReference";
+import { canonicalStockIngredientId } from "@/lib/stockRecipeIngredients";
 
 export interface MaterialIngredient { recipe_id: string; product_id: string; category: string; quantity: number; unit: string; notes: string | null }
 export interface MaterialRecipe { id: string; finished_product_id: string; version: number; active: boolean }
@@ -24,7 +25,8 @@ export function materialActualReference(initial: number, receipts: number, remai
 export function computeMaterialVariance(recipes: MaterialRecipe[], ingredients: MaterialIngredient[], sales: Record<string, number>, actuals: Record<string, MaterialActual>): MaterialResult[] {
   const recipeProducts = new Map(recipes.filter(r => r.active).map(r => [r.id, r.finished_product_id]));
   const groups = new Map<string, { ingredient: MaterialIngredient; theoretical: number }>();
-  for (const ingredient of ingredients) {
+  for (const source of ingredients) {
+    const ingredient = { ...source, product_id: canonicalStockIngredientId(source.product_id) };
     const product = recipeProducts.get(ingredient.recipe_id);
     if (!product) continue;
     const key = `${ingredient.product_id}:${unitKey(ingredient.unit)}`;
