@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Compléter les recettes depuis MARGE_OLIVERI_1-2.xlsx, vérifier ingrédients/quantités pour Sur place, Emporter, Autres et Tartes : fichier chiffré, attendre une copie Excel sans mot de passe ; aucune recette modifiée.
+- [ ] Compléter les recettes depuis MARGE_OLIVERI_1-2.xlsx : 133 recettes et 911 ingrédients vérifiés ; importer les unités d’achat exactes et conserver les anciennes versions, puis vérifier dans l’aperçu.
 - [x] Séparer le planning par postes renseignés dans RH, uniquement pour les employés présents dans le périmètre du PDV ; données et droits inchangés, 8 tests réussis, compilation valide, sans publication.
 - [ ] Vérifier le planning par poste dans l’aperçu connecté : session absente et connexion automatique au compte demandeur impossible ; attendre sa reconnexion.
 - [x] Vidéos : chargement réel ~0,9 s, signalement ~0,2–0,3 s, relecture du tableau et lecture WebM vérifiées ; ancienne vidéo 8,2 Mo conservée à l’identique (empreinte vérifiée), fiche réduite de 10,9 Mo à 71 caractères ; miniatures sans préchargement, 16 tests réussis, cinq signalements de test supprimés. Lecture MP4 historique non vérifiable dans Chromium sans codec H264 ; aucune publication ni paquet préparé.

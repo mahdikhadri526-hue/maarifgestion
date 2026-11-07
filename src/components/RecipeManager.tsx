@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabasePaginate";
+import { latestRecipeVersions } from "@/lib/recipeVersions";
 import { getProducts, isProductActive, type Category, type UnitType } from "@/lib/stockData";
 import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
@@ -41,7 +42,7 @@ type Ingredient = {
   notes: string | null;
 };
 
-const UNITS: UnitType[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU"];
+const UNITS: string[] = ["PIECE", "KILO", "LITRE", "PAQUET", "COLIS", "ROULEAU", "UA"];
 const CAT_LABELS: Record<string, string> = {
   emporter: "Emporter",
   surplace: "Sur place",
@@ -93,8 +94,9 @@ export function RecipeManager() {
         ),
       ]);
       setProducts(fp);
-      setRecipes(rc);
-      const recipeToProduct = new Map(rc.map((r) => [r.id, r.finished_product_id]));
+      const currentRecipes = latestRecipeVersions(rc);
+      setRecipes(currentRecipes);
+      const recipeToProduct = new Map(currentRecipes.map((r) => [r.id, r.finished_product_id]));
       const c: Record<string, number> = {};
       ri.forEach((row) => {
         const pid = recipeToProduct.get(row.recipe_id);
@@ -364,7 +366,7 @@ export function RecipeManager() {
               const stockInfo = stockMap.get(ing.product_id);
               const displayName = custom
                 ? (ing.notes || ing.product_id.replace(/^custom:/, "").replace(/-/g, " "))
-                : (stockInfo?.name ?? ing.product_id);
+                : (ing.notes || stockInfo?.name || ing.product_id);
               return (
                 <div
                   key={idx}
@@ -423,7 +425,7 @@ export function RecipeManager() {
                       >
                         <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                          {UNITS.map((u) => <SelectItem key={u} value={u}>{u}</SelectItem>)}
+                          {UNITS.map((u) => <SelectItem key={u} value={u}>{u === "UA" ? "Unité d’achat" : u}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     </div>
