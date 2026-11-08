@@ -2879,6 +2879,10 @@ export type Database = {
           stock_restant: number
         }[]
       }
+      sync_recipe_ingredient_links: {
+        Args: { _changes: Json }
+        Returns: number
+      }
       sync_recipe_ingredient_units: {
         Args: { _changes: Json }
         Returns: number
