@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { latestRecipeVersions } from "@/lib/recipeVersions";
 import { changedRecipeIngredientUnits } from "@/lib/recipeIngredientUnits";
+import { relinkRecipeIngredients, type RecipeIngredientLink } from "@/lib/recipeIngredientLinks";
 import { getProducts, isProductActive, type Category, type UnitType } from "@/lib/stockData";
 import { useAuth } from "@/contexts/AuthContext";
 import { canonicalStockIngredientId, stockRecipeGroups, stockRecipeIngredients, stockRecipeIngredientId } from "@/lib/stockRecipeIngredients";
@@ -82,6 +83,7 @@ export function RecipeManager() {
   const [editingRecipe, setEditingRecipe] = useState<Recipe | null>(null);
   const [editingIngs, setEditingIngs] = useState<Ingredient[]>([]);
   const [originalIngs, setOriginalIngs] = useState<Ingredient[]>([]);
+  const [linkChanges, setLinkChanges] = useState<RecipeIngredientLink[]>([]);
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
@@ -119,6 +121,7 @@ export function RecipeManager() {
   }, []);
 
   const openProduct = async (p: FinishedProduct) => {
+    setLinkChanges([]);
     setSelectedId(p.id);
     setEditingProduct({ ...p });
     const recipe = recipes.find((r) => r.finished_product_id === p.id) ?? null;
@@ -157,6 +160,7 @@ export function RecipeManager() {
     setEditingRecipe(null);
     setEditingIngs([]);
     setOriginalIngs([]);
+    setLinkChanges([]);
     setDirty(false);
   };
 
@@ -188,8 +192,15 @@ export function RecipeManager() {
 
   const remapToStock = (idx: number, stockId: string) => {
     const info = stockMap.get(stockId);
-    if (!info) return;
-    updateIng(idx, { product_id: stockId, category: info.category, notes: null });
+    const source = editingIngs[idx];
+    if (!info || !source || source.product_id === stockId) return;
+    const change: RecipeIngredientLink = {
+      source_product_id: source.product_id, source_category: source.category,
+      product_id: stockId, category: info.category,
+    };
+    setLinkChanges(changes => [...changes, change]);
+    setEditingIngs(ingredients => relinkRecipeIngredients(ingredients, change));
+    setDirty(true);
   };
 
   const save = async () => {
@@ -252,7 +263,12 @@ export function RecipeManager() {
         const { error: eIns } = await supabase.from("recipe_ingredients").insert(rows);
         if (eIns) throw eIns;
       }
-      toast.success("Recette enregistrée");
+      if (linkChanges.length > 0) {
+        const { error: linkError } = await supabase.rpc("sync_recipe_ingredient_links", { _changes: linkChanges });
+        if (linkError) throw linkError;
+      }
+      toast.success(linkChanges.length > 0 ? "Recette enregistrée et liaisons appliquées aux autres recettes" : "Recette enregistrée");
+      setLinkChanges([]);
       setDirty(false);
       setOriginalIngs(editingIngs.map(ingredient => ({ ...ingredient })));
       // refresh local data
