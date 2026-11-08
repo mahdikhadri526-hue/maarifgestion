@@ -37,6 +37,7 @@ import { UserMenu } from "@/components/auth/UserMenu";
 import { KioskToggle } from "@/components/KioskToggle";
 import { VoiceGuideManager } from "@/components/VoiceGuideManager";
 import { PageTitle } from "@/components/PageTitle";
+import { canDisplayAdminTable } from "@/lib/adminTableVisibility";
 
 type Tab = "dashboard" | "rh" | "planning" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "ecarts-matieres" | "pep" | "tech" | "pointage";
 
@@ -53,6 +54,7 @@ const Index = () => {
     void loadProductCatalog().then(() => setRefreshKey((k) => k + 1));
   }, []);
   const { can, isAdmin, hasAdminRole, isRegionalAdmin, user } = useAuth();
+  const showRestrictedTables = canDisplayAdminTable(user?.email, hasAdminRole);
 
   // Mode kiosque automatique : 2 secondes après la connexion (désactivé à la déconnexion)
   useEffect(() => {
@@ -93,7 +95,7 @@ const Index = () => {
     { id: "stuffs-glace" as Tab, label: "Contrôle STUFFS de glace", icon: Snowflake, perm: "view_glace", alt: "view_autocontrol" },
     { id: "hebdo" as Tab, label: "Suivi hebdomadaire", icon: CalendarDays, perm: "view_weekly" },
     { id: "temperatures" as Tab, label: "Températures frigos", icon: Thermometer, perm: "view_temperatures" },
-    ...(isPreviewHost() ? [
+    ...(showRestrictedTables ? [
       { id: "recettes" as Tab, label: "Recettes des produits finis", icon: ChefHat, perm: "view_recipes" },
       { id: "inventaire" as Tab, label: "Inventaire", icon: PackageCheck, perm: "view_inventory" },
     ] : []),
@@ -332,10 +334,10 @@ const Index = () => {
             {tab === "stuffs-glace" && <GlaceStuffControl />}
             {tab === "hebdo" && <WeeklyTracking />}
             {tab === "temperatures" && <FridgeTemperatureManager />}
-            {tab === "recettes" && <RecipeManager />}
+            {showRestrictedTables && tab === "recettes" && <RecipeManager />}
             {tab === "ecarts-matieres" && <MaterialVarianceModule />}
             {tab === "nettoyage" && <CleaningManager />}
-            {tab === "inventaire" && <InventoryModule />}
+            {showRestrictedTables && tab === "inventaire" && <InventoryModule />}
             {tab === "ecarts" && <EcartHub glace={<EcartModule />} />}
             {tab === "pep" && <PepModule />}
             {TECH_ENABLED && tab === "tech" && <TechModule />}
