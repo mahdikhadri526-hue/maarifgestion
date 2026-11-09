@@ -37,6 +37,17 @@ export function MaterialVarianceModule() {
   const canEdit = can("edit_ecarts");
   const [displayUnits, setDisplayUnits] = useState<Record<string, string>>(() => { try { return JSON.parse(localStorage.getItem("material-display-units") ?? "{}"); } catch { return {}; } });
   const setDisplayUnit = (id: string, unit: string) => setDisplayUnits(previous => { const next = { ...previous, [id]: unit }; localStorage.setItem("material-display-units", JSON.stringify(next)); return next; });
+  const [hiddenIds, setHiddenIds] = useState<string[]>(() => { try { const value = JSON.parse(localStorage.getItem("material-hidden-ingredients") ?? "[]"); return Array.isArray(value) ? value.filter(item => typeof item === "string") : []; } catch { return []; } });
+  const [manageHidden, setManageHidden] = useState(false);
+  const [pinOpen, setPinOpen] = useState(false);
+  const [pin, setPin] = useState("");
+  const setHidden = (ids: string[]) => { setHiddenIds(ids); localStorage.setItem("material-hidden-ingredients", JSON.stringify(ids)); };
+  const hideRow = (id: string) => setHidden([...new Set([...hiddenIds, id])]);
+  const showRow = (id: string) => setHidden(hiddenIds.filter(item => item !== id));
+  const submitPin = async () => {
+    if (!(await checkKioskPin(pin))) { toast.error("Code incorrect"); setPin(""); return; }
+    setPin(""); setPinOpen(false); setManageHidden(true);
+  };
 
   useEffect(() => {
     let cancelled = false;
