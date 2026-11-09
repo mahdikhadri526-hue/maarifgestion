@@ -88,7 +88,7 @@ export function MaterialVarianceModule() {
       <Button variant="outline" size="icon" title="Actualiser" aria-label="Actualiser l’analyse" disabled={loading || saving} onClick={() => { if (!dirty || window.confirm("Actualiser sans enregistrer les ventes ?")) setRevision(value => value + 1); }}><RefreshCw className="h-4 w-4" /></Button>
       <span className="text-sm text-muted-foreground sm:ml-auto">{pdv?.name}</span>
     </div>
-    {loading ? <p role="status" className="py-10 text-center text-muted-foreground">Chargement de l’analyse…</p> : error ? <p role="alert" className="text-destructive">{error}</p> : data && <Tabs value={view} onValueChange={value => { setView(value); setCategory("all"); setSearch(""); }}>
+    {loading ? <p role="status" className="py-10 text-center text-muted-foreground">Chargement de l’analyse…</p> : error ? <p role="alert" className="text-destructive">{error}</p> : data && <Tabs value={view} onValueChange={value => { setView(value); setCategory("all"); setSearch(""); setManageHidden(false); }}>
       <div className="flex flex-wrap gap-3 items-center justify-between">
         <TabsList><TabsTrigger value="sales">Ventes</TabsTrigger><TabsTrigger value="analysis">Écarts matières</TabsTrigger></TabsList>
         {canEdit && <Button onClick={save} disabled={saving || !dirty}><Save className="h-4 w-4 mr-2" />{saving ? "Enregistrement…" : "Enregistrer les ventes"}</Button>}
