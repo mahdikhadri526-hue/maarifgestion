@@ -63,7 +63,8 @@ export function MaterialVarianceModule() {
 
   const result = useMemo(() => data ? computeMaterialVariance(data.recipes, data.ingredients, sales, data.actuals).filter(row => isProductActive(row.id.split(":")[0])) : [], [data, sales]);
   const products = useMemo(() => data?.products.filter(product => product.active && (category === "all" || product.category === category) && product.name.toLowerCase().includes(search.toLowerCase())) ?? [], [data, category, search]);
-  const rows = result.filter(row => (category === "all" || row.category === category) && row.name.toLowerCase().includes(search.toLowerCase()));
+  const rows = result.filter(row => (category === "all" || row.category === category) && row.name.toLowerCase().includes(search.toLowerCase()) && (manageHidden || !hiddenIds.includes(row.id)));
+  const hiddenCount = hiddenIds.length;
   const recipeIds = new Set(data?.recipes.map(recipe => recipe.finished_product_id));
   const unavailable = result.filter(row => row.issue).length;
 
