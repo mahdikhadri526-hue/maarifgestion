@@ -232,6 +232,13 @@
       "when": 1794100912896,
       "tag": "0032_sync_recipe_ingredient_links",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1794256660223,
+      "tag": "0033_migration",
+      "breakpoints": true
     }
   ]
 }
