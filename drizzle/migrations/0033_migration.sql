@@ -1,0 +1,1 @@
+grant execute on function public.verify_kiosk_pin(text) to authenticated, anon;
