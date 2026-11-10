@@ -287,12 +287,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   useEffect(() => {
     let cancelled = false;
     setPreviousStockTotals({});
-    if (variant !== "stock" || !showMepCols || !previousPeriodStart) return;
+    if (variant !== "stock" || !showMepCols || !previousPeriodStart) {
+      setPreviousStockLoading(false);
+      return;
+    }
     setPreviousStockLoading(true);
     loadPreviousStockTotals(previousPeriodStart, {
       [MACARON_AGG_ID]: MACARON_ARTICLES,
       [CHANTILLY_AGG_ID]: [CHANTILLY_WEEKLY_ARTICLE],
       [AMANDES_AGG_ID]: [AMANDES_WEEKLY_ARTICLE],
+      [SIROP_AGG_ID]: [SIROP_CARAMEL_WEEKLY_ARTICLE],
     }).then(values => { if (!cancelled) setPreviousStockTotals(values); })
       .catch(() => { if (!cancelled) toast.error("Impossible de lire le dernier stock total précédent"); })
       .finally(() => { if (!cancelled) setPreviousStockLoading(false); });
@@ -1614,8 +1618,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Article</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
-                {showMepCols && <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock initial total</th>}
-                {showMepCols && showRefCols && <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock initial total Réf.</th>}
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Restant</th>
@@ -1628,8 +1630,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   <tr key={r.article} className={cn("border-b last:border-0 hover:bg-muted/30 transition-colors", rowI % 2 === 1 && "bg-muted/30")}>
                     <td className="p-3 text-sm font-medium weekly-sticky-column border-r bg-card w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>{r.article}</td>
                     <td className="p-3 text-right font-mono text-sm text-primary font-semibold">{r.stockInitial}</td>
-                    {showMepCols && <td className="p-3 text-right font-mono text-sm text-primary">—</td>}
-                    {showMepCols && showRefCols && <td className="p-3 text-right font-mono text-sm text-muted-foreground">—</td>}
                     <td className="p-3 text-right font-mono text-sm text-success">{r.entrees}</td>
                     <td className="p-3 text-right font-mono text-sm text-accent-foreground">{r.sorties}</td>
                     <td className={`p-3 text-right font-mono text-sm font-semibold ${r.stockRestant < 0 ? "text-destructive" : ""}`}>{r.stockRestant}</td>
@@ -1639,8 +1639,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <tr className="border-t-2 bg-muted/40 font-semibold">
                   <td className="p-3 text-sm weekly-sticky-column border-r bg-muted w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>TOTAL</td>
                   <td className="p-3 text-right font-mono text-sm text-primary">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.stockInitial, 0))}</td>
-                  {showMepCols && <td className="p-3 text-right font-mono text-sm">—</td>}
-                  {showMepCols && showRefCols && <td className="p-3 text-right font-mono text-sm">—</td>}
                   <td className="p-3 text-right font-mono text-sm text-success">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.entrees, 0))}</td>
                   <td className="p-3 text-right font-mono text-sm text-accent-foreground">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.sorties, 0))}</td>
                   <td className="p-3 text-right font-mono text-sm">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.stockRestant, 0))}</td>

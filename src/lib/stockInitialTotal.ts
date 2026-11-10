@@ -35,10 +35,15 @@ export async function loadPreviousStockTotals(periodStart: string, weeklyGroups:
   const products = getProducts();
   const result: Record<string, number> = {};
   await Promise.all(Object.entries(previous).map(async ([id, count]) => {
-    let remaining = initial[id] ?? 0;
+    const sourceIds = id === "__nespresso_agg__" ? ["ali-29", "ali-30", "ali-31", "ali-32"]
+      : id === "__nutella_nestle_agg__" ? ["ali-21", "ali-15"]
+      : id === "__the_aromatise_agg__" ? products.filter(product => /tchaba/i.test(product.name)).map(product => product.id)
+      : id === "__sirop_agg__" ? ["ali-9"] : [id];
+    let remaining = sourceIds.reduce((sum, sourceId) => sum + (initial[sourceId] ?? 0), 0);
     for (const movement of movements) {
-      if (movement.productId !== id || movement.date.slice(0, 10) > count.date) continue;
-      const qty = movementPiecesToDisplay(movement.quantity, units[id] || "PIECE", configs[id], id);
+      if (!sourceIds.includes(movement.productId) || movement.date.slice(0, 10) > count.date) continue;
+      const sourceId = movement.productId;
+      const qty = movementPiecesToDisplay(movement.quantity, units[sourceId] || "PIECE", configs[sourceId], sourceId);
       remaining += movement.type === "entree" ? qty : -qty;
     }
     const name = products.find(product => product.id === id)?.name;
@@ -46,7 +51,10 @@ export async function loadPreviousStockTotals(periodStart: string, weeklyGroups:
     if (name === "TOPPINGS") remaining = (await getToppingsBreakdown(date => date === count.date, date => date < count.date, {}))
       .reduce((sum, row) => sum + row.stockRestant, 0);
     const articles = weeklyGroups[id];
-    if (articles) remaining = buildWeeklyAggregateTotals(weekly, articles, date => date === count.date, false, false, count.date).stockRestant;
+    if (articles) {
+      const weeklyRemaining = buildWeeklyAggregateTotals(weekly, articles, date => date === count.date, false, false, count.date).stockRestant;
+      remaining = id === "__sirop_agg__" ? remaining + weeklyRemaining : weeklyRemaining;
+    }
     result[id] = roundStockQuantity(remaining + count.quantity);
   }));
   return result;
