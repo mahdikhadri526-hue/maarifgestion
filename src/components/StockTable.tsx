@@ -52,6 +52,7 @@ import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/lib/db";
 import { cn, formatDateFR } from "@/lib/utils";
 import { stockReferenceQuantity } from "@/lib/stockReference";
+import { loadPreviousStockTotals } from "@/lib/stockInitialTotal";
 import { downloadStructuredPdf } from "@/lib/printExport";
 import { WEEKLY_FRUIT_ARTICLES as FRUIT_ARTICLES, WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES, WEEKLY_ALL_ARTICLES as ALL_WEEKLY_ARTICLES } from "@/lib/weeklyArticles";
 import { STOCK_TARTE_ARTICLES as TARTE_ARTICLES } from "@/lib/stockRecipeIngredients";
@@ -280,6 +281,27 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     return false; // vue « Tout » : colonnes masquées
   }, [mode, day, month, start, end, mepInventoryDay]);
   const showMepCols = canToggleExtraCols && showMepColsRaw && countingDayInFilter;
+  const [previousStockTotals, setPreviousStockTotals] = useState<Record<string, number>>({});
+  const [previousStockLoading, setPreviousStockLoading] = useState(false);
+  const previousPeriodStart = mode === "day" ? day : mode === "month" ? `${month}-01` : mode === "period" ? start : "";
+  useEffect(() => {
+    let cancelled = false;
+    setPreviousStockTotals({});
+    if (variant !== "stock" || !showMepCols || !previousPeriodStart) {
+      setPreviousStockLoading(false);
+      return;
+    }
+    setPreviousStockLoading(true);
+    loadPreviousStockTotals(previousPeriodStart, {
+      [MACARON_AGG_ID]: MACARON_ARTICLES,
+      [CHANTILLY_AGG_ID]: [CHANTILLY_WEEKLY_ARTICLE],
+      [AMANDES_AGG_ID]: [AMANDES_WEEKLY_ARTICLE],
+      [SIROP_AGG_ID]: [SIROP_CARAMEL_WEEKLY_ARTICLE],
+    }).then(values => { if (!cancelled) setPreviousStockTotals(values); })
+      .catch(() => { if (!cancelled) toast.error("Impossible de lire le dernier stock total précédent"); })
+      .finally(() => { if (!cancelled) setPreviousStockLoading(false); });
+    return () => { cancelled = true; };
+  }, [variant, showMepCols, previousPeriodStart]);
   // En filtre « jour », la saisie n'apparaît que le jour même du comptage.
   // En filtre « période », la saisie n'apparaît que si le jour du comptage est
   // compris dans la période (ex. comptage du 1er oct. absent d'une période finissant le 30/09).
@@ -1696,6 +1718,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité Réf.</th>
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
+                {showMepCols && <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock initial total</th>}
+                {showMepCols && showRefCols && <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock initial total Réf.</th>}
                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
                 {showRefCols && (
                   <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées Réf.</th>
@@ -1805,6 +1829,12 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     </span>
                   </td>
                   <td className="p-3 text-right font-mono text-sm text-primary font-semibold">{fmtQty(level.productId, v.stockInitial)}</td>
+                  {showMepCols && <td className="p-3 text-right font-mono text-sm text-primary font-semibold">
+                    {previousStockLoading ? "…" : previousStockTotals[level.productId] === undefined ? "—" : fmtQty(level.productId, previousStockTotals[level.productId])}
+                  </td>}
+                  {showMepCols && showRefCols && <td className="p-3 text-right font-mono text-sm text-muted-foreground">
+                    {previousStockLoading ? "…" : previousStockTotals[level.productId] === undefined ? "—" : <StockReferenceValue quantity={previousStockTotals[level.productId]} reference={refMap[level.productId]} />}
+                  </td>}
                   <td className="p-3 text-right font-mono text-sm text-success">{fmtQty(level.productId, v.entrees)}</td>
                   {showRefCols && (
                     <td className="p-3 text-right font-mono text-sm text-muted-foreground">
