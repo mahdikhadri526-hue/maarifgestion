@@ -239,6 +239,13 @@
       "when": 1794256660223,
       "tag": "0033_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1794345908319,
+      "tag": "0034_restrict_tech_video_reads_to_owner_or_visible_issue",
+      "breakpoints": true
     }
   ]
 }
