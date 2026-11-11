@@ -16,25 +16,33 @@ export function calculateStockTotals(initialTotal: number | undefined, purchases
   return { sortiesTotal, stockTotal };
 }
 
-/** Latest recorded count strictly before the displayed period, independently per product. */
-export function previousStockCounts(rows: StockCount[], periodStart: string) {
-  const result: Record<string, { date: string; quantity: number }> = {};
+/**
+ * Somme de tous les comptages de mise en place strictement avant la période
+ * affichée, par produit. Le stock initial total est le dernier stock total :
+ * il enchaîne tous les comptages depuis le début, pas seulement le plus récent.
+ */
+export function sumPreviousCounts(rows: StockCount[], periodStart: string) {
+  const result: Record<string, number> = {};
   for (const row of rows) {
     if (row.week_start === "2000-01-03") continue;
     const date = formatISODate(inventoryDayOfWeek(row.week_start));
-    if (date >= periodStart || (result[row.product_id] && result[row.product_id].date >= date)) continue;
-    result[row.product_id] = { date, quantity: Number(row.quantity) || 0 };
+    if (date >= periodStart) continue;
+    result[row.product_id] = (result[row.product_id] ?? 0) + (Number(row.quantity) || 0);
   }
   return result;
 }
 
-/** Read-only previous total: never rewrites the existing initial stock or movements. */
+/**
+ * Dernier stock total avant la période, par produit (lecture seule : ne
+ * réécrit jamais le stock initial ni les mouvements). Même règle que la
+ * colonne Stock total : initial + entrées − |sorties − mise en place|,
+ * cumulée sur toute l'historique antérieur à la période.
+ */
 export async function loadPreviousStockTotals(periodStart: string, weeklyGroups: Record<string, readonly string[]>) {
   const pdvId = requireCurrentPdvId();
   const counts = await fetchAllRows<StockCount>(() => supabase.from("mise_en_place_stocks")
     .select("product_id,quantity,week_start").eq("pdv_id", pdvId).lt("week_start", periodStart));
-  const previous = previousStockCounts(counts, periodStart);
-  if (!Object.keys(previous).length) return {};
+  const countSums = sumPreviousCounts(counts, periodStart);
   const [movements, initial, units, configs, weekly] = await Promise.all([
     getMovements(), getInitialStocks(), getProductUnits(), getProductUnitConfigs(),
     fetchAllRows<WeeklyTrackingOrderRecord>(() => supabase.from("weekly_tracking")
@@ -42,29 +50,53 @@ export async function loadPreviousStockTotals(periodStart: string, weeklyGroups:
       .eq("fiche_type", "Mouvement glaces & tartes")),
   ]);
   const products = getProducts();
+  const prevDay = formatISODate(new Date(new Date(`${periodStart}T00:00:00`).getTime() - 86400000));
+  const ids = new Set<string>([...Object.keys(initial), ...Object.keys(countSums), ...Object.keys(weeklyGroups)]);
+  for (const movement of movements) ids.add(movement.productId);
   const result: Record<string, number> = {};
-  await Promise.all(Object.entries(previous).map(async ([id, count]) => {
+  await Promise.all([...ids].map(async (id) => {
     const sourceIds = id === "__nespresso_agg__" ? ["ali-29", "ali-30", "ali-31", "ali-32"]
       : id === "__nutella_nestle_agg__" ? ["ali-21", "ali-15"]
       : id === "__the_aromatise_agg__" ? products.filter(product => /tchaba/i.test(product.name)).map(product => product.id)
       : id === "__sirop_agg__" ? ["ali-9"] : [id];
-    let remaining = sourceIds.reduce((sum, sourceId) => sum + (initial[sourceId] ?? 0), 0);
+    let stockInitial = sourceIds.reduce((sum, sourceId) => sum + (initial[sourceId] ?? 0), 0);
+    let entrees = 0;
+    let sorties = 0;
     for (const movement of movements) {
-      if (!sourceIds.includes(movement.productId) || movement.date.slice(0, 10) > count.date) continue;
+      if (!sourceIds.includes(movement.productId) || movement.date.slice(0, 10) >= periodStart) continue;
       const sourceId = movement.productId;
       const qty = movementPiecesToDisplay(movement.quantity, units[sourceId] || "PIECE", configs[sourceId], sourceId);
-      remaining += movement.type === "entree" ? qty : -qty;
+      if (movement.type === "entree") entrees += qty; else sorties += qty;
     }
     const name = products.find(product => product.id === id)?.name;
-    if (name === "GLACE") remaining = (await getGlaceAggregateForRange(count.date, count.date)).stockRestant;
-    if (name === "TOPPINGS") remaining = (await getToppingsBreakdown(date => date === count.date, date => date < count.date, {}))
-      .reduce((sum, row) => sum + row.stockRestant, 0);
+    if (name === "GLACE") {
+      const agg = await getGlaceAggregateForRange(undefined, prevDay);
+      stockInitial = agg.stockInitial;
+      entrees = agg.entrees;
+      sorties = agg.sorties;
+    }
+    if (name === "TOPPINGS") {
+      const parts = await getToppingsBreakdown(date => date < periodStart, date => date < periodStart, {});
+      stockInitial = parts.reduce((sum, row) => sum + row.stockInitial, 0);
+      entrees = parts.reduce((sum, row) => sum + row.entrees, 0);
+      sorties = parts.reduce((sum, row) => sum + row.sorties, 0);
+    }
     const articles = weeklyGroups[id];
     if (articles) {
-      const weeklyRemaining = buildWeeklyAggregateTotals(weekly, articles, date => date === count.date, false, false, count.date).stockRestant;
-      remaining = id === "__sirop_agg__" ? remaining + weeklyRemaining : weeklyRemaining;
+      const weeklyTotals = buildWeeklyAggregateTotals(weekly, articles, date => date < periodStart, false, false, periodStart);
+      if (id === "__sirop_agg__") {
+        stockInitial += weeklyTotals.stockInitial;
+        entrees += weeklyTotals.entrees;
+        sorties += weeklyTotals.sorties;
+      } else {
+        stockInitial = weeklyTotals.stockInitial;
+        entrees = weeklyTotals.entrees;
+        sorties = weeklyTotals.sorties;
+      }
     }
-    result[id] = roundStockQuantity(remaining + count.quantity);
+    const mep = countSums[id] ?? 0;
+    if (!stockInitial && !entrees && !sorties && !mep) return;
+    result[id] = roundStockQuantity(stockInitial + entrees - Math.abs(sorties - mep));
   }));
   return result;
 }
