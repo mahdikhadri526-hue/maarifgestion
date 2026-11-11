@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Corriger le signe des sorties dans Stock total : café Brésil 7 + 0 et sorties total −8 doit donner −1 ; conserver saisies et sorties affichées.
+- [x] Corriger le signe des sorties dans Stock total : café Brésil 7 + 0 et sorties total −8 donne −1 ; 15 tests réussis, compilation valide, saisies et sorties affichées conservées, non publié. Vérification connectée bloquée : aucun compte ne correspond au demandeur pour ouvrir une session automatique.
 - [x] Appliquer Stock total = Stock initial total + Entrées - Sorties total et Sorties total = Sorties - Stock mise en place ; 32 tests réussis et compilation valide, aucune saisie modifiée, non publié.
 - [ ] Vérifier les nouvelles formules dans Stock restant connecté : session automatique impossible pour le demandeur ; attendre sa connexion à l’aperçu.
 - [x] Synchroniser les liaisons ingrédients vers Stock restant à l’enregistrement dans toutes les recettes courantes ; 17 tests réussis, quatre catégories vérifiées dans l’aperçu connecté, quantités/unités et version historique préservées, recettes temporaires supprimées, compilation valide, non publié.
