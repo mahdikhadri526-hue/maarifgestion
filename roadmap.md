@@ -1,5 +1,6 @@
 # Roadmap
-- [ ] Appliquer et tester Stock total = Stock initial total + Entrées - Sorties total et Sorties total = Sorties - Stock mise en place, sans changer les saisies ni les autres tables.
+- [x] Appliquer Stock total = Stock initial total + Entrées - Sorties total et Sorties total = Sorties - Stock mise en place ; 32 tests réussis et compilation valide, aucune saisie modifiée, non publié.
+- [ ] Vérifier les nouvelles formules dans Stock restant connecté : session automatique impossible pour le demandeur ; attendre sa connexion à l’aperçu.
 - [x] Synchroniser les liaisons ingrédients vers Stock restant à l’enregistrement dans toutes les recettes courantes ; 17 tests réussis, quatre catégories vérifiées dans l’aperçu connecté, quantités/unités et version historique préservées, recettes temporaires supprimées, compilation valide, non publié.
 - [x] Corriger les liens recettes Tartes/Fruits/Crème fraîche vers les références du Stock restant et ses agrégats par période ; anciens liens compatibles, sorties natives sans conversion inventée, choix Unité stock pour les lignes sans unité, 33 tests réussis et compilation valide ; aucune donnée modifiée ni publication.
 - [ ] Vérifier les nouveaux liens et les écarts dans une recette de l’aperçu connecté : aperçu déconnecté et aucune session disponible pour le demandeur ; attendre sa connexion. Les unités kg/pièce doivent correspondre aux unités réelles du stock pour calculer un écart.
