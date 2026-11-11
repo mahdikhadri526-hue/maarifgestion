@@ -30,8 +30,11 @@ describe("Stock remaining total columns", () => {
   it("calculates stock total from the previous initial total plus purchases minus total outputs", () => {
     expect(calculateStockTotals(100, 20, 40, 10).stockTotal).toBe(90);
   });
-  it("preserves negative outputs rather than clamping the requested formula", () => {
-    expect(calculateStockTotals(100, 0, 5, 10)).toEqual({ sortiesTotal: -5, stockTotal: 105 });
+  it("deducts the magnitude of negative total outputs without changing their displayed sign", () => {
+    expect(calculateStockTotals(100, 0, 5, 10)).toEqual({ sortiesTotal: -5, stockTotal: 95 });
+  });
+  it("returns minus one for Café Brésil with initial total seven, zero entries and total outputs minus eight", () => {
+    expect(calculateStockTotals(7, 0, 0, 8)).toEqual({ sortiesTotal: -8, stockTotal: -1 });
   });
   it("does not invent initial total when no previous count exists", () => {
     expect(calculateStockTotals(undefined, 20, 40, 10)).toEqual({ sortiesTotal: 30, stockTotal: undefined });

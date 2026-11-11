@@ -12,7 +12,7 @@ export function calculateStockTotals(initialTotal: number | undefined, purchases
   const sortiesTotal = roundStockQuantity(outputs - miseEnPlace);
   const stockTotal = initialTotal === undefined
     ? undefined
-    : roundStockQuantity(initialTotal + purchases - sortiesTotal);
+    : roundStockQuantity(initialTotal + purchases - Math.abs(sortiesTotal));
   return { sortiesTotal, stockTotal };
 }
 
