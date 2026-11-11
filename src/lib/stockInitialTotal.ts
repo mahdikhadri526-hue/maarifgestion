@@ -7,6 +7,15 @@ import { fetchAllRows } from "@/lib/supabasePaginate";
 
 export type StockCount = { product_id: string; quantity: number; week_start: string };
 
+/** Total columns only; no writes or changes to ordinary remaining stock. */
+export function calculateStockTotals(initialTotal: number | undefined, purchases: number, outputs: number, miseEnPlace: number) {
+  const sortiesTotal = roundStockQuantity(outputs - miseEnPlace);
+  const stockTotal = initialTotal === undefined
+    ? undefined
+    : roundStockQuantity(initialTotal + purchases - sortiesTotal);
+  return { sortiesTotal, stockTotal };
+}
+
 /** Latest recorded count strictly before the displayed period, independently per product. */
 export function previousStockCounts(rows: StockCount[], periodStart: string) {
   const result: Record<string, { date: string; quantity: number }> = {};
@@ -19,7 +28,7 @@ export function previousStockCounts(rows: StockCount[], periodStart: string) {
   return result;
 }
 
-/** Read-only presentation: never feeds the existing initial stock or outputs calculations. */
+/** Read-only previous total: never rewrites the existing initial stock or movements. */
 export async function loadPreviousStockTotals(periodStart: string, weeklyGroups: Record<string, readonly string[]>) {
   const pdvId = requireCurrentPdvId();
   const counts = await fetchAllRows<StockCount>(() => supabase.from("mise_en_place_stocks")

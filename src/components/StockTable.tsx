@@ -52,7 +52,7 @@ import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/lib/db";
 import { cn, formatDateFR } from "@/lib/utils";
 import { stockReferenceQuantity } from "@/lib/stockReference";
-import { loadPreviousStockTotals } from "@/lib/stockInitialTotal";
+import { calculateStockTotals, loadPreviousStockTotals } from "@/lib/stockInitialTotal";
 import { downloadStructuredPdf } from "@/lib/printExport";
 import { WEEKLY_FRUIT_ARTICLES as FRUIT_ARTICLES, WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES, WEEKLY_ALL_ARTICLES as ALL_WEEKLY_ARTICLES } from "@/lib/weeklyArticles";
 import { STOCK_TARTE_ARTICLES as TARTE_ARTICLES } from "@/lib/stockRecipeIngredients";
@@ -1749,8 +1749,12 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               {filtered.map((level) => {
                 const v0 = getRowValues(level);
                 const v = v0;
-                const stockTotal = (Number(v.stockRestant) || 0) + (mepMap[level.productId] ?? 0);
-                const sortiesTotal = roundStockQuantity((Number(v.stockInitial) || 0) + (Number(v.entrees) || 0) - stockTotal);
+                const { stockTotal, sortiesTotal } = calculateStockTotals(
+                  previousStockTotals[level.productId],
+                  Number(v.entrees) || 0,
+                  Number(v.sorties) || 0,
+                  mepMap[level.productId] ?? 0,
+                );
                 return (
                 <tr key={level.productId} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                   isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
@@ -1914,11 +1918,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                      </td>
                    )}
                    <td className="p-3 text-right font-mono text-sm font-bold text-primary">
-                     {roundStockQuantity((Number(v.stockRestant) || 0) + (mepMap[level.productId] ?? 0))}
+                     {previousStockLoading ? "…" : stockTotal === undefined ? "—" : stockTotal}
                    </td>
                    {showRefCols && (
                      <td className="p-3 text-right font-mono text-sm font-bold text-muted-foreground">
-                       <StockReferenceValue quantity={stockTotal} reference={refMap[level.productId]} />
+                       {previousStockLoading ? "…" : stockTotal === undefined ? "—" : <StockReferenceValue quantity={stockTotal} reference={refMap[level.productId]} />}
                      </td>
                    )}
                     </>
