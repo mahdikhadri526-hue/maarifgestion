@@ -33,6 +33,28 @@ export function sumPreviousCounts(rows: StockCount[], periodStart: string) {
 }
 
 /**
+ * Enchaîne jour par jour : stock total du jour = stock total de la veille +
+ * entrées − |sorties − mise en place|, identique à la colonne Stock total
+ * affichée pour chaque journée.
+ */
+export function chainDailyStockTotals(
+  start: number,
+  moves: { date: string; type: string; qty: number }[],
+  meps: { date: string; qty: number }[],
+) {
+  const days = new Map<string, { e: number; s: number; m: number }>();
+  const get = (d: string) => { let v = days.get(d); if (!v) { v = { e: 0, s: 0, m: 0 }; days.set(d, v); } return v; };
+  for (const mv of moves) { const v = get(mv.date); if (mv.type === "entree") v.e += mv.qty; else v.s += mv.qty; }
+  for (const mp of meps) get(mp.date).m += mp.qty;
+  let total = start;
+  for (const d of [...days.keys()].sort()) {
+    const v = days.get(d)!;
+    total = calculateStockTotals(total, v.e, v.s, v.m).stockTotal!;
+  }
+  return roundStockQuantity(total);
+}
+
+/**
  * Dernier stock total avant la période, par produit (lecture seule : ne
  * réécrit jamais le stock initial ni les mouvements). Même règle que la
  * colonne Stock total : initial + entrées − |sorties − mise en place|,
@@ -96,6 +118,18 @@ export async function loadPreviousStockTotals(periodStart: string, weeklyGroups:
     }
     const mep = countSums[id] ?? 0;
     if (!stockInitial && !entrees && !sorties && !mep) return;
+    if (name !== "GLACE" && name !== "TOPPINGS" && !articles) {
+      result[id] = chainDailyStockTotals(stockInitial, movements
+        .filter(movement => sourceIds.includes(movement.productId) && movement.date.slice(0, 10) < periodStart)
+        .map(movement => ({
+          date: movement.date.slice(0, 10),
+          type: movement.type,
+          qty: movementPiecesToDisplay(movement.quantity, units[movement.productId] || "PIECE", configs[movement.productId], movement.productId),
+        })), counts.filter(row => row.product_id === id && row.week_start !== "2000-01-03")
+        .map(row => ({ date: formatISODate(inventoryDayOfWeek(row.week_start)), qty: Number(row.quantity) || 0 }))
+        .filter(row => row.date < periodStart));
+      return;
+    }
     result[id] = roundStockQuantity(stockInitial + entrees - Math.abs(sorties - mep));
   }));
   return result;
