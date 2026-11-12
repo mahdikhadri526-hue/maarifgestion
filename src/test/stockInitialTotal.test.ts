@@ -46,3 +46,14 @@ describe("Stock remaining total columns", () => {
     expect(stockReferenceQuantity(totals.stockTotal ?? 0, "0.116")).toBe(2.32);
   });
 });
+import { chainDailyStockTotals } from "@/lib/stockInitialTotal";
+describe("chainDailyStockTotals", () => {
+  it("enchaîne le stock total jour par jour", () => {
+    // J1: 7 + 0 - |2 - 10| = -1 ; J2: -1 + 15 - |4 - 0| = 10
+    expect(chainDailyStockTotals(7, [
+      { date: "2026-11-14", type: "sortie", qty: 2 },
+      { date: "2026-11-15", type: "entree", qty: 15 },
+      { date: "2026-11-15", type: "sortie", qty: 4 },
+    ], [{ date: "2026-11-14", qty: 10 }])).toBe(10);
+  });
+});
