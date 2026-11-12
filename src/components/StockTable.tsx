@@ -318,7 +318,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   // Pas de report : le stock initial du lendemain est le stock de la veille
   // (la mise en place reste uniquement dans sa colonne, sans toucher au SI).
   // Saisie déverrouillée uniquement le jour du comptage de la semaine affichée.
-  const mepEditable = todayISO() === formatISODate(mepInventoryDay)
+  // MODE ESSAI : déverrouillage temporaire de la saisie mise en place.
+  // Remettre MEP_TEST_UNLOCK à false pour rétablir le verrouillage.
+  const MEP_TEST_UNLOCK = true;
+  const mepEditable = MEP_TEST_UNLOCK || todayISO() === formatISODate(mepInventoryDay)
     && !(mode === "day" && day && day !== todayISO());
   // Jours de comptage : chaque lundi, sauf la semaine qui chevauche la fin du
   // mois — là le comptage se fait le lendemain du dernier jour du mois
