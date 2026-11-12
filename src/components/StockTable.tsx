@@ -280,7 +280,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     if (mode === "period") return (!start || inv >= start) && (!end || inv <= end);
     return false; // vue « Tout » : colonnes masquées
   }, [mode, day, month, start, end, mepInventoryDay]);
-  const showMepCols = canToggleExtraCols && showMepColsRaw && countingDayInFilter;
+  const showMepCols = canToggleExtraCols && showMepColsRaw;
   const [previousStockTotals, setPreviousStockTotals] = useState<Record<string, number>>({});
   const [previousStockLoading, setPreviousStockLoading] = useState(false);
   const previousPeriodStart = mode === "day" ? day : mode === "month" ? `${month}-01` : mode === "period" ? start : "";
@@ -1478,7 +1478,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 {showRefCols ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
                 {showRefCols ? "Masquer colonnes Réf." : "Afficher colonnes Réf."}
               </Button>
-              {countingDayInFilter && (
+              {(
                 <Button size="sm" variant="outline" onClick={() => setShowMepCols((s) => !s)}>
                   {showMepCols ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
                   {showMepCols ? "Masquer mise en place / total" : "Afficher mise en place / total"}
