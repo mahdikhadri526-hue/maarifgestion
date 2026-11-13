@@ -14,6 +14,7 @@ import {
   visibleOrderItems,
   UnitType,
   setProductUnit,
+  resolveStockDisplayUnit,
   getMovements,
   getGlaceAggregateForRange,
   getToppingsDailyHistory,
@@ -656,8 +657,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
     if (extras.length) rows = [...rows, ...extras];
   }
-    return rows;
-  }, [levels, isWeeklyCat, stockCategory, category, variant, macaronAgg, siropWeekly, chantillyAgg, amandesAgg, periodTotals, mode]);
+    return rows.map(row => ({ ...row, unit: resolveStockDisplayUnit(row.productId, row.unit, weeklyUnits) }));
+  }, [levels, isWeeklyCat, stockCategory, category, variant, macaronAgg, siropWeekly, chantillyAgg, amandesAgg, periodTotals, mode, weeklyUnits]);
 
   const filtered = useMemo(() => {
     const searchQuery = deferredSearch
@@ -985,6 +986,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     const nextUnit = UNITS[nextIndex];
     try {
       await setProductUnit(productId, nextUnit);
+      setWeeklyUnits(current => ({ ...current, [productId]: nextUnit }));
       refresh();
       toast.success(`Unité changée en ${UNIT_LABELS[nextUnit]}`);
     } catch {
@@ -1746,9 +1748,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     </div>
                   </td>
                   <td className="p-3">
-                    <button
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      aria-label={`Unité ${level.productName}`}
                       onClick={() => {
-                        if (isReadOnlyAggId(level.productId)) return;
                         if (can("edit_stock")) {
                           cycleUnit(level.productId, level.unit);
                         } else {
@@ -1759,7 +1763,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       title="Cliquer pour changer l'unité"
                     >
                       {UNIT_LABELS[level.unit] || "Pièce"}
-                    </button>
+                    </Button>
                   </td>
                   <td className="p-3 text-right">
                     <input
