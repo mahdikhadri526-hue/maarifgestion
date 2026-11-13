@@ -1,7 +1,7 @@
 import { supabase } from "@/lib/db";
 import { requireCurrentPdvId } from "@/lib/pdvStore";
 import { inventoryDayOfWeek } from "@/lib/miseEnPlaceData";
-import { formatISODate, buildWeeklyAggregateTotals, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
+import { formatISODate, buildWeeklyDailyStocks, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
 import { getMovements, getInitialStocks, getProductUnits, getProductUnitConfigs, movementPiecesToDisplay, getGlaceAggregateForRange, getToppingsBreakdown, getProducts, roundStockQuantity } from "@/lib/stockData";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 
@@ -48,10 +48,34 @@ export function chainDailyStockTotals(
   for (const mp of meps) get(mp.date).m += mp.qty;
   let total = start;
   for (const d of [...days.keys()].sort()) {
-    const v = days.get(d)!;
-    total = calculateStockTotals(total, v.e, v.s, v.m).stockTotal!;
+    const v = days.get(d);
+    if (!v) continue;
+    const next = calculateStockTotals(total, v.e, v.s, v.m).stockTotal;
+    if (next !== undefined) total = next;
   }
   return roundStockQuantity(total);
+}
+
+/** Read-only daily carry-forward, using the same weekly outputs as Stock restant. */
+export function chainWeeklyStockTotals(
+  records: WeeklyTrackingOrderRecord[], articles: readonly string[], periodStart: string,
+  counts: StockCount[], productId: string,
+  extraInitial = 0, extraMoves: { date: string; type: string; qty: number }[] = [],
+) {
+  // Normalize before filtering: the next day's count closes the previous day's outputs.
+  const daily = buildWeeklyDailyStocks(records, articles).filter(row => row.date < periodStart);
+  const meps = counts.filter(row => row.product_id === productId && row.week_start !== "2000-01-03")
+    .map(row => ({ date: formatISODate(inventoryDayOfWeek(row.week_start)), qty: Number(row.quantity) || 0 }))
+    .filter(row => row.date < periodStart);
+  const moves = extraMoves.filter(row => row.date < periodStart);
+  if (!daily.length && !meps.length && !moves.length && extraInitial === 0) return undefined;
+  const firstByArticle = new Map<string, number>();
+  for (const row of daily) {
+    if (!firstByArticle.has(row.article)) firstByArticle.set(row.article, row.stockInitial);
+    moves.push({ date: row.date, type: "entree", qty: row.entrees }, { date: row.date, type: "sortie", qty: row.sorties });
+  }
+  const initial = extraInitial + [...firstByArticle.values()].reduce((sum, value) => sum + value, 0);
+  return chainDailyStockTotals(initial, moves, meps);
 }
 
 /**
@@ -81,6 +105,18 @@ export async function loadPreviousStockTotals(periodStart: string, weeklyGroups:
       : id === "__nutella_nestle_agg__" ? ["ali-21", "ali-15"]
       : id === "__the_aromatise_agg__" ? products.filter(product => /tchaba/i.test(product.name)).map(product => product.id)
       : id === "__sirop_agg__" ? ["ali-9"] : [id];
+    const articles = weeklyGroups[id];
+    if (articles) {
+      const combined = id === "__sirop_agg__";
+      const previousTotal = chainWeeklyStockTotals(weekly, articles, periodStart, counts, id,
+        combined ? sourceIds.reduce((sum, sourceId) => sum + (initial[sourceId] ?? 0), 0) : 0,
+        combined ? movements.filter(row => sourceIds.includes(row.productId)).map(row => ({
+          date: row.date.slice(0, 10), type: row.type,
+          qty: movementPiecesToDisplay(row.quantity, units[row.productId] || "PIECE", configs[row.productId], row.productId),
+        })) : []);
+      if (previousTotal !== undefined) result[id] = previousTotal;
+      return;
+    }
     let stockInitial = sourceIds.reduce((sum, sourceId) => sum + (initial[sourceId] ?? 0), 0);
     let entrees = 0;
     let sorties = 0;
@@ -102,19 +138,6 @@ export async function loadPreviousStockTotals(periodStart: string, weeklyGroups:
       stockInitial = parts.reduce((sum, row) => sum + row.stockInitial, 0);
       entrees = parts.reduce((sum, row) => sum + row.entrees, 0);
       sorties = parts.reduce((sum, row) => sum + row.sorties, 0);
-    }
-    const articles = weeklyGroups[id];
-    if (articles) {
-      const weeklyTotals = buildWeeklyAggregateTotals(weekly, articles, date => date < periodStart, false, false, periodStart);
-      if (id === "__sirop_agg__") {
-        stockInitial += weeklyTotals.stockInitial;
-        entrees += weeklyTotals.entrees;
-        sorties += weeklyTotals.sorties;
-      } else {
-        stockInitial = weeklyTotals.stockInitial;
-        entrees = weeklyTotals.entrees;
-        sorties = weeklyTotals.sorties;
-      }
     }
     const mep = countSums[id] ?? 0;
     if (!stockInitial && !entrees && !sorties && !mep) return;
