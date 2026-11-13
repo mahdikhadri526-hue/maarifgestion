@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Corriger les chiffres GLACE avec le calcul quotidien partagé : stocks par parfum, lots cumulés, comptage du lendemain et report du dernier stock ; détail bacs/kg, grammage et dates ajouté ; 40 tests réussis, compilation valide, aucune saisie modifiée, non publié.
+- [ ] Vérifier les chiffres et le détail GLACE dans le compte connecté : aperçu sur la connexion, aucune session automatique pour le demandeur ; attendre sa connexion.
 - [x] Fiabiliser la sauvegarde des conversions/unités Réf. : requêtes désormais exécutées et contrôlées, saisies successives ordonnées, échecs conservés localement pour réessai ; 101 anciennes références présentes en base, aucune nouvelle saisie retrouvée en base, 17 tests réussis, non publié ; stocks inchangés.
 - [ ] Confirmer sauvegarde/actualisation des conversions connecté et récupération éventuelle sur l’appareil de saisie : session du demandeur indisponible et stockage de son navigateur inaccessible ; attendre sa connexion dans l’aperçu.
 - [x] Corriger la relecture des unités de Stock restant après actualisation, notamment Crème chantilly : LITRE confirmé en base, priorité aux unités sauvegardées et modification des unités agrégées autorisée sans déverrouiller les quantités ; 28 tests réussis, compilation valide, non publié.

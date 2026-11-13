@@ -1,3 +1,4 @@
+import { buildGlaceStockDetails, sumGlaceStockDetails, type GlaceStockDetail } from "@/lib/glaceStockAggregate";
 import { buildWeeklyAggregateTotals, buildWeeklyDailyStocks, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
 import { supabase } from "@/lib/db";
 import { supabase as rawSupabase } from "@/integrations/supabase/client";
@@ -1164,109 +1165,12 @@ export async function getGlaceAggregate(): Promise<{ entrees: number; sorties: n
 }
 
 async function computeGlaceAggregate(): Promise<{ entrees: number; sorties: number; stockInitial: number; stockFinal: number }> {
-  const weekStart = currentMondayISO();
-  const nextWeekStart = (() => {
-    const d = new Date(weekStart);
-    d.setDate(d.getDate() + 7);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${y}-${m}-${dd}`;
-  })();
-  const [rows, gramRes] = await Promise.all([
-    fetchAllRows<any>(() =>
-      supabase
-        .from("weekly_tracking")
-        .select("article, entrees, sorties, stock_initial, day_of_week, week_start, row_index")
-        .eq("fiche_type", "Mouvement glaces & tartes")
-        .in("week_start", [weekStart, nextWeekStart]),
-    ),
-    getGlaceGrammageRes(),
-  ]);
-  const grams: Record<string, number> = {};
-  ((gramRes as any).data || []).forEach((r: any) => {
-    grams[r.article] = Number(r.grammage_grams) || 0;
-  });
-  const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
-  // Index : article -> wkStart -> day -> { si (rowIndex 0), entriesSum, explicitSortie }
-  type DayAgg = { si: number | null; entries: number; explicitSortie: number | null };
-  const byArticle = new Map<string, Map<string, Map<string, DayAgg>>>();
-  (rows || []).forEach((r: any) => {
-    if (!r.article || GLACE_PARFUMS_BLACKLIST.has(r.article)) return;
-    if (!grams[r.article]) return;
-    let wk = byArticle.get(r.article);
-    if (!wk) { wk = new Map(); byArticle.set(r.article, wk); }
-    let days = wk.get(r.week_start);
-    if (!days) { days = new Map(); wk.set(r.week_start, days); }
-    let cell = days.get(r.day_of_week);
-    if (!cell) { cell = { si: null, entries: 0, explicitSortie: null }; days.set(r.day_of_week, cell); }
-    const rowIdx = r.row_index ?? 0;
-    if (rowIdx === 0) {
-      if (r.stock_initial != null) cell.si = Number(r.stock_initial) || 0;
-      if (r.sorties != null) cell.explicitSortie = Number(r.sorties) || 0;
-    }
-    if (r.entrees != null) cell.entries += Number(r.entrees) || 0;
-  });
-  let entrees = 0;
-  let sorties = 0;
-  let stockInitial = 0;
-  let stockFinalTotal = 0;
-  let latestStockDayIndex = -1;
-  for (const wkMap of byArticle.values()) {
-    const cur = wkMap.get(weekStart);
-    if (!cur) continue;
-    for (let d = 6; d >= 0; d--) {
-      if (cur.get(DAYS[d])?.si != null) {
-        latestStockDayIndex = Math.max(latestStockDayIndex, d);
-        break;
-      }
-    }
-  }
-  for (const [article, wkMap] of byArticle) {
-    const g = grams[article] || 0;
-    if (!g) continue;
-    const cur = wkMap.get(weekStart);
-    if (!cur) continue;
-    const getCell = (wk: string, day: string): DayAgg =>
-      wkMap.get(wk)?.get(day) ?? { si: null, entries: 0, explicitSortie: null };
-    // Stock initial = SI Lundi
-    const siMon = getCell(weekStart, "Lundi").si ?? 0;
-    stockInitial += siMon * g;
-    // Entrées + Sorties par jour (logique identique à WeeklyTracking.getSortie)
-    for (let d = 0; d < 7; d++) {
-      const day = DAYS[d];
-      const c = getCell(weekStart, day);
-      entrees += c.entries * g;
-      let sortie: number | null = null;
-      if (d < 6) {
-        const next = getCell(weekStart, DAYS[d + 1]);
-        if ((c.si != null || c.entries > 0) && next.si != null) {
-          sortie = (c.si ?? 0) + c.entries - next.si;
-        }
-      } else {
-        const siNextMon = getCell(nextWeekStart, "Lundi").si;
-        if ((c.si != null || c.entries > 0) && siNextMon != null) {
-          sortie = (c.si ?? 0) + c.entries - siNextMon;
-        }
-      }
-      if (sortie == null) sortie = c.explicitSortie ?? 0;
-      sorties += sortie * g;
-    }
-    // Stock final = total saisi dans le SI du dernier jour renseigné globalement.
-    // Ne pas reprendre les jours précédents parfum par parfum : si le dernier total saisi est 20 kg,
-    // la table Stock restant doit afficher exactement ce total converti par grammage.
-    if (latestStockDayIndex >= 0) {
-      const latestSi = getCell(weekStart, DAYS[latestStockDayIndex]).si;
-      if (latestSi != null) stockFinalTotal += latestSi * g;
-    }
-  }
-  // Conversion grammes → kilos
-  return {
-    entrees: entrees / 1000,
-    sorties: sorties / 1000,
-    stockInitial: stockInitial / 1000,
-    stockFinal: stockFinalTotal / 1000,
-  };
+  const start = currentMondayISO();
+  const end = new Date(start + "T00:00:00");
+  end.setDate(end.getDate() + 6);
+  const endISO = `${end.getFullYear()}-${String(end.getMonth() + 1).padStart(2, "0")}-${String(end.getDate()).padStart(2, "0")}`;
+  const totals = await getGlaceAggregateForRange(start, endISO);
+  return { ...totals, stockFinal: totals.stockRestant };
 }
 
 function trackingDateISO(weekStart: string, dayOfWeek: string): string | null {
@@ -1292,84 +1196,7 @@ function nextDateISO(date: string): string {
 const DAYS_FOR_GLACE = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 export async function getGlaceAggregateForRange(startDate?: string, endDate?: string): Promise<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number }> {
-  const [rows, gramRes] = await Promise.all([
-    getGlaceWeeklyRows(weekLowerBound(startDate, 8)),
-    getGlaceGrammageRes(),
-  ]);
-
-  const grams: Record<string, number> = {};
-  ((gramRes as any).data || []).forEach((r: any) => {
-    grams[r.article] = Number(r.grammage_grams) || 0;
-  });
-
-  type DayAgg = { si: number | null; entries: number; explicitSortie: number | null };
-  const byArticle = new Map<string, Map<string, DayAgg>>();
-  (rows || []).forEach((r: any) => {
-    if (!r.article || GLACE_PARFUMS_BLACKLIST.has(r.article)) return;
-    if (!grams[r.article]) return;
-    const date = trackingDateISO(r.week_start, r.day_of_week);
-    if (!date) return;
-    let days = byArticle.get(r.article);
-    if (!days) { days = new Map(); byArticle.set(r.article, days); }
-    let cell = days.get(date);
-    if (!cell) { cell = { si: null, entries: 0, explicitSortie: null }; days.set(date, cell); }
-    const rowIdx = r.row_index ?? 0;
-    if (rowIdx === 0) {
-      if (r.stock_initial != null) cell.si = Number(r.stock_initial) || 0;
-      if (r.sorties != null) cell.explicitSortie = Number(r.sorties) || 0;
-    }
-    if (r.entrees != null) cell.entries += Number(r.entrees) || 0;
-  });
-
-  const inRange = (date: string) => (!startDate || date >= startDate) && (!endDate || date <= endDate);
-  let firstStockDate: string | null = null;
-  for (const days of byArticle.values()) {
-    for (const [date, cell] of days) {
-      if (!inRange(date) || cell.si == null) continue;
-      if (!firstStockDate || date < firstStockDate) firstStockDate = date;
-    }
-  }
-
-  let stockInitial = 0;
-  let entrees = 0;
-  let sorties = 0;
-  let stockRestant = 0;
-  for (const [article, days] of byArticle) {
-    const g = grams[article] || 0;
-    if (!g) continue;
-    if (firstStockDate) {
-      const si = days.get(firstStockDate)?.si;
-      if (si != null) stockInitial += si * g;
-    }
-    // Stock restant : dernier SI saisi à la date <= endDate (ou n'importe quand si pas d'endDate)
-    // pour ce parfum, multiplié par son grammage. Même logique que le stock final hebdo.
-    let latestSiDate: string | null = null;
-    for (const [date, cell] of days) {
-      if (cell.si == null) continue;
-      if (endDate && date > endDate) continue;
-      if (!latestSiDate || date > latestSiDate) latestSiDate = date;
-    }
-    if (latestSiDate) {
-      const si = days.get(latestSiDate)?.si;
-      if (si != null) stockRestant += si * g;
-    }
-    for (const [date, cell] of days) {
-      if (!inRange(date)) continue;
-      entrees += cell.entries * g;
-      let sortie: number | null = null;
-      const nextSi = days.get(nextDateISO(date))?.si;
-      if ((cell.si != null || cell.entries > 0) && nextSi != null) sortie = (cell.si ?? 0) + cell.entries - nextSi;
-      if (sortie == null) sortie = cell.explicitSortie ?? 0;
-      sorties += sortie * g;
-    }
-  }
-
-  return {
-    stockInitial: stockInitial / 1000,
-    entrees: entrees / 1000,
-    sorties: sorties / 1000,
-    stockRestant: stockRestant / 1000,
-  };
+  return sumGlaceStockDetails(await getGlaceBreakdownForRange(startDate, endDate));
 }
 
 export interface DailyStockRecord {
@@ -1456,89 +1283,12 @@ export interface AggregateBreakdownRow {
 export async function getGlaceBreakdownForRange(
   startDate?: string,
   endDate?: string,
-  useGlobalLatest = false,
-): Promise<AggregateBreakdownRow[]> {
-  const [rows, gramRes] = await Promise.all([
-    getGlaceWeeklyRows(weekLowerBound(startDate, 8)),
-    getGlaceGrammageRes(),
-  ]);
+  _useGlobalLatest = false,
+): Promise<GlaceStockDetail[]> {
+  // Keep older counts as context so sparse flavours do not disappear from a later period.
+  const [rows, gramRes] = await Promise.all([getGlaceWeeklyRows(), getGlaceGrammageRes()]);
+  if (gramRes.error) throw gramRes.error;
   const grams: Record<string, number> = {};
-  ((gramRes as any).data || []).forEach((r: any) => {
-    grams[r.article] = Number(r.grammage_grams) || 0;
-  });
-  type DayAgg = { si: number | null; entries: number; explicitSortie: number | null };
-  const byArticle = new Map<string, Map<string, DayAgg>>();
-  (rows || []).forEach((r: any) => {
-    if (!r.article || GLACE_PARFUMS_BLACKLIST.has(r.article)) return;
-    if (!grams[r.article]) return;
-    const date = trackingDateISO(r.week_start, r.day_of_week);
-    if (!date) return;
-    let days = byArticle.get(r.article);
-    if (!days) { days = new Map(); byArticle.set(r.article, days); }
-    let cell = days.get(date);
-    if (!cell) { cell = { si: null, entries: 0, explicitSortie: null }; days.set(date, cell); }
-    const rowIdx = r.row_index ?? 0;
-    if (rowIdx === 0) {
-      if (r.stock_initial != null) cell.si = Number(r.stock_initial) || 0;
-      if (r.sorties != null) cell.explicitSortie = Number(r.sorties) || 0;
-    }
-    if (r.entrees != null) cell.entries += Number(r.entrees) || 0;
-  });
-  const inRange = (date: string) => (!startDate || date >= startDate) && (!endDate || date <= endDate);
-  // Même logique que la ligne GLACE du tableau : SI = date de 1er comptage commune
-  // à tous les parfums dans la période ; restant = dernier SI (global en vue semaine).
-  let firstStockDate: string | null = null;
-  let latestGlobal: string | null = null;
-  for (const days of byArticle.values()) {
-    for (const [date, cell] of days) {
-      if (!inRange(date) || cell.si == null) continue;
-      if (!firstStockDate || date < firstStockDate) firstStockDate = date;
-      if (!latestGlobal || date > latestGlobal) latestGlobal = date;
-    }
-  }
-  const out: AggregateBreakdownRow[] = [];
-  const allArticles = Object.keys(grams).filter((a) => !GLACE_PARFUMS_BLACKLIST.has(a));
-  for (const article of allArticles) {
-    const g = grams[article] || 0;
-    const days = byArticle.get(article) ?? new Map<string, DayAgg>();
-    let stockInitial = 0;
-    let entrees = 0;
-    let sorties = 0;
-    if (firstStockDate) {
-      const si = days.get(firstStockDate)?.si;
-      if (si != null) stockInitial = si * g;
-    }
-    for (const [date, cell] of days) {
-      if (!inRange(date)) continue;
-      entrees += cell.entries * g;
-      let sortie: number | null = null;
-      const nextSi = days.get(nextDateISO(date))?.si;
-      if ((cell.si != null || cell.entries > 0) && nextSi != null) sortie = (cell.si ?? 0) + cell.entries - nextSi;
-      if (sortie == null) sortie = cell.explicitSortie ?? 0;
-      sorties += sortie * g;
-    }
-    let stockRestant = 0;
-    if (useGlobalLatest) {
-      const si = latestGlobal ? days.get(latestGlobal)?.si : null;
-      if (si != null) stockRestant = si * g;
-    } else {
-      let latestSiDate: string | null = null;
-      for (const [date, cell] of days) {
-        if (cell.si == null) continue;
-        if (endDate && date > endDate) continue;
-        if (!latestSiDate || date > latestSiDate) latestSiDate = date;
-      }
-      const si = latestSiDate ? days.get(latestSiDate)?.si : null;
-      if (si != null) stockRestant = si * g;
-    }
-    out.push({
-      name: article,
-      stockInitial: roundStockQuantity(stockInitial / 1000),
-      entrees: roundStockQuantity(entrees / 1000),
-      sorties: roundStockQuantity(sorties / 1000),
-      stockRestant: roundStockQuantity(stockRestant / 1000),
-    });
-  }
-  out.sort((a, b) => a.name.localeCompare(b.name, "fr"));
-  return out;
+  (gramRes.data || []).forEach(r => { grams[r.article] = Number(r.grammage_grams) || 0; });
+  return buildGlaceStockDetails(rows, grams, startDate, endDate);
 }
