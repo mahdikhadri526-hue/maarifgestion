@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Appliquer le chaînage quotidien du dernier Stock total aux catégories Tartes, Fruits, Glaces, Crème fraîche et Nettoyants, avec tests et sans écriture des données.
 - [x] Ajouter le choix d'unité des articles Tartes, Fruits, Glaces, Crème fraîche et Nettoyants via les réglages stock existants du PDV ; quantités natives et calculs conservés, 34 tests réussis, compilation valide, non publié.
 - [ ] Vérifier l'enregistrement/relecture d'une unité dans Stock restant connecté : session du demandeur indisponible ; attendre sa connexion dans l'aperçu.
 - [x] Harmoniser les colonnes Stock restant de Tartes, Fruits, Glaces, Crème fraîche et Nettoyants avec Alimentaire/Emballage : conversions Réf., mise en place et totaux avec identifiants existants ; 34 tests réussis, compilation valide, données et commandes inchangées, non publié.

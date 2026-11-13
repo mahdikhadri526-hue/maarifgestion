@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/db", () => ({ supabase: {} }));
-import { calculateStockTotals, sumPreviousCounts } from "@/lib/stockInitialTotal";
+import { calculateStockTotals, sumPreviousCounts, chainWeeklyStockTotals } from "@/lib/stockInitialTotal";
 import { stockReferenceQuantity } from "@/lib/stockReference";
 
 describe("Previous stock counting presentation", () => {
@@ -55,5 +55,30 @@ describe("chainDailyStockTotals", () => {
       { date: "2026-11-15", type: "entree", qty: 15 },
       { date: "2026-11-15", type: "sortie", qty: 4 },
     ], [{ date: "2026-11-14", qty: 10 }])).toBe(10);
+  });
+});
+
+describe("weekly category total carry-forward", () => {
+  it.each(["Tarte 6", "Orange fruits", "Vanille", "Crème fraîche (mousse fouettée)", "Détergent"])("uses the same daily totals for %s without changing inputs", article => {
+    const rows = [
+      { article, week_start: "2026-11-09", day_of_week: "Samedi", stock_initial: 7, entrees: 0, sorties: 2 },
+      { article, week_start: "2026-11-09", day_of_week: "Dimanche", stock_initial: null, entrees: 15, sorties: 4 },
+    ];
+    const snapshot = structuredClone(rows);
+    const previous = chainWeeklyStockTotals(rows, [article], "2026-11-16", [{ product_id: article, week_start: "2026-11-09", quantity: 10 }], article);
+    // Monday count: 7 - 10 = -3; Saturday: -3 - 2 = -5; Sunday: -5 + 15 - 4 = 6.
+    expect(previous).toBe(6);
+    expect(calculateStockTotals(previous, 5, 3, 1)).toEqual({ sortiesTotal: 2, stockTotal: 9 });
+    expect(rows).toEqual(snapshot);
+  });
+  it("keeps tomorrow's count as output context but excludes tomorrow's purchases", () => {
+    expect(chainWeeklyStockTotals([
+      { article: "Tarte 6", week_start: "2026-11-09", day_of_week: "Samedi", stock_initial: 7, entrees: 3, sorties: null },
+      { article: "Tarte 6", week_start: "2026-11-09", day_of_week: "Dimanche", stock_initial: 4, entrees: 99, sorties: null },
+    ], ["Tarte 6"], "2026-11-15", [], "Tarte 6")).toBe(4);
+  });
+  it("preserves a real zero total but does not invent missing previous stock", () => {
+    expect(chainWeeklyStockTotals([{ article: "Tarte 6", week_start: "2026-11-09", day_of_week: "Lundi", stock_initial: 0, entrees: 0, sorties: 0 }], ["Tarte 6"], "2026-11-16", [], "Tarte 6")).toBe(0);
+    expect(chainWeeklyStockTotals([], ["Tarte 6"], "2026-11-16", [], "Tarte 6")).toBeUndefined();
   });
 });
