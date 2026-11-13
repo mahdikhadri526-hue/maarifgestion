@@ -7,6 +7,10 @@ import { cached, invalidateTables } from "@/lib/requestCache";
 
 export type Category = "alimentaire" | "emballage";
 export type UnitType = "PIECE" | "KILO" | "LITRE" | "PAQUET" | "COLIS" | "ROULEAU";
+/** Saved PDV units take precedence over generated aggregate-row defaults. */
+export function resolveStockDisplayUnit(productId: string, fallback: UnitType, savedUnits: Record<string, UnitType>): UnitType {
+  return savedUnits[productId] ?? fallback;
+}
 export type MovementUnit = "CARTON" | "PAQUET" | "PIECE";
 
 export interface ProductPackOption {
