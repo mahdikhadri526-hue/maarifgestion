@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Corriger la relecture des unités de Stock restant après actualisation, notamment Crème chantilly, sans modifier les quantités.
 - [x] Reprendre dans Écarts matières les unités natives déjà enregistrées des tartes/fruits lorsqu’il n’existe pas de conversion Réf. ; unités Pièce des tartes confirmées en lecture seule, 25 tests réussis et compilation valide, saisies préservées, non publié. Contrôle connecté couvert par la tâche de vérification des unités ci-dessous.
 - [x] Aligner l’unité affichée de l’utilisation réelle sur Sorties total Réf., sans modifier quantités ni calculs ; 24 tests réussis et compilation valide, non publié.
 - [ ] Vérifier les unités réelles dans Écarts matières connecté : aperçu sur la connexion et session automatique indisponible pour le demandeur ; attendre sa connexion.
