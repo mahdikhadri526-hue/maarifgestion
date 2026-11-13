@@ -1,5 +1,5 @@
 import { WEEKLY_FRUIT_ARTICLES } from "@/lib/weeklyArticles";
-import { buildWeeklyAggregateTotals, CHANTILLY_AGG_ID, CHANTILLY_WEEKLY_ARTICLE, NESPRESSO_AGG_ID_CONST, NUTELLA_NESTLE_AGG_ID, THE_AROMATISE_AGG_ID, NUTELLA_ALI_ID, NESTLE_CARAMEL_ALI_ID, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
+import { buildWeeklyAggregateTotals, MACARON_AGG_ID, MACARON_ARTICLES, CHANTILLY_AGG_ID, CHANTILLY_WEEKLY_ARTICLE, NESPRESSO_AGG_ID_CONST, NUTELLA_NESTLE_AGG_ID, THE_AROMATISE_AGG_ID, NUTELLA_ALI_ID, NESTLE_CARAMEL_ALI_ID, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
 
 /** The existing combined Stock restant rows, not separate weekly articles. */
 export function getStockRecipeAggregates(products: readonly { id: string; name: string }[]) {
@@ -7,6 +7,7 @@ export function getStockRecipeAggregates(products: readonly { id: string; name: 
     { id: NESPRESSO_AGG_ID_CONST, name: "NESPRESSO (Total)", sourceIds: ["ali-29", "ali-30", "ali-31", "ali-32"] },
     { id: THE_AROMATISE_AGG_ID, name: "Thé aromatisé (Tchaba)", sourceIds: products.filter(p => /tchaba/i.test(p.name)).map(p => p.id) },
     { id: NUTELLA_NESTLE_AGG_ID, name: "Nutella/Nestlé caramel", sourceIds: [NUTELLA_ALI_ID, NESTLE_CARAMEL_ALI_ID] },
+    { id: MACARON_AGG_ID, name: "MACARON (tous parfums)", sourceIds: [...MACARON_ARTICLES] },
   ].map(row => ({ ...row, category: "alimentaire" as const }));
 }
 
