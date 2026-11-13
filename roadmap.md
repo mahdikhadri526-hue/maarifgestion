@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Vérifier et regrouper les doublons des écarts matières sans additionner les unités incompatibles ; proposer Nespresso, Thé aromatisé et Nutella/Nestlé caramel des références Stock restant dans Recettes, sans réécrire les données.
 - [x] Corriger le signe des sorties dans Stock total : café Brésil 7 + 0 et sorties total −8 donne −1 ; 15 tests réussis, compilation valide, saisies et sorties affichées conservées, non publié. Vérification connectée bloquée : aucun compte ne correspond au demandeur pour ouvrir une session automatique.
 - [x] Appliquer Stock total = Stock initial total + Entrées - Sorties total et Sorties total = Sorties - Stock mise en place ; 32 tests réussis et compilation valide, aucune saisie modifiée, non publié.
 - [ ] Vérifier les nouvelles formules dans Stock restant connecté : session automatique impossible pour le demandeur ; attendre sa connexion à l’aperçu.
