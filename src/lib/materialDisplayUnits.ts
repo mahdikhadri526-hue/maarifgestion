@@ -17,3 +17,9 @@ export function convertForDisplay(value: number | null, unit: string, chosen: st
   const option = options.find(o => o.label === chosen) ?? options[0];
   return { value: value === null ? null : Math.round(value * option.factor * 10000) / 10000, label: option.label, options };
 }
+
+/** Actual usage already carries the Stock restant reference quantity and unit. */
+export function materialUsageDisplay(kind: "actual" | "theo", value: number | null, unit: string, chosen?: string) {
+  if (kind === "actual") return { value, label: unit, options: [{ label: unit, factor: 1 }] };
+  return convertForDisplay(value, unit, chosen);
+}
