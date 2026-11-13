@@ -55,7 +55,9 @@ import { stockReferenceQuantity } from "@/lib/stockReference";
 import { calculateStockTotals, loadPreviousStockTotals } from "@/lib/stockInitialTotal";
 import { downloadStructuredPdf } from "@/lib/printExport";
 import { WEEKLY_FRUIT_ARTICLES as FRUIT_ARTICLES, WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES, WEEKLY_ALL_ARTICLES as ALL_WEEKLY_ARTICLES } from "@/lib/weeklyArticles";
-import { STOCK_TARTE_ARTICLES as TARTE_ARTICLES } from "@/lib/stockRecipeIngredients";
+import { STOCK_TARTE_ARTICLES as TARTE_ARTICLES, stockRecipeIngredientId } from "@/lib/stockRecipeIngredients";
+import { StockColumnHeaders } from "@/components/StockColumnHeaders";
+import { WeeklyStockColumns } from "@/components/WeeklyStockColumns";
 
 const GLACE_ARTICLES = [
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
@@ -297,6 +299,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       [CHANTILLY_AGG_ID]: [CHANTILLY_WEEKLY_ARTICLE],
       [AMANDES_AGG_ID]: [AMANDES_WEEKLY_ARTICLE],
       [SIROP_AGG_ID]: [SIROP_CARAMEL_WEEKLY_ARTICLE],
+      ...Object.fromEntries([...TARTE_ARTICLES, ...FRUIT_ARTICLES, ...NETTOYANT_ARTICLES, ...GLACE_ARTICLES].map(article => [stockRecipeIngredientId(article), [article]])),
     }).then(values => { if (!cancelled) setPreviousStockTotals(values); })
       .catch(() => { if (!cancelled) toast.error("Impossible de lire le dernier stock total précédent"); })
       .finally(() => { if (!cancelled) setPreviousStockLoading(false); });
@@ -1616,39 +1619,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         </div>
       ) : isWeeklyCat ? (
         <div className="bg-card rounded-lg border overflow-x-auto max-w-full">
-          <table className="weekly-sticky-table text-sm" style={{ borderCollapse: "separate", borderSpacing: 0, width: "max-content", minWidth: "100%", overflow: "visible" }}>
-            <thead className="bg-muted sticky top-0 z-30">
-              <tr className="border-b bg-muted/50">
-                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 45 }}>Article</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Restant</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stockWeeklyRows
-                .filter((r) => r.article.toLowerCase().includes(search.toLowerCase()))
-                .map((r, rowI) => (
-                  <tr key={r.article} className={cn("border-b last:border-0 hover:bg-muted/30 transition-colors", rowI % 2 === 1 && "bg-muted/30")}>
-                    <td className="p-3 text-sm font-medium weekly-sticky-column border-r bg-card w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>{r.article}</td>
-                    <td className="p-3 text-right font-mono text-sm text-primary font-semibold">{r.stockInitial}</td>
-                    <td className="p-3 text-right font-mono text-sm text-success">{r.entrees}</td>
-                    <td className="p-3 text-right font-mono text-sm text-accent-foreground">{r.sorties}</td>
-                    <td className={`p-3 text-right font-mono text-sm font-semibold ${r.stockRestant < 0 ? "text-destructive" : ""}`}>{r.stockRestant}</td>
-                  </tr>
-                ))}
-              {stockWeeklyRows.length > 0 && (
-                <tr className="border-t-2 bg-muted/40 font-semibold">
-                  <td className="p-3 text-sm weekly-sticky-column border-r bg-muted w-[140px] min-w-[140px]" style={{ position: "sticky", left: 0, zIndex: 25 }}>TOTAL</td>
-                  <td className="p-3 text-right font-mono text-sm text-primary">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.stockInitial, 0))}</td>
-                  <td className="p-3 text-right font-mono text-sm text-success">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.entrees, 0))}</td>
-                  <td className="p-3 text-right font-mono text-sm text-accent-foreground">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.sorties, 0))}</td>
-                  <td className="p-3 text-right font-mono text-sm">{roundStockQuantity(stockWeeklyRows.reduce((s, r) => s + r.stockRestant, 0))}</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+          <WeeklyStockColumns
+            rows={stockWeeklyRows.filter(row => row.article.toLowerCase().includes(search.toLowerCase()))}
+            categoryLabel={category === "tarte" ? "Tartes" : category === "fruits" ? "Fruits" : category === "nettoyant" ? "Nettoyants" : category === "glace" ? "Glaces" : "Crème fraîche"}
+            showRefCols={showRefCols} showMepCols={showMepCols}
+            references={refMap} updateRef={updateRef}
+            mepMap={mepMap} saveMep={saveMep} editable={canEditRemaining && mepEditable}
+            previousTotals={previousStockTotals} previousLoading={previousStockLoading}
+          />
           {stockWeeklyRows.length === 0 && (
             <p className="text-center text-muted-foreground py-8">Aucune donnée</p>
           )}
@@ -1716,35 +1694,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted border-r stock-sticky-column stock-sticky-head" style={{ position: "sticky", left: 0, zIndex: 45 }}>Produit</th>
-                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Conversion</th>
-                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unité Réf.</th>
-                <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Catégorie</th>
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Initial</th>
-                {showMepCols && <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock initial total</th>}
-                {showMepCols && showRefCols && <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock initial total Réf.</th>}
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées</th>
-                {showRefCols && (
-                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Entrées Réf.</th>
-                )}
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties</th>
-                {showRefCols && (
-                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties Réf.</th>
-                )}
-                <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock</th>
-                {showRefCols && (
-                  <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock Réf.</th>
-                )}
-                {showMepCols && (
-                  <>
-                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place</th>
-                 {showRefCols && <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock mise en place Réf.</th>}
-                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties total</th>
-                 {showRefCols && <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Sorties total Réf.</th>}
-                 <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total</th>
-                 {showRefCols && <th className="text-right p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Stock total Réf.</th>}
-                  </>
-                )}
+                <StockColumnHeaders showRefCols={showRefCols} showMepCols={showMepCols} />
 
               </tr>
             </thead>
