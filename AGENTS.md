@@ -26,4 +26,4 @@
 - CTG uses getCtgProductionLot for fiches and weekly entries, never legacy inputs.
 - Deadline corrections use an invoker RPC, trigger and audit for technical-account authority. Tech processing_mode defaults to technique; manager issues use Agenda PEP, close on repair validation, and appear in PDV Tech only when closed (visibleInPdvTech). Central manage_tech retains consultation, not manager-mode handling. Both views use mode-aware canHandleTechIssue and canHandlePepRepair; guard_manager_repair_actions enforces manager/admin roles, PDV/PEP access and technical-account exclusion on handling writes without blocking deadline corrections.
 - Bundle welcome MP3 imports (no /__l5e on servers); store tech videos privately before writes, keep legacy playback, disable list preloading.
-- Recipe totals reuse stock aggregate IDs; variance groups by ingredient without summing incompatible units, so actual usage appears only once.
+- Material actuals cover PDV stock IDs and shared weekly sorties; group recipe units without mixing, show unlinked outputs and flag native fallback for missing conversions.
