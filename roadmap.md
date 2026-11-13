@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Fiabiliser la sauvegarde des conversions/unités Réf. et vérifier les saisies récupérables, sans toucher aux stocks.
 - [x] Corriger la relecture des unités de Stock restant après actualisation, notamment Crème chantilly : LITRE confirmé en base, priorité aux unités sauvegardées et modification des unités agrégées autorisée sans déverrouiller les quantités ; 28 tests réussis, compilation valide, non publié.
 - [ ] Confirmer visuellement la sauvegarde/relecture de Crème chantilly dans l’aperçu connecté : aperçu sur la connexion, aucune session ne correspond au demandeur ; attendre sa connexion.
 - [x] Reprendre dans Écarts matières les unités natives déjà enregistrées des tartes/fruits lorsqu’il n’existe pas de conversion Réf. ; unités Pièce des tartes confirmées en lecture seule, 25 tests réussis et compilation valide, saisies préservées, non publié. Contrôle connecté couvert par la tâche de vérification des unités ci-dessous.
