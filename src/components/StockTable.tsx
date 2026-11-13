@@ -2209,6 +2209,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             </table>
           </div>
         )}
+        {!detailsLoading && !glaceDetails && <AggregateSourceDetails sources={sourceDaily} period={detailsPeriod} />}
       </DialogContent>
     </Dialog>
 
