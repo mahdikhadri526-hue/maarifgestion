@@ -12,6 +12,7 @@ export function buildMaterialStockActuals(
   levels: StockLevel[], movements: StockMovement[], start: string, end: string,
   references: MaterialStockReference[], mep: Record<string, number>, weeklyRows: WeeklyTrackingOrderRecord[],
   overrides: Record<string, MaterialStockTotals>,
+  stockUnits: Record<string, string> = {},
 ): Record<string, MaterialActual> {
   const refs = new Map(references.map(row => [row.product_id, row]));
   const totals: Record<string, MaterialStockTotals> = {};
@@ -39,9 +40,10 @@ export function buildMaterialStockActuals(
     totals[row.id] = row;
     // These are already the native quantities displayed by the Stock restant article rows.
     const ref = refs.get(row.id);
-    if (ref) add(row.id, row.name, row.category, row.sorties, row.group === "Crème fraîche" ? "kg" : "STOCK");
+    const nativeUnit = stockUnits[row.id] ?? (row.group === "Crème fraîche" ? "kg" : "STOCK");
+    if (ref) add(row.id, row.name, row.category, row.sorties, nativeUnit);
     else actuals[row.id] = { name: row.name, category: row.category, quantity: row.sorties,
-      unit: row.group === "Crème fraîche" ? "kg" : "STOCK" };
+      unit: nativeUnit };
   }
   for (const aggregate of getStockRecipeAggregates(levels.map(row => ({ id: row.productId, name: row.productName })))) {
     const outputs = aggregate.sourceIds.reduce((sum, id) => sum + (totals[id]?.sorties ?? 0), 0);

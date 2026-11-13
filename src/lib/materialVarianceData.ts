@@ -2,7 +2,7 @@ import { supabase } from "@/lib/db";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { requireCurrentPdvId } from "@/lib/pdvStore";
 import { latestRecipeVersions } from "@/lib/recipeVersions";
-import { getMovements, getStockLevels, getGlaceAggregateForRange, getToppingsBreakdown, roundStockQuantity } from "@/lib/stockData";
+import { getMovements, getStockLevels, getProductUnits, getGlaceAggregateForRange, getToppingsBreakdown, roundStockQuantity } from "@/lib/stockData";
 import { getMiseEnPlaceStocksForWeek, getMiseEnPlaceStocks, weekStartOf, inventoryDayOfWeek } from "@/lib/miseEnPlaceData";
 import { formatISODate } from "@/lib/stockWeeklyAggregates";
 import { materialSalesSection, type MaterialRecipe, type MaterialIngredient } from "@/lib/materialVariance";
@@ -15,7 +15,7 @@ export interface MaterialFinishedProduct { id: string; name: string; category: s
 export async function loadMaterialAnalysis(start: string, end: string) {
   const pdvId = requireCurrentPdvId();
   const week = weekStartOf(new Date(`${end}T00:00:00`));
-  const [products, recipeRows, ingredients, movements, levels, references, salesRows, weeklyMep, stockArticleRows] = await Promise.all([
+  const [products, recipeRows, ingredients, movements, levels, references, salesRows, weeklyMep, stockArticleRows, stockUnits] = await Promise.all([
     fetchAllRows<MaterialFinishedProduct>(() => supabase.from("finished_products").select("id,name,category,active").order("name")),
     fetchAllRows<MaterialRecipe>(() => supabase.from("recipes").select("id,finished_product_id,version,active")),
     fetchAllRows<MaterialIngredient>(() => supabase.from("recipe_ingredients").select("recipe_id,product_id,category,quantity,unit,notes")),
@@ -27,6 +27,7 @@ export async function loadMaterialAnalysis(start: string, end: string) {
       .select("article,sorties,entrees,stock_initial,day_of_week,week_start,row_index")
       .eq("fiche_type", "Mouvement glaces & tartes").in("article", [...new Set([...stockRecipeIngredients.map(row => row.name), ...MACARON_ARTICLES, SIROP_CARAMEL_WEEKLY_ARTICLE, AMANDES_WEEKLY_ARTICLE])])
       .order("id")),
+    getProductUnits(),
   ]);
   const inventoryDate = formatISODate(inventoryDayOfWeek(week));
   let mep = weeklyMep;
@@ -43,7 +44,7 @@ export async function loadMaterialAnalysis(start: string, end: string) {
     return null;
   }));
   const actuals = buildMaterialStockActuals(levels, movements, start, end, references, mep, stockArticleRows,
-    Object.fromEntries(special.flatMap(row => row ? [[row.id, row.totals]] : [])));
+    Object.fromEntries(special.flatMap(row => row ? [[row.id, row.totals]] : [])), stockUnits);
   return { products, recipes: latestRecipeVersions(recipeRows).filter(row => row.active), ingredients, actuals, sales: Object.fromEntries(salesRows.map(row => [row.item, Number(row.qty)])) as Record<string, number> };
 }
 
