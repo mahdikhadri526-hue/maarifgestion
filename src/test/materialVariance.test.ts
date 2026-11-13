@@ -5,12 +5,21 @@ import { canonicalStockIngredientId, getStockRecipeAggregates, stockRecipeIngred
 vi.mock("@/lib/stockData", () => ({ roundStockQuantity: (n: number) => Math.round(n * 1000) / 1000 }));
 
 describe("Analyse des écarts matières", () => {
-  it("offers the three existing combined stock references for recipes", () => {
+  it("offers the existing combined stock references for recipes", () => {
     const aggregates = getStockRecipeAggregates([{ id: "ali-12", name: "TCHABA VERVEINE DOUCE" }, { id: "ali-33", name: "TCHABA GARDEN" }, { id: "ali-7", name: "CAFE BRESIL" }]);
-    expect(aggregates.map(row => row.id)).toEqual(["__nespresso_agg__", "__the_aromatise_agg__", "__nutella_nestle_agg__"]);
+    expect(aggregates.map(row => row.id)).toEqual(["__nespresso_agg__", "__the_aromatise_agg__", "__nutella_nestle_agg__", "__macaron_agg__"]);
     expect(aggregates[0].sourceIds).toEqual(["ali-29", "ali-30", "ali-31", "ali-32"]);
     expect(aggregates[1].sourceIds).toEqual(["ali-12", "ali-33"]);
     expect(aggregates[2].sourceIds).toEqual(["ali-21", "ali-15"]);
+  });
+  it("links all twelve macaron flavours to the existing stock total without replacing individual references", () => {
+    const macaron = getStockRecipeAggregates([]).find(row => row.id === "__macaron_agg__");
+    expect(macaron?.sourceIds).toEqual([
+      "Mac.Chocolat P", "Mac.Pistache P", "Mac.Caramel P", "Mac.Cfé P", "Mac.Mng P", "Mac.Cit P",
+      "Mac.Chocolat N", "Mac.Pistache N", "Mac.Caramel N", "Mac.Cfé N", "Mac.Mng N", "Mac.Cit N",
+    ]);
+    expect(canonicalStockIngredientId("__macaron_agg__")).toBe("__macaron_agg__");
+    expect(stockRecipeIngredients.find(row => row.id === "Mac.Chocolat P")?.id).toBe("Mac.Chocolat P");
   });
   it("links tartes and fruits to exact Stock restant article identities and cream to its existing aggregate", () => {
     expect(stockRecipeIngredients.find(row => row.name === "Bûche")?.id).toBe("Bûche");
