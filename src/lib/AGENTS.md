@@ -1,0 +1,1 @@
+- Reference conversion saves must await lazy database requests, serialize patches per product and surface failures; browser pending patches are user-scoped recovery only, never authorization or proof of a successful database save.

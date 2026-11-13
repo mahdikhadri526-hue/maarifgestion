@@ -445,7 +445,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             if (migrationError) throw migrationError;
             for (const r of rows) next[r.product_id] = { conversion: r.conversion, unitRef: r.unit_ref };
           }
-          localStorage.removeItem(REF_STORAGE_KEY);
+          if (Object.entries(local).every(([id, value]) => next[id]?.conversion === value.conversion && next[id]?.unitRef === value.unitRef)) {
+            localStorage.removeItem(REF_STORAGE_KEY);
+          }
         }
       } catch { toast.error("Anciennes conversions conservées sur cet appareil : récupération non enregistrée."); }
       try {
