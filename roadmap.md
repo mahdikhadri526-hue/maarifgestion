@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Aligner l’unité affichée de l’utilisation réelle sur Sorties total Réf., sans modifier quantités ni calculs ; 24 tests réussis et compilation valide, non publié.
+- [ ] Vérifier les unités réelles dans Écarts matières connecté : aperçu sur la connexion et session automatique indisponible pour le demandeur ; attendre sa connexion.
 - [x] Appliquer le chaînage quotidien du dernier Stock total aux catégories Tartes, Fruits, Glaces, Crème fraîche et Nettoyants ; 41 tests réussis et compilation valide, aucune saisie modifiée, non publié.
 - [ ] Vérifier le report des totaux de ces catégories dans l’aperçu connecté : session du demandeur indisponible ; attendre sa connexion.
 - [x] Ajouter le choix d'unité des articles Tartes, Fruits, Glaces, Crème fraîche et Nettoyants via les réglages stock existants du PDV ; quantités natives et calculs conservés, 34 tests réussis, compilation valide, non publié.
