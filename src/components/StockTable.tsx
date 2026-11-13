@@ -344,12 +344,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   // Configurations (paquet/carton) par produit — utilisé pour afficher MASQUE/GANT en paquets
   const [unitConfigs, setUnitConfigs] = useState<Record<string, ProductUnitConfig>>({});
+  const [weeklyUnits, setWeeklyUnits] = useState<Record<string, UnitType>>({});
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        const cfgs = await getProductUnitConfigs();
-        if (!cancelled) setUnitConfigs(cfgs);
+        const [cfgs, units] = await Promise.all([getProductUnitConfigs(), getProductUnits()]);
+        if (!cancelled) {
+          setUnitConfigs(cfgs);
+          setWeeklyUnits(units);
+        }
       } catch {
         /* ignore */
       }
@@ -983,6 +987,17 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       await setProductUnit(productId, nextUnit);
       refresh();
       toast.success(`Unité changée en ${UNIT_LABELS[nextUnit]}`);
+    } catch {
+      toast.error("Erreur lors du changement d'unité");
+    }
+  };
+
+  const updateWeeklyUnit = async (productId: string, unit: UnitType) => {
+    if (!canEditStock) return;
+    try {
+      await setProductUnit(productId, unit);
+      setWeeklyUnits(current => ({ ...current, [productId]: unit }));
+      toast.success(`Unité changée en ${UNIT_LABELS[unit]}`);
     } catch {
       toast.error("Erreur lors du changement d'unité");
     }
@@ -1626,6 +1641,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             references={refMap} updateRef={updateRef}
             mepMap={mepMap} saveMep={saveMep} editable={canEditRemaining && mepEditable}
             previousTotals={previousStockTotals} previousLoading={previousStockLoading}
+            units={weeklyUnits} unitLabels={UNIT_LABELS} canEditUnit={canEditStock} updateUnit={updateWeeklyUnit}
           />
           {stockWeeklyRows.length === 0 && (
             <p className="text-center text-muted-foreground py-8">Aucune donnée</p>
