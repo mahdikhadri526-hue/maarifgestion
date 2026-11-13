@@ -6,7 +6,7 @@ import { changedRecipeIngredientUnits } from "@/lib/recipeIngredientUnits";
 import { relinkRecipeIngredients, type RecipeIngredientLink } from "@/lib/recipeIngredientLinks";
 import { getProducts, isProductActive, type Category, type UnitType } from "@/lib/stockData";
 import { useAuth } from "@/contexts/AuthContext";
-import { canonicalStockIngredientId, stockRecipeGroups, stockRecipeIngredients, stockRecipeIngredientId } from "@/lib/stockRecipeIngredients";
+import { canonicalStockIngredientId, getStockRecipeAggregates, stockRecipeGroups, stockRecipeIngredients, stockRecipeIngredientId } from "@/lib/stockRecipeIngredients";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,12 +62,14 @@ export function RecipeManager() {
   const canEdit = can("edit_recipes");
 
   const stockProducts = useMemo(() => getProducts(), []);
+  const stockAggregates = useMemo(() => getStockRecipeAggregates(stockProducts), [stockProducts]);
   const stockMap = useMemo(() => {
     const m = new Map<string, { name: string; category: Category }>();
     stockProducts.forEach((p) => m.set(p.id, { name: p.name, category: p.category }));
     stockRecipeIngredients.forEach((o) => m.set(o.id, { name: o.name, category: o.category }));
+    stockAggregates.forEach((o) => m.set(o.id, { name: o.name, category: o.category }));
     return m;
-  }, [stockProducts]);
+  }, [stockProducts, stockAggregates]);
 
   const [products, setProducts] = useState<FinishedProduct[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -487,6 +489,12 @@ export function RecipeManager() {
                               ))}
                             </SelectGroup>
                           ))}
+                          <SelectGroup>
+                            <SelectLabel>Totaux (Stock restant)</SelectLabel>
+                            {stockAggregates.filter(row => row.sourceIds.some(isProductActive)).map(row => (
+                              <SelectItem key={row.id} value={row.id}>{row.name}</SelectItem>
+                            ))}
+                          </SelectGroup>
                         </SelectContent>
                       </Select>
                     </div>

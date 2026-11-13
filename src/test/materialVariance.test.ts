@@ -1,10 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 import { computeMaterialVariance, materialActualReference, materialSalesSection } from "@/lib/materialVariance";
-import { canonicalStockIngredientId, stockRecipeIngredients, stockRecipePeriodTotals } from "@/lib/stockRecipeIngredients";
+import { canonicalStockIngredientId, getStockRecipeAggregates, stockRecipeIngredients, stockRecipePeriodTotals } from "@/lib/stockRecipeIngredients";
 
 vi.mock("@/lib/stockData", () => ({ roundStockQuantity: (n: number) => Math.round(n * 1000) / 1000 }));
 
 describe("Analyse des écarts matières", () => {
+  it("offers the three existing combined stock references for recipes", () => {
+    const aggregates = getStockRecipeAggregates([{ id: "ali-12", name: "TCHABA VERVEINE DOUCE" }, { id: "ali-33", name: "TCHABA GARDEN" }, { id: "ali-7", name: "CAFE BRESIL" }]);
+    expect(aggregates.map(row => row.id)).toEqual(["__nespresso_agg__", "__the_aromatise_agg__", "__nutella_nestle_agg__"]);
+    expect(aggregates[0].sourceIds).toEqual(["ali-29", "ali-30", "ali-31", "ali-32"]);
+    expect(aggregates[1].sourceIds).toEqual(["ali-12", "ali-33"]);
+    expect(aggregates[2].sourceIds).toEqual(["ali-21", "ali-15"]);
+  });
   it("links tartes and fruits to exact Stock restant article identities and cream to its existing aggregate", () => {
     expect(stockRecipeIngredients.find(row => row.name === "Bûche")?.id).toBe("Bûche");
     expect(stockRecipeIngredients.find(row => row.name === "Orange fruits")?.id).toBe("Orange fruits");
@@ -50,6 +57,16 @@ describe("Analyse des écarts matières", () => {
   it("never subtracts different units", () => {
     const result = computeMaterialVariance(recipes, ingredients, { sp: 10 }, { sidi: { name: "Sidi", category: "alimentaire", quantity: 10, unit: "kg" } });
     expect(result[0].variance).toBeNull();
+  });
+  it("shows a duplicated ingredient once without combining incompatible quantities or repeating its actual usage", () => {
+    const mixed = [{ ...ingredients[0], unit: "KILO", quantity: 0.5 }, { ...ingredients[1], unit: "UA", quantity: 2 }];
+    const result = computeMaterialVariance(recipes, mixed, { sp: 10, emp: 5 }, { sidi: { name: "Sidi", category: "alimentaire", quantity: 18, unit: "kg" } });
+    expect(result).toHaveLength(1);
+    expect(result[0].actual).toBe(18);
+    expect(result[0].theoretical).toBeNull();
+    expect(result[0].unit).toBe("5 KILO + 10 UA");
+    expect(result[0].variance).toBeNull();
+    expect(mixed.map(row => row.quantity)).toEqual([0.5, 2]);
   });
   it("separates saved sales by period end without touching existing discrepancy sections", () => {
     expect(materialSalesSection("2026-11-07")).toBe("MATIERES:VENTES:2026-11-07");

@@ -4,7 +4,7 @@ import { canonicalStockIngredientId } from "@/lib/stockRecipeIngredients";
 export interface MaterialIngredient { recipe_id: string; product_id: string; category: string; quantity: number; unit: string; notes: string | null }
 export interface MaterialRecipe { id: string; finished_product_id: string; version: number; active: boolean }
 export interface MaterialActual { name: string; category: string; quantity: number | null; unit: string }
-export interface MaterialResult { id: string; name: string; category: string; actual: number | null; theoretical: number; unit: string; actualUnit: string; variance: number | null; issue: string | null }
+export interface MaterialResult { id: string; name: string; category: string; actual: number | null; theoretical: number | null; unit: string; actualUnit: string; variance: number | null; issue: string | null }
 
 const unitKey = (unit: string) => {
   const key = unit.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().trim();
@@ -35,7 +35,7 @@ export function computeMaterialVariance(recipes: MaterialRecipe[], ingredients: 
     group.theoretical += (Number.isFinite(sold) && sold >= 0 ? sold : 0) * ingredient.quantity;
     groups.set(key, group);
   }
-  return [...groups].map(([id, { ingredient, theoretical }]) => {
+  const rows = [...groups].map(([id, { ingredient, theoretical }]) => {
     const actual = actuals[ingredient.product_id];
     const compatible = !!actual && unitKey(actual.unit) === unitKey(ingredient.unit);
     const issue = !actual ? "Non lié au stock" : actual.quantity === null ? "Conversion Réf. manquante" : !compatible ? "Unités différentes" : null;
@@ -43,6 +43,19 @@ export function computeMaterialVariance(recipes: MaterialRecipe[], ingredients: 
       actual: actual?.quantity ?? null, theoretical: round(theoretical), unit: ingredient.unit === "STOCK" ? "Unité stock" : ingredient.unit,
       actualUnit: actual?.unit === "STOCK" ? "Unité stock" : actual?.unit ?? "", variance: issue ? null : round((actual?.quantity ?? 0) - theoretical), issue };
   }).sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name, "fr"));
+  // One actual stock quantity per ingredient; never repeat it for each recipe unit.
+  const byIngredient = new Map<string, typeof rows>();
+  for (const row of rows) {
+    const ingredientId = row.id.slice(0, row.id.lastIndexOf(":"));
+    byIngredient.set(ingredientId, [...(byIngredient.get(ingredientId) ?? []), row]);
+  }
+  return [...byIngredient.values()].map(group => {
+    const first = group[0];
+    if (group.length === 1) return first;
+    return { ...first, theoretical: null, variance: null,
+      unit: group.map(row => `${row.theoretical} ${row.unit}`).join(" + "),
+      issue: "Plusieurs unités dans les recettes : à harmoniser" };
+  });
 }
 
 export function materialSalesSection(end: string) { return `MATIERES:VENTES:${end}`; }

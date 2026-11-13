@@ -6,7 +6,7 @@ import { getProducts, getMovements, getInitialStocks, getGlaceAggregateForRange,
 import { getMiseEnPlaceStocksForWeek, getMiseEnPlaceStocks, weekStartOf, inventoryDayOfWeek } from "@/lib/miseEnPlaceData";
 import { formatISODate } from "@/lib/stockWeeklyAggregates";
 import { materialActualReference, materialSalesSection, type MaterialActual, type MaterialRecipe, type MaterialIngredient } from "@/lib/materialVariance";
-import { stockRecipeIngredients, stockRecipePeriodTotals } from "@/lib/stockRecipeIngredients";
+import { getStockRecipeAggregates, stockRecipeIngredients, stockRecipePeriodTotals } from "@/lib/stockRecipeIngredients";
 import { CHANTILLY_AGG_ID, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
 
 export interface MaterialFinishedProduct { id: string; name: string; category: string | null; active: boolean }
@@ -74,6 +74,13 @@ export async function loadMaterialAnalysis(start: string, end: string) {
       quantity: ref ? materialActualReference(row.stockInitial, row.entrees, row.stockRestant, mep[row.id] ?? 0, ref.conversion) : row.sorties,
       unit: ref?.unit_ref ?? (row.id === CHANTILLY_AGG_ID ? "kg" : "STOCK"),
     };
+  }
+  for (const aggregate of getStockRecipeAggregates(stockProducts)) {
+    const sources = aggregate.sourceIds.map(id => totals[id]).filter(row => row !== undefined);
+    const outputs = roundStockQuantity(sources.reduce((sum, row) => sum + row.outputs, 0));
+    const ref = refs.get(aggregate.id);
+    actuals[aggregate.id] = { name: aggregate.name, category: aggregate.category, unit: ref?.unit_ref ?? "",
+      quantity: materialActualReference(outputs, 0, 0, mep[aggregate.id] ?? 0, ref?.conversion ?? "") };
   }
   return { products, recipes: latestRecipeVersions(recipeRows).filter(row => row.active), ingredients, actuals, sales: Object.fromEntries(salesRows.map(row => [row.item, Number(row.qty)])) as Record<string, number> };
 }
