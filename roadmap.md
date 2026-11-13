@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Vérifier et corriger les sorties manquantes dans Écarts matières pour toutes les familles, comparer au Stock restant et tester sans réécrire les saisies.
+- [x] Sorties matières : 105 références stock couvertes, regroupements hebdomadaires inclus, sorties sans recette visibles et conversions absentes signalées ; 36 tests réussis, aperçu connecté et mobile vérifiés, octobre comparé au Stock restant (Café 45, Sidi Ali 4 476, Macaron 610) ; saisies inchangées, non publié.
 - [x] Regrouper les doublons des écarts matières par référence sans additionner les unités incompatibles ; Nespresso, Thé aromatisé et Nutella/Nestlé caramel proposés depuis Stock restant dans Recettes ; 20 tests réussis, trois choix et Amd.Crml unique vérifiés dans l’aperçu admin, aucune donnée réécrite, non publié.
 - [x] Corriger le signe des sorties dans Stock total : café Brésil 7 + 0 et sorties total −8 donne −1 ; 15 tests réussis, compilation valide, saisies et sorties affichées conservées, non publié. Vérification connectée bloquée : aucun compte ne correspond au demandeur pour ouvrir une session automatique.
 - [x] Appliquer Stock total = Stock initial total + Entrées - Sorties total et Sorties total = Sorties - Stock mise en place ; 32 tests réussis et compilation valide, aucune saisie modifiée, non publié.
