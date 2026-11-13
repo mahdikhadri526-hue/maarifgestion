@@ -59,6 +59,7 @@ import { WEEKLY_FRUIT_ARTICLES as FRUIT_ARTICLES, WEEKLY_NETTOYANT_ARTICLES as N
 import { STOCK_TARTE_ARTICLES as TARTE_ARTICLES, stockRecipeIngredientId } from "@/lib/stockRecipeIngredients";
 import { StockColumnHeaders } from "@/components/StockColumnHeaders";
 import { WeeklyStockColumns } from "@/components/WeeklyStockColumns";
+import { createStockReferenceSaver, type StockReferencePatch } from "@/lib/stockReferenceSave";
 
 const GLACE_ARTICLES = [
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
@@ -221,7 +222,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [siropWeekly, setSiropWeekly] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const [chantillyAgg, setChantillyAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const [amandesAgg, setAmandesAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
-  const { can, isAdmin } = useAuth();
+  const { can, isAdmin, user } = useAuth();
   const operatorOptions = useOperators();
   const [showRefColsRaw, setShowRefCols] = useState<boolean>(false);
   const [showMepColsRaw, setShowMepCols] = useState<boolean>(false);
@@ -342,6 +343,34 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const REF_STORAGE_KEY = "stock_ref_conversions_v1";
   type RefRow = { conversion: string; unitRef: string };
   const [refMap, setRefMap] = useState<Record<string, RefRow>>({});
+  const pendingRefKey = `stock_ref_pending_v2:${user?.id ?? "signed-out"}`;
+  const pendingRefs = useRef<Record<string, StockReferencePatch>>({});
+  const persistPendingRefs = () => {
+    try { localStorage.setItem(pendingRefKey, JSON.stringify(pendingRefs.current)); } catch {}
+  };
+  const saveReference = useMemo(() => createStockReferenceSaver(async (productId, patch) => {
+    const payload: { product_id: string; conversion?: string; unit_ref?: string; updated_at: string } = {
+      product_id: productId, updated_at: new Date().toISOString(),
+    };
+    if (patch.conversion !== undefined) payload.conversion = patch.conversion;
+    if (patch.unitRef !== undefined) payload.unit_ref = patch.unitRef;
+    return await supabase.from("stock_ref_conversions").upsert(payload, { onConflict: "product_id" });
+  }), []);
+  const commitReference = async (productId: string, patch: StockReferencePatch) => {
+    try {
+      await saveReference(productId, patch);
+      const pending = pendingRefs.current[productId];
+      if (pending) {
+        for (const key of ["conversion", "unitRef"] as const) {
+          if (patch[key] !== undefined && pending[key] === patch[key]) delete pending[key];
+        }
+        if (Object.keys(pending).length === 0) delete pendingRefs.current[productId];
+      }
+      persistPendingRefs();
+    } catch {
+      toast.error("Conversion / unité Réf. non enregistrée : saisie conservée sur cet appareil. Réessayez.");
+    }
+  };
 
   // Configurations (paquet/carton) par produit — utilisé pour afficher MASQUE/GANT en paquets
   const [unitConfigs, setUnitConfigs] = useState<Record<string, ProductUnitConfig>>({});
@@ -392,28 +421,44 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         .from("stock_ref_conversions")
         .select("product_id, conversion, unit_ref");
       if (cancelled) return;
+      if (error) {
+        toast.error("Impossible de charger les conversions et unités Réf. enregistrées.");
+        return;
+      }
       const next: Record<string, RefRow> = {};
       if (!error && data) {
         for (const r of data as any[]) {
           next[r.product_id] = { conversion: r.conversion ?? "", unitRef: r.unit_ref ?? "" };
         }
       }
-      // Migration unique depuis localStorage si la base est vide
+      // Preserve legacy entries until their database write actually succeeds.
       try {
         const raw = localStorage.getItem(REF_STORAGE_KEY);
-        if (raw && Object.keys(next).length === 0) {
+        if (raw) {
           const local = JSON.parse(raw) as Record<string, RefRow>;
           const rows = Object.entries(local)
+            .filter(([id]) => !next[id])
             .filter(([, v]) => v && (v.conversion || v.unitRef))
             .map(([product_id, v]) => ({ product_id, conversion: v.conversion ?? "", unit_ref: v.unitRef ?? "" }));
           if (rows.length) {
-            await supabase.from("stock_ref_conversions").upsert(rows, { onConflict: "product_id" });
+            const { error: migrationError } = await supabase.from("stock_ref_conversions").upsert(rows, { onConflict: "product_id" });
+            if (migrationError) throw migrationError;
             for (const r of rows) next[r.product_id] = { conversion: r.conversion, unitRef: r.unit_ref };
           }
-          localStorage.removeItem(REF_STORAGE_KEY);
+          if (Object.entries(local).every(([id, value]) => next[id]?.conversion === value.conversion && next[id]?.unitRef === value.unitRef)) {
+            localStorage.removeItem(REF_STORAGE_KEY);
+          }
         }
+      } catch { toast.error("Anciennes conversions conservées sur cet appareil : récupération non enregistrée."); }
+      try {
+        const saved = JSON.parse(localStorage.getItem(pendingRefKey) ?? "{}") as Record<string, StockReferencePatch>;
+        pendingRefs.current = { ...saved, ...pendingRefs.current };
       } catch {}
-      setRefMap(next);
+      for (const [id, patch] of Object.entries(pendingRefs.current)) {
+        next[id] = { conversion: "", unitRef: "", ...next[id], ...patch };
+        if (canEditStock) void commitReference(id, { ...patch });
+      }
+      if (!cancelled) setRefMap(prev => ({ ...next, ...Object.fromEntries(Object.entries(pendingRefs.current).map(([id, patch]) => [id, { conversion: "", unitRef: "", ...next[id], ...prev[id], ...patch }])) }));
     };
     load();
     const ch = supabase
@@ -423,10 +468,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           const next = { ...prev };
           if (payload.eventType === "DELETE") {
             const id = payload.old?.product_id;
-            if (id) delete next[id];
+            if (id && !pendingRefs.current[id]) delete next[id];
           } else {
             const r = payload.new;
-            if (r?.product_id) next[r.product_id] = { conversion: r.conversion ?? "", unitRef: r.unit_ref ?? "" };
+            if (r?.product_id) next[r.product_id] = { conversion: r.conversion ?? "", unitRef: r.unit_ref ?? "", ...pendingRefs.current[r.product_id] };
           }
           return next;
         });
@@ -436,20 +481,21 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       cancelled = true;
       supabase.removeChannel(ch);
     };
-  }, []);
+  }, [pendingRefKey, canEditStock]);
 
   const updateRef = (productId: string, patch: Partial<RefRow>) => {
+    if (!canEditStock) {
+      toast.error("Opération non autorisée");
+      return;
+    }
+    pendingRefs.current[productId] = { ...pendingRefs.current[productId], ...patch };
+    persistPendingRefs();
     setRefMap((prev) => {
       const merged = { conversion: "", unitRef: "", ...prev[productId], ...patch };
       const next = { ...prev, [productId]: merged };
-      void supabase
-        .from("stock_ref_conversions")
-        .upsert(
-          { product_id: productId, conversion: merged.conversion, unit_ref: merged.unitRef, updated_at: new Date().toISOString() },
-          { onConflict: "product_id" },
-        );
       return next;
     });
+    void commitReference(productId, patch);
   };
 
   const getAdjustmentDate = () => {
