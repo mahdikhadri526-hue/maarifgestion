@@ -61,6 +61,8 @@ import { StockColumnHeaders } from "@/components/StockColumnHeaders";
 import { WeeklyStockColumns } from "@/components/WeeklyStockColumns";
 import { createStockReferenceSaver, type StockReferencePatch } from "@/lib/stockReferenceSave";
 import { GlaceStockDetails } from "@/components/GlaceStockDetails";
+import { AggregateSourceDetails } from "@/components/AggregateSourceDetails";
+import { getSourceDailyDetails, type SourceDailyDetail } from "@/lib/stockData";
 import type { GlaceStockDetail } from "@/lib/glaceStockAggregate";
 
 const GLACE_ARTICLES = [
@@ -342,6 +344,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [glaceDetails, setGlaceDetails] = useState<GlaceStockDetail[] | null>(null);
   const [detailsPeriod, setDetailsPeriod] = useState("");
+  const [sourceDaily, setSourceDaily] = useState<SourceDailyDetail[]>([]);
 
   // Conversion + Unité Réf. par produit (partagées via Supabase, synchronisées en temps réel)
   const REF_STORAGE_KEY = "stock_ref_conversions_v1";
@@ -1093,6 +1096,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         stockRestant: level.stockRestant,
       };
     }
+    if (level.productId === THE_AROMATISE_AGG_ID || level.productId === NUTELLA_NESTLE_AGG_ID) {
+      const ids = level.productId === THE_AROMATISE_AGG_ID
+        ? (levels || []).filter((l) => /tchaba/i.test(l.productName)).map((l) => l.productId)
+        : [NUTELLA_ALI_ID, NESTLE_CARAMEL_ALI_ID];
+      const sum = ids.reduce((acc, id) => {
+        const t = periodTotals[id];
+        return t ? { stockInitial: acc.stockInitial + t.stockInitial, entrees: acc.entrees + t.entrees, sorties: acc.sorties + t.sorties, stockRestant: acc.stockRestant + t.stockRestant } : acc;
+      }, { stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 });
+      return { stockInitial: roundStockQuantity(sum.stockInitial), entrees: roundStockQuantity(sum.entrees), sorties: roundStockQuantity(sum.sorties), stockRestant: roundStockQuantity(sum.stockRestant) };
+    }
     if (EXTRA_AGG_IDS.includes(level.productId)) {
       return {
         stockInitial: level.stockInitial,
@@ -1358,7 +1371,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     const isMacaron = level.productId === MACARON_AGG_ID;
     const isGlace = level.productName === "GLACE" && level.category === "alimentaire";
     const isToppings = level.productName === "TOPPINGS" && level.category === "alimentaire";
-    if (!isNespresso && !isMacaron && !isGlace && !isToppings) return;
+    const isThe = level.productId === THE_AROMATISE_AGG_ID;
+    if (!isNespresso && !isMacaron && !isGlace && !isToppings && !isThe) return;
+    setSourceDaily([]);
 
     setDetailsTitle(level.productName);
     setDetailsUnit(isGlace ? "Kg" : "");
@@ -1368,8 +1383,26 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     setDetailsLoading(true);
     try {
       const range = currentRange();
-      if (isNespresso) {
-        const rows: AggregateBreakdownRow[] = NESPRESSO_IDS.map((id) => {
+      const rangeMatch = (d: string) => {
+        const dd = d.slice(0, 10);
+        if (mode === "day") return day ? dd === day : true;
+        if (mode === "month") return month ? dd.startsWith(month) : true;
+        if (mode === "period") return (!start || dd >= start) && (!end || dd <= end);
+        return true;
+      };
+      if (isNespresso || isThe || isToppings) {
+        const ids = isNespresso ? NESPRESSO_IDS
+          : isThe ? (levels || []).filter((l) => /tchaba/i.test(l.productName)).map((l) => l.productId)
+          : TOPPINGS_ALI_PRODUCT_IDS;
+        const names: Record<string, string> = {};
+        ids.forEach((id) => { names[id] = (levels || []).find((l) => l.productId === id)?.productName || id; });
+        setDetailsPeriod(range.start && range.end ? `Du ${formatDateFR(range.start)} au ${formatDateFR(range.end)}` : "Toutes les dates");
+        getSourceDailyDetails(ids, names, mode === "all" ? null : rangeMatch, isToppings)
+          .then(setSourceDaily).catch(() => setSourceDaily([]));
+      }
+      if (isNespresso || isThe) {
+        const ids = isNespresso ? NESPRESSO_IDS : (levels || []).filter((l) => /tchaba/i.test(l.productName)).map((l) => l.productId);
+        const rows: AggregateBreakdownRow[] = ids.map((id) => {
           const src = (levels || []).find((l) => l.productId === id);
           if (!src) return null;
           if (mode === "all") {
@@ -1458,6 +1491,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   const isAggregateLevel = (level: typeof filtered[number]) =>
     level.productId === NESPRESSO_AGG_ID ||
+    level.productId === THE_AROMATISE_AGG_ID ||
     level.productId === MACARON_AGG_ID ||
     (level.productName === "GLACE" && level.category === "alimentaire") ||
     (level.productName === "TOPPINGS" && level.category === "alimentaire");
@@ -2175,6 +2209,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             </table>
           </div>
         )}
+        {!detailsLoading && !glaceDetails && <AggregateSourceDetails sources={sourceDaily} period={detailsPeriod} />}
       </DialogContent>
     </Dialog>
 

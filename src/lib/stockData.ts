@@ -1292,3 +1292,54 @@ export async function getGlaceBreakdownForRange(
   (gramRes.data || []).forEach(r => { grams[r.article] = Number(r.grammage_grams) || 0; });
   return buildGlaceStockDetails(rows, grams, startDate, endDate);
 }
+
+export type SourceDailyDetail = {
+  name: string;
+  source: "mouvements" | "suivi-hebdo";
+  daily: Array<{ date: string; stockInitial: number; entrees: number; sorties: number; stockRestant: number }>;
+};
+
+/** Read-only per-day detail for aggregated rows (Nespresso, Thé aromatisé, TOPPINGS); same movement chain as the row totals. */
+export async function getSourceDailyDetails(
+  productIds: readonly string[],
+  labels: Record<string, string>,
+  matchDate: ((d: string) => boolean) | null,
+  includeToppingsWeekly = false,
+): Promise<SourceDailyDetail[]> {
+  const [allMovements, initialStocks, units, configs, weeklyRes] = await Promise.all([
+    getMovements(), getInitialStocks(), getProductUnits(), getProductUnitConfigs(),
+    includeToppingsWeekly ? getToppingsWeeklyRes() : Promise.resolve({ data: [] }),
+  ]);
+  const inRange = (d: string) => !matchDate || matchDate(d);
+  const out: SourceDailyDetail[] = productIds.map((pid) => {
+    const cv = pid === OREO_PRODUCT_ID ? oreoKg : roundStockQuantity;
+    const days: Record<string, { e: number; s: number }> = {};
+    const unit = units[pid] || "PIECE";
+    allMovements.filter((m) => m.productId === pid).forEach((m) => {
+      const d = m.date.split("T")[0];
+      if (!days[d]) days[d] = { e: 0, s: 0 };
+      const q = movementPiecesToDisplay(m.quantity, unit, configs[pid], pid);
+      if (m.type === "entree") days[d].e += q; else days[d].s += q;
+    });
+    let cumul = initialStocks[pid] || 0;
+    const daily: SourceDailyDetail["daily"] = [];
+    for (const d of Object.keys(days).sort()) {
+      const before = cumul;
+      cumul = before + days[d].e - days[d].s;
+      if (inRange(d)) daily.push({ date: d, stockInitial: cv(before), entrees: cv(days[d].e), sorties: cv(days[d].s), stockRestant: cv(cumul) });
+    }
+    const name = labels[pid] || pid;
+    return { name: pid === OREO_PRODUCT_ID ? `${name} (kg)` : name, source: "mouvements" as const, daily };
+  });
+  if (includeToppingsWeekly) {
+    const rows = ((weeklyRes as any).data || []) as WeeklyTrackingOrderRecord[];
+    for (const art of TOPPINGS_WEEKLY_ARTICLES) {
+      out.push({
+        name: `${art} (Suivi Hebdo)`, source: "suivi-hebdo",
+        daily: buildWeeklyDailyStocks(rows, [art]).filter((r) => inRange(r.date))
+          .map(({ date, stockInitial, entrees, sorties, stockRestant }) => ({ date, stockInitial, entrees, sorties, stockRestant })),
+      });
+    }
+  }
+  return out;
+}
