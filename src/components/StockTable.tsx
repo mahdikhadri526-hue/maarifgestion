@@ -60,6 +60,8 @@ import { STOCK_TARTE_ARTICLES as TARTE_ARTICLES, stockRecipeIngredientId } from 
 import { StockColumnHeaders } from "@/components/StockColumnHeaders";
 import { WeeklyStockColumns } from "@/components/WeeklyStockColumns";
 import { createStockReferenceSaver, type StockReferencePatch } from "@/lib/stockReferenceSave";
+import { GlaceStockDetails } from "@/components/GlaceStockDetails";
+import type { GlaceStockDetail } from "@/lib/glaceStockAggregate";
 
 const GLACE_ARTICLES = [
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
@@ -338,6 +340,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [detailsRows, setDetailsRows] = useState<AggregateBreakdownRow[]>([]);
   const [detailsUnit, setDetailsUnit] = useState<string>("");
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [glaceDetails, setGlaceDetails] = useState<GlaceStockDetail[] | null>(null);
+  const [detailsPeriod, setDetailsPeriod] = useState("");
 
   // Conversion + Unité Réf. par produit (partagées via Supabase, synchronisées en temps réel)
   const REF_STORAGE_KEY = "stock_ref_conversions_v1";
@@ -1359,6 +1363,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     setDetailsTitle(level.productName);
     setDetailsUnit(isGlace ? "Kg" : "");
     setDetailsRows([]);
+    setGlaceDetails(null);
     setDetailsOpen(true);
     setDetailsLoading(true);
     try {
@@ -1397,6 +1402,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         }
         const breakdown = await getGlaceBreakdownForRange(bStart, bEnd, mode === "all");
         setDetailsRows(breakdown);
+        setGlaceDetails(breakdown);
+        setDetailsPeriod(bStart && bEnd ? `Du ${formatDateFR(bStart)} au ${formatDateFR(bEnd)}` : "Toutes les dates");
       } else if (isMacaron) {
         // Mêmes données (même filtre de semaines) que la ligne MACARON
         const data = macaronDataRef.current;
@@ -2112,12 +2119,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     </div>
 
     <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Détails du calcul — {detailsTitle}</DialogTitle>
         </DialogHeader>
         {detailsLoading ? (
           <p className="text-center text-muted-foreground py-6 text-sm">Chargement...</p>
+        ) : glaceDetails ? (
+          <GlaceStockDetails rows={glaceDetails} period={detailsPeriod} />
         ) : detailsRows.length === 0 ? (
           <p className="text-center text-muted-foreground py-6 text-sm">Aucune donnée pour la période</p>
         ) : (
