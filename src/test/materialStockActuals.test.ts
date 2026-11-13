@@ -10,6 +10,17 @@ const reference = (id: string, conversion = "1") => ({ product_id: id, conversio
 const recipes = [{ id: "r", finished_product_id: "p", version: 1, active: true }];
 
 describe("Material stock output coverage", () => {
+  it("reads saved tarte and fruit stock units without changing quantities or overriding reference units", () => {
+    const weekly = ["Tarte 6", "Orange fruits"].flatMap(article => [
+      { article, week_start: "2026-11-02", day_of_week: "Lundi", row_index: 0, stock_initial: 20, entrees: 5, sorties: null },
+      { article, week_start: "2026-11-02", day_of_week: "Mardi", row_index: 0, stock_initial: 18, entrees: 0, sorties: null },
+    ]);
+    const actuals = buildMaterialStockActuals([], [], "2026-11-02", "2026-11-02", [], {}, weekly, {}, { "Tarte 6": "PIECE", "Orange fruits": "KILO" });
+    expect(actuals["Tarte 6"]).toMatchObject({ quantity: 7, unit: "PIECE" });
+    expect(actuals["Orange fruits"]).toMatchObject({ quantity: 7, unit: "KILO" });
+    const converted = buildMaterialStockActuals([], [], "2026-11-02", "2026-11-02", [{ product_id: "Tarte 6", conversion: "2", unit_ref: "g" }], {}, weekly, {}, { "Tarte 6": "PIECE" });
+    expect(converted["Tarte 6"]).toMatchObject({ quantity: 14, unit: "g" });
+  });
   it("includes PDV-only stock products and restricts their outputs to the period", () => {
     const actuals = buildMaterialStockActuals([level("pdv-only")], [movement("pdv-only", 12), movement("pdv-only", 90, "2026-10-31")], "2026-11-01", "2026-11-13", [reference("pdv-only")], {}, [], {});
     expect(actuals["pdv-only"].quantity).toBe(12);
