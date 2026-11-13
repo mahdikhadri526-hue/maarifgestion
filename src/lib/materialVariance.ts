@@ -3,7 +3,7 @@ import { canonicalStockIngredientId } from "@/lib/stockRecipeIngredients";
 
 export interface MaterialIngredient { recipe_id: string; product_id: string; category: string; quantity: number; unit: string; notes: string | null }
 export interface MaterialRecipe { id: string; finished_product_id: string; version: number; active: boolean }
-export interface MaterialActual { name: string; category: string; quantity: number | null; unit: string }
+export interface MaterialActual { name: string; category: string; quantity: number | null; unit: string; conversionMissing?: boolean }
 export interface MaterialResult { id: string; name: string; category: string; actual: number | null; theoretical: number | null; unit: string; actualUnit: string; variance: number | null; issue: string | null }
 
 const unitKey = (unit: string) => {
@@ -38,7 +38,7 @@ export function computeMaterialVariance(recipes: MaterialRecipe[], ingredients: 
   const rows = [...groups].map(([id, { ingredient, theoretical }]) => {
     const actual = actuals[ingredient.product_id];
     const compatible = !!actual && unitKey(actual.unit) === unitKey(ingredient.unit);
-    const issue = !actual ? "Non lié au stock" : actual.quantity === null ? "Conversion Réf. manquante" : !compatible ? "Unités différentes" : null;
+    const issue = !actual ? "Non lié au stock" : actual.quantity === null || actual.conversionMissing ? "Conversion Réf. manquante" : !compatible ? "Unités différentes" : null;
     return { id, name: actual?.name ?? ingredient.notes ?? ingredient.product_id.replace(/^custom:/, ""), category: actual?.category ?? ingredient.category,
       actual: actual?.quantity ?? null, theoretical: round(theoretical), unit: ingredient.unit === "STOCK" ? "Unité stock" : ingredient.unit,
       actualUnit: actual?.unit === "STOCK" ? "Unité stock" : actual?.unit ?? "", variance: issue ? null : round((actual?.quantity ?? 0) - theoretical), issue };
@@ -49,13 +49,22 @@ export function computeMaterialVariance(recipes: MaterialRecipe[], ingredients: 
     const ingredientId = row.id.slice(0, row.id.lastIndexOf(":"));
     byIngredient.set(ingredientId, [...(byIngredient.get(ingredientId) ?? []), row]);
   }
-  return [...byIngredient.values()].map(group => {
+  const results = [...byIngredient.values()].map(group => {
     const first = group[0];
     if (group.length === 1) return first;
     return { ...first, theoretical: null, variance: null,
       unit: group.map(row => `${row.theoretical} ${row.unit}`).join(" + "),
       issue: "Plusieurs unités dans les recettes : à harmoniser" };
   });
+  // Stock outputs must remain visible even when no current recipe references them.
+  for (const [id, actual] of Object.entries(actuals)) {
+    if (byIngredient.has(id) || actual.quantity === null || actual.quantity === 0) continue;
+    results.push({ id: `${id}:${unitKey(actual.unit)}`, name: actual.name, category: actual.category,
+      actual: actual.quantity, actualUnit: actual.unit === "STOCK" ? "Unité stock" : actual.unit,
+      theoretical: null, unit: "", variance: null,
+      issue: actual.conversionMissing ? "Conversion Réf. manquante · Sans recette liée" : "Sans recette liée" });
+  }
+  return results.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name, "fr"));
 }
 
 export function materialSalesSection(end: string) { return `MATIERES:VENTES:${end}`; }
