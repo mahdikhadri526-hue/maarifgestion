@@ -1,4 +1,6 @@
 # Roadmap
+- [ ] Ajouter des regroupements personnalisés dans Stock restant, par PDV, sans changer les sources ni leurs calculs.
+- [ ] Permettre de rendre les produits/regroupements sélectionnés disponibles dans Recettes et Écarts ingrédients ; tester calculs et sauvegarde.
 - [x] Ajouter au clic sur un ingrédient le détail théorique par produit, catégorie, ventes et dose de recette ; 21 tests réussis, calculs et données inchangés, compilation valide, non publié.
 - [ ] Vérifier le clic et le détail théorique dans le compte connecté : aperçu sur la connexion et ouverture automatique indisponible pour le demandeur ; attendre sa connexion.
 - [x] Corriger les chiffres GLACE avec le calcul quotidien partagé : stocks par parfum, lots cumulés, comptage du lendemain et report du dernier stock ; détail bacs/kg, grammage et dates ajouté ; 40 tests réussis, compilation valide, aucune saisie modifiée, non publié.
