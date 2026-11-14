@@ -39,12 +39,15 @@ export function combineStockSources(ids: string[], sources: GroupSource[], mep: 
 export function sumGroupReferenceColumn(
   ids: string[], quantities: Record<string, number | undefined>,
   references: Record<string, { conversion: string; unitRef: string }>,
+  groupReference?: { conversion: string; unitRef: string },
 ) {
   let total = 0;
   let unit: string | undefined;
   for (const id of new Set(ids)) {
     const quantity = quantities[id];
-    const ref = references[id];
+    const own = references[id];
+    // A product without its own conversion uses the group's conversion.
+    const ref = own?.unitRef.trim() && own.conversion.trim() ? own : groupReference?.unitRef.trim() && groupReference.conversion.trim() ? groupReference : own;
     if (quantity === undefined || !ref?.unitRef.trim()) return null;
     const converted = stockReferenceQuantity(quantity, ref.conversion);
     if (converted === null) return null;
