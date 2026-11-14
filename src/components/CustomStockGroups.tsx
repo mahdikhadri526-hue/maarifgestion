@@ -10,6 +10,8 @@ import { requireCurrentPdvId } from "@/lib/pdvStore";
 import { isProductActive } from "@/lib/stockData";
 import { combineStockSources, loadCustomStockGroups, loadGroupSources, saveCustomStockGroup, type CustomStockGroup, type GroupSource } from "@/lib/customStockGroups";
 import { stockReferenceQuantity } from "@/lib/stockReference";
+import { StockColumnHeaders } from "@/components/StockColumnHeaders";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function CustomStockGroups({ start, end, mep, previous, references, updateRef, showTotals, showRefs }: {
   start?: string; end?: string; mep: Record<string, number>; previous: Record<string, number>;
@@ -69,16 +71,41 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
     { label: "Entrées", key: "entrees" }, { label: "Sorties", key: "sorties" }, { label: "Stock restant", key: "stockRestant" },
     ...(showTotals ? [{ label: "Stock mise en place", key: "miseEnPlace" as const }, { label: "Sorties total", key: "sortiesTotal" as const }, { label: "Stock total", key: "stockTotal" as const }] : []),
   ];
+  const referenceValue = (id: string, quantity: number | undefined) => {
+    if (quantity === undefined) return "—";
+    const ref = references[id];
+    const value = stockReferenceQuantity(quantity, ref?.conversion ?? "");
+    return value === null ? "—" : <>{value} <span className="text-xs text-muted-foreground">{ref?.unitRef}</span></>;
+  };
+  const cell = "p-3 text-right font-mono whitespace-nowrap";
   return <section className="border-t mt-4 py-4">
     <div className="flex flex-wrap items-center gap-2 px-4 mb-3">
       <h3 className="font-semibold mr-auto">Regroupements personnalisés</h3>
       {editable && <Button size="sm" variant="outline" onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" /> Choisir des produits</Button>}
     </div>
     {loading ? <p className="px-4 text-sm text-muted-foreground">Chargement…</p> : <div className="overflow-x-auto">
-      <table className="w-full text-sm"><thead className="bg-muted"><tr><th className="p-3 text-left">Produit</th><th className="p-3">Unité</th>{fields.map(field => <th key={field.key} className="p-3 text-right whitespace-nowrap">{field.label}</th>)}{showRefs && <th className="p-3 whitespace-nowrap">Sorties total Réf.</th>}<th className="p-3">Recettes / Écarts</th></tr></thead>
-        <tbody>{totals.map(({ group, values }) => <tr key={group.id} className="border-b"><td className="p-3"><Button variant="link" className="p-0 h-auto text-left whitespace-normal" onClick={() => setDetail(group)}>{group.name}</Button></td><td className="p-3">{values?.unit ?? "Unités différentes"}</td>
-          {fields.map(field => <td className="p-3 text-right font-mono" key={field.key}>{values?.[field.key] ?? "—"}</td>)}
-          {showRefs && <td className="p-3 text-right font-mono"><div className="flex gap-1 mb-1"><Input aria-label={`Conversion ${group.name}`} disabled={!editable} type="number" step="any" className="w-20 h-8" value={references[group.id]?.conversion ?? ""} onChange={event => updateRef(group.id, { conversion: event.target.value })} /><Input aria-label={`Unité Réf. ${group.name}`} disabled={!editable} className="w-20 h-8" value={references[group.id]?.unitRef ?? ""} onChange={event => updateRef(group.id, { unitRef: event.target.value })} /></div>{values ? stockReferenceQuantity(values.sortiesTotal, references[group.id]?.conversion ?? "") ?? "—" : "—"} {references[group.id]?.unitRef}</td>}
+      <table className="weekly-sticky-table w-max min-w-full text-sm border-separate border-spacing-0"><thead className="bg-muted"><tr><th className="p-3 text-left weekly-sticky-column bg-muted border-r sticky left-0 z-20 min-w-[140px]">Produit</th><StockColumnHeaders showRefCols={showRefs} showMepCols={showTotals} /><th className="p-3">Recettes / Écarts</th></tr></thead>
+        <tbody>{totals.map(({ group, values }) => <tr key={group.id} className="border-b hover:bg-muted/30"><td className="p-3 weekly-sticky-column bg-card border-r sticky left-0 z-10 min-w-[140px] max-w-[220px]"><Button variant="link" className="p-0 h-auto text-left whitespace-normal" onClick={() => setDetail(group)}>{group.name}</Button></td><td className="p-3 text-xs">{values?.unit ?? "Unités différentes"}</td>
+          <td className={cell}><Input aria-label={`Conversion ${group.name}`} disabled={!editable} type="number" step="any" className="w-20 h-8 text-right text-xs" value={references[group.id]?.conversion ?? ""} onChange={event => updateRef(group.id, { conversion: event.target.value })} /></td>
+          <td className="p-3"><Select disabled={!editable} value={references[group.id]?.unitRef || "unset"} onValueChange={value => updateRef(group.id, { unitRef: value === "unset" ? "" : value })}><SelectTrigger aria-label={`Unité Réf. ${group.name}`} className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="unset">—</SelectItem>{["kg", "g", "L", "ml", "pièce", "paquet", "carton", "bac", "boîte", "sachet", "bouteille", "rouleau"].map(unit => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}</SelectContent></Select></td>
+          <td className="p-3 text-xs text-primary">{values ? [...new Set(values.rows.map(row => row.category === "alimentaire" ? "Alimentaire" : row.category === "emballage" ? "Emballage" : row.category))].join(" / ") : "—"}</td>
+          <td className={`${cell} text-primary font-semibold`}>{values?.stockInitial ?? "—"}</td>
+          {showTotals && <td className={`${cell} text-primary`}>{values?.initialTotal ?? "—"}</td>}
+          {showTotals && showRefs && <td className={cell}>{referenceValue(group.id, values?.initialTotal)}</td>}
+          <td className={`${cell} text-success`}>{values?.entrees ?? "—"}</td>
+          {showRefs && <td className={cell}>{referenceValue(group.id, values?.entrees)}</td>}
+          <td className={`${cell} text-accent-foreground`}>{values?.sorties ?? "—"}</td>
+          {showRefs && <td className={cell}>{referenceValue(group.id, values?.sorties)}</td>}
+          <td className={`${cell} font-semibold`}>{values?.stockRestant ?? "—"}</td>
+          {showRefs && <td className={cell}>{referenceValue(group.id, values?.stockRestant)}</td>}
+          {showTotals && <>
+            <td className={cell}>{values?.miseEnPlace ?? "—"}</td>
+            {showRefs && <td className={cell}>{referenceValue(group.id, values?.miseEnPlace)}</td>}
+            <td className={`${cell} font-bold`}>{values?.sortiesTotal ?? "—"}</td>
+            {showRefs && <td className={cell}>{referenceValue(group.id, values?.sortiesTotal)}</td>}
+            <td className={`${cell} text-primary font-bold`}>{values?.stockTotal ?? "—"}</td>
+            {showRefs && <td className={cell}>{referenceValue(group.id, values?.stockTotal)}</td>}
+          </>}
           <td className="p-3">{group.exported ? <span className="text-success">Disponible</span> : editable && <Button size="sm" variant="outline" disabled={busy || !values} onClick={() => exportGroup(group)}><Send className="h-4 w-4 mr-1" /> Exporter</Button>}</td>
         </tr>)}</tbody></table>
     </div>}
