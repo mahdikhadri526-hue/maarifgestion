@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Combine, Send, Plus, Save } from "lucide-react";
+import { Combine, Send, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { requireCurrentPdvId } from "@/lib/pdvStore";
@@ -11,9 +11,10 @@ import { isProductActive } from "@/lib/stockData";
 import { combineStockSources, loadCustomStockGroups, loadGroupSources, saveCustomStockGroup, type CustomStockGroup, type GroupSource } from "@/lib/customStockGroups";
 import { stockReferenceQuantity } from "@/lib/stockReference";
 
-export function CustomStockGroups({ start, end, mep, previous, references, showTotals, showRefs }: {
+export function CustomStockGroups({ start, end, mep, previous, references, updateRef, showTotals, showRefs }: {
   start?: string; end?: string; mep: Record<string, number>; previous: Record<string, number>;
   references: Record<string, { conversion: string; unitRef: string }>; showTotals: boolean; showRefs: boolean;
+  updateRef: (id: string, patch: { conversion?: string; unitRef?: string }) => void;
 }) {
   const { can } = useAuth();
   const editable = can("edit_stock");
@@ -77,7 +78,7 @@ export function CustomStockGroups({ start, end, mep, previous, references, showT
       <table className="w-full text-sm"><thead className="bg-muted"><tr><th className="p-3 text-left">Produit</th><th className="p-3">Unité</th>{fields.map(field => <th key={field.key} className="p-3 text-right whitespace-nowrap">{field.label}</th>)}{showRefs && <th className="p-3 whitespace-nowrap">Sorties total Réf.</th>}<th className="p-3">Recettes / Écarts</th></tr></thead>
         <tbody>{totals.map(({ group, values }) => <tr key={group.id} className="border-b"><td className="p-3"><Button variant="link" className="p-0 h-auto text-left whitespace-normal" onClick={() => setDetail(group)}>{group.name}</Button></td><td className="p-3">{values?.unit ?? "Unités différentes"}</td>
           {fields.map(field => <td className="p-3 text-right font-mono" key={field.key}>{values?.[field.key] ?? "—"}</td>)}
-          {showRefs && <td className="p-3 text-right font-mono">{values ? stockReferenceQuantity(values.sortiesTotal, references[group.id]?.conversion ?? "") ?? "—" : "—"} {references[group.id]?.unitRef}</td>}
+          {showRefs && <td className="p-3 text-right font-mono"><div className="flex gap-1 mb-1"><Input aria-label={`Conversion ${group.name}`} disabled={!editable} type="number" step="any" className="w-20 h-8" value={references[group.id]?.conversion ?? ""} onChange={event => updateRef(group.id, { conversion: event.target.value })} /><Input aria-label={`Unité Réf. ${group.name}`} disabled={!editable} className="w-20 h-8" value={references[group.id]?.unitRef ?? ""} onChange={event => updateRef(group.id, { unitRef: event.target.value })} /></div>{values ? stockReferenceQuantity(values.sortiesTotal, references[group.id]?.conversion ?? "") ?? "—" : "—"} {references[group.id]?.unitRef}</td>}
           <td className="p-3">{group.exported ? <span className="text-success">Disponible</span> : editable && <Button size="sm" variant="outline" disabled={busy || !values} onClick={() => exportGroup(group)}><Send className="h-4 w-4 mr-1" /> Exporter</Button>}</td>
         </tr>)}</tbody></table>
     </div>}
