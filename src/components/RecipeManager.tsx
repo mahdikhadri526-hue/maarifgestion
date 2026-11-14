@@ -174,6 +174,35 @@ export function RecipeManager() {
     setDirty(false);
   };
 
+  const createProduct = async () => {
+    const name = newName.trim();
+    if (!name) {
+      toast.error("Le nom du produit est obligatoire");
+      return;
+    }
+    setCreating(true);
+    try {
+      const code = `FP-${Date.now().toString(36).toUpperCase()}`;
+      const { data, error } = await supabase
+        .from("finished_products")
+        .insert({ code, name, unit: "PIECE", category: newCategory, active: true })
+        .select()
+        .single();
+      if (error) throw error;
+      const created = data as FinishedProduct;
+      setProducts((arr) => [...arr, created].sort((a, b) => a.name.localeCompare(b.name, "fr")));
+      setNewProductOpen(false);
+      setNewName("");
+      setNewCategory("surplace");
+      toast.success("Produit fini créé", { description: "Ajoutez maintenant ses ingrédients." });
+      await openProduct(created);
+    } catch (e: any) {
+      toast.error("Erreur de création", { description: e.message });
+    } finally {
+      setCreating(false);
+    }
+  };
+
   const closeDetail = () => {
     if (dirty && !confirm("Modifications non enregistrées. Quitter ?")) return;
     setSelectedId(null);
