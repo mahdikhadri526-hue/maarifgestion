@@ -246,6 +246,13 @@
       "when": 1794345908319,
       "tag": "0034_restrict_tech_video_reads_to_owner_or_visible_issue",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1794616502744,
+      "tag": "0035_stock_product_groups",
+      "breakpoints": true
     }
   ]
 }

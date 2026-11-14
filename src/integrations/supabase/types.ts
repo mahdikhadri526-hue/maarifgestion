@@ -2175,6 +2175,41 @@ export type Database = {
           },
         ]
       }
+      stock_product_groups: {
+        Row: {
+          created_at: string
+          exported: boolean
+          id: string
+          name: string
+          pdv_id: string
+          source_ids: string[]
+        }
+        Insert: {
+          created_at?: string
+          exported?: boolean
+          id: string
+          name: string
+          pdv_id: string
+          source_ids: string[]
+        }
+        Update: {
+          created_at?: string
+          exported?: boolean
+          id?: string
+          name?: string
+          pdv_id?: string
+          source_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_product_groups_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_ref_conversions: {
         Row: {
           conversion: string
