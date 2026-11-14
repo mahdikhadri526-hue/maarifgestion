@@ -102,6 +102,12 @@ export function RecipeManager() {
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
+  // new finished product
+  const [newProductOpen, setNewProductOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newCategory, setNewCategory] = useState<string>("surplace");
+  const [creating, setCreating] = useState(false);
+
   const loadAll = async () => {
     setLoading(true);
     try {
