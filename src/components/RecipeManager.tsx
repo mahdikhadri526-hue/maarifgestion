@@ -15,6 +15,9 @@ import {
   Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { ArrowLeft, ChefHat, Plus, Save, Search, Trash2, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { loadCustomStockGroups, groupIngredientId, type CustomStockGroup } from "@/lib/customStockGroups";
