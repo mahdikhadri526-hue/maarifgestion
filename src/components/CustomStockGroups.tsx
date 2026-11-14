@@ -77,7 +77,7 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
       try { return [sourceId, combineStockSources([sourceId], sources, mep, previous)[field]]; }
       catch { return [sourceId, undefined]; }
     }));
-    const value = sumGroupReferenceColumn(group.source_ids, quantities, references);
+    const value = sumGroupReferenceColumn(group.source_ids, quantities, references, references[group.id]);
     return value === null ? <span title="Conversion manquante ou unités Réf. différentes">—</span> : <>{value.quantity} <span className="text-xs text-muted-foreground">{value.unit}</span></>;
   };
   const cell = "p-3 text-right font-mono whitespace-nowrap";

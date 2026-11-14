@@ -41,3 +41,10 @@ describe("Custom stock groups preserve source calculations", () => {
     expect(groupIngredientId({ id: "stock-group:1", pdv_id: "pdv", name: "A+B", source_ids: ["a", "b"], exported: true })).toBe("stock-group:1");
   });
 });
+describe("group reference fallback", () => {
+  it("uses the group conversion for products without their own", async () => {
+    const { sumGroupReferenceColumn } = await import("@/lib/customStockGroups");
+    expect(sumGroupReferenceColumn(["a", "b"], { a: 2, b: 3 }, { a: { conversion: "0.5", unitRef: "kg" } }, { conversion: "2", unitRef: "kg" }))
+      .toEqual({ quantity: 7, unit: "kg" });
+  });
+});
