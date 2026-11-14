@@ -641,6 +641,45 @@ export function RecipeManager() {
       <p className="text-center text-xs text-muted-foreground pt-2">
         {filtered.length} / {products.length} produit{products.length > 1 ? "s" : ""}
       </p>
+
+      <Dialog open={newProductOpen} onOpenChange={setNewProductOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nouveau produit fini</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Nom du produit</Label>
+              <Input
+                value={newName}
+                maxLength={120}
+                placeholder="Ex. : Milkshake vanille"
+                onChange={(e) => setNewName(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Catégorie</Label>
+              <Select value={newCategory} onValueChange={setNewCategory}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CAT_LABELS).map(([k, l]) => (
+                    <SelectItem key={k} value={k}>{l}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewProductOpen(false)} disabled={creating}>
+              Annuler
+            </Button>
+            <Button onClick={createProduct} disabled={creating || !newName.trim()}>
+              {creating ? "Création…" : "Créer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
