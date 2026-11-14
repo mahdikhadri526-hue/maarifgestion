@@ -74,7 +74,10 @@ export function RecipeManager() {
     stockProducts.forEach((p) => m.set(p.id, { name: p.name, category: p.category }));
     stockRecipeIngredients.forEach((o) => m.set(o.id, { name: o.name, category: o.category }));
     stockAggregates.forEach((o) => m.set(o.id, { name: o.name, category: o.category }));
-    exportedStock.forEach(row => m.set(groupIngredientId(row), { name: row.name, category: "alimentaire" }));
+    exportedStock.forEach(row => {
+      const id = groupIngredientId(row);
+      m.set(id, { name: row.name, category: m.get(id)?.category ?? "alimentaire" });
+    });
     return m;
   }, [stockProducts, stockAggregates, exportedStock]);
 
@@ -504,7 +507,7 @@ export function RecipeManager() {
                           </SelectGroup>
                           <SelectGroup>
                             <SelectLabel>Exportés du Stock restant</SelectLabel>
-                            {exportedStock.filter(row => row.source_ids.every(isProductActive)).map(row => (
+                            {exportedStock.filter(row => row.source_ids.every(isProductActive) && !stockProducts.some(product => product.id === groupIngredientId(row)) && !stockRecipeIngredients.some(product => product.id === groupIngredientId(row)) && !stockAggregates.some(product => product.id === groupIngredientId(row))).map(row => (
                               <SelectItem key={row.id} value={groupIngredientId(row)}>{row.name}</SelectItem>
                             ))}
                           </SelectGroup>
