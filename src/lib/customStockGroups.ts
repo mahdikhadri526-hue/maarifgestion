@@ -34,6 +34,27 @@ export function combineStockSources(ids: string[], sources: GroupSource[], mep: 
     stockTotal: completePrevious ? sum(row => calculateStockTotals(previous[row.id], row.entrees, row.sorties, mep[row.id] ?? 0).stockTotal ?? 0) : undefined };
 }
 
+/** Reference columns add each source's converted column, not a conversion of the group sum. */
+export function sumGroupReferenceColumn(
+  ids: string[], quantities: Record<string, number | undefined>,
+  references: Record<string, { conversion: string; unitRef: string }>,
+) {
+  let total = 0;
+  let unit: string | undefined;
+  for (const id of new Set(ids)) {
+    const quantity = quantities[id];
+    const ref = references[id];
+    if (quantity === undefined || !ref?.unitRef.trim()) return null;
+    const converted = stockReferenceQuantity(quantity, ref.conversion);
+    if (converted === null) return null;
+    const currentUnit = normalizedGroupUnit(ref.unitRef);
+    if (unit !== undefined && unit !== currentUnit) return null;
+    unit = currentUnit;
+    total += converted;
+  }
+  return unit === undefined ? null : { quantity: Number(total.toFixed(4)), unit };
+}
+
 export async function loadCustomStockGroups() {
   return fetchAllRows<CustomStockGroup>(() => supabase.from("stock_product_groups").select("*").eq("pdv_id", requireCurrentPdvId()).order("created_at"));
 }
