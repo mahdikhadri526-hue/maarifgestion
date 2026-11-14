@@ -17,6 +17,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, ChefHat, Plus, Save, Search, Trash2, Link2 } from "lucide-react";
 import { toast } from "sonner";
+import { loadCustomStockGroups, groupIngredientId, type CustomStockGroup } from "@/lib/customStockGroups";
 
 type FinishedProduct = {
   id: string;
@@ -60,6 +61,11 @@ function isCustom(productId: string) {
 export function RecipeManager() {
   const { can } = useAuth();
   const canEdit = can("edit_recipes");
+  const [exportedStock, setExportedStock] = useState<CustomStockGroup[]>([]);
+  useEffect(() => {
+    loadCustomStockGroups().then(rows => setExportedStock(rows.filter(row => row.exported)))
+      .catch(() => toast.error("Impossible de charger les produits exportés du stock"));
+  }, []);
 
   const stockProducts = useMemo(() => getProducts(), []);
   const stockAggregates = useMemo(() => getStockRecipeAggregates(stockProducts), [stockProducts]);
@@ -68,8 +74,12 @@ export function RecipeManager() {
     stockProducts.forEach((p) => m.set(p.id, { name: p.name, category: p.category }));
     stockRecipeIngredients.forEach((o) => m.set(o.id, { name: o.name, category: o.category }));
     stockAggregates.forEach((o) => m.set(o.id, { name: o.name, category: o.category }));
+    exportedStock.forEach(row => {
+      const id = groupIngredientId(row);
+      m.set(id, { name: row.name, category: m.get(id)?.category ?? "alimentaire" });
+    });
     return m;
-  }, [stockProducts, stockAggregates]);
+  }, [stockProducts, stockAggregates, exportedStock]);
 
   const [products, setProducts] = useState<FinishedProduct[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -493,6 +503,12 @@ export function RecipeManager() {
                             <SelectLabel>Totaux (Stock restant)</SelectLabel>
                             {stockAggregates.filter(row => row.sourceIds.some(isProductActive)).map(row => (
                               <SelectItem key={row.id} value={row.id}>{row.name}</SelectItem>
+                            ))}
+                          </SelectGroup>
+                          <SelectGroup>
+                            <SelectLabel>Exportés du Stock restant</SelectLabel>
+                            {exportedStock.filter(row => row.source_ids.every(isProductActive) && !stockProducts.some(product => product.id === groupIngredientId(row)) && !stockRecipeIngredients.some(product => product.id === groupIngredientId(row)) && !stockAggregates.some(product => product.id === groupIngredientId(row))).map(row => (
+                              <SelectItem key={row.id} value={groupIngredientId(row)}>{row.name}</SelectItem>
                             ))}
                           </SelectGroup>
                         </SelectContent>

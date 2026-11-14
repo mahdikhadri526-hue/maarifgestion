@@ -9,6 +9,8 @@ import { materialSalesSection, type MaterialRecipe, type MaterialIngredient } fr
 import { stockRecipeIngredients } from "@/lib/stockRecipeIngredients";
 import { MACARON_ARTICLES, SIROP_CARAMEL_WEEKLY_ARTICLE, AMANDES_WEEKLY_ARTICLE, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
 import { buildMaterialStockActuals } from "@/lib/materialStockActuals";
+import { loadCustomStockGroups, loadGroupSources, combineStockSources, groupIngredientId } from "@/lib/customStockGroups";
+import { stockReferenceQuantity } from "@/lib/stockReference";
 
 export interface MaterialFinishedProduct { id: string; name: string; category: string | null; active: boolean }
 
@@ -45,6 +47,23 @@ export async function loadMaterialAnalysis(start: string, end: string) {
   }));
   const actuals = buildMaterialStockActuals(levels, movements, start, end, references, mep, stockArticleRows,
     Object.fromEntries(special.flatMap(row => row ? [[row.id, row.totals]] : [])), stockUnits);
+  const exports = (await loadCustomStockGroups()).filter(row => row.exported);
+  if (exports.length) {
+    const sources = await loadGroupSources(start, end);
+    for (const group of exports) {
+      const id = groupIngredientId(group);
+      // Existing individual outputs remain untouched; only add missing references.
+      if (group.source_ids.length === 1 && actuals[id]) continue;
+      try {
+        const total = combineStockSources(group.source_ids, sources, mep);
+        const ref = references.find(row => row.product_id === id);
+        const quantity = stockReferenceQuantity(total.sortiesTotal, ref?.conversion ?? "");
+        actuals[id] = { name: group.name, category: sources.find(row => row.id === group.source_ids[0])?.category ?? "alimentaire", quantity: quantity ?? total.sortiesTotal, unit: quantity === null ? total.unit : ref?.unit_ref ?? total.unit, conversionMissing: quantity === null };
+      } catch {
+        actuals[id] = { name: group.name, category: "alimentaire", quantity: null, unit: "", conversionMissing: true };
+      }
+    }
+  }
   return { products, recipes: latestRecipeVersions(recipeRows).filter(row => row.active), ingredients, actuals, sales: Object.fromEntries(salesRows.map(row => [row.item, Number(row.qty)])) as Record<string, number> };
 }
 

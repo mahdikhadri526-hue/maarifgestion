@@ -1,4 +1,7 @@
 # AGENTS.md
+<!-- LOVABLE:BEGIN -->
+- Custom stock groups are PDV-scoped; sum existing source calculations without modifying sources, reject mixed native units, and expose exported identities to recipes/material actuals without inventing recipe doses or rewriting history.
+<!-- LOVABLE:END -->
 - RH balances share headings; report totals appear once and history expands.
 - Packaging edits retain option IDs and base-unit history; deleting base formats disables choices without erasing conversions. Admin-only UI/database guards protect formats without blocking unrelated stock/name edits.
 - Weekly, Stock and Order Fruits/Tartes use display subsets only; retain historical article identities and weekly/transfer fiche keys, and preserve stock-specific tartes entries and formulas.

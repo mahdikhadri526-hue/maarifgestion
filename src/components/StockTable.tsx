@@ -61,6 +61,7 @@ import { StockColumnHeaders } from "@/components/StockColumnHeaders";
 import { WeeklyStockColumns } from "@/components/WeeklyStockColumns";
 import { createStockReferenceSaver, type StockReferencePatch } from "@/lib/stockReferenceSave";
 import { GlaceStockDetails } from "@/components/GlaceStockDetails";
+import { CustomStockGroups } from "@/components/CustomStockGroups";
 import { AggregateSourceDetails } from "@/components/AggregateSourceDetails";
 import { getSourceDailyDetails, type SourceDailyDetail } from "@/lib/stockData";
 import type { GlaceStockDetail } from "@/lib/glaceStockAggregate";
@@ -2150,6 +2151,12 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           </Dialog>
         </>
       )}
+      {variant === "stock" && <CustomStockGroups
+        start={mode === "day" ? day : mode === "month" ? `${month}-01` : mode === "period" ? start || undefined : undefined}
+        end={mode === "day" ? day : mode === "month" ? monthEndISO(month) : mode === "period" ? end || undefined : undefined}
+        mep={mepMap} previous={previousStockTotals} references={refMap} updateRef={updateRef}
+        showTotals={showMepCols} showRefs={showRefCols}
+      />}
     </div>
 
     <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
