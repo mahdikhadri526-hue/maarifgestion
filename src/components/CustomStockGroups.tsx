@@ -8,8 +8,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { requireCurrentPdvId } from "@/lib/pdvStore";
 import { isProductActive } from "@/lib/stockData";
-import { combineStockSources, loadCustomStockGroups, loadGroupSources, saveCustomStockGroup, type CustomStockGroup, type GroupSource } from "@/lib/customStockGroups";
-import { stockReferenceQuantity } from "@/lib/stockReference";
+import { combineStockSources, sumGroupReferenceColumn, loadCustomStockGroups, loadGroupSources, saveCustomStockGroup, type CustomStockGroup, type GroupSource } from "@/lib/customStockGroups";
 import { StockColumnHeaders } from "@/components/StockColumnHeaders";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -71,11 +70,15 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
     { label: "Entrées", key: "entrees" }, { label: "Sorties", key: "sorties" }, { label: "Stock restant", key: "stockRestant" },
     ...(showTotals ? [{ label: "Stock mise en place", key: "miseEnPlace" as const }, { label: "Sorties total", key: "sortiesTotal" as const }, { label: "Stock total", key: "stockTotal" as const }] : []),
   ];
-  const referenceValue = (id: string, quantity: number | undefined) => {
-    if (quantity === undefined) return "—";
-    const ref = references[id];
-    const value = stockReferenceQuantity(quantity, ref?.conversion ?? "");
-    return value === null ? "—" : <>{value} <span className="text-xs text-muted-foreground">{ref?.unitRef}</span></>;
+  const referenceValue = (id: string, field: typeof fields[number]["key"]) => {
+    const group = groups.find(row => row.id === id);
+    if (!group) return "—";
+    const quantities = Object.fromEntries(group.source_ids.map(sourceId => {
+      try { return [sourceId, combineStockSources([sourceId], sources, mep, previous)[field]]; }
+      catch { return [sourceId, undefined]; }
+    }));
+    const value = sumGroupReferenceColumn(group.source_ids, quantities, references);
+    return value === null ? <span title="Conversion manquante ou unités Réf. différentes">—</span> : <>{value.quantity} <span className="text-xs text-muted-foreground">{value.unit}</span></>;
   };
   const cell = "p-3 text-right font-mono whitespace-nowrap";
   return <section className="border-t mt-4 py-4">
@@ -91,20 +94,20 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
           <td className="p-3 text-xs text-primary">{values ? [...new Set(values.rows.map(row => row.category === "alimentaire" ? "Alimentaire" : row.category === "emballage" ? "Emballage" : row.category))].join(" / ") : "—"}</td>
           <td className={`${cell} text-primary font-semibold`}>{values?.stockInitial ?? "—"}</td>
           {showTotals && <td className={`${cell} text-primary`}>{values?.initialTotal ?? "—"}</td>}
-          {showTotals && showRefs && <td className={cell}>{referenceValue(group.id, values?.initialTotal)}</td>}
+          {showTotals && showRefs && <td className={cell}>{referenceValue(group.id, "initialTotal")}</td>}
           <td className={`${cell} text-success`}>{values?.entrees ?? "—"}</td>
-          {showRefs && <td className={cell}>{referenceValue(group.id, values?.entrees)}</td>}
+          {showRefs && <td className={cell}>{referenceValue(group.id, "entrees")}</td>}
           <td className={`${cell} text-accent-foreground`}>{values?.sorties ?? "—"}</td>
-          {showRefs && <td className={cell}>{referenceValue(group.id, values?.sorties)}</td>}
+          {showRefs && <td className={cell}>{referenceValue(group.id, "sorties")}</td>}
           <td className={`${cell} font-semibold`}>{values?.stockRestant ?? "—"}</td>
-          {showRefs && <td className={cell}>{referenceValue(group.id, values?.stockRestant)}</td>}
+          {showRefs && <td className={cell}>{referenceValue(group.id, "stockRestant")}</td>}
           {showTotals && <>
             <td className={cell}>{values?.miseEnPlace ?? "—"}</td>
-            {showRefs && <td className={cell}>{referenceValue(group.id, values?.miseEnPlace)}</td>}
+            {showRefs && <td className={cell}>{referenceValue(group.id, "miseEnPlace")}</td>}
             <td className={`${cell} font-bold`}>{values?.sortiesTotal ?? "—"}</td>
-            {showRefs && <td className={cell}>{referenceValue(group.id, values?.sortiesTotal)}</td>}
+            {showRefs && <td className={cell}>{referenceValue(group.id, "sortiesTotal")}</td>}
             <td className={`${cell} text-primary font-bold`}>{values?.stockTotal ?? "—"}</td>
-            {showRefs && <td className={cell}>{referenceValue(group.id, values?.stockTotal)}</td>}
+            {showRefs && <td className={cell}>{referenceValue(group.id, "stockTotal")}</td>}
           </>}
           <td className="p-3">{group.exported ? <span className="text-success">Disponible</span> : editable && <Button size="sm" variant="outline" disabled={busy || !values} onClick={() => exportGroup(group)}><Send className="h-4 w-4 mr-1" /> Exporter</Button>}</td>
         </tr>)}</tbody></table>

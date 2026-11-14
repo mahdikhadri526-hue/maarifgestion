@@ -6,6 +6,7 @@ import { buildWeeklyAggregateTotals, type WeeklyTrackingOrderRecord } from "@/li
 import { stockRecipeIngredients, getStockRecipeAggregates } from "@/lib/stockRecipeIngredients";
 import { WEEKLY_ALL_ARTICLES } from "@/lib/weeklyArticles";
 import { calculateStockTotals } from "@/lib/stockInitialTotal";
+import { stockReferenceQuantity } from "@/lib/stockReference";
 
 export type CustomStockGroup = { id: string; pdv_id: string; name: string; source_ids: string[]; exported: boolean };
 export type GroupSource = { id: string; name: string; category: string; unit: string; stockInitial: number; entrees: number; sorties: number; stockRestant: number };

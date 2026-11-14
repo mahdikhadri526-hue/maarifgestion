@@ -1,12 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/db", () => ({ supabase: {} }));
-import { combineStockSources, groupIngredientId, type GroupSource } from "@/lib/customStockGroups";
+import { combineStockSources, sumGroupReferenceColumn, groupIngredientId, type GroupSource } from "@/lib/customStockGroups";
 
 const sources: GroupSource[] = [
   { id: "a", name: "A", category: "alimentaire", unit: "KILO", stockInitial: 7, entrees: 0, sorties: 8, stockRestant: -1 },
   { id: "b", name: "B", category: "alimentaire", unit: "kg", stockInitial: 5, entrees: 3, sorties: 2, stockRestant: 6 },
 ];
 describe("Custom stock groups preserve source calculations", () => {
+  it("adds each numeric column of the selected products independently", () => {
+    expect(combineStockSources(["a", "b"], sources, { a: 1, b: 2 }, { a: 7, b: 5 })).toMatchObject({ stockInitial: 12, entrees: 3, sorties: 10, stockRestant: 5, initialTotal: 12, miseEnPlace: 3, sortiesTotal: 7, stockTotal: 8 });
+  });
+  it("adds reference values with each product's own conversion", () => {
+    expect(sumGroupReferenceColumn(["a", "b"], { a: 8, b: 2 }, { a: { conversion: "2", unitRef: "kg" }, b: { conversion: "3", unitRef: "kg" } })).toEqual({ quantity: 22, unit: "kg" });
+  });
+  it("does not mix incompatible reference units or omit missing values", () => {
+    expect(sumGroupReferenceColumn(["a", "b"], { a: 8, b: 2 }, { a: { conversion: "2", unitRef: "kg" }, b: { conversion: "3", unitRef: "L" } })).toBeNull();
+    expect(sumGroupReferenceColumn(["a", "b"], { a: 8 }, { a: { conversion: "2", unitRef: "kg" } })).toBeNull();
+  });
   it("merges selected source stock calculations without mutating originals", () => {
     const before = structuredClone(sources);
     expect(combineStockSources(["a", "b"], sources)).toMatchObject({ stockInitial: 12, entrees: 3, sorties: 10, stockRestant: 5 });
