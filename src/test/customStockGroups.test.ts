@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 vi.mock("@/lib/db", () => ({ supabase: {} }));
-import { combineStockSources, sumGroupReferenceColumn, groupIngredientId, type GroupSource } from "@/lib/customStockGroups";
+import { combineStockSources, sumGroupReferenceColumn, customGroupMaterialActual, groupIngredientId, type GroupSource } from "@/lib/customStockGroups";
 
 const sources: GroupSource[] = [
   { id: "a", name: "A", category: "alimentaire", unit: "KILO", stockInitial: 7, entrees: 0, sorties: 8, stockRestant: -1 },
@@ -46,5 +46,30 @@ describe("group reference fallback", () => {
     const { sumGroupReferenceColumn } = await import("@/lib/customStockGroups");
     expect(sumGroupReferenceColumn(["a", "b"], { a: 2, b: 3 }, { a: { conversion: "0.5", unitRef: "kg" } }, { conversion: "2", unitRef: "kg" }))
       .toEqual({ quantity: 7, unit: "kg" });
+  });
+});
+
+describe("material group actuals use Sorties total Réf., not native Sorties total", () => {
+  const group = { id: "stock-group:1", pdv_id: "pdv", name: "A+B", source_ids: ["a", "b"], exported: true };
+  it("adds individually converted total outputs, preserving sources and conversions", () => {
+    const refs = { a: { conversion: "2", unitRef: "kg" }, b: { conversion: "3", unitRef: "kg" }, [group.id]: { conversion: "10", unitRef: "kg" } };
+    const before = structuredClone({ sources, refs });
+    // Native outputs are 7 + 1 = 8; reference outputs are 14 + 3 = 17, not 8 or 80.
+    expect(customGroupMaterialActual(group, sources, { a: 1, b: 1 }, refs)).toMatchObject({ quantity: 17, unit: "kg", conversionMissing: false });
+    expect({ sources, refs }).toEqual(before);
+  });
+  it("uses the same group fallback as the Stock restant reference column", () => {
+    expect(customGroupMaterialActual(group, sources, { a: 1, b: 1 }, { a: { conversion: "2", unitRef: "kg" }, [group.id]: { conversion: "0.5", unitRef: "kg" } }))
+      .toMatchObject({ quantity: 14.5, unit: "kg", conversionMissing: false });
+  });
+  it("never substitutes native outputs for missing or incompatible reference values", () => {
+    for (const refs of [{ a: { conversion: "2", unitRef: "kg" } }, { a: { conversion: "2", unitRef: "kg" }, b: { conversion: "3", unitRef: "L" } }]) {
+      expect(customGroupMaterialActual(group, sources, {}, refs)).toMatchObject({ quantity: null, conversionMissing: true });
+    }
+  });
+  it("preserves zero and signed reference outputs", () => {
+    const refs = { a: { conversion: "2", unitRef: "kg" }, b: { conversion: "2", unitRef: "kg" } };
+    expect(customGroupMaterialActual(group, sources, { a: 10 }, refs).quantity).toBe(0);
+    expect(customGroupMaterialActual(group, sources, { a: 11 }, refs).quantity).toBe(-2);
   });
 });

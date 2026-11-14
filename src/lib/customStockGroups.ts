@@ -7,6 +7,7 @@ import { stockRecipeIngredients, getStockRecipeAggregates } from "@/lib/stockRec
 import { WEEKLY_ALL_ARTICLES } from "@/lib/weeklyArticles";
 import { calculateStockTotals } from "@/lib/stockInitialTotal";
 import { stockReferenceQuantity } from "@/lib/stockReference";
+import type { MaterialActual } from "@/lib/materialVariance";
 
 export type CustomStockGroup = { id: string; pdv_id: string; name: string; source_ids: string[]; exported: boolean };
 export type GroupSource = { id: string; name: string; category: string; unit: string; stockInitial: number; entrees: number; sorties: number; stockRestant: number };
@@ -57,6 +58,23 @@ export function sumGroupReferenceColumn(
     total += converted;
   }
   return unit === undefined ? null : { quantity: Number(total.toFixed(4)), unit };
+}
+
+/** Material actuals read the exact source sum used by Sorties total Réf. */
+export function customGroupMaterialActual(
+  group: CustomStockGroup, sources: GroupSource[], mep: Record<string, number>,
+  references: Record<string, { conversion: string; unitRef: string }>,
+): MaterialActual {
+  const total = combineStockSources(group.source_ids, sources, mep);
+  const quantities = Object.fromEntries(total.rows.map(row => [
+    row.id, combineStockSources([row.id], sources, mep).sortiesTotal,
+  ]));
+  const reference = sumGroupReferenceColumn(group.source_ids, quantities, references, references[groupIngredientId(group)]);
+  return {
+    name: group.name, category: total.rows[0].category,
+    quantity: reference?.quantity ?? null, unit: reference?.unit ?? "",
+    conversionMissing: reference === null,
+  };
 }
 
 export async function loadCustomStockGroups() {

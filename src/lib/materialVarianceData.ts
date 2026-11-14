@@ -9,8 +9,7 @@ import { materialSalesSection, type MaterialRecipe, type MaterialIngredient } fr
 import { stockRecipeIngredients } from "@/lib/stockRecipeIngredients";
 import { MACARON_ARTICLES, SIROP_CARAMEL_WEEKLY_ARTICLE, AMANDES_WEEKLY_ARTICLE, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
 import { buildMaterialStockActuals } from "@/lib/materialStockActuals";
-import { loadCustomStockGroups, loadGroupSources, combineStockSources, groupIngredientId } from "@/lib/customStockGroups";
-import { stockReferenceQuantity } from "@/lib/stockReference";
+import { loadCustomStockGroups, loadGroupSources, customGroupMaterialActual, groupIngredientId } from "@/lib/customStockGroups";
 
 export interface MaterialFinishedProduct { id: string; name: string; category: string | null; active: boolean }
 
@@ -50,15 +49,13 @@ export async function loadMaterialAnalysis(start: string, end: string) {
   const exports = (await loadCustomStockGroups()).filter(row => row.exported);
   if (exports.length) {
     const sources = await loadGroupSources(start, end);
+    const groupReferences = Object.fromEntries(references.map(row => [row.product_id, { conversion: row.conversion, unitRef: row.unit_ref }]));
     for (const group of exports) {
       const id = groupIngredientId(group);
       // Existing individual outputs remain untouched; only add missing references.
       if (group.source_ids.length === 1 && actuals[id]) continue;
       try {
-        const total = combineStockSources(group.source_ids, sources, mep);
-        const ref = references.find(row => row.product_id === id);
-        const quantity = stockReferenceQuantity(total.sortiesTotal, ref?.conversion ?? "");
-        actuals[id] = { name: group.name, category: sources.find(row => row.id === group.source_ids[0])?.category ?? "alimentaire", quantity: quantity ?? total.sortiesTotal, unit: quantity === null ? total.unit : ref?.unit_ref ?? total.unit, conversionMissing: quantity === null };
+        actuals[id] = customGroupMaterialActual(group, sources, mep, groupReferences);
       } catch {
         actuals[id] = { name: group.name, category: "alimentaire", quantity: null, unit: "", conversionMissing: true };
       }

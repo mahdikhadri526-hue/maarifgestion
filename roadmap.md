@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Corriger les utilisations réelles des regroupements : somme des Sorties total Réf. de chaque source, mêmes conversions et repli du regroupement que Stock restant ; aucun remplacement par les sorties natives sans conversion.
+- [ ] Vérifier cette comparaison dans le compte connecté : aucune session automatique ne correspond au demandeur ; connexion dans l’aperçu nécessaire.
 - [x] Ajouter des regroupements personnalisés dans Stock restant par PDV, sélection de produits de même unité, détails et somme des calculs sources ; sources inchangées.
 - [x] Exporter les références sélectionnées vers les choix Recettes et les utilisations réelles des Écarts ingrédients ; 45 tests réussis, compilation valide, non publié.
 - [ ] Vérifier la création, la sauvegarde après actualisation et l’export dans le compte connecté : aperçu sur la connexion, aucune session du demandeur disponible ; attendre sa connexion.
