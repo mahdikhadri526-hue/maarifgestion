@@ -6,6 +6,7 @@ import { buildWeeklyAggregateTotals, type WeeklyTrackingOrderRecord } from "@/li
 import { stockRecipeIngredients, getStockRecipeAggregates } from "@/lib/stockRecipeIngredients";
 import { WEEKLY_ALL_ARTICLES } from "@/lib/weeklyArticles";
 import { calculateStockTotals } from "@/lib/stockInitialTotal";
+import { stockReferenceQuantity } from "@/lib/stockReference";
 
 export type CustomStockGroup = { id: string; pdv_id: string; name: string; source_ids: string[]; exported: boolean };
 export type GroupSource = { id: string; name: string; category: string; unit: string; stockInitial: number; entrees: number; sorties: number; stockRestant: number };
@@ -32,6 +33,27 @@ export function combineStockSources(ids: string[], sources: GroupSource[], mep: 
     miseEnPlace: sum(row => mep[row.id] ?? 0), sortiesTotal: sum(row => calculateStockTotals(previous[row.id], row.entrees, row.sorties, mep[row.id] ?? 0).sortiesTotal),
     initialTotal: completePrevious ? sum(row => previous[row.id]) : undefined,
     stockTotal: completePrevious ? sum(row => calculateStockTotals(previous[row.id], row.entrees, row.sorties, mep[row.id] ?? 0).stockTotal ?? 0) : undefined };
+}
+
+/** Reference columns add each source's converted column, not a conversion of the group sum. */
+export function sumGroupReferenceColumn(
+  ids: string[], quantities: Record<string, number | undefined>,
+  references: Record<string, { conversion: string; unitRef: string }>,
+) {
+  let total = 0;
+  let unit: string | undefined;
+  for (const id of new Set(ids)) {
+    const quantity = quantities[id];
+    const ref = references[id];
+    if (quantity === undefined || !ref?.unitRef.trim()) return null;
+    const converted = stockReferenceQuantity(quantity, ref.conversion);
+    if (converted === null) return null;
+    const currentUnit = normalizedGroupUnit(ref.unitRef);
+    if (unit !== undefined && unit !== currentUnit) return null;
+    unit = currentUnit;
+    total += converted;
+  }
+  return unit === undefined ? null : { quantity: Number(total.toFixed(4)), unit };
 }
 
 export async function loadCustomStockGroups() {
