@@ -15,6 +15,9 @@ import {
   Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { ArrowLeft, ChefHat, Plus, Save, Search, Trash2, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { loadCustomStockGroups, groupIngredientId, type CustomStockGroup } from "@/lib/customStockGroups";
@@ -99,6 +102,12 @@ export function RecipeManager() {
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
 
+  // new finished product
+  const [newProductOpen, setNewProductOpen] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [newCategory, setNewCategory] = useState<string>("surplace");
+  const [creating, setCreating] = useState(false);
+
   const loadAll = async () => {
     setLoading(true);
     try {
@@ -163,6 +172,35 @@ export function RecipeManager() {
       setOriginalIngs(((data ?? []) as Ingredient[]).map(ing => ({ ...ing, product_id: canonicalStockIngredientId(ing.product_id) })));
     }
     setDirty(false);
+  };
+
+  const createProduct = async () => {
+    const name = newName.trim();
+    if (!name) {
+      toast.error("Le nom du produit est obligatoire");
+      return;
+    }
+    setCreating(true);
+    try {
+      const code = `FP-${Date.now().toString(36).toUpperCase()}`;
+      const { data, error } = await supabase
+        .from("finished_products")
+        .insert({ code, name, unit: "PIECE", category: newCategory, active: true })
+        .select()
+        .single();
+      if (error) throw error;
+      const created = data as FinishedProduct;
+      setProducts((arr) => [...arr, created].sort((a, b) => a.name.localeCompare(b.name, "fr")));
+      setNewProductOpen(false);
+      setNewName("");
+      setNewCategory("surplace");
+      toast.success("Produit fini créé", { description: "Ajoutez maintenant ses ingrédients." });
+      await openProduct(created);
+    } catch (e: any) {
+      toast.error("Erreur de création", { description: e.message });
+    } finally {
+      setCreating(false);
+    }
   };
 
   const closeDetail = () => {
@@ -537,9 +575,16 @@ export function RecipeManager() {
   return (
     <div className="space-y-4">
       <Card className="p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <ChefHat className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">Recettes des produits finis</h2>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <ChefHat className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">Recettes des produits finis</h2>
+          </div>
+          {canEdit && (
+            <Button size="sm" onClick={() => setNewProductOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Nouveau produit fini
+            </Button>
+          )}
         </div>
         <p className="text-sm text-muted-foreground">
           Sélectionnez un produit fini pour modifier la quantité de chaque ingrédient.
@@ -596,6 +641,45 @@ export function RecipeManager() {
       <p className="text-center text-xs text-muted-foreground pt-2">
         {filtered.length} / {products.length} produit{products.length > 1 ? "s" : ""}
       </p>
+
+      <Dialog open={newProductOpen} onOpenChange={setNewProductOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Nouveau produit fini</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label>Nom du produit</Label>
+              <Input
+                value={newName}
+                maxLength={120}
+                placeholder="Ex. : Milkshake vanille"
+                onChange={(e) => setNewName(e.target.value)}
+                autoFocus
+              />
+            </div>
+            <div className="space-y-1">
+              <Label>Catégorie</Label>
+              <Select value={newCategory} onValueChange={setNewCategory}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {Object.entries(CAT_LABELS).map(([k, l]) => (
+                    <SelectItem key={k} value={k}>{l}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setNewProductOpen(false)} disabled={creating}>
+              Annuler
+            </Button>
+            <Button onClick={createProduct} disabled={creating || !newName.trim()}>
+              {creating ? "Création…" : "Créer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
