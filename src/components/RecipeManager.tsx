@@ -575,9 +575,16 @@ export function RecipeManager() {
   return (
     <div className="space-y-4">
       <Card className="p-4 space-y-3">
-        <div className="flex items-center gap-2">
-          <ChefHat className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-semibold">Recettes des produits finis</h2>
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <ChefHat className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">Recettes des produits finis</h2>
+          </div>
+          {canEdit && (
+            <Button size="sm" onClick={() => setNewProductOpen(true)}>
+              <Plus className="h-4 w-4 mr-1" /> Nouveau produit fini
+            </Button>
+          )}
         </div>
         <p className="text-sm text-muted-foreground">
           Sélectionnez un produit fini pour modifier la quantité de chaque ingrédient.
