@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Ajouter au clic sur un ingrédient le détail théorique par produit, catégorie, ventes et dose de recette ; préserver tous les calculs et données existants, tester le détail.
 - [x] Corriger les chiffres GLACE avec le calcul quotidien partagé : stocks par parfum, lots cumulés, comptage du lendemain et report du dernier stock ; détail bacs/kg, grammage et dates ajouté ; 40 tests réussis, compilation valide, aucune saisie modifiée, non publié.
 - [ ] Vérifier les chiffres et le détail GLACE dans le compte connecté : aperçu sur la connexion, aucune session automatique pour le demandeur ; attendre sa connexion.
 - [x] Fiabiliser la sauvegarde des conversions/unités Réf. : requêtes désormais exécutées et contrôlées, saisies successives ordonnées, échecs conservés localement pour réessai ; 101 anciennes références présentes en base, aucune nouvelle saisie retrouvée en base, 17 tests réussis, non publié ; stocks inchangés.
