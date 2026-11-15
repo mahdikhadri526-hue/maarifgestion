@@ -8,8 +8,8 @@ import { formatISODate } from "@/lib/stockWeeklyAggregates";
 import { materialSalesSection, type MaterialRecipe, type MaterialIngredient } from "@/lib/materialVariance";
 import { stockRecipeIngredients } from "@/lib/stockRecipeIngredients";
 import { MACARON_ARTICLES, SIROP_CARAMEL_WEEKLY_ARTICLE, AMANDES_WEEKLY_ARTICLE, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
-import { buildMaterialStockActuals } from "@/lib/materialStockActuals";
-import { loadCustomStockGroups, loadGroupSources, customGroupMaterialActual, groupIngredientId } from "@/lib/customStockGroups";
+import { buildMaterialActualDetails, type MaterialActualDetail } from "@/lib/materialStockActuals";
+import { loadCustomStockGroups, loadGroupSources, customGroupMaterialActual, customGroupMaterialActualDetail, groupIngredientId } from "@/lib/customStockGroups";
 
 export interface MaterialFinishedProduct { id: string; name: string; category: string | null; active: boolean }
 
@@ -44,7 +44,7 @@ export async function loadMaterialAnalysis(start: string, end: string) {
     }
     return null;
   }));
-  const actuals = buildMaterialStockActuals(levels, movements, start, end, references, mep, stockArticleRows,
+  const { actuals, details: actualDetails } = buildMaterialActualDetails(levels, movements, start, end, references, mep, stockArticleRows,
     Object.fromEntries(special.flatMap(row => row ? [[row.id, row.totals]] : [])), stockUnits);
   const exports = (await loadCustomStockGroups()).filter(row => row.exported);
   if (exports.length) {
@@ -56,12 +56,13 @@ export async function loadMaterialAnalysis(start: string, end: string) {
       if (group.source_ids.length === 1 && actuals[id]) continue;
       try {
         actuals[id] = customGroupMaterialActual(group, sources, mep, groupReferences);
+        actualDetails[id] = customGroupMaterialActualDetail(group, sources, mep, groupReferences);
       } catch {
         actuals[id] = { name: group.name, category: "alimentaire", quantity: null, unit: "", conversionMissing: true };
       }
     }
   }
-  return { products, recipes: latestRecipeVersions(recipeRows).filter(row => row.active), ingredients, actuals, sales: Object.fromEntries(salesRows.map(row => [row.item, Number(row.qty)])) as Record<string, number> };
+  return { products, recipes: latestRecipeVersions(recipeRows).filter(row => row.active), ingredients, actuals, actualDetails: actualDetails as Record<string, MaterialActualDetail>, sales: Object.fromEntries(salesRows.map(row => [row.item, Number(row.qty)])) as Record<string, number> };
 }
 
 export async function saveMaterialSales(start: string, end: string, sales: Record<string, number>) {
