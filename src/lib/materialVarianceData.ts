@@ -3,7 +3,7 @@ import { fetchAllRows } from "@/lib/supabasePaginate";
 import { requireCurrentPdvId } from "@/lib/pdvStore";
 import { latestRecipeVersions } from "@/lib/recipeVersions";
 import { getMovements, getStockLevels, getProductUnits, getGlaceAggregateForRange, getToppingsBreakdown, roundStockQuantity } from "@/lib/stockData";
-import { getMiseEnPlaceStocksForWeek, getMiseEnPlaceStocks, weekStartOf, inventoryDayOfWeek } from "@/lib/miseEnPlaceData";
+import { getMiseEnPlaceStocksForWeek, getMiseEnPlaceStocks, getMiseEnPlaceTotalsForPeriod, weekStartOf, inventoryDayOfWeek } from "@/lib/miseEnPlaceData";
 import { formatISODate } from "@/lib/stockWeeklyAggregates";
 import { materialSalesSection, type MaterialRecipe, type MaterialIngredient } from "@/lib/materialVariance";
 import { stockRecipeIngredients } from "@/lib/stockRecipeIngredients";
@@ -23,7 +23,7 @@ export async function loadMaterialAnalysis(start: string, end: string) {
     getMovements(), getStockLevels(),
     fetchAllRows<{ product_id: string; conversion: string; unit_ref: string }>(() => supabase.from("stock_ref_conversions").select("product_id,conversion,unit_ref")),
     fetchAllRows<{ item: string; qty: number }>(() => supabase.from("ecart_lines").select("item,qty").eq("pdv_id", pdvId).eq("entry_date", start).eq("section", materialSalesSection(end))),
-    getMiseEnPlaceStocksForWeek(week),
+    start === end ? getMiseEnPlaceStocksForWeek(week) : getMiseEnPlaceTotalsForPeriod(start, end),
     fetchAllRows<WeeklyTrackingOrderRecord>(() => supabase.from("weekly_tracking")
       .select("article,sorties,entrees,stock_initial,day_of_week,week_start,row_index")
       .eq("fiche_type", "Mouvement glaces & tartes").in("article", [...new Set([...stockRecipeIngredients.map(row => row.name), ...MACARON_ARTICLES, SIROP_CARAMEL_WEEKLY_ARTICLE, AMANDES_WEEKLY_ARTICLE])])
@@ -32,8 +32,10 @@ export async function loadMaterialAnalysis(start: string, end: string) {
   ]);
   const inventoryDate = formatISODate(inventoryDayOfWeek(week));
   let mep = weeklyMep;
-  if (week === weekStartOf() && !Object.keys(mep).length) mep = await getMiseEnPlaceStocks(true);
-  if (inventoryDate < start || inventoryDate > end) mep = {};
+  if (start === end) {
+    if (week === weekStartOf() && !Object.keys(mep).length) mep = await getMiseEnPlaceStocks(true);
+    if (inventoryDate < start || inventoryDate > end) mep = {};
+  }
   // Shared stock APIs preserve the ice cream and TOPPINGS period formulas.
   const special = await Promise.all(levels.map(async product => {
     if (product.productName === "GLACE") return { id: product.productId, totals: await getGlaceAggregateForRange(start, end) };

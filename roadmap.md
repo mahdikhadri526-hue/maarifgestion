@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Corriger le cumul de mise en place dans l’utilisation réelle et son détail pour les périodes, notamment Bande PP en août (20) ; 46 tests réussis, compilation valide, aucune saisie modifiée, non publié.
+- [ ] Confirmer le détail réel de Bande PP en août dans le compte connecté : aucune session ne correspond au demandeur ; attendre sa connexion dans l’aperçu.
 - [x] Corriger les utilisations réelles des regroupements : somme des Sorties total Réf. de chaque source, mêmes conversions et repli du regroupement que Stock restant ; aucun remplacement par les sorties natives sans conversion.
 - [ ] Vérifier cette comparaison dans le compte connecté : aucune session automatique ne correspond au demandeur ; connexion dans l’aperçu nécessaire.
 - [x] Ajouter des regroupements personnalisés dans Stock restant par PDV, sélection de produits de même unité, détails et somme des calculs sources ; sources inchangées.
