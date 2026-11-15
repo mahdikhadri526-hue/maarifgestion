@@ -17,7 +17,7 @@ describe("mepTotalsFromRows", () => {
 
   it("exclut les semaines hors période", () => {
     const rows = [
-      { product_id: "a", quantity: 2, week_start: "2026-10-26" }, // comptage lun. 26/10
+      { product_id: "a", quantity: 2, week_start: "2026-10-19" }, // comptage lun. 19/10
       { product_id: "a", quantity: 3, week_start: "2026-11-09" },
     ];
     expect(mepTotalsFromRows(rows, "2026-11-01", "2026-11-30")).toEqual({ a: 3 });
