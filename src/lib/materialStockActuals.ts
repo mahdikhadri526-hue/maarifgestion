@@ -81,10 +81,12 @@ function computeMaterialStockActuals(
     const nativeUnit = stockUnits[row.id] ?? (row.group === "Crème fraîche" ? "kg" : "STOCK");
     if (ref) add(row.id, row.name, row.category, row.sorties, nativeUnit);
     else {
-      actuals[row.id] = { name: row.name, category: row.category, quantity: row.sorties,
+      const miseEnPlace = mep[row.id] ?? 0;
+      const sortiesTotal = roundStockQuantity(row.sorties - miseEnPlace);
+      actuals[row.id] = { name: row.name, category: row.category, quantity: sortiesTotal,
         unit: nativeUnit };
-      details[row.id] = { lines: [{ name: row.name, sorties: row.sorties, miseEnPlace: 0, sortiesTotal: row.sorties, nativeUnit, conversion: "", converted: null, unitRef: nativeUnit }],
-        totalSorties: row.sorties, nativeUnit, conversion: "", total: row.sorties, unit: nativeUnit, conversionMissing: false };
+      details[row.id] = { lines: [{ name: row.name, sorties: row.sorties, miseEnPlace, sortiesTotal, nativeUnit, conversion: "", converted: null, unitRef: nativeUnit }],
+        totalSorties: sortiesTotal, nativeUnit, conversion: "", total: sortiesTotal, unit: nativeUnit, conversionMissing: false };
     }
   }
   for (const aggregate of getStockRecipeAggregates(levels.map(row => ({ id: row.productId, name: row.productName })))) {

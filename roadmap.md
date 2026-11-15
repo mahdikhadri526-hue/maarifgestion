@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Corriger le cumul de mise en place dans l’utilisation réelle et son détail pour les périodes, notamment Bande PP en août (20), sans modifier les saisies ni Stock restant.
 - [x] Corriger les utilisations réelles des regroupements : somme des Sorties total Réf. de chaque source, mêmes conversions et repli du regroupement que Stock restant ; aucun remplacement par les sorties natives sans conversion.
 - [ ] Vérifier cette comparaison dans le compte connecté : aucune session automatique ne correspond au demandeur ; connexion dans l’aperçu nécessaire.
 - [x] Ajouter des regroupements personnalisés dans Stock restant par PDV, sélection de produits de même unité, détails et somme des calculs sources ; sources inchangées.
