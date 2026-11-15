@@ -40,7 +40,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
 import { useMiseEnPlace, MiseEnPlaceInput } from "@/components/MiseEnPlaceCell";
-import { weekStartOf, inventoryDayOfWeek } from "@/lib/miseEnPlaceData";
+import { weekStartOf, inventoryDayOfWeek, getMiseEnPlaceTotalsForPeriod } from "@/lib/miseEnPlaceData";
 import { getOperators } from "@/lib/operators";
 import { useOperators } from "@/lib/roster";
 import { toast } from "sonner";
@@ -312,18 +312,33 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       .finally(() => { if (!cancelled) setPreviousStockLoading(false); });
     return () => { cancelled = true; };
   }, [variant, showMepCols, previousPeriodStart]);
+  // En filtre mois / période / tout, la colonne « Stock mise en place »
+  // affiche le TOTAL des saisies de la période (somme des comptages
+  // hebdomadaires déjà enregistrés), en lecture seule.
+  const mepPeriodStart = mode === "month" && month ? `${month}-01` : mode === "period" ? (start || null) : mode === "all" ? null : null;
+  const mepPeriodEnd = mode === "month" && month ? monthEndISO(month) : mode === "period" ? (end || null) : mode === "all" ? null : null;
+  const [mepPeriodTotals, setMepPeriodTotals] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let cancelled = false;
+    setMepPeriodTotals({});
+    if (variant !== "stock" || !showMepCols || mode === "day") return;
+    getMiseEnPlaceTotalsForPeriod(mepPeriodStart, mepPeriodEnd)
+      .then(values => { if (!cancelled) setMepPeriodTotals(values); })
+      .catch(() => { if (!cancelled) toast.error("Impossible de lire les totaux de mise en place"); });
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [variant, showMepCols, mode, mepPeriodStart, mepPeriodEnd]);
   // En filtre « jour », la saisie n'apparaît que le jour même du comptage.
-  // En filtre « période », la saisie n'apparaît que si le jour du comptage est
-  // compris dans la période (ex. comptage du 1er oct. absent d'une période finissant le 30/09).
+  // En filtre mois / période / tout : total des saisies de la période.
   const mepMap = useMemo<Record<string, number>>(
     () => {
+      if (mode !== "day") return mepPeriodTotals;
       const inv = formatISODate(mepInventoryDay);
-      if (mode === "day" && day && day !== inv) return {};
-      if (mode === "period" && ((end && inv > end) || (start && inv < start))) return {};
+      if (day && day !== inv) return {};
       return mepMapRaw;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mepMapRaw, mode, day, start, end, mepWeek]
+    [mepMapRaw, mepPeriodTotals, mode, day, mepWeek]
   );
   // Pas de report : le stock initial du lendemain est le stock de la veille
   // (la mise en place reste uniquement dans sa colonne, sans toucher au SI).
@@ -331,8 +346,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   // MODE ESSAI : déverrouillage temporaire de la saisie mise en place.
   // Remettre MEP_TEST_UNLOCK à false pour rétablir le verrouillage.
   const MEP_TEST_UNLOCK = true;
-  const mepEditable = MEP_TEST_UNLOCK || todayISO() === formatISODate(mepInventoryDay)
-    && !(mode === "day" && day && day !== todayISO());
+  // Hors filtre « jour », la colonne affiche un total de période : lecture seule.
+  const mepEditable = mode === "day" && (MEP_TEST_UNLOCK || (todayISO() === formatISODate(mepInventoryDay)
+    && !(day && day !== todayISO())));
   // Jours de comptage : chaque lundi, sauf la semaine qui chevauche la fin du
   // mois — là le comptage se fait le lendemain du dernier jour du mois
   // (géré dans inventoryDayOfWeek / miseEnPlaceData).
@@ -1599,7 +1615,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           )}
           {variant !== "order" && (
             <div className="flex flex-wrap items-center gap-2 mt-1 rounded-md border bg-muted/30 px-2 py-1.5">
-              {mepEditable ? (
+              {mode !== "day" ? (
+                <span className="text-xs text-muted-foreground">
+                  Stock mise en place : total des saisies de la période affichée (lecture seule — saisie en filtre « Jour »).
+                </span>
+              ) : mepEditable ? (
                 <span className="text-xs text-muted-foreground">
                   Saisie mise en place ouverte — jour de comptage.
                 </span>
