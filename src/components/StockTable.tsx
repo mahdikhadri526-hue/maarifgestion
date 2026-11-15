@@ -40,7 +40,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
 import { useMiseEnPlace, MiseEnPlaceInput } from "@/components/MiseEnPlaceCell";
-import { weekStartOf, inventoryDayOfWeek, getMiseEnPlaceTotalsForPeriod } from "@/lib/miseEnPlaceData";
+import { weekStartOf, inventoryDayOfWeek, getMiseEnPlaceTotalsForPeriod, canEditMiseEnPlace } from "@/lib/miseEnPlaceData";
 import { getOperators } from "@/lib/operators";
 import { useOperators } from "@/lib/roster";
 import { toast } from "sonner";
@@ -259,23 +259,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       : mode === "month" && month ? (month === currentMonthISO() ? todayISO() : monthEndISO(month))
       : mode === "period" && end ? end
       : todayISO();
-    let ws = weekStartOf(new Date(`${ref}T00:00:00`));
-    // La semaine qui chevauche la fin du mois est comptée le 1er du mois
-    // suivant et appartient au mois SUIVANT. En filtre mois passé, si la
-    // semaine contenant le dernier jour du mois déborde sur le mois suivant,
-    // on recule d'une semaine (elle sera affichée dans le filtre du mois
-    // suivant).
-    if (mode === "month" && month && month !== currentMonthISO()) {
-      const monthEnd = monthEndISO(month);
-      const d = new Date(`${monthEnd}T00:00:00`);
-      if (d.getDay() !== 0) {
-        // fin de mois ≠ dimanche → la semaine chevauche → reculer d'une semaine
-        const prev = new Date(d);
-        prev.setDate(prev.getDate() - 7);
-        ws = weekStartOf(prev);
-      }
-    }
-    return ws;
+    return weekStartOf(new Date(`${ref}T00:00:00`));
   }, [mode, day, month, end]);
   const { map: mepMapRaw, save: saveMep } = useMiseEnPlace(mepWeek);
   const mepInventoryDay = inventoryDayOfWeek(mepWeek);
@@ -343,15 +327,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   // Pas de report : le stock initial du lendemain est le stock de la veille
   // (la mise en place reste uniquement dans sa colonne, sans toucher au SI).
   // Saisie déverrouillée uniquement le jour du comptage de la semaine affichée.
-  // MODE ESSAI : déverrouillage temporaire de la saisie mise en place.
-  // Remettre MEP_TEST_UNLOCK à false pour rétablir le verrouillage.
-  const MEP_TEST_UNLOCK = true;
   // Hors filtre « jour », la colonne affiche un total de période : lecture seule.
-  const mepEditable = mode === "day" && (MEP_TEST_UNLOCK || (todayISO() === formatISODate(mepInventoryDay)
-    && !(day && day !== todayISO())));
-  // Jours de comptage : chaque lundi, sauf la semaine qui chevauche la fin du
-  // mois — là le comptage se fait le lendemain du dernier jour du mois
-  // (géré dans inventoryDayOfWeek / miseEnPlaceData).
+  const mepEditable = canEditMiseEnPlace(mode, day, todayISO(), mepWeek);
+  // Dimanche, ou dernier jour du mois pour la semaine de fin de mois.
 
   // Détails du calcul pour les articles agrégés (GLACE / TOPPINGS / NESPRESSO / MACARON)
   const [detailsOpen, setDetailsOpen] = useState(false);
