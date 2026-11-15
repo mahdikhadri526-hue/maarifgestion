@@ -1615,7 +1615,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           )}
           {variant !== "order" && (
             <div className="flex flex-wrap items-center gap-2 mt-1 rounded-md border bg-muted/30 px-2 py-1.5">
-              {mepEditable ? (
+              {mode !== "day" ? (
+                <span className="text-xs text-muted-foreground">
+                  Stock mise en place : total des saisies de la période affichée (lecture seule — saisie en filtre « Jour »).
+                </span>
+              ) : mepEditable ? (
                 <span className="text-xs text-muted-foreground">
                   Saisie mise en place ouverte — jour de comptage.
                 </span>
