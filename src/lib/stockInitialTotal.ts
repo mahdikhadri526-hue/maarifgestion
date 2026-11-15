@@ -6,6 +6,7 @@ import { getMovements, getInitialStocks, getProductUnits, getProductUnitConfigs,
 import { fetchAllRows } from "@/lib/supabasePaginate";
 
 export type StockCount = { product_id: string; quantity: number; week_start: string };
+export type StockCarryPeriod = "day" | "month";
 
 /** Total columns only; no writes or changes to ordinary remaining stock. */
 export function calculateStockTotals(initialTotal: number | undefined, purchases: number, outputs: number, miseEnPlace: number) {
@@ -41,9 +42,10 @@ export function chainDailyStockTotals(
   start: number,
   moves: { date: string; type: string; qty: number }[],
   meps: { date: string; qty: number }[],
+  period: StockCarryPeriod = "day",
 ) {
   const days = new Map<string, { e: number; s: number; m: number }>();
-  const get = (d: string) => { let v = days.get(d); if (!v) { v = { e: 0, s: 0, m: 0 }; days.set(d, v); } return v; };
+  const get = (date: string) => { const d = period === "month" ? date.slice(0, 7) : date; let v = days.get(d); if (!v) { v = { e: 0, s: 0, m: 0 }; days.set(d, v); } return v; };
   for (const mv of moves) { const v = get(mv.date); if (mv.type === "entree") v.e += mv.qty; else v.s += mv.qty; }
   for (const mp of meps) get(mp.date).m += mp.qty;
   let total = start;
@@ -61,6 +63,7 @@ export function chainWeeklyStockTotals(
   records: WeeklyTrackingOrderRecord[], articles: readonly string[], periodStart: string,
   counts: StockCount[], productId: string,
   extraInitial = 0, extraMoves: { date: string; type: string; qty: number }[] = [],
+  period: StockCarryPeriod = "day",
 ) {
   // Normalize before filtering: the next day's count closes the previous day's outputs.
   const daily = buildWeeklyDailyStocks(records, articles).filter(row => row.date < periodStart);
@@ -75,7 +78,7 @@ export function chainWeeklyStockTotals(
     moves.push({ date: row.date, type: "entree", qty: row.entrees }, { date: row.date, type: "sortie", qty: row.sorties });
   }
   const initial = extraInitial + [...firstByArticle.values()].reduce((sum, value) => sum + value, 0);
-  return chainDailyStockTotals(initial, moves, meps);
+  return chainDailyStockTotals(initial, moves, meps, period);
 }
 
 /**
@@ -84,7 +87,7 @@ export function chainWeeklyStockTotals(
  * colonne Stock total : initial + entrées − |sorties − mise en place|,
  * cumulée sur toute l'historique antérieur à la période.
  */
-export async function loadPreviousStockTotals(periodStart: string, weeklyGroups: Record<string, readonly string[]>) {
+export async function loadPreviousStockTotals(periodStart: string, weeklyGroups: Record<string, readonly string[]>, period: StockCarryPeriod = "day") {
   const pdvId = requireCurrentPdvId();
   const counts = await fetchAllRows<StockCount>(() => supabase.from("mise_en_place_stocks")
     .select("product_id,quantity,week_start").eq("pdv_id", pdvId).lt("week_start", periodStart));
@@ -113,7 +116,7 @@ export async function loadPreviousStockTotals(periodStart: string, weeklyGroups:
         combined ? movements.filter(row => sourceIds.includes(row.productId)).map(row => ({
           date: row.date.slice(0, 10), type: row.type,
           qty: movementPiecesToDisplay(row.quantity, units[row.productId] || "PIECE", configs[row.productId], row.productId),
-        })) : []);
+        })) : [], period);
       if (previousTotal !== undefined) result[id] = previousTotal;
       return;
     }
@@ -150,7 +153,46 @@ export async function loadPreviousStockTotals(periodStart: string, weeklyGroups:
           qty: movementPiecesToDisplay(movement.quantity, units[movement.productId] || "PIECE", configs[movement.productId], movement.productId),
         })), counts.filter(row => row.product_id === id && row.week_start !== "2000-01-03")
         .map(row => ({ date: formatISODate(inventoryDayOfWeek(row.week_start)), qty: Number(row.quantity) || 0 }))
-        .filter(row => row.date < periodStart));
+        .filter(row => row.date < periodStart), period);
+      return;
+    }
+    if (period === "month") {
+      // Rebuild completed months with the same aggregate outputs displayed by
+      // StockTable. Applying abs() once per day would change monthly balances.
+      const dates = [
+        ...movements.map(row => row.date.slice(0, 10)),
+        ...weekly.map(row => row.week_start),
+        ...counts.filter(row => row.week_start !== "2000-01-03").map(row => formatISODate(inventoryDayOfWeek(row.week_start))),
+      ].filter(date => date < periodStart).sort();
+      let total = stockInitial;
+      const firstDate = dates[0];
+      if (firstDate) {
+        const cursor = new Date(`${firstDate.slice(0, 7)}-01T00:00:00`);
+        while (formatISODate(cursor) < periodStart) {
+          const from = formatISODate(cursor);
+          const next = new Date(cursor);
+          next.setMonth(next.getMonth() + 1);
+          const to = formatISODate(new Date(Math.min(next.getTime(), new Date(`${periodStart}T00:00:00`).getTime()) - 86400000));
+          const within = (date: string) => date >= from && date <= to;
+          let purchases = 0;
+          let outputs = 0;
+          if (name === "GLACE") {
+            const agg = await getGlaceAggregateForRange(from, to);
+            purchases = agg.entrees;
+            outputs = agg.sorties;
+          } else {
+            const parts = await getToppingsBreakdown(within, date => date < from, {});
+            purchases = parts.reduce((sum, row) => sum + row.entrees, 0);
+            outputs = parts.reduce((sum, row) => sum + row.sorties, 0);
+          }
+          const periodMep = counts.filter(row => row.product_id === id && row.week_start !== "2000-01-03" && within(formatISODate(inventoryDayOfWeek(row.week_start))))
+            .reduce((sum, row) => sum + (Number(row.quantity) || 0), 0);
+          const value = calculateStockTotals(total, purchases, outputs, periodMep).stockTotal;
+          if (value !== undefined) total = value;
+          cursor.setMonth(cursor.getMonth() + 1);
+        }
+      }
+      result[id] = total;
       return;
     }
     result[id] = roundStockQuantity(stockInitial + entrees - Math.abs(sorties - mep));
