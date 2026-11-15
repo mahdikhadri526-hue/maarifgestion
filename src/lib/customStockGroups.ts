@@ -78,6 +78,26 @@ export function customGroupMaterialActual(
   };
 }
 
+/** Read-only breakdown of the group actual: each source keeps its own conversion. */
+export function customGroupMaterialActualDetail(
+  group: CustomStockGroup, sources: GroupSource[], mep: Record<string, number>,
+  references: Record<string, { conversion: string; unitRef: string }>,
+): MaterialActualDetail {
+  const total = combineStockSources(group.source_ids, sources, mep);
+  const groupReference = references[groupIngredientId(group)];
+  const lines: MaterialActualLine[] = total.rows.map(row => {
+    const sortiesTotal = combineStockSources([row.id], sources, mep).sortiesTotal;
+    const own = references[row.id];
+    const ref = own?.unitRef.trim() && own.conversion.trim() ? own : groupReference?.unitRef.trim() && groupReference.conversion.trim() ? groupReference : own;
+    const converted = ref?.unitRef.trim() ? stockReferenceQuantity(sortiesTotal, ref.conversion) : null;
+    return { name: row.name, sorties: row.sorties, miseEnPlace: mep[row.id] ?? 0, sortiesTotal,
+      nativeUnit: row.unit, conversion: ref?.conversion ?? "", converted, unitRef: ref?.unitRef ?? row.unit };
+  });
+  const actual = customGroupMaterialActual(group, sources, mep, references);
+  return { lines, totalSorties: total.sortiesTotal, nativeUnit: total.unit, conversion: "",
+    total: actual.quantity, unit: actual.unit, conversionMissing: actual.conversionMissing ?? false };
+}
+
 export async function loadCustomStockGroups() {
   return fetchAllRows<CustomStockGroup>(() => supabase.from("stock_product_groups").select("*").eq("pdv_id", requireCurrentPdvId()).order("created_at"));
 }
