@@ -29,16 +29,16 @@ vi.mock("@/lib/miseEnPlaceData", async importOriginal => {
 describe("Material analysis mise en place", () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it("deducts all 20 Bande PP counted in August and shows them in the real detail", async () => {
+  it("deducts the August counts on Sundays or month-end and shows them in the real detail", async () => {
     const result = await loadMaterialAnalysis("2026-08-01", "2026-08-31");
     expect(getMiseEnPlaceTotalsForPeriod).toHaveBeenCalledWith("2026-08-01", "2026-08-31");
     expect(getMiseEnPlaceStocksForWeek).not.toHaveBeenCalled();
-    expect(result.actualDetails["bande-pp"].lines[0]).toMatchObject({ sorties: 100, miseEnPlace: 20, sortiesTotal: 80 });
-    expect(result.actuals["bande-pp"].quantity).toBe(80);
+    expect(result.actualDetails["bande-pp"].lines[0]).toMatchObject({ sorties: 100, miseEnPlace: 62, sortiesTotal: 38 });
+    expect(result.actuals["bande-pp"].quantity).toBe(38);
   });
 
   it("keeps single-day mise en place on its counting day only", async () => {
-    const counted = await loadMaterialAnalysis("2026-08-10", "2026-08-10");
+    const counted = await loadMaterialAnalysis("2026-08-16", "2026-08-16");
     expect(counted.actualDetails["bande-pp"].lines[0].miseEnPlace).toBe(12);
     const other = await loadMaterialAnalysis("2026-08-11", "2026-08-11");
     expect(other.actualDetails["bande-pp"].lines[0].miseEnPlace).toBe(0);
