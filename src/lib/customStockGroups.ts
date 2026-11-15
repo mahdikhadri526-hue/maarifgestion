@@ -8,6 +8,7 @@ import { WEEKLY_ALL_ARTICLES } from "@/lib/weeklyArticles";
 import { calculateStockTotals } from "@/lib/stockInitialTotal";
 import { stockReferenceQuantity } from "@/lib/stockReference";
 import type { MaterialActual } from "@/lib/materialVariance";
+import type { MaterialActualDetail, MaterialActualLine } from "@/lib/materialStockActuals";
 
 export type CustomStockGroup = { id: string; pdv_id: string; name: string; source_ids: string[]; exported: boolean };
 export type GroupSource = { id: string; name: string; category: string; unit: string; stockInitial: number; entrees: number; sorties: number; stockRestant: number };
