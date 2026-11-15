@@ -1,2 +1,1 @@
 - Reference conversion saves must await lazy database requests, serialize patches per product and surface failures; browser pending patches are user-scoped recovery only, never authorization or proof of a successful database save.
-- Material analysis periods use shared Stock restant mise-en-place period totals with counting-date boundaries; actual values and details use the same deductions even for native weekly rows without conversions, preventing inconsistent reports.
