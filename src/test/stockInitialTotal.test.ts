@@ -48,6 +48,25 @@ describe("Stock remaining total columns", () => {
 });
 import { chainDailyStockTotals } from "@/lib/stockInitialTotal";
 describe("chainDailyStockTotals", () => {
+  it("reports August's monthly final total as September's initial total for CVC 75", () => {
+    const moves = [
+      { date: "2026-08-03", type: "sortie", qty: 50 },
+      { date: "2026-08-17", type: "entree", qty: 100 },
+      { date: "2026-08-17", type: "sortie", qty: 80 },
+    ];
+    const meps = [{ date: "2026-08-03", qty: 70 }];
+    const augustFinal = calculateStockTotals(1850, 100, 130, 70).stockTotal;
+    expect(augustFinal).toBe(1890);
+    expect(chainDailyStockTotals(1850, moves, meps, "month")).toBe(1890);
+    expect(chainDailyStockTotals(1850, moves, meps)).toBe(1850);
+  });
+  it("chains completed months and the partial month before a custom period without including future data", () => {
+    expect(chainDailyStockTotals(100, [
+      { date: "2026-07-01", type: "sortie", qty: 10 },
+      { date: "2026-08-02", type: "sortie", qty: 5 },
+      { date: "2026-08-03", type: "sortie", qty: 25 },
+    ], [{ date: "2026-08-02", qty: 20 }], "month")).toBe(80);
+  });
   it("enchaîne le stock total jour par jour", () => {
     // J1: 7 + 0 - |2 - 10| = -1 ; J2: -1 + 15 - |4 - 0| = 10
     expect(chainDailyStockTotals(7, [
@@ -59,6 +78,12 @@ describe("chainDailyStockTotals", () => {
 });
 
 describe("weekly category total carry-forward", () => {
+  it("carries the monthly final total for weekly categories using summed monthly outputs and counts", () => {
+    expect(chainWeeklyStockTotals([
+      { article: "Tarte 6", week_start: "2026-08-03", day_of_week: "Lundi", stock_initial: 100, entrees: 0, sorties: 5 },
+      { article: "Tarte 6", week_start: "2026-08-03", day_of_week: "Mardi", stock_initial: null, entrees: 0, sorties: 25 },
+    ], ["Tarte 6"], "2026-09-01", [{ product_id: "Tarte 6", week_start: "2026-08-03", quantity: 20 }], "Tarte 6", 0, [], "month")).toBe(90);
+  });
   it.each(["Tarte 6", "Orange fruits", "Vanille", "Crème fraîche (mousse fouettée)", "Détergent"])("uses the same daily totals for %s without changing inputs", article => {
     const rows = [
       { article, week_start: "2026-11-09", day_of_week: "Samedi", stock_initial: 7, entrees: 0, sorties: 2 },

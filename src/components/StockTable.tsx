@@ -307,11 +307,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       [AMANDES_AGG_ID]: [AMANDES_WEEKLY_ARTICLE],
       [SIROP_AGG_ID]: [SIROP_CARAMEL_WEEKLY_ARTICLE],
       ...Object.fromEntries([...TARTE_ARTICLES, ...FRUIT_ARTICLES, ...NETTOYANT_ARTICLES, ...GLACE_ARTICLES].map(article => [stockRecipeIngredientId(article), [article]])),
-    }).then(values => { if (!cancelled) setPreviousStockTotals(values); })
+    }, mode === "day" ? "day" : "month").then(values => { if (!cancelled) setPreviousStockTotals(values); })
       .catch(() => { if (!cancelled) toast.error("Impossible de lire le dernier stock total précédent"); })
       .finally(() => { if (!cancelled) setPreviousStockLoading(false); });
     return () => { cancelled = true; };
-  }, [variant, showMepCols, previousPeriodStart]);
+  }, [variant, showMepCols, previousPeriodStart, mode]);
   // En filtre mois / période / tout, la colonne « Stock mise en place »
   // affiche le TOTAL des saisies de la période (somme des comptages
   // hebdomadaires déjà enregistrés), en lecture seule.
