@@ -97,6 +97,32 @@ export async function setMiseEnPlaceStockForWeek(productId: string, quantity: nu
 }
 
 /**
+ * Totaux des saisies mise en place sur une période : somme par produit des
+ * quantités dont le jour de comptage tombe dans [start, end] (bornes ISO
+ * incluses, null = sans borne). La semaine chevauchant la fin du mois est
+ * rattachée au mois suivant via inventoryDayOfWeek. La valeur unique héritée
+ * (semaine fixe) est exclue. Lecture seule : aucune donnée n'est modifiée.
+ */
+export async function getMiseEnPlaceTotalsForPeriod(start: string | null, end: string | null): Promise<Record<string, number>> {
+  const pdvId = requireCurrentPdvId();
+  const { data, error } = await (supabase as any)
+    .from("mise_en_place_stocks")
+    .select("product_id, quantity, week_start")
+    .eq("pdv_id", pdvId)
+    .neq("week_start", SINGLE_WEEK);
+  if (error) throw error;
+  const totals: Record<string, number> = {};
+  for (const row of (data || []) as any[]) {
+    const inv = inventoryDayOfWeek(row.week_start);
+    const iso = `${inv.getFullYear()}-${String(inv.getMonth() + 1).padStart(2, "0")}-${String(inv.getDate()).padStart(2, "0")}`;
+    if (start && iso < start) continue;
+    if (end && iso > end) continue;
+    totals[row.product_id] = (totals[row.product_id] ?? 0) + (Number(row.quantity) || 0);
+  }
+  return totals;
+}
+
+/**
  * Jour d'inventaire d'une semaine : le lundi, sauf si la semaine chevauche
  * la fin du mois — alors le lendemain du dernier jour du mois.
  */
