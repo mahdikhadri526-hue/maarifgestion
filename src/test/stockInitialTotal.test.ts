@@ -12,8 +12,8 @@ describe("Previous stock counting presentation", () => {
     ], "2026-11-09")).toEqual({ a: 16 });
   });
   it("uses the month boundary counting date rather than Monday", () => {
-    expect(sumPreviousCounts([{ product_id: "a", week_start: "2026-10-26", quantity: 7 }], "2026-11-01")).toEqual({});
-    expect(sumPreviousCounts([{ product_id: "a", week_start: "2026-10-26", quantity: 7 }], "2026-11-02")).toEqual({ a: 7 });
+    expect(sumPreviousCounts([{ product_id: "a", week_start: "2026-10-26", quantity: 7 }], "2026-10-31")).toEqual({});
+    expect(sumPreviousCounts([{ product_id: "a", week_start: "2026-10-26", quantity: 7 }], "2026-11-01")).toEqual({ a: 7 });
   });
   it("keeps zero counts and never treats legacy values as dated counts", () => {
     expect(sumPreviousCounts([{ product_id: "a", week_start: "2026-11-02", quantity: 0 }, { product_id: "b", week_start: "2000-01-03", quantity: 10 }], "2026-11-09")).toEqual({ a: 0 });
@@ -91,9 +91,9 @@ describe("weekly category total carry-forward", () => {
     ];
     const snapshot = structuredClone(rows);
     const previous = chainWeeklyStockTotals(rows, [article], "2026-11-16", [{ product_id: article, week_start: "2026-11-09", quantity: 10 }], article);
-    // Monday count: 7 - 10 = -3; Saturday: -3 - 2 = -5; Sunday: -5 + 15 - 4 = 6.
-    expect(previous).toBe(6);
-    expect(calculateStockTotals(previous, 5, 3, 1)).toEqual({ sortiesTotal: 2, stockTotal: 9 });
+    // Saturday: 7 - 2 = 5; Sunday: 5 + 15 - |4 - 10| = 14.
+    expect(previous).toBe(14);
+    expect(calculateStockTotals(previous, 5, 3, 1)).toEqual({ sortiesTotal: 2, stockTotal: 17 });
     expect(rows).toEqual(snapshot);
   });
   it("keeps tomorrow's count as output context but excludes tomorrow's purchases", () => {

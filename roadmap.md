@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Appliquer la saisie mise en place le dimanche ou le dernier jour du mois, rétablir le verrouillage hors comptage et aligner les totaux de période ; 38 tests réussis, compilation valide, aucune saisie modifiée, non publié.
+- [ ] Vérifier visuellement le nouveau jour de saisie dans le compte connecté : aucune session ne correspond au demandeur ; attendre sa connexion dans l’aperçu.
 - [x] Corriger le cumul de mise en place dans l’utilisation réelle et son détail pour les périodes, notamment Bande PP en août (20) ; 46 tests réussis, compilation valide, aucune saisie modifiée, non publié.
 - [ ] Confirmer le détail réel de Bande PP en août dans le compte connecté : aucune session ne correspond au demandeur ; attendre sa connexion dans l’aperçu.
 - [x] Corriger les utilisations réelles des regroupements : somme des Sorties total Réf. de chaque source, mêmes conversions et repli du regroupement que Stock restant ; aucun remplacement par les sorties natives sans conversion.

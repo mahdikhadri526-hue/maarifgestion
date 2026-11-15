@@ -100,7 +100,7 @@ export async function setMiseEnPlaceStockForWeek(productId: string, quantity: nu
  * Totaux des saisies mise en place sur une période : somme par produit des
  * quantités dont le jour de comptage tombe dans [start, end] (bornes ISO
  * incluses, null = sans borne). La semaine chevauchant la fin du mois est
- * rattachée au mois suivant via inventoryDayOfWeek. La valeur unique héritée
+ * rattachée au mois qui se termine via inventoryDayOfWeek. La valeur unique héritée
  * (semaine fixe) est exclue. Lecture seule : aucune donnée n'est modifiée.
  */
 export async function getMiseEnPlaceTotalsForPeriod(start: string | null, end: string | null): Promise<Record<string, number>> {
@@ -136,8 +136,8 @@ export function mepTotalsFromRows(
 }
 
 /**
- * Jour d'inventaire d'une semaine : le lundi, sauf si la semaine chevauche
- * la fin du mois — alors le lendemain du dernier jour du mois.
+ * Jour de comptage : le dimanche, sauf pour la semaine contenant la fin
+ * du mois — alors le dernier jour du mois. Les clés restent des lundis ISO.
  */
 export function inventoryDayOfWeek(weekStart: string): Date {
   const monday = new Date(weekStart + "T00:00:00");
@@ -145,9 +145,14 @@ export function inventoryDayOfWeek(weekStart: string): Date {
   sunday.setDate(sunday.getDate() + 6);
   const monthEnd = new Date(monday.getFullYear(), monday.getMonth() + 1, 0);
   if (monthEnd >= monday && monthEnd <= sunday) {
-    const d = new Date(monthEnd);
-    d.setDate(d.getDate() + 1);
-    return d;
+    return monthEnd;
   }
-  return monday;
+  return sunday;
+}
+
+/** Saisie uniquement en vue jour, à la date de comptage et le jour même. */
+export function canEditMiseEnPlace(mode: string, day: string, today: string, weekStart: string): boolean {
+  const count = inventoryDayOfWeek(weekStart);
+  const iso = `${count.getFullYear()}-${String(count.getMonth() + 1).padStart(2, "0")}-${String(count.getDate()).padStart(2, "0")}`;
+  return mode === "day" && day === today && today === iso;
 }
