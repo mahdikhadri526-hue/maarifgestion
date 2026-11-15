@@ -111,8 +111,21 @@ export async function getMiseEnPlaceTotalsForPeriod(start: string | null, end: s
     .eq("pdv_id", pdvId)
     .neq("week_start", SINGLE_WEEK);
   if (error) throw error;
+  return mepTotalsFromRows((data || []) as any[], start, end);
+}
+
+/**
+ * Règle de calcul des totaux : on additionne par produit les quantités dont
+ * le jour de comptage de la semaine tombe dans [start, end] (bornes ISO
+ * incluses, null = sans borne).
+ */
+export function mepTotalsFromRows(
+  rows: { product_id: string; quantity: number; week_start: string }[],
+  start: string | null,
+  end: string | null,
+): Record<string, number> {
   const totals: Record<string, number> = {};
-  for (const row of (data || []) as any[]) {
+  for (const row of rows) {
     const inv = inventoryDayOfWeek(row.week_start);
     const iso = `${inv.getFullYear()}-${String(inv.getMonth() + 1).padStart(2, "0")}-${String(inv.getDate()).padStart(2, "0")}`;
     if (start && iso < start) continue;
