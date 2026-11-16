@@ -40,21 +40,20 @@ describe("mepTotalsFromRows", () => {
 });
 
 describe("calendrier de saisie mise en place", () => {
-  it("ouvre chaque dimanche et ferme les autres jours", () => {
+  it("conserve le dimanche comme date de comptage", () => {
     expect(inventoryDayOfWeek("2026-11-09").getDate()).toBe(15);
-    expect(canEditMiseEnPlace("day", "2026-11-15", "2026-11-15", "2026-11-09")).toBe(true);
-    expect(canEditMiseEnPlace("day", "2026-11-09", "2026-11-09", "2026-11-09")).toBe(false);
-    expect(canEditMiseEnPlace("day", "2026-11-14", "2026-11-14", "2026-11-09")).toBe(false);
   });
-  it("ouvre le dernier jour du mois au lieu du dimanche de la même semaine", () => {
-    expect(canEditMiseEnPlace("day", "2026-11-30", "2026-11-30", "2026-11-30")).toBe(true);
-    expect(canEditMiseEnPlace("day", "2026-12-06", "2026-12-06", "2026-11-30")).toBe(false);
-    expect(canEditMiseEnPlace("day", "2026-10-31", "2026-10-31", "2026-10-26")).toBe(true);
-    expect(canEditMiseEnPlace("day", "2026-11-01", "2026-11-01", "2026-10-26")).toBe(false);
+  it("conserve le dernier jour du mois pour la semaine de fin de mois", () => {
+    expect(inventoryDayOfWeek("2026-11-30").getDate()).toBe(30);
+    expect(inventoryDayOfWeek("2026-10-26").getDate()).toBe(31);
     expect(inventoryDayOfWeek("2027-02-22").getDate()).toBe(28);
   });
-  it("garde les jours passés et les totaux de période en lecture seule", () => {
-    expect(canEditMiseEnPlace("day", "2026-11-15", "2026-11-16", "2026-11-09")).toBe(false);
-    expect(canEditMiseEnPlace("month", "2026-11-15", "2026-11-15", "2026-11-09")).toBe(false);
+  it("laisse toujours la saisie déverrouillée en filtre jour sans restriction de date", () => {
+    expect(canEditMiseEnPlace("day")).toBe(true);
+  });
+  it("préserve la lecture seule des cumuls mois, période et tout", () => {
+    for (const mode of ["month", "period", "all"]) {
+      expect(canEditMiseEnPlace(mode)).toBe(false);
+    }
   });
 });

@@ -326,9 +326,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   );
   // Pas de report : le stock initial du lendemain est le stock de la veille
   // (la mise en place reste uniquement dans sa colonne, sans toucher au SI).
-  // Saisie déverrouillée uniquement le jour du comptage de la semaine affichée.
+  // Saisie toujours déverrouillée pour la semaine du jour sélectionné.
   // Hors filtre « jour », la colonne affiche un total de période : lecture seule.
-  const mepEditable = canEditMiseEnPlace(mode, day, todayISO(), mepWeek);
+  const mepEditable = canEditMiseEnPlace(mode);
   // Dimanche, ou dernier jour du mois pour la semaine de fin de mois.
 
   // Détails du calcul pour les articles agrégés (GLACE / TOPPINGS / NESPRESSO / MACARON)
@@ -1599,7 +1599,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 </span>
               ) : mepEditable ? (
                 <span className="text-xs text-muted-foreground">
-                  Saisie mise en place ouverte — jour de comptage.
+                  Saisie mise en place ouverte.
                 </span>
               ) : (
                 <span className="text-xs text-muted-foreground">

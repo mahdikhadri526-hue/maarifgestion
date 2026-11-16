@@ -150,9 +150,7 @@ export function inventoryDayOfWeek(weekStart: string): Date {
   return sunday;
 }
 
-/** Saisie uniquement en vue jour, à la date de comptage et le jour même. */
-export function canEditMiseEnPlace(mode: string, day: string, today: string, weekStart: string): boolean {
-  const count = inventoryDayOfWeek(weekStart);
-  const iso = `${count.getFullYear()}-${String(count.getMonth() + 1).padStart(2, "0")}-${String(count.getDate()).padStart(2, "0")}`;
-  return mode === "day" && day === today && today === iso;
+/** Saisie toujours ouverte en vue jour ; les cumuls de période restent en lecture seule. */
+export function canEditMiseEnPlace(mode: string): boolean {
+  return mode === "day";
 }
