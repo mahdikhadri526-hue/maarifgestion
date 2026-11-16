@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -72,18 +72,19 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
     catch { return { group, values: null }; }
   });
   const fields: { label: string; key: "stockInitial" | "entrees" | "sorties" | "stockRestant" | "miseEnPlace" | "sortiesTotal" | "initialTotal" | "stockTotal" }[] = [
-    { label: "Stock initial", key: "stockInitial" }, ...(showTotals ? [{ label: "Stock initial total", key: "initialTotal" as const }] : []),
+    { label: "Stock initial", key: "stockInitial" }, { label: "Stock initial total", key: "initialTotal" },
     { label: "Entrées", key: "entrees" }, { label: "Sorties", key: "sorties" }, { label: "Stock restant", key: "stockRestant" },
-    ...(showTotals ? [{ label: "Stock mise en place", key: "miseEnPlace" as const }, { label: "Sorties total", key: "sortiesTotal" as const }, { label: "Stock total", key: "stockTotal" as const }] : []),
+    { label: "Stock mise en place", key: "miseEnPlace" }, { label: "Sorties total", key: "sortiesTotal" }, { label: "Stock total", key: "stockTotal" },
   ];
-  const referenceValue = (id: string, field: typeof fields[number]["key"]) => {
+  const referenceValue = (id: string, field: typeof fields[number]["key"], sourceIds?: string[]) => {
     const group = groups.find(row => row.id === id);
     if (!group) return "—";
-    const quantities = Object.fromEntries(group.source_ids.map(sourceId => {
+    const ids = sourceIds ?? group.source_ids;
+    const quantities = Object.fromEntries(ids.map(sourceId => {
       try { return [sourceId, combineStockSources([sourceId], sources, mep, previous)[field]]; }
       catch { return [sourceId, undefined]; }
     }));
-    const value = sumGroupReferenceColumn(group.source_ids, quantities, references, references[group.id]);
+    const value = sumGroupReferenceColumn(ids, quantities, references, references[group.id]);
     return value === null ? <span title="Conversion manquante ou unités Réf. différentes">—</span> : <>{value.quantity} <span className="text-xs text-muted-foreground">{value.unit}</span></>;
   };
   const cell = "p-3 text-right font-mono whitespace-nowrap";
@@ -124,8 +125,13 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
       <Input aria-label="Nom du regroupement" placeholder="Nom du regroupement" value={name} onChange={event => setName(event.target.value)} />
       <div className="flex flex-wrap gap-2"><Button disabled={busy || selected.length < 2} onClick={() => save(false)}><Combine className="h-4 w-4 mr-1" /> {editing ? "Enregistrer" : "Fusionner"} ({selected.length})</Button>{!editing && <Button variant="outline" disabled={busy || !selected.length} onClick={() => save(true)}><Send className="h-4 w-4 mr-1" /> Exporter vers Recettes / Écarts</Button>}</div>
     </DialogContent></Dialog>
-    <Dialog open={!!detail} onOpenChange={value => { if (!value) setDetail(null); }}><DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>Détail — {detail?.name}</DialogTitle></DialogHeader><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr><th className="p-2 text-left">Source</th>{fields.map(field => <th key={field.key} className="p-2 whitespace-nowrap">{field.label}</th>)}</tr></thead><tbody>{detail?.source_ids.map(id => {
-      try { const value = combineStockSources([id], sources, mep, previous); return <tr key={id} className="border-t"><td className="p-2">{value.rows[0].name}</td>{fields.map(field => <td className="p-2 text-right font-mono" key={field.key}>{value[field.key] ?? "—"}</td>)}</tr>; } catch { return <tr key={id}><td>{id} — indisponible</td></tr>; }
-    })}</tbody></table></div></DialogContent></Dialog>
+    <Dialog open={!!detail} onOpenChange={value => { if (!value) setDetail(null); }}><DialogContent className="max-w-6xl max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle className="break-words pr-6">Détail — {detail?.name}</DialogTitle></DialogHeader><div className="overflow-x-auto min-w-0"><table className="w-max min-w-full text-sm whitespace-nowrap"><thead className="bg-muted"><tr><th className="p-2 text-left sticky left-0 bg-muted z-10">Source</th><th className="p-2">Unité</th><th className="p-2">Conversion</th><th className="p-2">Unité Réf.</th>{fields.map(field => <Fragment key={field.key}><th className="p-2 text-right">{field.label}</th>{field.key !== "stockInitial" && <th className="p-2 text-right">{field.label} Réf.</th>}</Fragment>)}</tr></thead><tbody>{detail?.source_ids.map(id => {
+      try {
+        const value = combineStockSources([id], sources, mep, previous);
+        const own = references[id];
+        const ref = own?.unitRef.trim() && own.conversion.trim() ? own : references[detail.id] ?? own;
+        return <tr key={id} className="border-t"><td className="p-2 sticky left-0 bg-card z-10 max-w-[200px] whitespace-normal break-words">{value.rows[0].name}</td><td className="p-2">{value.unit}</td><td className="p-2 text-right font-mono">{ref?.conversion || "—"}</td><td className="p-2">{ref?.unitRef || "—"}</td>{fields.map(field => <Fragment key={field.key}><td className="p-2 text-right font-mono">{value[field.key] ?? "—"}</td>{field.key !== "stockInitial" && <td className="p-2 text-right font-mono text-muted-foreground">{referenceValue(detail.id, field.key, [id])}</td>}</Fragment>)}</tr>;
+      } catch { return <tr key={id}><td colSpan={19} className="p-2">{id} — indisponible</td></tr>; }
+    })}</tbody>{detail && <tfoot className="bg-muted font-semibold"><tr><td className="p-2 sticky left-0 bg-muted z-10">TOTAL</td><td colSpan={3} />{fields.map(field => <Fragment key={field.key}><td className="p-2 text-right font-mono">{totals.find(row => row.group.id === detail.id)?.values?.[field.key] ?? "—"}</td>{field.key !== "stockInitial" && <td className="p-2 text-right font-mono">{referenceValue(detail.id, field.key)}</td>}</Fragment>)}</tr></tfoot>}</table></div></DialogContent></Dialog>
   </section>;
 }
