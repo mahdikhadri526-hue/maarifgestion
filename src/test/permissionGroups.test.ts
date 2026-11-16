@@ -14,6 +14,13 @@ describe("permissions des ajouts récents", () => {
     ]);
   });
 
+  it("déclare le droit partagé de modification du stock et des regroupements une seule fois", () => {
+    const groups = PERMISSION_GROUPS.filter(group => group.keys.includes("edit_stock"));
+    expect(groups).toHaveLength(1);
+    expect(groups[0]?.title).toBe("Stock restant, mise en place & regroupements");
+    expect(ALL_PERMISSIONS.filter(permission => permission.key === "edit_stock")).toHaveLength(1);
+  });
+
   it("ne propose que des clés de permissions reconnues", () => {
     const known = new Set<string>(ALL_PERMISSIONS.map(permission => permission.key));
     for (const group of PERMISSION_GROUPS) {
