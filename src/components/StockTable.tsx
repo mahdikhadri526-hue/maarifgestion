@@ -52,11 +52,11 @@ import { useAuth } from "@/contexts/AuthContext";
 import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/lib/db";
 import { cn, formatDateFR } from "@/lib/utils";
-import { stockReferenceQuantity } from "@/lib/stockReference";
+import { stockReferenceQuantity, sumStockReferenceSources } from "@/lib/stockReference";
 import { calculateStockTotals, loadPreviousStockTotals } from "@/lib/stockInitialTotal";
 import { downloadStructuredPdf } from "@/lib/printExport";
 import { WEEKLY_FRUIT_ARTICLES as FRUIT_ARTICLES, WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES, WEEKLY_ALL_ARTICLES as ALL_WEEKLY_ARTICLES } from "@/lib/weeklyArticles";
-import { STOCK_TARTE_ARTICLES as TARTE_ARTICLES, stockRecipeIngredientId } from "@/lib/stockRecipeIngredients";
+import { STOCK_TARTE_ARTICLES as TARTE_ARTICLES, stockRecipeIngredientId, getStockRecipeAggregates } from "@/lib/stockRecipeIngredients";
 import { StockColumnHeaders } from "@/components/StockColumnHeaders";
 import { WeeklyStockColumns } from "@/components/WeeklyStockColumns";
 import { createStockReferenceSaver, type StockReferencePatch } from "@/lib/stockReferenceSave";
@@ -1812,6 +1812,21 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   Number(v.sorties) || 0,
                   mepMap[level.productId] ?? 0,
                 );
+                const aggregate = getStockRecipeAggregates((levels || []).map(row => ({ id: row.productId, name: row.productName })))
+                  .find(row => row.id === level.productId && row.sourceIds.some(id => levels?.some(source => source.productId === id)));
+                const renderReference = (field: "entrees" | "sorties" | "stockRestant" | "initialTotal" | "miseEnPlace" | "sortiesTotal" | "stockTotal", quantity: number | undefined) => {
+                  if (!aggregate) return quantity === undefined ? "—" : <StockReferenceValue quantity={quantity} reference={refMap[level.productId]} />;
+                  const ids = aggregate.sourceIds.filter(id => levels?.some(source => source.productId === id));
+                  const quantities = Object.fromEntries(ids.map(id => {
+                    const source = levels?.find(row => row.productId === id);
+                    if (!source) return [id, undefined];
+                    const values = getRowValues(source);
+                    const totals = calculateStockTotals(previousStockTotals[id], values.entrees, values.sorties, mepMap[id] ?? 0);
+                    return [id, field === "initialTotal" ? previousStockTotals[id] : field === "miseEnPlace" ? mepMap[id] ?? 0 : field === "sortiesTotal" || field === "stockTotal" ? totals[field] : values[field]];
+                  }));
+                  const ref = sumStockReferenceSources(ids, quantities, refMap, refMap[level.productId]);
+                  return ref === null ? <span title="Conversion manquante ou unités Réf. différentes">—</span> : <>{ref.quantity} <span className="text-[10px] text-muted-foreground">{ref.unit}</span></>;
+                };
                 return (
                 <tr key={level.productId} className={`border-b last:border-0 hover:bg-muted/30 transition-colors ${
                   isRequisitionProduct(level.productId) ? "bg-amber-50 dark:bg-amber-950/20" : ""
@@ -1896,30 +1911,18 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     {previousStockLoading ? "…" : previousStockTotals[level.productId] === undefined ? "—" : fmtQty(level.productId, previousStockTotals[level.productId])}
                   </td>}
                   {showMepCols && showRefCols && <td className="p-3 text-right font-mono text-sm text-muted-foreground">
-                    {previousStockLoading ? "…" : previousStockTotals[level.productId] === undefined ? "—" : <StockReferenceValue quantity={previousStockTotals[level.productId]} reference={refMap[level.productId]} />}
+                    {previousStockLoading ? "…" : renderReference("initialTotal", previousStockTotals[level.productId])}
                   </td>}
                   <td className="p-3 text-right font-mono text-sm text-success">{fmtQty(level.productId, v.entrees)}</td>
                   {showRefCols && (
                     <td className="p-3 text-right font-mono text-sm text-muted-foreground">
-                      {(() => {
-                        const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
-                        if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
-                        const val = v.entrees * conv;
-                        const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
-                        return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
-                      })()}
+                      {renderReference("entrees", v.entrees)}
                     </td>
                   )}
                   <td className="p-3 text-right font-mono text-sm text-accent-foreground">{fmtQty(level.productId, v.sorties)}</td>
                   {showRefCols && (
                     <td className="p-3 text-right font-mono text-sm text-muted-foreground">
-                      {(() => {
-                        const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
-                        if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
-                        const val = v.sorties * conv;
-                        const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
-                        return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
-                      })()}
+                      {renderReference("sorties", v.sorties)}
                     </td>
                   )}
                   <td className={`p-3 text-right font-mono text-sm font-semibold ${
@@ -1940,13 +1943,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   </td>
                   {showRefCols && (
                     <td className="p-3 text-right font-mono text-sm font-semibold text-muted-foreground">
-                      {(() => {
-                        const conv = parseFloat(refMap[level.productId]?.conversion ?? "");
-                        if (!Number.isFinite(conv) || conv === 0) return <span className="text-muted-foreground">—</span>;
-                        const val = v.stockRestant * conv;
-                        const display = Number.isInteger(val) ? val : Math.round(val * 100) / 100;
-                        return <>{display}{refMap[level.productId]?.unitRef ? <span className="text-[10px] text-muted-foreground ml-1">{refMap[level.productId]?.unitRef}</span> : null}</>;
-                      })()}
+                      {renderReference("stockRestant", v.stockRestant)}
                     </td>
                   )}
                   {showMepCols && (
@@ -1963,7 +1960,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   </td>
                   {showRefCols && (
                     <td className="p-3 text-right font-mono text-sm text-muted-foreground">
-                      <StockReferenceValue quantity={mepMap[level.productId] ?? 0} reference={refMap[level.productId]} />
+                      {renderReference("miseEnPlace", mepMap[level.productId] ?? 0)}
                     </td>
                   )}
                    <td className="p-3 text-right font-mono text-sm font-bold">
@@ -1973,7 +1970,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                    </td>
                    {showRefCols && (
                      <td className="p-3 text-right font-mono text-sm font-bold text-muted-foreground">
-                       <StockReferenceValue quantity={sortiesTotal} reference={refMap[level.productId]} />
+                       {renderReference("sortiesTotal", sortiesTotal)}
                      </td>
                    )}
                    <td className="p-3 text-right font-mono text-sm font-bold text-primary">
@@ -1981,7 +1978,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                    </td>
                    {showRefCols && (
                      <td className="p-3 text-right font-mono text-sm font-bold text-muted-foreground">
-                       {previousStockLoading ? "…" : stockTotal === undefined ? "—" : <StockReferenceValue quantity={stockTotal} reference={refMap[level.productId]} />}
+                       {previousStockLoading ? "…" : renderReference("stockTotal", stockTotal)}
                      </td>
                    )}
                     </>

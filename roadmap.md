@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Corriger les totaux Réf. de Nutella et des regroupements : additionner les colonnes converties des sources, sans modifier leurs données ; vérifier les tests et la comparaison connectée.
 - [x] Ajouter Écarts ingrédients et rendre les ajouts récents Stock restant / mise en place / regroupements / produits finis explicites dans la liste partagée des permissions utilisateurs et PDV, en conservant les clés et accès existants.
 - [x] Laisser la saisie mise en place toujours déverrouillée en filtre Jour, sans changer les autorisations, les dates de comptage ni les cumuls de période.
 - [x] Appliquer la saisie mise en place le dimanche ou le dernier jour du mois, rétablir le verrouillage hors comptage et aligner les totaux de période ; 38 tests réussis, compilation valide, aucune saisie modifiée, non publié.

@@ -6,7 +6,7 @@ import { buildWeeklyAggregateTotals, type WeeklyTrackingOrderRecord } from "@/li
 import { stockRecipeIngredients, getStockRecipeAggregates } from "@/lib/stockRecipeIngredients";
 import { WEEKLY_ALL_ARTICLES } from "@/lib/weeklyArticles";
 import { calculateStockTotals } from "@/lib/stockInitialTotal";
-import { stockReferenceQuantity } from "@/lib/stockReference";
+import { stockReferenceQuantity, sumStockReferenceSources } from "@/lib/stockReference";
 import type { MaterialActual } from "@/lib/materialVariance";
 import type { MaterialActualDetail, MaterialActualLine } from "@/lib/materialStockActuals";
 
@@ -43,22 +43,7 @@ export function sumGroupReferenceColumn(
   references: Record<string, { conversion: string; unitRef: string }>,
   groupReference?: { conversion: string; unitRef: string },
 ) {
-  let total = 0;
-  let unit: string | undefined;
-  for (const id of new Set(ids)) {
-    const quantity = quantities[id];
-    const own = references[id];
-    // A product without its own conversion uses the group's conversion.
-    const ref = own?.unitRef.trim() && own.conversion.trim() ? own : groupReference?.unitRef.trim() && groupReference.conversion.trim() ? groupReference : own;
-    if (quantity === undefined || !ref?.unitRef.trim()) return null;
-    const converted = stockReferenceQuantity(quantity, ref.conversion);
-    if (converted === null) return null;
-    const currentUnit = normalizedGroupUnit(ref.unitRef);
-    if (unit !== undefined && unit !== currentUnit) return null;
-    unit = currentUnit;
-    total += converted;
-  }
-  return unit === undefined ? null : { quantity: Number(total.toFixed(4)), unit };
+  return sumStockReferenceSources(ids, quantities, references, groupReference);
 }
 
 /** Material actuals read the exact source sum used by Sorties total Réf. */
