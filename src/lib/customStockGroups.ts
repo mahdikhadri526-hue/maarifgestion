@@ -22,14 +22,26 @@ export const normalizedGroupUnit = (value: string) => {
 };
 
 /** Sum source calculations, never replace their identities or combine different units. */
-export function combineStockSources(ids: string[], sources: GroupSource[], mep: Record<string, number> = {}, previous: Record<string, number> = {}) {
+export function combineStockSources(ids: string[], sources: GroupSource[], mep: Record<string, number> = {}, previous: Record<string, number> = {}, references?: Record<string, { conversion: string; unitRef: string }>, groupReference?: { conversion: string; unitRef: string }) {
   const unique = [...new Set(ids)];
   const parts = unique.map(id => sources.find(row => row.id === id));
   if (!unique.length || parts.some(row => !row)) throw new Error("Un produit du regroupement est indisponible.");
   const rows = parts.filter((row): row is GroupSource => !!row);
-  const unit = normalizedGroupUnit(rows[0].unit);
-  if (!unit || rows.some(row => normalizedGroupUnit(row.unit) !== unit)) throw new Error("Choisissez des produits avec la même unité de stock.");
-  const sum = (read: (row: GroupSource) => number) => Number(rows.reduce((total, row) => total + read(row), 0).toFixed(4));
+  const nativeUnit = normalizedGroupUnit(rows[0].unit);
+  const mixedNativeUnits = !nativeUnit || rows.some(row => normalizedGroupUnit(row.unit) !== nativeUnit);
+  const referenceUnit = references ? sumGroupReferenceColumn(unique, Object.fromEntries(rows.map(row => [row.id, 0])), references, groupReference) : null;
+  if (mixedNativeUnits && !referenceUnit) throw new Error("Choisissez des produits avec la même unité de stock ou des conversions vers la même unité Réf.");
+  const configuredRefs = rows.map(row => references?.[row.id] ?? groupReference).filter(ref => ref?.unitRef.trim() && ref.conversion.trim());
+  if (configuredRefs.length === rows.length && !referenceUnit) throw new Error("Choisissez des produits avec la même unité Réf.");
+  const unit = mixedNativeUnits ? referenceUnit?.unit ?? nativeUnit : nativeUnit;
+  const sum = (read: (row: GroupSource) => number) => {
+    if (mixedNativeUnits && references) {
+      const converted = sumGroupReferenceColumn(unique, Object.fromEntries(rows.map(row => [row.id, read(row)])), references, groupReference);
+      if (!converted) throw new Error("Conversions Réf. manquantes ou incompatibles.");
+      return converted.quantity;
+    }
+    return Number(rows.reduce((total, row) => total + read(row), 0).toFixed(4));
+  };
   const completePrevious = rows.every(row => previous[row.id] !== undefined);
   return { unit, rows, stockInitial: sum(row => row.stockInitial), entrees: sum(row => row.entrees), sorties: sum(row => row.sorties), stockRestant: sum(row => row.stockRestant),
     miseEnPlace: sum(row => mep[row.id] ?? 0), sortiesTotal: sum(row => calculateStockTotals(previous[row.id], row.entrees, row.sorties, mep[row.id] ?? 0).sortiesTotal),
@@ -51,7 +63,7 @@ export function customGroupMaterialActual(
   group: CustomStockGroup, sources: GroupSource[], mep: Record<string, number>,
   references: Record<string, { conversion: string; unitRef: string }>,
 ): MaterialActual {
-  const total = combineStockSources(group.source_ids, sources, mep);
+  const total = combineStockSources(group.source_ids, sources, mep, {}, references, references[groupIngredientId(group)]);
   const quantities = Object.fromEntries(total.rows.map(row => [
     row.id, combineStockSources([row.id], sources, mep).sortiesTotal,
   ]));
@@ -68,7 +80,7 @@ export function customGroupMaterialActualDetail(
   group: CustomStockGroup, sources: GroupSource[], mep: Record<string, number>,
   references: Record<string, { conversion: string; unitRef: string }>,
 ): MaterialActualDetail {
-  const total = combineStockSources(group.source_ids, sources, mep);
+  const total = combineStockSources(group.source_ids, sources, mep, {}, references, references[groupIngredientId(group)]);
   const groupReference = references[groupIngredientId(group)];
   const lines: MaterialActualLine[] = total.rows.map(row => {
     const sortiesTotal = combineStockSources([row.id], sources, mep).sortiesTotal;
