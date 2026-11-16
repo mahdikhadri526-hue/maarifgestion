@@ -26,7 +26,7 @@ export const ROLE_ORDER: AppRole[] = ["admin", "regional_admin", "manager", "ope
 // Liste complète des permissions, regroupées par tableau / module de l'application.
 export const PERMISSION_GROUPS: { title: string; keys: string[] }[] = [
   { title: "Tableau de bord", keys: ["view_dashboard"] },
-  { title: "Stock initial", keys: ["view_stock", "edit_stock", "delete_stock"] },
+  { title: "Stock initial", keys: ["view_stock", "delete_stock"] },
   { title: "Stock restant, mise en place & regroupements", keys: ["view_reports", "edit_stock", "edit_remaining_stock", "toggle_stock_extra_cols", "edit_storage_capacity"] },
   { title: "Mouvements", keys: ["view_movements", "edit_movements", "delete_movements"] },
   { title: "Réquisitions", keys: ["view_requisitions", "edit_requisitions", "delete_requisitions"] },
