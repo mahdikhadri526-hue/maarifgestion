@@ -63,13 +63,13 @@ export function customGroupMaterialActual(
   group: CustomStockGroup, sources: GroupSource[], mep: Record<string, number>,
   references: Record<string, { conversion: string; unitRef: string }>,
 ): MaterialActual {
-  const total = combineStockSources(group.source_ids, sources, mep, {}, references, references[groupIngredientId(group)]);
-  const quantities = Object.fromEntries(total.rows.map(row => [
+  const rows = [...new Set(group.source_ids)].map(id => sources.find(row => row.id === id)).filter((row): row is GroupSource => !!row);
+  const quantities = Object.fromEntries(rows.map(row => [
     row.id, combineStockSources([row.id], sources, mep).sortiesTotal,
   ]));
   const reference = sumGroupReferenceColumn(group.source_ids, quantities, references, references[groupIngredientId(group)]);
   return {
-    name: group.name, category: total.rows[0].category,
+    name: group.name, category: rows[0]?.category ?? "alimentaire",
     quantity: reference?.quantity ?? null, unit: reference?.unit ?? "",
     conversionMissing: reference === null,
   };
@@ -80,7 +80,8 @@ export function customGroupMaterialActualDetail(
   group: CustomStockGroup, sources: GroupSource[], mep: Record<string, number>,
   references: Record<string, { conversion: string; unitRef: string }>,
 ): MaterialActualDetail {
-  const total = combineStockSources(group.source_ids, sources, mep, {}, references, references[groupIngredientId(group)]);
+  const sameNativeUnit = group.source_ids.every(id => normalizedGroupUnit(sources.find(row => row.id === id)?.unit ?? "") === normalizedGroupUnit(sources.find(row => row.id === group.source_ids[0])?.unit ?? ""));
+  const total = combineStockSources(group.source_ids, sources, mep, {}, sameNativeUnit ? undefined : references, references[groupIngredientId(group)]);
   const groupReference = references[groupIngredientId(group)];
   const lines: MaterialActualLine[] = total.rows.map(row => {
     const sortiesTotal = combineStockSources([row.id], sources, mep).sortiesTotal;
