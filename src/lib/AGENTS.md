@@ -1,1 +1,2 @@
 - Reference conversion saves must await lazy database requests, serialize patches per product and surface failures; browser pending patches are user-scoped recovery only, never authorization or proof of a successful database save.
+- Built-in and custom aggregate reference columns share sumStockReferenceSources; sum source conversions before grouping so different package factors are not replaced by a conversion of native totals.

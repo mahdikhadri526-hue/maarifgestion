@@ -1,4 +1,4 @@
-import { stockReferenceQuantity } from "@/lib/stockReference";
+import { stockReferenceQuantity, sumStockReferenceSources } from "@/lib/stockReference";
 import { roundStockQuantity, type StockLevel, type StockMovement } from "@/lib/stockData";
 import { buildWeeklyAggregateTotals, MACARON_AGG_ID, MACARON_ARTICLES, AMANDES_AGG_ID, AMANDES_WEEKLY_ARTICLE, SIROP_AGG_ID, SIROP_CARAMEL_WEEKLY_ARTICLE, SIROP_CHOCOLAT_ALI_ID, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
 import { getStockRecipeAggregates, stockRecipePeriodTotals } from "@/lib/stockRecipeIngredients";
@@ -96,6 +96,24 @@ function computeMaterialStockActuals(
       return { name: level?.productName ?? id, sorties: totals[id]?.sorties ?? 0 };
     });
     add(aggregate.id, aggregate.name, aggregate.category, sources.reduce((sum, source) => sum + source.sorties, 0), nativeUnit, sources);
+    const ids = aggregate.sourceIds.filter(id => levels.some(row => row.productId === id));
+    if (ids.length) {
+      const referenceMap = Object.fromEntries(references.map(row => [row.product_id, { conversion: row.conversion, unitRef: row.unit_ref }]));
+      const quantities = Object.fromEntries(ids.map(id => [id, roundStockQuantity((totals[id]?.sorties ?? 0) - (mep[id] ?? 0))]));
+      const value = sumStockReferenceSources(ids, quantities, referenceMap, referenceMap[aggregate.id]);
+      actuals[aggregate.id] = { name: aggregate.name, category: aggregate.category, quantity: value?.quantity ?? null,
+        unit: value?.unit ?? "", conversionMissing: value === null };
+      const lines = ids.map(id => {
+        const own = referenceMap[id];
+        const fallback = referenceMap[aggregate.id];
+        const ref = own?.unitRef.trim() && own.conversion.trim() ? own : fallback;
+        return { name: levels.find(row => row.productId === id)?.productName ?? id, sorties: totals[id]?.sorties ?? 0,
+          miseEnPlace: mep[id] ?? 0, sortiesTotal: quantities[id], nativeUnit: stockUnits[id] ?? levels.find(row => row.productId === id)?.unit ?? nativeUnit,
+          conversion: ref?.conversion ?? "", converted: ref?.unitRef ? stockReferenceQuantity(quantities[id], ref.conversion) : null, unitRef: ref?.unitRef ?? "" };
+      });
+      details[aggregate.id] = { lines, totalSorties: roundStockQuantity(Object.values(quantities).reduce((sum, n) => sum + n, 0)),
+        nativeUnit, conversion: "", total: value?.quantity ?? null, unit: value?.unit ?? "", conversionMissing: value === null };
+    }
   }
   const weekly = (articles: readonly string[]) => buildWeeklyAggregateTotals(weeklyRows, articles, date => date >= start && date <= end, false, false, start);
   add(MACARON_AGG_ID, "MACARON (tous parfums)", "alimentaire", weekly(MACARON_ARTICLES).sorties, "PIECE");
