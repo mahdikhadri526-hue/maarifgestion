@@ -28,6 +28,9 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [detail, setDetail] = useState<CustomStockGroup | null>(null);
+  const [editing, setEditing] = useState<CustomStockGroup | null>(null);
+  const openCreate = () => { setEditing(null); setSelected([]); setName(""); setOpen(true); };
+  const openEdit = (group: CustomStockGroup) => { setEditing(group); setSelected([...group.source_ids]); setName(group.name); setOpen(true); };
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -47,11 +50,14 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
       if (!exported && !name.trim()) throw new Error("Donnez un nom au regroupement.");
       const next = exported
         ? selected.map(id => ({ id: `stock-export:${requireCurrentPdvId()}:${id}`, pdv_id: requireCurrentPdvId(), name: sources.find(row => row.id === id)?.name ?? id, source_ids: [id], exported: true }))
-        : [{ id: `stock-group:${crypto.randomUUID()}`, pdv_id: requireCurrentPdvId(), name: name.trim(), source_ids: [...new Set(selected)], exported: false }];
+        : [editing
+          // Same id keeps conversions, exports and recipe links attached to the group.
+          ? { ...editing, name: name.trim(), source_ids: [...new Set(selected)] }
+          : { id: `stock-group:${crypto.randomUUID()}`, pdv_id: requireCurrentPdvId(), name: name.trim(), source_ids: [...new Set(selected)], exported: false }];
       for (const group of next) await saveCustomStockGroup(group);
       setGroups(await loadCustomStockGroups());
-      setOpen(false); setSelected([]); setName("");
-      toast.success(exported ? "Produits disponibles dans Recettes et Écarts ingrédients" : "Regroupement enregistré");
+      setOpen(false); setSelected([]); setName(""); setEditing(null);
+      toast.success(exported ? "Produits disponibles dans Recettes et Écarts ingrédients" : editing ? "Regroupement modifié" : "Regroupement enregistré");
     } catch (error) { toast.error(error instanceof Error ? error.message : "Enregistrement impossible"); }
     finally { setBusy(false); }
   };
@@ -84,11 +90,11 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
   return <section className="border-t mt-4 py-4">
     <div className="flex flex-wrap items-center gap-2 px-4 mb-3">
       <h3 className="font-semibold mr-auto">Regroupements personnalisés</h3>
-      {editable && <Button size="sm" variant="outline" onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-1" /> Choisir des produits</Button>}
+      {editable && <Button size="sm" variant="outline" onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Choisir des produits</Button>}
     </div>
     {loading ? <p className="px-4 text-sm text-muted-foreground">Chargement…</p> : <div className="overflow-x-auto">
       <table className="weekly-sticky-table w-max min-w-full text-sm border-separate border-spacing-0"><thead className="bg-muted"><tr><th className="p-3 text-left weekly-sticky-column bg-muted border-r sticky left-0 z-20 min-w-[140px]">Produit</th><StockColumnHeaders showRefCols={showRefs} showMepCols={showTotals} /><th className="p-3">Recettes / Écarts</th></tr></thead>
-        <tbody>{totals.map(({ group, values }) => <tr key={group.id} className="border-b hover:bg-muted/30"><td className="p-3 weekly-sticky-column bg-card border-r sticky left-0 z-10 min-w-[140px] max-w-[220px]"><Button variant="link" className="p-0 h-auto text-left whitespace-normal" onClick={() => setDetail(group)}>{group.name}</Button></td><td className="p-3 text-xs">{values?.unit ?? "Unités différentes"}</td>
+        <tbody>{totals.map(({ group, values }) => <tr key={group.id} className="border-b hover:bg-muted/30"><td className="p-3 weekly-sticky-column bg-card border-r sticky left-0 z-10 min-w-[140px] max-w-[220px]"><Button variant="link" className="p-0 h-auto text-left whitespace-normal" onClick={() => setDetail(group)}>{group.name}</Button>{editable && <Button size="sm" variant="ghost" className="h-7 px-2 ml-1 text-xs" disabled={busy} aria-label={`Modifier ${group.name}`} onClick={() => openEdit(group)}>Modifier</Button>}</td><td className="p-3 text-xs">{values?.unit ?? "Unités différentes"}</td>
           <td className={cell}><Input aria-label={`Conversion ${group.name}`} disabled={!editable} type="number" step="any" className="w-20 h-8 text-right text-xs" value={references[group.id]?.conversion ?? ""} onChange={event => updateRef(group.id, { conversion: event.target.value })} /></td>
           <td className="p-3"><Select disabled={!editable} value={references[group.id]?.unitRef || "unset"} onValueChange={value => updateRef(group.id, { unitRef: value === "unset" ? "" : value })}><SelectTrigger aria-label={`Unité Réf. ${group.name}`} className="w-28 h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="unset">—</SelectItem>{["kg", "g", "L", "ml", "pièce", "paquet", "carton", "bac", "boîte", "sachet", "bouteille", "rouleau"].map(unit => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}</SelectContent></Select></td>
           <td className="p-3 text-xs text-primary">{values ? [...new Set(values.rows.map(row => row.category === "alimentaire" ? "Alimentaire" : row.category === "emballage" ? "Emballage" : row.category))].join(" / ") : "—"}</td>
@@ -112,11 +118,11 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
           <td className="p-3">{group.exported ? <span className="text-success">Disponible</span> : editable && <Button size="sm" variant="outline" disabled={busy || !values} onClick={() => exportGroup(group)}><Send className="h-4 w-4 mr-1" /> Exporter</Button>}</td>
         </tr>)}</tbody></table>
     </div>}
-    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>Choisir des produits</DialogTitle></DialogHeader>
+    <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>{editing ? `Modifier — ${editing.name}` : "Choisir des produits"}</DialogTitle></DialogHeader>
       <Input aria-label="Rechercher un produit à regrouper" placeholder="Rechercher un produit…" value={search} onChange={event => setSearch(event.target.value)} />
       <div className="max-h-64 overflow-y-auto space-y-2">{sources.filter(row => isProductActive(row.id) && row.name.toLocaleLowerCase("fr").includes(search.toLocaleLowerCase("fr"))).map(row => <label key={row.id} className="flex items-center gap-2 text-sm py-1"><Checkbox checked={selected.includes(row.id)} onCheckedChange={checked => setSelected(ids => checked ? [...ids, row.id] : ids.filter(id => id !== row.id))} /><span className="min-w-0 break-words flex-1">{row.name}</span><span className="text-muted-foreground">{row.unit}</span></label>)}</div>
       <Input aria-label="Nom du regroupement" placeholder="Nom du regroupement" value={name} onChange={event => setName(event.target.value)} />
-      <div className="flex flex-wrap gap-2"><Button disabled={busy || selected.length < 2} onClick={() => save(false)}><Combine className="h-4 w-4 mr-1" /> Fusionner ({selected.length})</Button><Button variant="outline" disabled={busy || !selected.length} onClick={() => save(true)}><Send className="h-4 w-4 mr-1" /> Exporter vers Recettes / Écarts</Button></div>
+      <div className="flex flex-wrap gap-2"><Button disabled={busy || selected.length < 2} onClick={() => save(false)}><Combine className="h-4 w-4 mr-1" /> {editing ? "Enregistrer" : "Fusionner"} ({selected.length})</Button>{!editing && <Button variant="outline" disabled={busy || !selected.length} onClick={() => save(true)}><Send className="h-4 w-4 mr-1" /> Exporter vers Recettes / Écarts</Button>}</div>
     </DialogContent></Dialog>
     <Dialog open={!!detail} onOpenChange={value => { if (!value) setDetail(null); }}><DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>Détail — {detail?.name}</DialogTitle></DialogHeader><div className="overflow-x-auto"><table className="w-full text-sm"><thead><tr><th className="p-2 text-left">Source</th>{fields.map(field => <th key={field.key} className="p-2 whitespace-nowrap">{field.label}</th>)}</tr></thead><tbody>{detail?.source_ids.map(id => {
       try { const value = combineStockSources([id], sources, mep, previous); return <tr key={id} className="border-t"><td className="p-2">{value.rows[0].name}</td>{fields.map(field => <td className="p-2 text-right font-mono" key={field.key}>{value[field.key] ?? "—"}</td>)}</tr>; } catch { return <tr key={id}><td>{id} — indisponible</td></tr>; }
