@@ -34,6 +34,19 @@ describe("Custom stock groups preserve source calculations", () => {
   it("counts the same source once", () => {
     expect(combineStockSources(["a", "a"], sources).sorties).toBe(8);
   });
+  it("groups different stock units through their shared reference unit without changing sources", () => {
+    const mixed = [sources[0], { ...sources[1], unit: "paquet" }];
+    const before = structuredClone(mixed);
+    const refs = { a: { conversion: "1", unitRef: "kg" }, b: { conversion: "0.5", unitRef: "KILO" } };
+    expect(combineStockSources(["a", "b"], mixed, { a: 1, b: 2 }, { a: 7, b: 5 }, refs)).toMatchObject({ unit: "kg", stockInitial: 9.5, entrees: 1.5, sorties: 9, stockRestant: 2, miseEnPlace: 2, sortiesTotal: 7, initialTotal: 9.5, stockTotal: 4 });
+    expect(mixed).toEqual(before);
+  });
+  it("rejects incompatible reference units even for identical native units", () => {
+    expect(() => combineStockSources(["a", "b"], sources, {}, {}, { a: { conversion: "1", unitRef: "kg" }, b: { conversion: "1", unitRef: "L" } })).toThrow("même unité Réf.");
+  });
+  it("does not group mixed native units with a missing reference conversion", () => {
+    expect(() => combineStockSources(["a", "b"], [sources[0], { ...sources[1], unit: "paquet" }], {}, {}, { a: { conversion: "1", unitRef: "kg" } })).toThrow("même unité");
+  });
   it("keeps the existing stock identity when exporting an individual product", () => {
     expect(groupIngredientId({ id: "export", pdv_id: "pdv", name: "A", source_ids: ["a"], exported: true })).toBe("a");
   });

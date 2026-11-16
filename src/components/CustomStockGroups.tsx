@@ -46,7 +46,7 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
     try {
       if (!exported && selected.length < 2) throw new Error("Sélectionnez au moins deux produits.");
       // Individual exports need no shared unit; each retains its own identity.
-      if (!exported) combineStockSources(selected, sources);
+      if (!exported) combineStockSources(selected, sources, {}, {}, references, editing ? references[editing.id] : undefined);
       if (!exported && !name.trim()) throw new Error("Donnez un nom au regroupement.");
       const next = exported
         ? selected.map(id => ({ id: `stock-export:${requireCurrentPdvId()}:${id}`, pdv_id: requireCurrentPdvId(), name: sources.find(row => row.id === id)?.name ?? id, source_ids: [id], exported: true }))
@@ -68,7 +68,7 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
     finally { setBusy(false); }
   };
   const totals = groups.filter(group => group.source_ids.length > 1 && group.source_ids.every(isProductActive)).map(group => {
-    try { return { group, values: combineStockSources(group.source_ids, sources, mep, previous) }; }
+    try { return { group, values: combineStockSources(group.source_ids, sources, mep, previous, references, references[group.id]) }; }
     catch { return { group, values: null }; }
   });
   const fields: { label: string; key: "stockInitial" | "entrees" | "sorties" | "stockRestant" | "miseEnPlace" | "sortiesTotal" | "initialTotal" | "stockTotal" }[] = [
@@ -121,7 +121,7 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
     </div>}
     <Dialog open={open} onOpenChange={setOpen}><DialogContent className="max-h-[85vh] overflow-y-auto"><DialogHeader><DialogTitle>{editing ? `Modifier — ${editing.name}` : "Choisir des produits"}</DialogTitle></DialogHeader>
       <Input aria-label="Rechercher un produit à regrouper" placeholder="Rechercher un produit…" value={search} onChange={event => setSearch(event.target.value)} />
-      <div className="max-h-64 overflow-y-auto space-y-2">{sources.filter(row => isProductActive(row.id) && row.name.toLocaleLowerCase("fr").includes(search.toLocaleLowerCase("fr"))).map(row => <label key={row.id} className="flex items-center gap-2 text-sm py-1"><Checkbox checked={selected.includes(row.id)} onCheckedChange={checked => setSelected(ids => checked ? [...ids, row.id] : ids.filter(id => id !== row.id))} /><span className="min-w-0 break-words flex-1">{row.name}</span><span className="text-muted-foreground">{row.unit}</span></label>)}</div>
+      <div className="max-h-64 overflow-y-auto space-y-2">{sources.filter(row => isProductActive(row.id) && row.name.toLocaleLowerCase("fr").includes(search.toLocaleLowerCase("fr"))).map(row => <label key={row.id} className="flex items-center gap-2 text-sm py-1"><Checkbox checked={selected.includes(row.id)} onCheckedChange={checked => setSelected(ids => checked ? [...ids, row.id] : ids.filter(id => id !== row.id))} /><span className="min-w-0 break-words flex-1">{row.name}</span><span className="text-muted-foreground text-right">{row.unit}{references[row.id]?.unitRef && <span className="block text-xs">Réf. : {references[row.id].unitRef}</span>}</span></label>)}</div>
       <Input aria-label="Nom du regroupement" placeholder="Nom du regroupement" value={name} onChange={event => setName(event.target.value)} />
       <div className="flex flex-wrap gap-2"><Button disabled={busy || selected.length < 2} onClick={() => save(false)}><Combine className="h-4 w-4 mr-1" /> {editing ? "Enregistrer" : "Fusionner"} ({selected.length})</Button>{!editing && <Button variant="outline" disabled={busy || !selected.length} onClick={() => save(true)}><Send className="h-4 w-4 mr-1" /> Exporter vers Recettes / Écarts</Button>}</div>
     </DialogContent></Dialog>
