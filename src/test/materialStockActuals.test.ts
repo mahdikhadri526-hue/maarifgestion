@@ -59,4 +59,12 @@ describe("Material stock output coverage", () => {
     expect(actuals.__the_aromatise_agg__.quantity).toBe(8);
     expect(actuals.__nutella_nestle_agg__.quantity).toBe(2.5);
   });
+  it("Nutella total adds source Sorties total Réf. rather than native total outputs", () => {
+    const actuals = buildMaterialStockActuals([level("ali-21"), level("ali-15")],
+      [movement("ali-21", 3), movement("ali-15", 2)], "2026-11-01", "2026-11-13",
+      [reference("ali-21", "2"), reference("ali-15", "3"), reference("__nutella_nestle_agg__", "10")],
+      { "ali-21": 1 }, [], {});
+    expect(actuals.__nutella_nestle_agg__.quantity).toBe(10);
+    expect(actuals.__nutella_nestle_agg__.quantity).not.toBe(4);
+  });
 });
