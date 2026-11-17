@@ -2213,18 +2213,24 @@ export type Database = {
       stock_ref_conversions: {
         Row: {
           conversion: string
+          mep_grams: string
+          pieces_per_kg: string
           product_id: string
           unit_ref: string
           updated_at: string
         }
         Insert: {
           conversion?: string
+          mep_grams?: string
+          pieces_per_kg?: string
           product_id: string
           unit_ref?: string
           updated_at?: string
         }
         Update: {
           conversion?: string
+          mep_grams?: string
+          pieces_per_kg?: string
           product_id?: string
           unit_ref?: string
           updated_at?: string

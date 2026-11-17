@@ -1,4 +1,4 @@
-export type StockReferenceRow = { conversion: string; unitRef: string };
+export type StockReferenceRow = { conversion: string; unitRef: string; mepGrams: string; piecesPerKg: string };
 export type StockReferencePatch = Partial<StockReferenceRow>;
 
 /** Await lazy database requests and serialize patches to prevent older edits winning. */
