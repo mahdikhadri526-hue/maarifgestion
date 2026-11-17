@@ -28,7 +28,7 @@ export function WeeklyStockColumns({ rows, categoryLabel, showRefCols, showMepCo
   return <table className="weekly-sticky-table text-sm w-max min-w-full border-separate border-spacing-0">
     <thead className="bg-muted sticky top-0 z-30"><tr className="border-b bg-muted/50">
       <th className="text-left p-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider weekly-sticky-column weekly-sticky-head bg-muted border-r w-[140px] min-w-[140px] sticky left-0 z-40">Article</th>
-      <StockColumnHeaders showRefCols={showRefCols} showMepCols={showMepCols} />
+      <StockColumnHeaders showRefCols={showRefCols} showMepCols={showMepCols} showPackagingCols={false} />
     </tr></thead>
     <tbody>{rows.map(row => {
       const id = stockRecipeIngredientId(row.article);

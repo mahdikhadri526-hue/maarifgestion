@@ -2,6 +2,15 @@ import { describe, expect, it } from "vitest";
 import { createStockReferenceSaver, type StockReferencePatch } from "@/lib/stockReferenceSave";
 
 describe("reference conversion persistence", () => {
+  it("conserve la saisie directe en pièces et le poids lors de sauvegardes successives", async () => {
+    const database: Record<string, StockReferencePatch> = {};
+    const save = createStockReferenceSaver(async (id, patch) => {
+      database[id] = { ...database[id], ...patch };
+      return { error: null };
+    });
+    await Promise.all([save("emballage", { mepGrams: "500", piecesPerKg: "100" }), save("emballage", { mepDirectPieces: "20" })]);
+    expect(JSON.parse(JSON.stringify(database)).emballage).toEqual({ mepGrams: "500", piecesPerKg: "100", mepDirectPieces: "20" });
+  });
   it("executes lazy requests and keeps conversion and L unit after reloading", async () => {
     const database: Record<string, StockReferencePatch> = {};
     let executed = 0;
