@@ -53,7 +53,7 @@ import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/lib/db";
 import { cn, formatDateFR } from "@/lib/utils";
 import { stockReferenceQuantity, sumStockReferenceSources } from "@/lib/stockReference";
-import { emballageMepTotal, mepPiecesFromGrams } from "@/lib/emballageMep";
+import { dailyMepValues, emballageMepTotal, mepPiecesFromGrams } from "@/lib/emballageMep";
 import { calculateStockTotals, loadPreviousStockTotals } from "@/lib/stockInitialTotal";
 import { downloadStructuredPdf } from "@/lib/printExport";
 import { WEEKLY_FRUIT_ARTICLES as FRUIT_ARTICLES, WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES, WEEKLY_ALL_ARTICLES as ALL_WEEKLY_ARTICLES } from "@/lib/weeklyArticles";
@@ -252,6 +252,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   const canEditStock = can("edit_stock");
   const canEditRemaining = can("edit_remaining_stock") || can("edit_stock");
+  // Shared stock rows also identify packaging entries in the daily MEP view.
+  const { data: levels, loading, refresh } = useStockLevels();
   // Semaine sélectionnée pour la colonne « Stock mise en place » (lundi ISO).
   // Semaine suivie par le filtre de date : chaque semaine a ses propres saisies.
   const mepWeek = useMemo(() => {
@@ -303,6 +305,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const mepPeriodStart = mode === "month" && month ? `${month}-01` : mode === "period" ? (start || null) : mode === "all" ? null : null;
   const mepPeriodEnd = mode === "month" && month ? monthEndISO(month) : mode === "period" ? (end || null) : mode === "all" ? null : null;
   const [mepPeriodTotals, setMepPeriodTotals] = useState<Record<string, number>>({});
+  const [packagingMepDrafts, setPackagingMepDrafts] = useState<{ week: string; values: Record<string, number> }>({ week: "", values: {} });
   useEffect(() => {
     let cancelled = false;
     setMepPeriodTotals({});
@@ -319,11 +322,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     () => {
       if (mode !== "day") return mepPeriodTotals;
       const inv = formatISODate(mepInventoryDay);
-      if (day && day !== inv) return {};
-      return mepMapRaw;
+      return dailyMepValues(
+        mepMapRaw, !day || day === inv,
+        (levels ?? []).filter(row => row.category === "emballage").map(row => row.productId),
+        packagingMepDrafts.week === mepWeek ? packagingMepDrafts.values : {},
+      );
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [mepMapRaw, mepPeriodTotals, mode, day, mepWeek]
+    [mepMapRaw, mepPeriodTotals, mode, day, mepWeek, levels, packagingMepDrafts]
   );
   // Pas de report : le stock initial du lendemain est le stock de la veille
   // (la mise en place reste uniquement dans sa colonne, sans toucher au SI).
@@ -513,11 +519,22 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     void commitReference(productId, patch);
   };
 
+  const updateEmballageMep = (productId: string, patch: Partial<RefRow>) => {
+    if (!canEditStock || !canEditRemaining || !mepEditable) return;
+    const reference = { ...refMap[productId], ...pendingRefs.current[productId], ...patch };
+    updateRef(productId, patch);
+    const total = emballageMepTotal(reference.mepGrams ?? "", reference.piecesPerKg ?? "", reference.mepDirectPieces ?? "");
+    setPackagingMepDrafts(prev => ({
+      week: mepWeek,
+      values: { ...(prev.week === mepWeek ? prev.values : {}), [productId]: total },
+    }));
+  };
+
   // Explicit edits alone update the selected week; historical counts are never rewritten on load.
   const saveEmballageMep = async (productId: string) => {
     if (!canEditRemaining || !mepEditable) return;
-    const reference = refMap[productId];
-    if (!reference) return;
+    if (!refMap[productId]) return;
+    const reference = { ...refMap[productId], ...pendingRefs.current[productId] };
     try {
       await saveReference(productId, {
         mepGrams: reference.mepGrams,
@@ -611,7 +628,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
   // Un seul chargement pour toutes les catégories : le filtre Alim./Emb. est
   // appliqué côté client pour un basculement instantané (pas de refetch).
-  const { data: levels, loading, refresh } = useStockLevels();
   const NESPRESSO_IDS = ["ali-29", "ali-30", "ali-31", "ali-32"];
   const NESPRESSO_AGG_ID = "__nespresso_agg__";
   // Toute la construction des lignes (filtre catégorie, agrégats, recherche)
@@ -1984,7 +2000,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                             type="number"
                             step="any"
                             value={refMap[level.productId]?.mepGrams ?? ""}
-                            onChange={(e) => updateRef(level.productId, { mepGrams: e.target.value })}
+                            onChange={(e) => updateEmballageMep(level.productId, { mepGrams: e.target.value })}
                             disabled={!canEditRemaining || !mepEditable}
                             onBlur={() => { void saveEmballageMep(level.productId); }}
                             placeholder="—"
@@ -2001,7 +2017,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                             type="number"
                             step="any"
                             value={refMap[level.productId]?.piecesPerKg ?? ""}
-                            onChange={(e) => updateRef(level.productId, { piecesPerKg: e.target.value })}
+                            onChange={(e) => updateEmballageMep(level.productId, { piecesPerKg: e.target.value })}
                             disabled={!canEditRemaining || !mepEditable}
                             onBlur={() => { void saveEmballageMep(level.productId); }}
                             placeholder="—"
@@ -2026,7 +2042,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                             aria-label={`MEP directement en pièces ${level.productName}`}
                             value={refMap[level.productId]?.mepDirectPieces ?? ""}
                             disabled={!canEditRemaining || !mepEditable}
-                            onChange={e => updateRef(level.productId, { mepDirectPieces: e.target.value })}
+                            onChange={e => updateEmballageMep(level.productId, { mepDirectPieces: e.target.value })}
                             onBlur={() => { void saveEmballageMep(level.productId); }}
                             placeholder="—" className="w-24 h-8 text-right text-xs font-mono ml-auto"
                           />
