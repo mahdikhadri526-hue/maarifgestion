@@ -423,7 +423,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     const load = async () => {
       const { data, error } = await supabase
         .from("stock_ref_conversions")
-        .select("product_id, conversion, unit_ref");
+        .select("product_id, conversion, unit_ref, mep_grams, pieces_per_kg");
       if (cancelled) return;
       if (error) {
         toast.error("Impossible de charger les conversions et unités Réf. enregistrées.");
@@ -432,7 +432,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       const next: Record<string, RefRow> = {};
       if (!error && data) {
         for (const r of data as any[]) {
-          next[r.product_id] = { conversion: r.conversion ?? "", unitRef: r.unit_ref ?? "" };
+          next[r.product_id] = { conversion: r.conversion ?? "", unitRef: r.unit_ref ?? "", mepGrams: r.mep_grams ?? "", piecesPerKg: r.pieces_per_kg ?? "" };
         }
       }
       // Preserve legacy entries until their database write actually succeeds.
@@ -447,7 +447,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           if (rows.length) {
             const { error: migrationError } = await supabase.from("stock_ref_conversions").upsert(rows, { onConflict: "product_id" });
             if (migrationError) throw migrationError;
-            for (const r of rows) next[r.product_id] = { conversion: r.conversion, unitRef: r.unit_ref };
+            for (const r of rows) next[r.product_id] = { conversion: r.conversion, unitRef: r.unit_ref, mepGrams: "", piecesPerKg: "" };
           }
           if (Object.entries(local).every(([id, value]) => next[id]?.conversion === value.conversion && next[id]?.unitRef === value.unitRef)) {
             localStorage.removeItem(REF_STORAGE_KEY);
@@ -459,10 +459,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         pendingRefs.current = { ...saved, ...pendingRefs.current };
       } catch {}
       for (const [id, patch] of Object.entries(pendingRefs.current)) {
-        next[id] = { conversion: "", unitRef: "", ...next[id], ...patch };
+        next[id] = { conversion: "", unitRef: "", mepGrams: "", piecesPerKg: "", ...next[id], ...patch };
         if (canEditStock) void commitReference(id, { ...patch });
       }
-      if (!cancelled) setRefMap(prev => ({ ...next, ...Object.fromEntries(Object.entries(pendingRefs.current).map(([id, patch]) => [id, { conversion: "", unitRef: "", ...next[id], ...prev[id], ...patch }])) }));
+      if (!cancelled) setRefMap(prev => ({ ...next, ...Object.fromEntries(Object.entries(pendingRefs.current).map(([id, patch]) => [id, { conversion: "", unitRef: "", mepGrams: "", piecesPerKg: "", ...next[id], ...prev[id], ...patch }])) }));
     };
     load();
     const ch = supabase
@@ -475,7 +475,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             if (id && !pendingRefs.current[id]) delete next[id];
           } else {
             const r = payload.new;
-            if (r?.product_id) next[r.product_id] = { conversion: r.conversion ?? "", unitRef: r.unit_ref ?? "", ...pendingRefs.current[r.product_id] };
+            if (r?.product_id) next[r.product_id] = { conversion: r.conversion ?? "", unitRef: r.unit_ref ?? "", mepGrams: r.mep_grams ?? "", piecesPerKg: r.pieces_per_kg ?? "", ...pendingRefs.current[r.product_id] };
           }
           return next;
         });
@@ -495,7 +495,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     pendingRefs.current[productId] = { ...pendingRefs.current[productId], ...patch };
     persistPendingRefs();
     setRefMap((prev) => {
-      const merged = { conversion: "", unitRef: "", ...prev[productId], ...patch };
+      const merged = { conversion: "", unitRef: "", mepGrams: "", piecesPerKg: "", ...prev[productId], ...patch };
       const next = { ...prev, [productId]: merged };
       return next;
     });
