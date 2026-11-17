@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Verrouiller MEP g/directe au jour de comptage et isoler les saisies par PDV/semaine ; anciennes valeurs conservées sans report automatique, tests ciblés validés, non publié.
+- [ ] Confirmer Bac 2,5 dans le compte connecté : aucune session automatique ne correspond au demandeur ; connexion dans l’aperçu nécessaire.
 - [x] Corriger l’affichage immédiat de MEP pièces + MEP directement en pièces pour les emballages, même hors dimanche ; conserver la somme hebdomadaire après rechargement, 17 tests réussis, non publié.
 - [x] Ajouter MEP directement en pièces après MEP (pièces) pour les emballages ; enregistrer leur somme en stock mise en place sans réécrire les saisies existantes ; 7 tests réussis, compilation valide, non publié.
 - [ ] Vérifier la nouvelle saisie emballage dans le compte connecté : aucune session automatique ne correspond au demandeur ; connexion dans l’aperçu nécessaire.

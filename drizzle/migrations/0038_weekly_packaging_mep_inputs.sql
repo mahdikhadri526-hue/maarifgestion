@@ -1,0 +1,3 @@
+ALTER TABLE public.mise_en_place_stocks ADD COLUMN IF NOT EXISTS mep_grams text, ADD COLUMN IF NOT EXISTS mep_direct_pieces text;
+COMMENT ON COLUMN public.mise_en_place_stocks.mep_grams IS 'Packaging weight input belonging only to this PDV and counting week';
+COMMENT ON COLUMN public.mise_en_place_stocks.mep_direct_pieces IS 'Packaging direct piece input belonging only to this PDV and counting week';
