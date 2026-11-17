@@ -6,3 +6,10 @@ export function mepPiecesFromGrams(grams: string, piecesPerKg: string): number |
   const pieces = (g * perKg) / 1000;
   return Number.isInteger(pieces) ? pieces : Math.round(pieces * 100) / 100;
 }
+
+/** Additionne les pièces calculées à la balance et les pièces comptées directement. */
+export function emballageMepTotal(grams: string, piecesPerKg: string, directPieces: string): number {
+  const calculated = mepPiecesFromGrams(grams, piecesPerKg) ?? 0;
+  const direct = Number(directPieces);
+  return Math.round((calculated + (Number.isFinite(direct) ? direct : 0)) * 100) / 100;
+}
