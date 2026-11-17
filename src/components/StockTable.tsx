@@ -53,6 +53,7 @@ import { ENABLE_ORDER_COLUMNS } from "@/lib/featureFlags";
 import { supabase } from "@/lib/db";
 import { cn, formatDateFR } from "@/lib/utils";
 import { stockReferenceQuantity, sumStockReferenceSources } from "@/lib/stockReference";
+import { mepPiecesFromGrams } from "@/lib/emballageMep";
 import { calculateStockTotals, loadPreviousStockTotals } from "@/lib/stockInitialTotal";
 import { downloadStructuredPdf } from "@/lib/printExport";
 import { WEEKLY_FRUIT_ARTICLES as FRUIT_ARTICLES, WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES, WEEKLY_ALL_ARTICLES as ALL_WEEKLY_ARTICLES } from "@/lib/weeklyArticles";
@@ -343,7 +344,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   // Conversion + Unité Réf. par produit (partagées via Supabase, synchronisées en temps réel)
   const REF_STORAGE_KEY = "stock_ref_conversions_v1";
-  type RefRow = { conversion: string; unitRef: string };
+  type RefRow = { conversion: string; unitRef: string; mepGrams: string; piecesPerKg: string };
   const [refMap, setRefMap] = useState<Record<string, RefRow>>({});
   const pendingRefKey = `stock_ref_pending_v2:${user?.id ?? "signed-out"}`;
   const pendingRefs = useRef<Record<string, StockReferencePatch>>({});
@@ -351,11 +352,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     try { localStorage.setItem(pendingRefKey, JSON.stringify(pendingRefs.current)); } catch {}
   };
   const saveReference = useMemo(() => createStockReferenceSaver(async (productId, patch) => {
-    const payload: { product_id: string; conversion?: string; unit_ref?: string; updated_at: string } = {
+    const payload: { product_id: string; conversion?: string; unit_ref?: string; mep_grams?: string; pieces_per_kg?: string; updated_at: string } = {
       product_id: productId, updated_at: new Date().toISOString(),
     };
     if (patch.conversion !== undefined) payload.conversion = patch.conversion;
     if (patch.unitRef !== undefined) payload.unit_ref = patch.unitRef;
+    if (patch.mepGrams !== undefined) payload.mep_grams = patch.mepGrams;
+    if (patch.piecesPerKg !== undefined) payload.pieces_per_kg = patch.piecesPerKg;
     return await supabase.from("stock_ref_conversions").upsert(payload, { onConflict: "product_id" });
   }), []);
   const commitReference = async (productId: string, patch: StockReferencePatch) => {
@@ -363,7 +366,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       await saveReference(productId, patch);
       const pending = pendingRefs.current[productId];
       if (pending) {
-        for (const key of ["conversion", "unitRef"] as const) {
+        for (const key of ["conversion", "unitRef", "mepGrams", "piecesPerKg"] as const) {
           if (patch[key] !== undefined && pending[key] === patch[key]) delete pending[key];
         }
         if (Object.keys(pending).length === 0) delete pendingRefs.current[productId];
@@ -421,7 +424,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     const load = async () => {
       const { data, error } = await supabase
         .from("stock_ref_conversions")
-        .select("product_id, conversion, unit_ref");
+        .select("product_id, conversion, unit_ref, mep_grams, pieces_per_kg");
       if (cancelled) return;
       if (error) {
         toast.error("Impossible de charger les conversions et unités Réf. enregistrées.");
@@ -430,7 +433,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       const next: Record<string, RefRow> = {};
       if (!error && data) {
         for (const r of data as any[]) {
-          next[r.product_id] = { conversion: r.conversion ?? "", unitRef: r.unit_ref ?? "" };
+          next[r.product_id] = { conversion: r.conversion ?? "", unitRef: r.unit_ref ?? "", mepGrams: r.mep_grams ?? "", piecesPerKg: r.pieces_per_kg ?? "" };
         }
       }
       // Preserve legacy entries until their database write actually succeeds.
@@ -445,7 +448,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           if (rows.length) {
             const { error: migrationError } = await supabase.from("stock_ref_conversions").upsert(rows, { onConflict: "product_id" });
             if (migrationError) throw migrationError;
-            for (const r of rows) next[r.product_id] = { conversion: r.conversion, unitRef: r.unit_ref };
+            for (const r of rows) next[r.product_id] = { conversion: r.conversion, unitRef: r.unit_ref, mepGrams: "", piecesPerKg: "" };
           }
           if (Object.entries(local).every(([id, value]) => next[id]?.conversion === value.conversion && next[id]?.unitRef === value.unitRef)) {
             localStorage.removeItem(REF_STORAGE_KEY);
@@ -457,10 +460,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         pendingRefs.current = { ...saved, ...pendingRefs.current };
       } catch {}
       for (const [id, patch] of Object.entries(pendingRefs.current)) {
-        next[id] = { conversion: "", unitRef: "", ...next[id], ...patch };
+        next[id] = { conversion: "", unitRef: "", mepGrams: "", piecesPerKg: "", ...next[id], ...patch };
         if (canEditStock) void commitReference(id, { ...patch });
       }
-      if (!cancelled) setRefMap(prev => ({ ...next, ...Object.fromEntries(Object.entries(pendingRefs.current).map(([id, patch]) => [id, { conversion: "", unitRef: "", ...next[id], ...prev[id], ...patch }])) }));
+      if (!cancelled) setRefMap(prev => ({ ...next, ...Object.fromEntries(Object.entries(pendingRefs.current).map(([id, patch]) => [id, { conversion: "", unitRef: "", mepGrams: "", piecesPerKg: "", ...next[id], ...prev[id], ...patch }])) }));
     };
     load();
     const ch = supabase
@@ -473,7 +476,15 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             if (id && !pendingRefs.current[id]) delete next[id];
           } else {
             const r = payload.new;
-            if (r?.product_id) next[r.product_id] = { conversion: r.conversion ?? "", unitRef: r.unit_ref ?? "", ...pendingRefs.current[r.product_id] };
+            if (r?.product_id) {
+              const p = pendingRefs.current[r.product_id];
+              next[r.product_id] = {
+                conversion: p?.conversion ?? r.conversion ?? "",
+                unitRef: p?.unitRef ?? r.unit_ref ?? "",
+                mepGrams: p?.mepGrams ?? r.mep_grams ?? "",
+                piecesPerKg: p?.piecesPerKg ?? r.pieces_per_kg ?? "",
+              };
+            }
           }
           return next;
         });
@@ -493,7 +504,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     pendingRefs.current[productId] = { ...pendingRefs.current[productId], ...patch };
     persistPendingRefs();
     setRefMap((prev) => {
-      const merged = { conversion: "", unitRef: "", ...prev[productId], ...patch };
+      const merged = { conversion: "", unitRef: "", mepGrams: "", piecesPerKg: "", ...prev[productId], ...patch };
       const next = { ...prev, [productId]: merged };
       return next;
     });
@@ -1945,6 +1956,47 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     <td className="p-3 text-right font-mono text-sm font-semibold text-muted-foreground">
                       {renderReference("stockRestant", v.stockRestant)}
                     </td>
+                  )}
+                  {showRefCols && (
+                    <>
+                      <td className="p-3 text-right">
+                        {level.category === "emballage" ? (
+                          <input
+                            type="number"
+                            step="any"
+                            value={refMap[level.productId]?.mepGrams ?? ""}
+                            onChange={(e) => updateRef(level.productId, { mepGrams: e.target.value })}
+                            placeholder="—"
+                            title="Poids de la mise en place relevé à la balance (grammes)"
+                            className="w-20 text-right bg-background border rounded px-2 py-1 text-xs font-mono"
+                          />
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-right">
+                        {level.category === "emballage" ? (
+                          <input
+                            type="number"
+                            step="any"
+                            value={refMap[level.productId]?.piecesPerKg ?? ""}
+                            onChange={(e) => updateRef(level.productId, { piecesPerKg: e.target.value })}
+                            placeholder="—"
+                            title="Nombre de pièces pour 1000 g"
+                            className="w-20 text-right bg-background border rounded px-2 py-1 text-xs font-mono"
+                          />
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-right font-mono text-sm font-semibold text-primary">
+                        {(() => {
+                          if (level.category !== "emballage") return <span className="text-muted-foreground">—</span>;
+                          const pieces = mepPiecesFromGrams(refMap[level.productId]?.mepGrams ?? "", refMap[level.productId]?.piecesPerKg ?? "");
+                          return pieces === null ? <span className="text-muted-foreground">—</span> : <span title="MEP (g) × Pièces / 1000 g ÷ 1000">{pieces}</span>;
+                        })()}
+                      </td>
+                    </>
                   )}
                   {showMepCols && (
                     <>

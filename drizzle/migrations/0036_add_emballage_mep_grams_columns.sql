@@ -1,0 +1,3 @@
+ALTER TABLE public.stock_ref_conversions
+  ADD COLUMN IF NOT EXISTS mep_grams TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS pieces_per_kg TEXT NOT NULL DEFAULT '';

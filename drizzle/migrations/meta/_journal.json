@@ -253,6 +253,13 @@
       "when": 1794616502744,
       "tag": "0035_stock_product_groups",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1794896100199,
+      "tag": "0036_add_emballage_mep_grams_columns",
+      "breakpoints": true
     }
   ]
 }
