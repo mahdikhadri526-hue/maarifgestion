@@ -267,6 +267,13 @@
       "when": 1794897333450,
       "tag": "0037_add_emballage_mep_direct_pieces",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1794898576780,
+      "tag": "0038_weekly_packaging_mep_inputs",
+      "breakpoints": true
     }
   ]
 }

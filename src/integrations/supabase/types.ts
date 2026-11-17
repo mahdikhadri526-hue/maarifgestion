@@ -1191,6 +1191,8 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          mep_direct_pieces: string | null
+          mep_grams: string | null
           pdv_id: string
           product_id: string
           quantity: number
@@ -1200,6 +1202,8 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          mep_direct_pieces?: string | null
+          mep_grams?: string | null
           pdv_id: string
           product_id: string
           quantity?: number
@@ -1209,6 +1213,8 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          mep_direct_pieces?: string | null
+          mep_grams?: string | null
           pdv_id?: string
           product_id?: string
           quantity?: number
