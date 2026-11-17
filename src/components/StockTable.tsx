@@ -1948,6 +1948,50 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       {renderReference("stockRestant", v.stockRestant)}
                     </td>
                   )}
+                  {showRefCols && (
+                    <>
+                      <td className="p-3 text-right">
+                        {level.category === "emballage" ? (
+                          <input
+                            type="number"
+                            step="any"
+                            value={refMap[level.productId]?.mepGrams ?? ""}
+                            onChange={(e) => updateRef(level.productId, { mepGrams: e.target.value })}
+                            placeholder="—"
+                            title="Poids de la mise en place relevé à la balance (grammes)"
+                            className="w-20 text-right bg-background border rounded px-2 py-1 text-xs font-mono"
+                          />
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-right">
+                        {level.category === "emballage" ? (
+                          <input
+                            type="number"
+                            step="any"
+                            value={refMap[level.productId]?.piecesPerKg ?? ""}
+                            onChange={(e) => updateRef(level.productId, { piecesPerKg: e.target.value })}
+                            placeholder="—"
+                            title="Nombre de pièces pour 1000 g"
+                            className="w-20 text-right bg-background border rounded px-2 py-1 text-xs font-mono"
+                          />
+                        ) : (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </td>
+                      <td className="p-3 text-right font-mono text-sm font-semibold text-primary">
+                        {(() => {
+                          if (level.category !== "emballage") return <span className="text-muted-foreground">—</span>;
+                          const grams = parseFloat(refMap[level.productId]?.mepGrams ?? "");
+                          const perKg = parseFloat(refMap[level.productId]?.piecesPerKg ?? "");
+                          if (!Number.isFinite(grams) || !Number.isFinite(perKg) || perKg === 0) return <span className="text-muted-foreground">—</span>;
+                          const pieces = (grams * perKg) / 1000;
+                          return <span title="MEP (g) × Pièces / 1000 g ÷ 1000">{Number.isInteger(pieces) ? pieces : Math.round(pieces * 100) / 100}</span>;
+                        })()}
+                      </td>
+                    </>
+                  )}
                   {showMepCols && (
                     <>
                   <td className="p-3 text-right font-mono text-sm">
