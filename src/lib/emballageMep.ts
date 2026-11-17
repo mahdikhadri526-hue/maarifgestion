@@ -13,3 +13,16 @@ export function emballageMepTotal(grams: string, piecesPerKg: string, directPiec
   const direct = Number(directPieces);
   return Math.round((calculated + (Number.isFinite(direct) ? direct : 0)) * 100) / 100;
 }
+
+/** Packaging edits remain visible on any unlocked day; other daily rows retain counting-day visibility. */
+export function dailyMepValues(
+  saved: Record<string, number>,
+  countingDay: boolean,
+  packagingIds: string[],
+  drafts: Record<string, number>,
+): Record<string, number> {
+  const visible = countingDay ? { ...saved } : Object.fromEntries(
+    packagingIds.filter(id => saved[id] !== undefined).map(id => [id, saved[id]]),
+  );
+  return { ...visible, ...drafts };
+}
