@@ -1,2 +1,3 @@
 - Reference conversion saves must await lazy database requests, serialize patches per product and surface failures; browser pending patches are user-scoped recovery only, never authorization or proof of a successful database save.
 - Built-in and custom aggregate reference columns share sumStockReferenceSources; sum source conversions before grouping so different package factors are not replaced by a conversion of native totals.
+- Packaging MEP input edits persist their calculated-plus-direct piece sum through the existing weekly MEP writer; never backfill historical counts automatically from reference settings.

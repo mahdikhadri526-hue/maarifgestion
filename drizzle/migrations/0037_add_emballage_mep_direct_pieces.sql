@@ -1,0 +1,1 @@
+ALTER TABLE public.stock_ref_conversions ADD COLUMN IF NOT EXISTS mep_direct_pieces TEXT NOT NULL DEFAULT '';

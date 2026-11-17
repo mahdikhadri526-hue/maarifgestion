@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Ajouter MEP directement en pièces après MEP (pièces) pour les emballages ; enregistrer leur somme en stock mise en place sans réécrire les saisies existantes ; 7 tests réussis, compilation valide, non publié.
+- [ ] Vérifier la nouvelle saisie emballage dans le compte connecté : aucune session automatique ne correspond au demandeur ; connexion dans l’aperçu nécessaire.
 - [x] Corriger les totaux Réf. de Nutella/Nestlé, Nespresso et Thé aromatisé avec la somme des conversions sources, partagée avec les regroupements personnalisés et le détail réel ; 27 tests réussis, compilation valide, données inchangées, non publié.
 - [ ] Confirmer Nutella et les totaux Réf. dans le compte connecté : aucun compte ne correspond au demandeur pour ouvrir une session automatique ; attendre sa connexion dans l’aperçu.
 - [x] Ajouter Écarts ingrédients et rendre les ajouts récents Stock restant / mise en place / regroupements / produits finis explicites dans la liste partagée des permissions utilisateurs et PDV, en conservant les clés et accès existants.

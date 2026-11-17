@@ -2213,6 +2213,7 @@ export type Database = {
       stock_ref_conversions: {
         Row: {
           conversion: string
+          mep_direct_pieces: string
           mep_grams: string
           pieces_per_kg: string
           product_id: string
@@ -2221,6 +2222,7 @@ export type Database = {
         }
         Insert: {
           conversion?: string
+          mep_direct_pieces?: string
           mep_grams?: string
           pieces_per_kg?: string
           product_id: string
@@ -2229,6 +2231,7 @@ export type Database = {
         }
         Update: {
           conversion?: string
+          mep_direct_pieces?: string
           mep_grams?: string
           pieces_per_kg?: string
           product_id?: string
