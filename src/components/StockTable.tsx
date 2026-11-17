@@ -475,7 +475,15 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             if (id && !pendingRefs.current[id]) delete next[id];
           } else {
             const r = payload.new;
-            if (r?.product_id) next[r.product_id] = { conversion: r.conversion ?? "", unitRef: r.unit_ref ?? "", mepGrams: r.mep_grams ?? "", piecesPerKg: r.pieces_per_kg ?? "", ...pendingRefs.current[r.product_id] };
+            if (r?.product_id) {
+              const p = pendingRefs.current[r.product_id];
+              next[r.product_id] = {
+                conversion: p?.conversion ?? r.conversion ?? "",
+                unitRef: p?.unitRef ?? r.unit_ref ?? "",
+                mepGrams: p?.mepGrams ?? r.mep_grams ?? "",
+                piecesPerKg: p?.piecesPerKg ?? r.pieces_per_kg ?? "",
+              };
+            }
           }
           return next;
         });
