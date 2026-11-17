@@ -1991,11 +1991,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       <td className="p-3 text-right font-mono text-sm font-semibold text-primary">
                         {(() => {
                           if (level.category !== "emballage") return <span className="text-muted-foreground">—</span>;
-                          const grams = parseFloat(refMap[level.productId]?.mepGrams ?? "");
-                          const perKg = parseFloat(refMap[level.productId]?.piecesPerKg ?? "");
-                          if (!Number.isFinite(grams) || !Number.isFinite(perKg) || perKg === 0) return <span className="text-muted-foreground">—</span>;
-                          const pieces = (grams * perKg) / 1000;
-                          return <span title="MEP (g) × Pièces / 1000 g ÷ 1000">{Number.isInteger(pieces) ? pieces : Math.round(pieces * 100) / 100}</span>;
+                          const pieces = mepPiecesFromGrams(refMap[level.productId]?.mepGrams ?? "", refMap[level.productId]?.piecesPerKg ?? "");
+                          return pieces === null ? <span className="text-muted-foreground">—</span> : <span title="MEP (g) × Pièces / 1000 g ÷ 1000">{pieces}</span>;
                         })()}
                       </td>
                     </>
