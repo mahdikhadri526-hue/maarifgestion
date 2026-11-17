@@ -252,6 +252,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   const canEditStock = can("edit_stock");
   const canEditRemaining = can("edit_remaining_stock") || can("edit_stock");
+  // Shared stock rows also identify packaging entries in the daily MEP view.
+  const { data: levels, loading, refresh } = useStockLevels();
   // Semaine sélectionnée pour la colonne « Stock mise en place » (lundi ISO).
   // Semaine suivie par le filtre de date : chaque semaine a ses propres saisies.
   const mepWeek = useMemo(() => {
@@ -626,7 +628,6 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
   // Un seul chargement pour toutes les catégories : le filtre Alim./Emb. est
   // appliqué côté client pour un basculement instantané (pas de refetch).
-  const { data: levels, loading, refresh } = useStockLevels();
   const NESPRESSO_IDS = ["ali-29", "ali-30", "ali-31", "ali-32"];
   const NESPRESSO_AGG_ID = "__nespresso_agg__";
   // Toute la construction des lignes (filtre catégorie, agrégats, recherche)
