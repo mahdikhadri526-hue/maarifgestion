@@ -343,7 +343,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
 
   // Conversion + Unité Réf. par produit (partagées via Supabase, synchronisées en temps réel)
   const REF_STORAGE_KEY = "stock_ref_conversions_v1";
-  type RefRow = { conversion: string; unitRef: string };
+  type RefRow = { conversion: string; unitRef: string; mepGrams: string; piecesPerKg: string };
   const [refMap, setRefMap] = useState<Record<string, RefRow>>({});
   const pendingRefKey = `stock_ref_pending_v2:${user?.id ?? "signed-out"}`;
   const pendingRefs = useRef<Record<string, StockReferencePatch>>({});
@@ -351,11 +351,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     try { localStorage.setItem(pendingRefKey, JSON.stringify(pendingRefs.current)); } catch {}
   };
   const saveReference = useMemo(() => createStockReferenceSaver(async (productId, patch) => {
-    const payload: { product_id: string; conversion?: string; unit_ref?: string; updated_at: string } = {
+    const payload: { product_id: string; conversion?: string; unit_ref?: string; mep_grams?: string; pieces_per_kg?: string; updated_at: string } = {
       product_id: productId, updated_at: new Date().toISOString(),
     };
     if (patch.conversion !== undefined) payload.conversion = patch.conversion;
     if (patch.unitRef !== undefined) payload.unit_ref = patch.unitRef;
+    if (patch.mepGrams !== undefined) payload.mep_grams = patch.mepGrams;
+    if (patch.piecesPerKg !== undefined) payload.pieces_per_kg = patch.piecesPerKg;
     return await supabase.from("stock_ref_conversions").upsert(payload, { onConflict: "product_id" });
   }), []);
   const commitReference = async (productId: string, patch: StockReferencePatch) => {
@@ -363,7 +365,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       await saveReference(productId, patch);
       const pending = pendingRefs.current[productId];
       if (pending) {
-        for (const key of ["conversion", "unitRef"] as const) {
+        for (const key of ["conversion", "unitRef", "mepGrams", "piecesPerKg"] as const) {
           if (patch[key] !== undefined && pending[key] === patch[key]) delete pending[key];
         }
         if (Object.keys(pending).length === 0) delete pendingRefs.current[productId];
