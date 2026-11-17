@@ -85,12 +85,26 @@ export async function getMiseEnPlaceStocksForWeek(weekStart: string): Promise<Re
   return map;
 }
 
-export async function setMiseEnPlaceStockForWeek(productId: string, quantity: number, weekStart: string) {
+export type PackagingMepInputs = { mepGrams: string; mepDirectPieces: string };
+
+export async function getPackagingMepInputsForWeek(weekStart: string): Promise<Record<string, PackagingMepInputs>> {
+  const { data, error } = await supabase.from("mise_en_place_stocks")
+    .select("product_id, mep_grams, mep_direct_pieces")
+    .eq("pdv_id", requireCurrentPdvId()).eq("week_start", weekStart);
+  if (error) throw error;
+  return Object.fromEntries((data ?? []).map(row => [row.product_id, {
+    mepGrams: row.mep_grams ?? "", mepDirectPieces: row.mep_direct_pieces ?? "",
+  }]));
+}
+
+export async function setMiseEnPlaceStockForWeek(productId: string, quantity: number, weekStart: string, inputs?: PackagingMepInputs) {
   const pdvId = requireCurrentPdvId();
   const { error } = await (supabase as any)
     .from("mise_en_place_stocks")
     .upsert(
-      { pdv_id: pdvId, product_id: productId, quantity, week_start: weekStart },
+      { pdv_id: pdvId, product_id: productId, quantity, week_start: weekStart,
+        ...(inputs ? { mep_grams: inputs.mepGrams, mep_direct_pieces: inputs.mepDirectPieces } : {}),
+      },
       { onConflict: "pdv_id,product_id,week_start" }
     );
   if (error) throw error;
@@ -153,4 +167,10 @@ export function inventoryDayOfWeek(weekStart: string): Date {
 /** Saisie toujours ouverte en vue jour ; les cumuls de période restent en lecture seule. */
 export function canEditMiseEnPlace(mode: string): boolean {
   return mode === "day";
+}
+
+export function canEditPackagingMep(mode: string, day: string, weekStart: string): boolean {
+  const date = inventoryDayOfWeek(weekStart);
+  const countingDay = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  return mode === "day" && day === countingDay;
 }

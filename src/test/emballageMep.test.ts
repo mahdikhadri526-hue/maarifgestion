@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { dailyMepValues, emballageMepTotal, mepPiecesFromGrams } from "@/lib/emballageMep";
 
 describe("mepPiecesFromGrams (Emballage : MEP grammes → pièces)", () => {
-  it("affiche immédiatement 50 pièces calculées + 20 directes = 70 même hors dimanche", () => {
+  it("affiche immédiatement 50 pièces calculées + 20 directes = 70 le jour du comptage", () => {
     const total = emballageMepTotal("500", "100", "20");
-    expect(dailyMepValues({ emballage: 12, alimentaire: 8 }, false, ["emballage"], { emballage: total })).toEqual({ emballage: 70 });
+    expect(dailyMepValues({ emballage: 12 }, true, ["emballage"], { emballage: total })).toEqual({ emballage: 70 });
   });
   it("conserve la somme enregistrée après rechargement sans modifier les autres catégories ni semaines", () => {
-    expect(dailyMepValues({ emballage: 70, alimentaire: 8 }, false, ["emballage"], {})).toEqual({ emballage: 70 });
+    expect(dailyMepValues({ emballage: 70, alimentaire: 8 }, false, ["emballage"], {})).toEqual({});
     expect(dailyMepValues({ emballage: 12, alimentaire: 8 }, true, ["emballage"], {})).toEqual({ emballage: 12, alimentaire: 8 });
     expect(dailyMepValues({}, false, ["emballage"], {})).toEqual({});
   });

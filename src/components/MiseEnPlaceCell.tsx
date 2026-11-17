@@ -6,6 +6,8 @@ import {
   getMiseEnPlaceStocksForWeek,
   setMiseEnPlaceStockForWeek,
   weekStartOf,
+  getPackagingMepInputsForWeek,
+  type PackagingMepInputs,
 } from "@/lib/miseEnPlaceData";
 
 /**
@@ -15,6 +17,7 @@ import {
  */
 export function useMiseEnPlace(weekStart?: string) {
   const [map, setMap] = useState<Record<string, number>>({});
+  const [packagingInputs, setPackagingInputs] = useState<Record<string, PackagingMepInputs>>({});
   const currentWeek = weekStartOf();
   const week = weekStart || currentWeek;
   const isCurrent = week === currentWeek;
@@ -22,26 +25,30 @@ export function useMiseEnPlace(weekStart?: string) {
   useEffect(() => {
     let cancelled = false;
     setMap({});
+    setPackagingInputs({});
     (async () => {
       let r = await getMiseEnPlaceStocksForWeek(week);
       if (isCurrent && Object.keys(r).length === 0) {
         r = await getMiseEnPlaceStocks(true);
       }
       if (!cancelled) setMap(r);
+      const inputs = await getPackagingMepInputsForWeek(week);
+      if (!cancelled) setPackagingInputs(inputs);
     })().catch(() => {});
     return () => { cancelled = true; };
   }, [week, isCurrent]);
 
-  const save = useCallback(async (productId: string, value: number) => {
+  const save = useCallback(async (productId: string, value: number, inputs?: PackagingMepInputs) => {
     setMap((prev) => ({ ...prev, [productId]: value }));
     try {
-      await setMiseEnPlaceStockForWeek(productId, value, week);
+      await setMiseEnPlaceStockForWeek(productId, value, week, inputs);
+      if (inputs) setPackagingInputs(prev => ({ ...prev, [productId]: inputs }));
     } catch (e: any) {
       toast.error(e?.message || "Enregistrement impossible");
     }
   }, [week]);
 
-  return { map, save };
+  return { map, save, packagingInputs };
 }
 
 export function MiseEnPlaceInput({

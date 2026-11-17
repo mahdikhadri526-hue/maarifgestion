@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mepTotalsFromRows, inventoryDayOfWeek, canEditMiseEnPlace } from "@/lib/miseEnPlaceData";
+import { mepTotalsFromRows, inventoryDayOfWeek, canEditMiseEnPlace, canEditPackagingMep } from "@/lib/miseEnPlaceData";
 
 // Règle : en filtre mois / période / tout, la colonne « Stock mise en place »
 // affiche le TOTAL des quantités saisies dont le jour de comptage tombe dans
@@ -40,6 +40,17 @@ describe("mepTotalsFromRows", () => {
 });
 
 describe("calendrier de saisie mise en place", () => {
+  it("verrouille MEP g et pièces directes sauf le dimanche de comptage", () => {
+    expect(canEditPackagingMep("day", "2026-11-15", "2026-11-09")).toBe(true);
+    expect(canEditPackagingMep("day", "2026-11-12", "2026-11-09")).toBe(false);
+    expect(canEditPackagingMep("month", "2026-11-15", "2026-11-09")).toBe(false);
+  });
+  it("autorise uniquement le dernier jour du mois dans la semaine de fin de mois", () => {
+    expect(canEditPackagingMep("day", "2026-10-31", "2026-10-26")).toBe(true);
+    expect(canEditPackagingMep("day", "2026-11-01", "2026-10-26")).toBe(false);
+    expect(canEditPackagingMep("day", "2026-11-30", "2026-11-30")).toBe(true);
+    expect(canEditPackagingMep("day", "2026-12-06", "2026-11-30")).toBe(false);
+  });
   it("conserve le dimanche comme date de comptage", () => {
     expect(inventoryDayOfWeek("2026-11-09").getDate()).toBe(15);
   });
