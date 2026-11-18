@@ -11,6 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Package, Plus, Save, Search, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { canDisplayAdminTable } from "@/lib/adminTableVisibility";
 
 interface Props {
   onChanged?: () => void;
@@ -24,9 +25,9 @@ const normalize = (s: string) =>
   s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 export function ProductCatalogManager({ onChanged, category = "all", conditionnementOnly = false }: Props) {
-  const { can, hasAdminRole } = useAuth();
-  const canEdit = conditionnementOnly ? hasAdminRole : can("edit_products");
-  const canDelete = can("delete_products");
+  const { can, hasAdminRole, user } = useAuth();
+  const canEdit = canDisplayAdminTable(user?.email, hasAdminRole);
+  const canDelete = canEdit;
   const canView = canEdit || canDelete || can("view_products");
 
   const [open, setOpen] = useState(false);

@@ -11,14 +11,17 @@ import { isProductActive } from "@/lib/stockData";
 import { combineStockSources, sumGroupReferenceColumn, loadCustomStockGroups, loadGroupSources, saveCustomStockGroup, type CustomStockGroup, type GroupSource } from "@/lib/customStockGroups";
 import { StockColumnHeaders } from "@/components/StockColumnHeaders";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { canDisplayAdminTable } from "@/lib/adminTableVisibility";
+import { useSharedCatalogRevision } from "@/hooks/useSharedCatalogRevision";
 
 export function CustomStockGroups({ start, end, mep, previous, references, updateRef, showTotals, showRefs }: {
   start?: string; end?: string; mep: Record<string, number>; previous: Record<string, number>;
   references: Record<string, { conversion: string; unitRef: string }>; showTotals: boolean; showRefs: boolean;
   updateRef: (id: string, patch: { conversion?: string; unitRef?: string }) => void;
 }) {
-  const { can } = useAuth();
-  const editable = can("edit_stock");
+  const { user, hasAdminRole, pdvId } = useAuth();
+  const editable = canDisplayAdminTable(user?.email, hasAdminRole);
+  const sharedRevision = useSharedCatalogRevision(["stock_product_groups", "product_catalog"], pdvId);
   const [groups, setGroups] = useState<CustomStockGroup[]>([]);
   const [sources, setSources] = useState<GroupSource[]>([]);
   const [open, setOpen] = useState(false);
@@ -39,7 +42,7 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
       .catch(() => { if (!cancelled) toast.error("Impossible de charger les regroupements"); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, [start, end]);
+  }, [start, end, pdvId, sharedRevision]);
   const save = async (exported: boolean) => {
     if (!editable) return;
     setBusy(true);
@@ -62,6 +65,7 @@ export function CustomStockGroups({ start, end, mep, previous, references, updat
     finally { setBusy(false); }
   };
   const exportGroup = async (group: CustomStockGroup) => {
+    if (!editable) return;
     setBusy(true);
     try { await saveCustomStockGroup({ ...group, exported: true }); setGroups(await loadCustomStockGroups()); toast.success("Regroupement disponible dans Recettes et Écarts ingrédients"); }
     catch { toast.error("Export non enregistré"); }

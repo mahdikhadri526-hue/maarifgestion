@@ -21,6 +21,9 @@ import {
 import { ArrowLeft, ChefHat, Plus, Save, Search, Trash2, Link2 } from "lucide-react";
 import { toast } from "sonner";
 import { loadCustomStockGroups, groupIngredientId, type CustomStockGroup } from "@/lib/customStockGroups";
+import { canDisplayAdminTable } from "@/lib/adminTableVisibility";
+import { useSharedCatalogRevision } from "@/hooks/useSharedCatalogRevision";
+import { loadProductCatalog } from "@/lib/productCatalog";
 
 type FinishedProduct = {
   id: string;
@@ -62,15 +65,16 @@ function isCustom(productId: string) {
 }
 
 export function RecipeManager() {
-  const { can } = useAuth();
-  const canEdit = can("edit_recipes");
+  const { user, hasAdminRole, pdvId } = useAuth();
+  const canEdit = canDisplayAdminTable(user?.email, hasAdminRole);
+  const sharedRevision = useSharedCatalogRevision(["recipes", "recipe_ingredients", "finished_products", "stock_product_groups", "product_catalog"], pdvId);
   const [exportedStock, setExportedStock] = useState<CustomStockGroup[]>([]);
   useEffect(() => {
-    loadCustomStockGroups().then(rows => setExportedStock(rows.filter(row => row.exported)))
+    loadProductCatalog().then(() => loadCustomStockGroups()).then(rows => setExportedStock(rows.filter(row => row.exported)))
       .catch(() => toast.error("Impossible de charger les produits exportés du stock"));
-  }, []);
+  }, [sharedRevision, pdvId]);
 
-  const stockProducts = useMemo(() => getProducts(), []);
+  const stockProducts = useMemo(() => getProducts(), [exportedStock]);
   const stockAggregates = useMemo(() => getStockRecipeAggregates(stockProducts), [stockProducts]);
   const stockMap = useMemo(() => {
     const m = new Map<string, { name: string; category: Category }>();
@@ -139,7 +143,7 @@ export function RecipeManager() {
 
   useEffect(() => {
     loadAll();
-  }, []);
+  }, [sharedRevision]);
 
   const openProduct = async (p: FinishedProduct) => {
     setLinkChanges([]);
@@ -147,6 +151,12 @@ export function RecipeManager() {
     setEditingProduct({ ...p });
     const recipe = recipes.find((r) => r.finished_product_id === p.id) ?? null;
     if (!recipe) {
+      if (!canEdit) {
+        setSelectedId(null);
+        setEditingProduct(null);
+        toast.info("Aucune recette enregistrée pour ce produit.");
+        return;
+      }
       // create one on the fly
       const { data, error } = await supabase
         .from("recipes")
@@ -175,6 +185,7 @@ export function RecipeManager() {
   };
 
   const createProduct = async () => {
+    if (!canEdit) return;
     const name = newName.trim();
     if (!name) {
       toast.error("Le nom du produit est obligatoire");
@@ -213,6 +224,24 @@ export function RecipeManager() {
     setLinkChanges([]);
     setDirty(false);
   };
+
+  useEffect(() => {
+    // Never replace an admin's unsaved draft with another client's refresh.
+    if (!selectedId || dirty || saving || creating) return;
+    const product = products.find(row => row.id === selectedId);
+    const recipe = recipes.find(row => row.finished_product_id === selectedId);
+    if (!product || !recipe) return;
+    let cancelled = false;
+    void supabase.from("recipe_ingredients").select("*").eq("recipe_id", recipe.id).then(({ data, error }) => {
+      if (cancelled || error) return;
+      setEditingProduct({ ...product });
+      setEditingRecipe({ ...recipe });
+      const ingredients = ((data ?? []) as Ingredient[]).map(ing => ({ ...ing, product_id: canonicalStockIngredientId(ing.product_id) }));
+      setEditingIngs(ingredients);
+      setOriginalIngs(ingredients);
+    });
+    return () => { cancelled = true; };
+  }, [products, recipes, selectedId, dirty, saving, creating]);
 
   const updateIng = (idx: number, patch: Partial<Ingredient>) => {
     setEditingIngs((arr) => arr.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
@@ -254,7 +283,7 @@ export function RecipeManager() {
   };
 
   const save = async () => {
-    if (!editingProduct || !editingRecipe) return;
+    if (!canEdit || !editingProduct || !editingRecipe) return;
     // validate
     for (const ing of editingIngs) {
       if (!ing.quantity || ing.quantity <= 0) {
@@ -586,9 +615,6 @@ export function RecipeManager() {
             </Button>
           )}
         </div>
-        <p className="text-sm text-muted-foreground">
-          Sélectionnez un produit fini pour modifier la quantité de chaque ingrédient.
-        </p>
 
         <div className="grid sm:grid-cols-2 gap-2">
           <div className="relative">

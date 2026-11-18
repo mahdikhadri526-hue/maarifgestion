@@ -16,12 +16,14 @@ import { formatISODate } from "@/lib/stockWeeklyAggregates";
 import { materialUsageDisplay } from "@/lib/materialDisplayUnits";
 import { MaterialTheoreticalDetails } from "@/components/MaterialTheoreticalDetails";
 import { MaterialActualDetails } from "@/components/MaterialActualDetails";
+import { useSharedCatalogRevision } from "@/hooks/useSharedCatalogRevision";
 
 const categoryLabels: Record<string, string> = { surplace: "Sur place", emporter: "Emporter", tartes: "Tartes", autres: "Autres", alimentaire: "Alimentaire", emballage: "Emballage" };
 const number = (value: number | null) => value === null ? "—" : value.toLocaleString("fr-FR", { maximumFractionDigits: 4 });
 
 export function MaterialVarianceModule() {
   const { pdvId, pdv, can } = useAuth();
+  const sharedRevision = useSharedCatalogRevision(["recipes", "recipe_ingredients", "finished_products", "stock_product_groups", "product_catalog"], pdvId);
   const today = formatISODate(new Date());
   const [start, setStart] = useState(`${today.slice(0, 7)}-01`);
   const [end, setEnd] = useState(today);
@@ -52,6 +54,15 @@ export function MaterialVarianceModule() {
     if (!(await checkKioskPin(pin))) { toast.error("Code incorrect"); setPin(""); return; }
     setPin(""); setPinOpen(false); setManageHidden(true);
   };
+
+  useEffect(() => {
+    if (sharedRevision === 0) return;
+    let cancelled = false;
+    void loadMaterialAnalysis(period.start, period.end).then(result => {
+      if (!cancelled) setData(result);
+    }).catch(() => { if (!cancelled) toast.error("Actualisation des recettes impossible"); });
+    return () => { cancelled = true; };
+  }, [sharedRevision, period, pdvId]);
 
   useEffect(() => {
     let cancelled = false;

@@ -2847,6 +2847,7 @@ export type Database = {
         Args: { _pdv_id: string; _permission_key: string; _user_id: string }
         Returns: boolean
       }
+      can_manage_shared_catalog: { Args: never; Returns: boolean }
       can_participate_inventory: {
         Args: { _session_id: string; _user_id: string }
         Returns: boolean

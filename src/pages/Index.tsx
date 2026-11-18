@@ -38,6 +38,7 @@ import { KioskToggle } from "@/components/KioskToggle";
 import { VoiceGuideManager } from "@/components/VoiceGuideManager";
 import { PageTitle } from "@/components/PageTitle";
 import { canDisplayAdminTable } from "@/lib/adminTableVisibility";
+import { useSharedCatalogRevision } from "@/hooks/useSharedCatalogRevision";
 
 type Tab = "dashboard" | "rh" | "planning" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "ecarts-matieres" | "pep" | "tech" | "pointage";
 
@@ -48,12 +49,13 @@ const Index = () => {
   const [showAdmin, setShowAdmin] = useState(false);
   const [showAnomalies, setShowAnomalies] = useState(false);
   const [kiosk, setKiosk] = useState(false);
+  const { can, isAdmin, hasAdminRole, isRegionalAdmin, user, pdvId } = useAuth();
+  const catalogRevision = useSharedCatalogRevision(["product_catalog"], pdvId);
 
   // Charge le catalogue produits personnalisé (ajouts / modifications / suppressions)
   useEffect(() => {
     void loadProductCatalog().then(() => setRefreshKey((k) => k + 1));
-  }, []);
-  const { can, isAdmin, hasAdminRole, isRegionalAdmin, user } = useAuth();
+  }, [pdvId, catalogRevision]);
   const showRestrictedTables = canDisplayAdminTable(user?.email, hasAdminRole);
 
   // Mode kiosque automatique : 2 secondes après la connexion (désactivé à la déconnexion)
@@ -95,8 +97,8 @@ const Index = () => {
     { id: "stuffs-glace" as Tab, label: "Contrôle STUFFS de glace", icon: Snowflake, perm: "view_glace", alt: "view_autocontrol" },
     { id: "hebdo" as Tab, label: "Suivi hebdomadaire", icon: CalendarDays, perm: "view_weekly" },
     { id: "temperatures" as Tab, label: "Températures frigos", icon: Thermometer, perm: "view_temperatures" },
+    { id: "recettes" as Tab, label: "Recettes des produits finis", icon: ChefHat, perm: "view_recipes" },
     ...(showRestrictedTables ? [
-      { id: "recettes" as Tab, label: "Recettes des produits finis", icon: ChefHat, perm: "view_recipes" },
       { id: "inventaire" as Tab, label: "Inventaire", icon: PackageCheck, perm: "view_inventory" },
     ] : []),
     { id: "nettoyage" as Tab, label: "Nettoyage", icon: Sparkles, perm: "view_cleaning" },
@@ -110,7 +112,7 @@ const Index = () => {
   ];
   const ATTENDANCE_ENABLED = isPreviewHost();
   const tabs = allTabs.filter(
-    (t) => (can(t.perm) || ("alt" in t && typeof t.alt === "string" && can(t.alt))) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED) && (t.id !== "rh" || ATTENDANCE_ENABLED) && (t.id !== "planning" || ATTENDANCE_ENABLED)
+    (t) => (t.id === "recettes" || can(t.perm) || ("alt" in t && typeof t.alt === "string" && can(t.alt))) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED) && (t.id !== "rh" || ATTENDANCE_ENABLED) && (t.id !== "planning" || ATTENDANCE_ENABLED)
   );
   const pageTitles: Partial<Record<Tab, string>> = {
     "stock-initial": "Stock Initial",
@@ -334,7 +336,7 @@ const Index = () => {
             {tab === "stuffs-glace" && <GlaceStuffControl />}
             {tab === "hebdo" && <WeeklyTracking />}
             {tab === "temperatures" && <FridgeTemperatureManager />}
-            {showRestrictedTables && tab === "recettes" && <RecipeManager />}
+            {tab === "recettes" && <RecipeManager />}
             {tab === "ecarts-matieres" && <MaterialVarianceModule />}
             {tab === "nettoyage" && <CleaningManager />}
             {showRestrictedTables && tab === "inventaire" && <InventoryModule />}

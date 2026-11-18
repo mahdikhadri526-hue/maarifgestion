@@ -274,6 +274,13 @@
       "when": 1794898576780,
       "tag": "0038_weekly_packaging_mep_inputs",
       "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1794972314441,
+      "tag": "0039_shared_recipe_reads_designated_admin_writes",
+      "breakpoints": true
     }
   ]
 }
