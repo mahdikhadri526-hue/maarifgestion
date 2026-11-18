@@ -1,7 +1,7 @@
 # Roadmap
 - [x] Partager recettes et produits finis en consultation, réserver la gestion des recettes/produits/regroupements à khadri1982@gmail.com ; protections restrictives en base et actualisation partagée, 29 tests réussis, aucune donnée réécrite, non publié.
 - [ ] Vérifier le partage entre comptes dans l’aperçu connecté : aucune session du demandeur disponible ; connexion dans l’aperçu nécessaire.
-- [ ] Confirmer si les regroupements doivent être communs à tous les PDV (question ouverte ; périmètre PDV conservé provisoirement).
+- [x] Partager les définitions de regroupements entre tous les PDV, gestion exclusivement admin ; identifiants et stocks PDV conservés, 21 tests réussis et politiques vérifiées, non publié ; contrôle connecté restant ci-dessus.
 - [x] Verrouiller MEP g/directe au jour de comptage et isoler les saisies par PDV/semaine ; anciennes valeurs conservées sans report automatique, tests ciblés validés, non publié.
 - [ ] Confirmer Bac 2,5 dans le compte connecté : aucune session automatique ne correspond au demandeur ; connexion dans l’aperçu nécessaire.
 - [x] Corriger l’affichage immédiat de MEP pièces + MEP directement en pièces pour les emballages, même hors dimanche ; conserver la somme hebdomadaire après rechargement, 17 tests réussis, non publié.

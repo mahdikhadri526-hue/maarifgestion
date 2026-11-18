@@ -1,5 +1,4 @@
 import { supabase } from "@/lib/db";
-import { requireCurrentPdvId } from "@/lib/pdvStore";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { getStockLevels, getMovements, getInitialStocks, getProductUnits, getProductUnitConfigs, movementPiecesToDisplay, getGlaceAggregateForRange, getToppingsBreakdown } from "@/lib/stockData";
 import { buildWeeklyAggregateTotals, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
@@ -97,7 +96,7 @@ export function customGroupMaterialActualDetail(
 }
 
 export async function loadCustomStockGroups() {
-  return fetchAllRows<CustomStockGroup>(() => supabase.from("stock_product_groups").select("*").eq("pdv_id", requireCurrentPdvId()).order("created_at"));
+  return fetchAllRows<CustomStockGroup>(() => supabase.from("stock_product_groups").select("*").order("created_at"));
 }
 export async function saveCustomStockGroup(group: CustomStockGroup) {
   const { error } = await supabase.from("stock_product_groups").upsert(group);

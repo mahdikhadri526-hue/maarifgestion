@@ -1,0 +1,3 @@
+CREATE POLICY stock_groups_shared_read ON public.stock_product_groups FOR SELECT TO authenticated USING (true);
+CREATE POLICY stock_groups_shared_admin ON public.stock_product_groups FOR ALL TO authenticated USING (public.can_manage_shared_catalog()) WITH CHECK (public.can_manage_shared_catalog());
+COMMENT ON COLUMN public.stock_product_groups.pdv_id IS 'Creation PDV provenance only; group definitions are shared across PDVs, source stock calculations remain PDV-scoped.';

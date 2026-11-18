@@ -20,7 +20,7 @@ export function useSharedCatalogRevision(tables: string[], pdvId?: string | null
     names.forEach(table => {
       channel.on("postgres_changes", {
         event: "*", schema: "public", table,
-        ...(pdvId && ["stock_product_groups", "product_catalog"].includes(table) ? { filter: `pdv_id=eq.${pdvId}` } : {}),
+        ...(pdvId && table === "product_catalog" ? { filter: `pdv_id=eq.${pdvId}` } : {}),
       }, refresh);
     });
     channel.subscribe();

@@ -2,4 +2,4 @@
 - Built-in and custom aggregate reference columns share sumStockReferenceSources; sum source conversions before grouping so different package factors are not replaced by a conversion of native totals.
 - Packaging MEP input edits persist their calculated-plus-direct piece sum through the existing weekly MEP writer; never backfill historical counts automatically from reference settings.
 - Packaging weight/direct inputs live on PDV-week MEP rows, not shared reference conversions, to prevent cross-week repetition; display only on counting day.
-- Shared catalog views use lifecycle-managed, debounced Realtime subscriptions and focus refresh; recipe reads are authenticated, while designated-admin writes are enforced by restrictive database policies, preserving existing PDV boundaries.
+- Shared catalog views use lifecycle-managed, debounced Realtime subscriptions and focus refresh; recipes and group definitions have authenticated reads and designated-admin write guards, while source stock quantities remain PDV-scoped.

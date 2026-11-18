@@ -281,6 +281,13 @@
       "when": 1794972314441,
       "tag": "0039_shared_recipe_reads_designated_admin_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1794972499449,
+      "tag": "0040_share_stock_group_definitions_across_pdvs",
+      "breakpoints": true
     }
   ]
 }
