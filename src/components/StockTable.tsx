@@ -1,4 +1,3 @@
-import { splitRegularisation } from "@/lib/stockRegularisation";
 import { useState, useEffect, useDeferredValue, useMemo, useRef } from "react";
 import {
   MACARON_ARTICLES, MACARON_AGG_ID, SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID,
@@ -24,6 +23,7 @@ import {
   getProductUnitConfigs,
   movementPiecesToDisplay,
   roundStockQuantity,
+  movementFlow,
   setInitialStock,
   getGlaceBreakdownForRange,
   TOPPINGS_ALI_PRODUCT_IDS,
@@ -620,14 +620,22 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       if (diff < 0) {
         rows = [{ ...base, date: adjustmentDate, type: "sortie", quantity: Math.abs(diff) }];
       } else {
-        // Diminuer les sorties : d'abord celles du jour, puis celles des jours précédents.
+        // Diminuer uniquement les sorties du jour : jamais les entrées,
+        // jamais le stock initial, et jamais de sorties négatives.
         const { data: past, error: pastErr } = await supabase
           .from("stock_movements")
           .select("date, type, quantity, source")
           .eq("product_id", adjustData.productId)
+          .gte("date", adjustmentDate)
           .lte("date", adjustmentDate + "T23:59:59");
         if (pastErr) throw pastErr;
-        rows = splitRegularisation(diff, adjustmentDate, (past || []) as any[]).map((r) => ({ ...base, date: r.date, type: "entree", quantity: r.quantity }));
+        const daySorties = roundStockQuantity(((past || []) as any[]).reduce((sum, m) => sum + movementFlow(m, Number(m.quantity) || 0).s, 0));
+        if (diff > daySorties) {
+          toast.error(`Impossible : les sorties du jour (${Math.max(0, daySorties)}) ne peuvent pas devenir négatives. Maximum possible : ${roundStockQuantity(adjustData.oldRestant + Math.max(0, daySorties))}`);
+          setAdjustSaving(false);
+          return;
+        }
+        rows = [{ ...base, date: adjustmentDate, type: "entree", quantity: diff }];
       }
       const { error } = await supabase.from("stock_movements").insert(rows as any);
       if (error) throw error;
@@ -1023,8 +1031,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         if (!byProduct[m.productId]) byProduct[m.productId] = {};
         const bd = byProduct[m.productId];
         if (!bd[d]) bd[d] = { entrees: 0, sorties: 0 };
-        if (m.type === "entree") bd[d].entrees += dq;
-        else bd[d].sorties += dq;
+        const flow = movementFlow(m, dq);
+        bd[d].entrees += flow.e;
+        bd[d].sorties += flow.s;
       });
       const results: Record<string, { stockInitial: number; entrees: number; sorties: number; stockRestant: number }> = {};
       levels.forEach((lvl) => {

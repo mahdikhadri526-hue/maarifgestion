@@ -2,7 +2,7 @@ import { supabase } from "@/lib/db";
 import { requireCurrentPdvId } from "@/lib/pdvStore";
 import { inventoryDayOfWeek } from "@/lib/miseEnPlaceData";
 import { formatISODate, buildWeeklyDailyStocks, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
-import { getMovements, getInitialStocks, getProductUnits, getProductUnitConfigs, movementPiecesToDisplay, getGlaceAggregateForRange, getToppingsBreakdown, getProducts, roundStockQuantity } from "@/lib/stockData";
+import { getMovements, getInitialStocks, getProductUnits, getProductUnitConfigs, movementPiecesToDisplay, getGlaceAggregateForRange, getToppingsBreakdown, getProducts, roundStockQuantity, movementFlow } from "@/lib/stockData";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 
 export type StockCount = { product_id: string; quantity: number; week_start: string };
@@ -40,13 +40,13 @@ export function sumPreviousCounts(rows: StockCount[], periodStart: string) {
  */
 export function chainDailyStockTotals(
   start: number,
-  moves: { date: string; type: string; qty: number }[],
+  moves: { date: string; type: string; qty: number; source?: string | null }[],
   meps: { date: string; qty: number }[],
   period: StockCarryPeriod = "day",
 ) {
   const days = new Map<string, { e: number; s: number; m: number }>();
   const get = (date: string) => { const d = period === "month" ? date.slice(0, 7) : date; let v = days.get(d); if (!v) { v = { e: 0, s: 0, m: 0 }; days.set(d, v); } return v; };
-  for (const mv of moves) { const v = get(mv.date); if (mv.type === "entree") v.e += mv.qty; else v.s += mv.qty; }
+  for (const mv of moves) { const v = get(mv.date); const f = movementFlow(mv, mv.qty); v.e += f.e; v.s += f.s; }
   for (const mp of meps) get(mp.date).m += mp.qty;
   let total = start;
   for (const d of [...days.keys()].sort()) {
@@ -127,7 +127,7 @@ export async function loadPreviousStockTotals(periodStart: string, weeklyGroups:
       if (!sourceIds.includes(movement.productId) || movement.date.slice(0, 10) >= periodStart) continue;
       const sourceId = movement.productId;
       const qty = movementPiecesToDisplay(movement.quantity, units[sourceId] || "PIECE", configs[sourceId], sourceId);
-      if (movement.type === "entree") entrees += qty; else sorties += qty;
+      const f = movementFlow(movement, qty); entrees += f.e; sorties += f.s;
     }
     const name = products.find(product => product.id === id)?.name;
     if (name === "GLACE") {
@@ -150,6 +150,7 @@ export async function loadPreviousStockTotals(periodStart: string, weeklyGroups:
         .map(movement => ({
           date: movement.date.slice(0, 10),
           type: movement.type,
+          source: movement.source,
           qty: movementPiecesToDisplay(movement.quantity, units[movement.productId] || "PIECE", configs[movement.productId], movement.productId),
         })), counts.filter(row => row.product_id === id && row.week_start !== "2000-01-03")
         .map(row => ({ date: formatISODate(inventoryDayOfWeek(row.week_start)), qty: Number(row.quantity) || 0 }))
