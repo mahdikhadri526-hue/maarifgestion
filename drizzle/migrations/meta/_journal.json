@@ -288,6 +288,13 @@
       "when": 1794972499449,
       "tag": "0040_share_stock_group_definitions_across_pdvs",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1795090668749,
+      "tag": "0041_restrict_shared_reads_and_video_upload_owner",
+      "breakpoints": true
     }
   ]
 }
