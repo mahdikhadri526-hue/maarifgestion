@@ -146,6 +146,13 @@ export function roundStockQuantity(value: number): number {
   return Number.isInteger(value) ? value : Number(value.toFixed(2));
 }
 
+
+/** Régularisation : n'agit que sur les sorties (jamais sur les entrées). */
+export function movementFlow(m: { type: string; source?: string | null }, q: number): { e: number; s: number } {
+  if (m.source === "regularisation") return { e: 0, s: m.type === "sortie" ? q : -q };
+  return m.type === "entree" ? { e: q, s: 0 } : { e: 0, s: q };
+}
+
 export function movementPiecesToDisplay(
   quantity: number,
   unit: UnitType,
@@ -920,7 +927,7 @@ export async function getToppingsBreakdown(
       const d = m.date.split("T")[0];
       if (!c.days[d]) c.days[d] = { e: 0, s: 0 };
       const q = movementPiecesToDisplay(m.quantity, unit, configs[pid], pid);
-      if (m.type === "entree") c.days[d].e += q; else c.days[d].s += q;
+      { const f = movementFlow(m, q); c.days[d].e += f.e; c.days[d].s += f.s; }
     });
     comps.push(c);
   }
@@ -996,8 +1003,7 @@ export async function getToppingsDailyHistory(): Promise<DailyStockRecord[]> {
         const d = m.date.split("T")[0];
         if (!byDate[d]) byDate[d] = { entrees: 0, sorties: 0 };
         const q = movementPiecesToDisplay(m.quantity, unit, config, pid);
-        if (m.type === "entree") byDate[d].entrees += q;
-        else byDate[d].sorties += q;
+        { const f = movementFlow(m, q); byDate[d].entrees += f.e; byDate[d].sorties += f.s; }
       });
   }
 
@@ -1230,8 +1236,7 @@ export async function getProductDailyHistory(productId: string): Promise<DailySt
     const d = m.date.split("T")[0];
     if (!byDate[d]) byDate[d] = { entrees: 0, sorties: 0 };
     const displayQuantity = movementPiecesToDisplay(m.quantity, unit, config, productId);
-    if (m.type === "entree") byDate[d].entrees += displayQuantity;
-    else byDate[d].sorties += displayQuantity;
+    { const f = movementFlow(m, displayQuantity); byDate[d].entrees += f.e; byDate[d].sorties += f.s; }
   });
 
   const dates = Object.keys(byDate).sort();
@@ -1319,7 +1324,7 @@ export async function getSourceDailyDetails(
       const d = m.date.split("T")[0];
       if (!days[d]) days[d] = { e: 0, s: 0 };
       const q = movementPiecesToDisplay(m.quantity, unit, configs[pid], pid);
-      if (m.type === "entree") days[d].e += q; else days[d].s += q;
+      { const f = movementFlow(m, q); days[d].e += f.e; days[d].s += f.s; }
     });
     let cumul = initialStocks[pid] || 0;
     const daily: SourceDailyDetail["daily"] = [];

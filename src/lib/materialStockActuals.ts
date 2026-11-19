@@ -1,5 +1,5 @@
 import { stockReferenceQuantity, sumStockReferenceSources } from "@/lib/stockReference";
-import { roundStockQuantity, type StockLevel, type StockMovement } from "@/lib/stockData";
+import { roundStockQuantity, movementFlow, type StockLevel, type StockMovement } from "@/lib/stockData";
 import { buildWeeklyAggregateTotals, MACARON_AGG_ID, MACARON_ARTICLES, AMANDES_AGG_ID, AMANDES_WEEKLY_ARTICLE, SIROP_AGG_ID, SIROP_CARAMEL_WEEKLY_ARTICLE, SIROP_CHOCOLAT_ALI_ID, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
 import { getStockRecipeAggregates, stockRecipePeriodTotals } from "@/lib/stockRecipeIngredients";
 import type { MaterialActual } from "@/lib/materialVariance";
@@ -44,8 +44,7 @@ function computeMaterialStockActuals(
     const row = totals[movement.productId];
     if (!row || date < start || date > end) continue;
     const quantity = roundStockQuantity(movement.quantity);
-    if (movement.type === "entree") row.entrees += quantity;
-    else row.sorties += quantity;
+    { const f = movementFlow(movement, quantity); row.entrees += f.e; row.sorties += f.s; }
   }
   Object.assign(totals, overrides);
   const actuals: Record<string, MaterialActual> = {};

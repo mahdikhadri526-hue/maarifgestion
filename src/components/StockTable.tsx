@@ -1,3 +1,4 @@
+import { splitRegularisation } from "@/lib/stockRegularisation";
 import { useState, useEffect, useDeferredValue, useMemo, useRef } from "react";
 import {
   MACARON_ARTICLES, MACARON_AGG_ID, SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID,
@@ -607,17 +608,28 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       // diff > 0 (stock augmenté) → type=entree, source=regularisation → soustrait des sorties
       // diff < 0 (stock diminué) → type=sortie, source=regularisation → ajoute aux sorties
       const adjustmentDate = getAdjustmentDate();
-      const { error } = await supabase.from("stock_movements").insert({
-        date: adjustmentDate,
+      const base = {
         product_id: adjustData.productId,
         product_name: adjustData.productName,
         category: adjustData.category,
-        type: diff > 0 ? "entree" : "sortie",
-        quantity: Math.abs(diff),
         performed_by: op,
         unit_used: "PIECE",
         source: "regularisation",
-      } as any);
+      };
+      let rows: any[];
+      if (diff < 0) {
+        rows = [{ ...base, date: adjustmentDate, type: "sortie", quantity: Math.abs(diff) }];
+      } else {
+        // Diminuer les sorties : d'abord celles du jour, puis celles des jours précédents.
+        const { data: past, error: pastErr } = await supabase
+          .from("stock_movements")
+          .select("date, type, quantity, source")
+          .eq("product_id", adjustData.productId)
+          .lte("date", adjustmentDate + "T23:59:59");
+        if (pastErr) throw pastErr;
+        rows = splitRegularisation(diff, adjustmentDate, (past || []) as any[]).map((r) => ({ ...base, date: r.date, type: "entree", quantity: r.quantity }));
+      }
+      const { error } = await supabase.from("stock_movements").insert(rows as any);
       if (error) throw error;
       toast.success(`Régularisation enregistrée (${adjustData.oldRestant} → ${newRestant})`);
       setAdjustOpen(false);

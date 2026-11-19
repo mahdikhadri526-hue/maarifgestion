@@ -1,6 +1,6 @@
 import { supabase } from "@/lib/db";
 import { fetchAllRows } from "@/lib/supabasePaginate";
-import { getStockLevels, getMovements, getInitialStocks, getProductUnits, getProductUnitConfigs, movementPiecesToDisplay, getGlaceAggregateForRange, getToppingsBreakdown } from "@/lib/stockData";
+import { getStockLevels, getMovements, getInitialStocks, getProductUnits, getProductUnitConfigs, movementPiecesToDisplay, movementFlow, getGlaceAggregateForRange, getToppingsBreakdown } from "@/lib/stockData";
 import { buildWeeklyAggregateTotals, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
 import { stockRecipeIngredients, getStockRecipeAggregates } from "@/lib/stockRecipeIngredients";
 import { WEEKLY_ALL_ARTICLES } from "@/lib/weeklyArticles";
@@ -118,7 +118,7 @@ export async function loadGroupSources(start?: string, end?: string): Promise<Gr
         const date = move.date.slice(0, 10);
         const day = daily.get(date) ?? { e: 0, s: 0 };
         const qty = movementPiecesToDisplay(move.quantity, units[level.productId] ?? "PIECE", configs[level.productId], level.productId);
-        if (move.type === "entree") day.e += qty; else day.s += qty;
+        { const f = movementFlow(move, qty); day.e += f.e; day.s += f.s; }
         daily.set(date, day);
       }
       let current = initial[level.productId] ?? 0;

@@ -295,6 +295,13 @@
       "when": 1795090668749,
       "tag": "0041_restrict_shared_reads_and_video_upload_owner",
       "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1795091138454,
+      "tag": "0042_period_aggregates_regularisation_on_sorties",
+      "breakpoints": true
     }
   ]
 }
