@@ -58,6 +58,8 @@ import { dailyMepValues, emballageMepTotal, mepPiecesFromGrams } from "@/lib/emb
 import { calculateStockTotals, loadPreviousStockTotals } from "@/lib/stockInitialTotal";
 import { downloadStructuredPdf } from "@/lib/printExport";
 import { WEEKLY_FRUIT_ARTICLES as FRUIT_ARTICLES, WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES, WEEKLY_ALL_ARTICLES as ALL_WEEKLY_ARTICLES } from "@/lib/weeklyArticles";
+import { applyWeeklyArticleSettings, type WeeklyCategory } from "@/lib/weeklyArticleSettings";
+import { useWeeklyArticleSettings } from "@/hooks/useWeeklyArticleSettings";
 import { STOCK_TARTE_ARTICLES as TARTE_ARTICLES, stockRecipeIngredientId, getStockRecipeAggregates } from "@/lib/stockRecipeIngredients";
 import { StockColumnHeaders } from "@/components/StockColumnHeaders";
 import { WeeklyStockColumns } from "@/components/WeeklyStockColumns";
@@ -229,7 +231,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [siropWeekly, setSiropWeekly] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const [chantillyAgg, setChantillyAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const [amandesAgg, setAmandesAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
-  const { can, isAdmin, user } = useAuth();
+  const { can, isAdmin, user, pdvId } = useAuth();
+  const weeklyArticleSettings = useWeeklyArticleSettings(pdvId).data ?? [];
+  const weeklySettingsKey = JSON.stringify(weeklyArticleSettings);
   const operatorOptions = useOperators();
   const [showRefColsRaw, setShowRefCols] = useState<boolean>(false);
   const [showMepColsRaw, setShowMepCols] = useState<boolean>(false);
@@ -803,15 +807,16 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     setWeeklyLoading(true);
     (async () => {
       try {
-        const list =
+        const baseList =
           category === "tarte" ? TARTE_ARTICLES
           : category === "fruits" ? FRUIT_ARTICLES
           : category === "nettoyant" ? NETTOYANT_ARTICLES
           : GLACE_ARTICLES;
+        const list = applyWeeklyArticleSettings(baseList, pdvId, category as WeeklyCategory, weeklyArticleSettings);
         const ficheType = "Mouvement glaces & tartes";
         const wr = weekRangeFilter(mode, day, month, start, end);
         const data = await cached(
-          `st_weekly_orders_${category}_${wr.from ?? "all"}`,
+          `st_weekly_orders_${category}_${pdvId}_${weeklySettingsKey}_${wr.from ?? "all"}`,
           ["weekly_tracking"],
           () =>
             fetchAllRows<WeeklyTrackingOrderRecord>(() => {
@@ -846,7 +851,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       }
     })();
     return () => { cancelled = true; };
-  }, [variant, category, isWeeklyCat, mode, day, month, start, end]);
+  }, [variant, category, isWeeklyCat, mode, day, month, start, end, pdvId, weeklySettingsKey]);
 
   // Stock restant : catégories hebdo (crème fraîche, tartes, glaces, nettoyants)
   // Même principe que alimentaire/emballage : SI + Entrées - Sorties = Restant.
@@ -860,15 +865,18 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     setWeeklyLoading(true);
     (async () => {
       try {
-        const list =
+        const baseList =
           category === "tarte" ? TARTE_ARTICLES
           : category === "fruits" ? FRUIT_ARTICLES
           : category === "nettoyant" ? NETTOYANT_ARTICLES
           : category === "glace" ? GLACE_ARTICLES.filter((a) => a !== CHANTILLY_WEEKLY_ARTICLE)
           : [CHANTILLY_WEEKLY_ARTICLE];
+        const list = (["tarte", "fruits", "nettoyant", "glace"] as string[]).includes(category)
+          ? applyWeeklyArticleSettings(baseList, pdvId, category as WeeklyCategory, weeklyArticleSettings).filter((a) => a !== CHANTILLY_WEEKLY_ARTICLE)
+          : baseList;
         const ficheType = "Mouvement glaces & tartes";
         const data = await cached(
-          `st_weekly_stock_${category}_all`,
+          `st_weekly_stock_${category}_${pdvId}_${weeklySettingsKey}_all`,
           ["weekly_tracking"],
           () =>
             fetchAllRows<WeeklyTrackingOrderRecord>(() => {
@@ -911,7 +919,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       }
     })();
     return () => { cancelled = true; };
-  }, [variant, category, isWeeklyCat, mode, day, month, start, end]);
+  }, [variant, category, isWeeklyCat, mode, day, month, start, end, pdvId, weeklySettingsKey]);
 
   // Load weekly_tracking data for MACARON aggregate row in Stock Restant
   useEffect(() => {

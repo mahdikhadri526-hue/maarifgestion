@@ -27,3 +27,11 @@ export function validateWeeklyArticle(article: string, category: WeeklyCategory,
   }
   return null;
 }
+// Applies the PDV's added/removed weekly articles to another table's base list (Commande, Stock restant),
+// keeping that table's own historical identities for the default articles.
+export function applyWeeklyArticleSettings(base: readonly string[], pdvId: string | null, category: WeeklyCategory, settings: readonly WeeklyArticleSetting[]): string[] {
+  const scoped = settings.filter(row => row.pdv_id === pdvId && row.category === category);
+  const removed = new Set(scoped.filter(r => !r.active).map(r => r.article));
+  const added = scoped.filter(r => r.active).map(r => r.article);
+  return [...new Set([...base.filter(a => !removed.has(a)), ...added])];
+}
