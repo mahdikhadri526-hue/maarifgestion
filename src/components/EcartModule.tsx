@@ -3,10 +3,14 @@ import { toast } from "sonner";
 import { Boxes, Loader2, Package, Save, Scale, ShoppingCart } from "lucide-react";
 import { formatDateFR } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useWeeklyArticleSettings } from "@/hooks/useWeeklyArticleSettings";
 import { PhotoScanEntry, type ScannedEntry } from "@/components/PhotoScanEntry";
 import {
   GRAM_SECTIONS,
   SECTION_ITEMS,
+  PARFUMS,
+  configureEcartExtraParfums,
   applyGlaceAuto,
   computeDay,
   eachDate,
@@ -35,7 +39,28 @@ const VIEW_SECTIONS: Record<Exclude<View, "ecarts">, Section[]> = {
 };
 
 export function EcartModule() {
-  const { can, isAdmin, isRegionalAdmin } = useAuth();
+  const { can, isAdmin, isRegionalAdmin, pdvId } = useAuth();
+  const weeklySettings = useWeeklyArticleSettings(pdvId).data;
+  const [parfumsVersion, setParfumsVersion] = useState(0);
+  const removedParfums = useMemo(() => new Set(
+    (weeklySettings ?? []).filter((r) => r.category === "glace" && !r.active).map((r) => r.article.toLocaleLowerCase("fr")),
+  ), [weeklySettings]);
+  useEffect(() => {
+    if (!weeklySettings) return;
+    const added = weeklySettings.filter((r) => r.category === "glace" && r.active).map((r) => r.article);
+    let cancelled = false;
+    (async () => {
+      let grams: Record<string, number> = {};
+      if (added.length) {
+        const { data } = await supabase.from("glace_grammage").select("article, grammage_grams");
+        grams = Object.fromEntries((data ?? []).map((g) => [g.article.toLocaleLowerCase("fr"), Number(g.grammage_grams) || 0]));
+      }
+      if (cancelled) return;
+      configureEcartExtraParfums(added.map((name) => ({ name, gram: grams[name.toLocaleLowerCase("fr")] ?? 0 })));
+      setParfumsVersion((v) => v + 1);
+    })();
+    return () => { cancelled = true; };
+  }, [weeklySettings]);
   const canEdit = can("edit_ecarts") || isAdmin || isRegionalAdmin;
 
   const [view, setView] = useState<View>("ecarts");
@@ -77,7 +102,7 @@ export function EcartModule() {
     } finally {
       setLoading(false);
     }
-  }, [range.start, range.end, date]);
+  }, [range.start, range.end, date, parfumsVersion]);
 
   useEffect(() => {
     void load();
@@ -151,7 +176,9 @@ export function EcartModule() {
     scannable?: boolean;
     showLotNumber?: boolean;
   }) => {
-    const items = SECTION_ITEMS[section];
+    const items = SECTION_ITEMS[section] === PARFUMS
+      ? PARFUMS.filter((it) => !removedParfums.has(it.name.toLocaleLowerCase("fr")))
+      : SECTION_ITEMS[section];
     const gramInput = GRAM_SECTIONS.includes(section);
     const locked = !!override || !!autoLocked;
     const map = override ?? day[section] ?? {};

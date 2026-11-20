@@ -356,6 +356,24 @@ const WEEKLY_TO_PARFUM: Record<string, string> = {
   Réglisse: "REGLISSE",
 };
 const PARFUM_NAMES = new Set(PARFUMS.map((p) => p.name));
+const BASE_PARFUM_COUNT = PARFUMS.length;
+
+/**
+ * Ajoute les parfums glace créés par l'admin pour le PDV (suivi hebdo) aux sections parfum.
+ * Les parfums par défaut ne sont jamais retirés du calcul (historique préservé).
+ */
+export function configureEcartExtraParfums(extra: Item[]): void {
+  PARFUMS.splice(BASE_PARFUM_COUNT);
+  const known = new Set(PARFUMS.map((p) => p.name.toLocaleLowerCase("fr")));
+  for (const it of extra) {
+    const key = it.name.toLocaleLowerCase("fr");
+    if (known.has(key)) continue;
+    known.add(key);
+    PARFUMS.push(it);
+  }
+  PARFUM_NAMES.clear();
+  PARFUMS.forEach((p) => PARFUM_NAMES.add(p.name));
+}
 
 function weekRef(date: string): { weekStart: string } {
   const d = new Date(`${date}T12:00:00`);
