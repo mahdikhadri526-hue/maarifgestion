@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Ajouter/supprimer/restaurer les articles Glaces, Fruits, Nettoyants et Tartes par PDV depuis le compte admin, sans effacer l’historique ; tester isolation et droits.
 - [x] Partager recettes et produits finis en consultation, réserver la gestion des recettes/produits/regroupements à khadri1982@gmail.com ; protections restrictives en base et actualisation partagée, 29 tests réussis, aucune donnée réécrite, non publié.
 - [ ] Vérifier le partage entre comptes dans l’aperçu connecté : aucune session du demandeur disponible ; connexion dans l’aperçu nécessaire.
 - [x] Partager les définitions de regroupements entre tous les PDV, gestion exclusivement admin ; identifiants et stocks PDV conservés, 21 tests réussis et politiques vérifiées, non publié ; contrôle connecté restant ci-dessus.

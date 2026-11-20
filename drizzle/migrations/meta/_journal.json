@@ -323,6 +323,13 @@
       "when": 1795196115514,
       "tag": "0045_fridge_slots_per_pdv",
       "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1795196991228,
+      "tag": "0046_weekly_articles_per_pdv",
+      "breakpoints": true
     }
   ]
 }

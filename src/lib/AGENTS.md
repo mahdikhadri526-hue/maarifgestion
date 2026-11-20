@@ -4,3 +4,4 @@
 - Packaging weight/direct inputs live on PDV-week MEP rows, not shared reference conversions, to prevent cross-week repetition; display only on counting day.
 - Shared catalog views use lifecycle-managed, debounced Realtime subscriptions and focus refresh; recipes and group definitions have authenticated reads and designated-admin write guards, while source stock quantities remain PDV-scoped.- Regularisations act only on that day's sorties (movementFlow), never below zero.
 - Temperature slots: fridge_slots rows with pdv_id override null-pdv defaults when a PDV has any; admin-only writes; readings keep their saved slot label.
+- Weekly article settings are PDV-scoped presentation additions and reversible removals, managed by the designated admin; preserve shared default lists, historical fiche/article identities and other modules' calculations.

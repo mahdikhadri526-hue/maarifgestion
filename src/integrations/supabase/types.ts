@@ -2703,6 +2703,41 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_article_settings: {
+        Row: {
+          active: boolean
+          article: string
+          category: string
+          created_at: string
+          id: string
+          pdv_id: string
+        }
+        Insert: {
+          active?: boolean
+          article: string
+          category: string
+          created_at?: string
+          id?: string
+          pdv_id: string
+        }
+        Update: {
+          active?: boolean
+          article?: string
+          category?: string
+          created_at?: string
+          id?: string
+          pdv_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_article_settings_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_tracking: {
         Row: {
           article: string | null

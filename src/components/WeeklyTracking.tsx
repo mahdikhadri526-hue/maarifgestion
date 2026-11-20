@@ -23,6 +23,9 @@ import { getCurrentPdvId, requireCurrentPdvId } from "@/lib/pdvStore";
 import { invalidateTables } from "@/lib/requestCache";
 import { MaterielTracking } from "./MaterielTracking";
 import { WeeklyTransfers } from "./WeeklyTransfers";
+import { WeeklyArticlesAdmin } from "./WeeklyArticlesAdmin";
+import { useWeeklyArticleSettings } from "@/hooks/useWeeklyArticleSettings";
+import { resolveWeeklyArticles, type WeeklyCategory } from "@/lib/weeklyArticleSettings";
 
 const SHOW_KG_BAC = false; // colonne Kg/bac masquée
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
@@ -249,10 +252,12 @@ function LotExistantCell({
   dayIdx,
   article,
   getBalances,
+  isIce = false,
 }: {
   dayIdx: number;
   article: string;
   getBalances: (d: number, a: string) => { lot: string; remaining: number; entryDate?: string }[];
+  isIce?: boolean;
 }) {
   const batches = getBalances(dayIdx, article).filter((b) => b.remaining > 0);
   // Tri FIFO strict : le lot avec la date d'entrée la plus ancienne en haut.
@@ -268,7 +273,7 @@ function LotExistantCell({
       existing.remaining += b.remaining;
       if (ed && (!existing.entryDate || ed < existing.entryDate)) existing.entryDate = ed;
     } else {
-      merged.push({ lot: label, remaining: b.remaining, entryDate: ed, lotDate: lotDateKey(label, ed || undefined, GLACE_ARTICLES.includes(article)) ?? "", order: idx });
+      merged.push({ lot: label, remaining: b.remaining, entryDate: ed, lotDate: lotDateKey(label, ed || undefined, isIce || GLACE_ARTICLES.includes(article)) ?? "", order: idx });
     }
   });
   merged.sort((a, b) => {
@@ -365,7 +370,20 @@ export function WeeklyTracking() {
   const [showControls, setShowControls] = useState(true);
   const [unlockedDays, setUnlockedDays] = useState<Set<string>>(new Set());
   const [scanDay, setScanDay] = useState<string>("today");
-  const { can, user } = useAuth();
+  const { can, user, pdvId } = useAuth();
+  const articleSettingsQuery = useWeeklyArticleSettings(pdvId);
+  const articleLists = useMemo(() => {
+    const settings = articleSettingsQuery.data ?? [];
+    return {
+      glace: resolveWeeklyArticles(pdvId, "glace", settings),
+      fruits: resolveWeeklyArticles(pdvId, "fruits", settings),
+      nettoyant: resolveWeeklyArticles(pdvId, "nettoyant", settings),
+      tarte: resolveWeeklyArticles(pdvId, "tarte", settings),
+    };
+  }, [pdvId, articleSettingsQuery.data]);
+  // Keep removed ice identities for historical FIFO, independent of display settings.
+  const iceArticles = useMemo(() => resolveWeeklyArticles(pdvId, "glace", articleSettingsQuery.data ?? [], true), [pdvId, articleSettingsQuery.data]);
+  useEffect(() => { setFilterArticle("all"); }, [pdvId, articleSettingsQuery.data]);
   const operatorOptions = useOperators();
   const managerOptions = useManagers();
   const restrictedEmail = "gestionmaarif1@gmail.com";
@@ -401,8 +419,8 @@ export function WeeklyTracking() {
   };
 
   const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
-  const activeArticles = tab === "glace" ? GLACE_ARTICLES : tab === "tarte" ? TARTE_ARTICLES : tab === "fruits" ? FRUIT_ARTICLES : tab === "nettoyant" ? NETTOYANT_ARTICLES : ARTICLES;
-  const tabArticles = (t: string) => (t === "glace" ? GLACE_ARTICLES : t === "fruits" ? FRUIT_ARTICLES : t === "nettoyant" ? NETTOYANT_ARTICLES : TARTE_ARTICLES);
+  const tabArticles = (t: string) => articleLists[t as WeeklyCategory] ?? ARTICLES;
+  const activeArticles = tabArticles(tab);
   const tabLabel = tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : tab === "fruits" ? "Fruits" : tab === "nettoyant" ? "Mouvement produits nettoyants" : "Mouvement tartes";
 
   // Compute the list of week-starts to load (covers period filter)
@@ -917,7 +935,7 @@ export function WeeklyTracking() {
         const computed = getSortie(d, article, wkStart);
         if (typeof computed === "number") sortie = computed;
       }
-      sortFifoByLot(batches, wkStart, GLACE_ARTICLES.includes(article));
+      sortFifoByLot(batches, wkStart, iceArticles.includes(article));
       let need = sortie;
       for (const b of batches) {
         if (need <= 0) break;
@@ -1004,7 +1022,7 @@ export function WeeklyTracking() {
         const computed = getSortie(d, article, wkStart);
         if (typeof computed === "number") sortie = computed;
       }
-      sortFifoByLot(out, dayDate, GLACE_ARTICLES.includes(article));
+      sortFifoByLot(out, dayDate, iceArticles.includes(article));
       let need = sortie;
       for (const b of out) {
         if (need <= 0) break;
@@ -1145,7 +1163,7 @@ export function WeeklyTracking() {
             }
           }
 
-          sortFifoByLot(batches, dayDate, GLACE_ARTICLES.includes(article));
+          sortFifoByLot(batches, dayDate, iceArticles.includes(article));
           let need = sortie;
           for (const b of batches) {
             if (need <= 0) break;
@@ -1164,7 +1182,7 @@ export function WeeklyTracking() {
       }
     }
     return map;
-  }, [rows, ficheType]);
+  }, [rows, ficheType, iceArticles]);
 
   const addEntryRow = (day: string, article: string) => {
     const existing = entriesFor(day, article);
@@ -1184,7 +1202,7 @@ export function WeeklyTracking() {
 
   const focusNextSI = (currentArticleIdx: number) => {
     // Find next visible article
-    for (let next = currentArticleIdx + 1; next < ARTICLES.length; next++) {
+    for (let next = currentArticleIdx + 1; next < activeArticles.length; next++) {
       const el = document.querySelector<HTMLInputElement>(`input[data-si="0-${next}"]`);
       if (el) {
         el.focus();
@@ -1861,7 +1879,11 @@ export function WeeklyTracking() {
 
         {(["glace", "tarte", "fruits", "nettoyant"] as const).map((t) => (
         <TabsContent key={t} value={t} className="mt-4 space-y-3 min-w-0">
-          <h3 className="text-base font-semibold">{t === "glace" ? "Mouvement glaces" : t === "tarte" ? "Mouvement tartes" : t === "fruits" ? "Fruits" : "Mouvement produits nettoyants"}</h3>
+          <div className="flex flex-wrap items-center justify-between gap-2 no-print">
+            <h3 className="text-base font-semibold">{t === "glace" ? "Mouvement glaces" : t === "tarte" ? "Mouvement tartes" : t === "fruits" ? "Fruits" : "Mouvement produits nettoyants"}</h3>
+            <WeeklyArticlesAdmin category={t} />
+          </div>
+          {articleSettingsQuery.isError && <p className="text-sm text-destructive">Impossible de charger les articles de ce PDV. <Button variant="link" onClick={() => articleSettingsQuery.refetch()}>Réessayer</Button></p>}
           {/* FILTERS BAR */}
           {showControls && (
           <div className="bg-card rounded-lg border p-3 flex flex-wrap items-end gap-3">
@@ -2155,6 +2177,7 @@ export function WeeklyTracking() {
                               <LotExistantCell
                                 dayIdx={dIdx}
                                 article={article}
+                                isIce={iceArticles.includes(article)}
                                 getBalances={(d, a) => lotsOfDayMap.get(`${wkStart}|${d}|${a}`) ?? []}
                               />
                             </td>
