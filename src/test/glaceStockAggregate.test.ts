@@ -1,9 +1,22 @@
 import { describe, expect, it, vi } from "vitest";
 import { buildGlaceStockDetails, sumGlaceStockDetails } from "@/lib/glaceStockAggregate";
+import { isWeeklyArticleVisible, type WeeklyArticleSetting } from "@/lib/weeklyArticleSettings";
 vi.mock("@/lib/stockData", () => ({ roundStockQuantity: (n: number) => Math.round(n * 1000) / 1000 }));
 const row = (article: string, day_of_week: string, stock_initial: number | null, entrees = 0, sorties: number | null = null, row_index = 0) =>
   ({ article, week_start: "2026-11-09", day_of_week, stock_initial, entrees, sorties, row_index });
 describe("GLACE stock and drill-down share daily bac calculations", () => {
+  it("excludes the removed sans sucre 14 kg outputs from GLACE totals without erasing records", () => {
+    const records = [row("sans sucre", "Lundi", 0, 14, 4), row("Vanille", "Lundi", 2, 0, 0)];
+    const original = structuredClone(records);
+    const details = buildGlaceStockDetails(records, { "sans sucre": 3500, Vanille: 3555 });
+    const settings: WeeklyArticleSetting[] = [{ pdv_id: "A", category: "glace", article: "sans sucre", active: false }];
+    expect(sumGlaceStockDetails(details).sorties).toBe(14);
+    const visible = details.filter(row => isWeeklyArticleVisible("A", settings, row.name));
+    expect(sumGlaceStockDetails(visible)).toEqual({ stockInitial: 7.11, entrees: 0, sorties: 0, stockRestant: 7.11 });
+    expect(sumGlaceStockDetails(details.filter(row => isWeeklyArticleVisible("B", settings, row.name))).sorties).toBe(14);
+    expect(sumGlaceStockDetails(details.filter(row => isWeeklyArticleVisible("A", [{ ...settings[0], active: true }], row.name))).sorties).toBe(14);
+    expect(records).toEqual(original);
+  });
   it("uses next day's count as closing stock and sums all receipt lots before converting kg", () => {
     const rows = buildGlaceStockDetails([row("Vanille", "Lundi", 4, 1), row("Vanille", "Lundi", 999, 2, 999, 1), row("Vanille", "Mardi", 3, 50)], { Vanille: 3555 }, "2026-11-09", "2026-11-09");
     expect(rows[0].bacs).toEqual({ stockInitial: 4, entrees: 3, sorties: 4, stockRestant: 3 });

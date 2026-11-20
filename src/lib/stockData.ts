@@ -5,6 +5,7 @@ import { supabase as rawSupabase } from "@/integrations/supabase/client";
 import { requireCurrentPdvId } from "@/lib/pdvStore";
 import { fetchAllRows } from "@/lib/supabasePaginate";
 import { cached, invalidateTables } from "@/lib/requestCache";
+import { isWeeklyArticleVisible, type WeeklyArticleSetting } from "@/lib/weeklyArticleSettings";
 
 export type Category = "alimentaire" | "emballage";
 export type UnitType = "PIECE" | "KILO" | "LITRE" | "PAQUET" | "COLIS" | "ROULEAU";
@@ -1291,11 +1292,18 @@ export async function getGlaceBreakdownForRange(
   _useGlobalLatest = false,
 ): Promise<GlaceStockDetail[]> {
   // Keep older counts as context so sparse flavours do not disappear from a later period.
-  const [rows, gramRes] = await Promise.all([getGlaceWeeklyRows(), getGlaceGrammageRes()]);
+  const pdvId = requireCurrentPdvId();
+  const [rows, gramRes, settingsRes] = await Promise.all([
+    getGlaceWeeklyRows(), getGlaceGrammageRes(),
+    rawSupabase.from("weekly_article_settings").select("pdv_id,category,article,active").eq("pdv_id", pdvId).eq("category", "glace"),
+  ]);
   if (gramRes.error) throw gramRes.error;
+  if (settingsRes.error) throw settingsRes.error;
   const grams: Record<string, number> = {};
   (gramRes.data || []).forEach(r => { grams[r.article] = Number(r.grammage_grams) || 0; });
-  return buildGlaceStockDetails(rows, grams, startDate, endDate);
+  const settings = (settingsRes.data ?? []) as WeeklyArticleSetting[];
+  return buildGlaceStockDetails(rows, grams, startDate, endDate)
+    .filter(row => isWeeklyArticleVisible(pdvId, settings, row.name));
 }
 
 export type SourceDailyDetail = {

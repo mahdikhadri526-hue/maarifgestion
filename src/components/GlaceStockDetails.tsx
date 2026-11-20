@@ -17,7 +17,7 @@ export function GlaceStockDetails({ rows, period }: { rows: GlaceStockDetail[]; 
   const settings = useWeeklyArticleSettings(pdvId).data ?? [];
   const visibleRows = rows.filter(row => isWeeklyArticleVisible(pdvId, settings, row.name));
   const [expanded, setExpanded] = useState<string[]>([]);
-  const totals = sumGlaceStockDetails(rows);
+  const totals = sumGlaceStockDetails(visibleRows);
   return <div className="space-y-4 min-w-0">
     <p className="text-sm font-medium">{period}</p>
     <div className="overflow-x-auto">
