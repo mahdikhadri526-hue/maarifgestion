@@ -58,7 +58,7 @@ import { dailyMepValues, emballageMepTotal, mepPiecesFromGrams } from "@/lib/emb
 import { calculateStockTotals, loadPreviousStockTotals } from "@/lib/stockInitialTotal";
 import { downloadStructuredPdf } from "@/lib/printExport";
 import { WEEKLY_FRUIT_ARTICLES as FRUIT_ARTICLES, WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES, WEEKLY_ALL_ARTICLES as ALL_WEEKLY_ARTICLES } from "@/lib/weeklyArticles";
-import { applyWeeklyArticleSettings, type WeeklyCategory } from "@/lib/weeklyArticleSettings";
+import { applyWeeklyArticleSettings, isWeeklyArticleVisible, type WeeklyCategory } from "@/lib/weeklyArticleSettings";
 import { useWeeklyArticleSettings } from "@/hooks/useWeeklyArticleSettings";
 import { STOCK_TARTE_ARTICLES as TARTE_ARTICLES, stockRecipeIngredientId, getStockRecipeAggregates } from "@/lib/stockRecipeIngredients";
 import { StockColumnHeaders } from "@/components/StockColumnHeaders";
@@ -798,12 +798,12 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const filtered = useMemo(() => {
     const searchQuery = deferredSearch
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-    const visible = visibleProductRows(withAgg);
+    const visible = visibleProductRows(withAgg).filter(row => isWeeklyArticleVisible(pdvId, weeklyArticleSettings, row.productId, row.productName));
     return searchQuery
       ? visible.filter((l) =>
           l.productName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().includes(searchQuery))
       : visible;
-  }, [withAgg, deferredSearch]);
+  }, [withAgg, deferredSearch, pdvId, weeklySettingsKey]);
 
 
   // Load weekly_tracking data for Tarte/Glace categories

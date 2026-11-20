@@ -9,6 +9,13 @@ export const WEEKLY_DEFAULTS: Record<WeeklyCategory, string[]> = {
 };
 export type WeeklyArticleSetting = { pdv_id: string; category: WeeklyCategory; article: string; active: boolean };
 
+/** Display-only matching for stock IDs, legacy recipe links and article labels. */
+export function isWeeklyArticleVisible(pdvId: string | null, settings: readonly WeeklyArticleSetting[], id: string, name = id): boolean {
+  const normalize = (value: string) => value.trim().toLocaleLowerCase("fr");
+  const identities = new Set([normalize(id.replace(/^weekly:/, "")), normalize(name)]);
+  return !settings.some(row => row.pdv_id === pdvId && !row.active && identities.has(normalize(row.article)));
+}
+
 // Presentation only: never filter the historical rows used for stock calculations.
 export function resolveWeeklyArticles(pdvId: string | null, category: WeeklyCategory, settings: readonly WeeklyArticleSetting[], includeRemoved = false): string[] {
   const scoped = settings.filter(row => row.pdv_id === pdvId && row.category === category);

@@ -5,6 +5,7 @@ import { formatDateFR } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useWeeklyArticleSettings } from "@/hooks/useWeeklyArticleSettings";
+import { isWeeklyArticleVisible } from "@/lib/weeklyArticleSettings";
 import { PhotoScanEntry, type ScannedEntry } from "@/components/PhotoScanEntry";
 import {
   GRAM_SECTIONS,
@@ -43,8 +44,8 @@ export function EcartModule() {
   const weeklySettings = useWeeklyArticleSettings(pdvId).data;
   const [parfumsVersion, setParfumsVersion] = useState(0);
   const removedParfums = useMemo(() => new Set(
-    (weeklySettings ?? []).filter((r) => r.category === "glace" && !r.active).map((r) => r.article.toLocaleLowerCase("fr")),
-  ), [weeklySettings]);
+    (weeklySettings ?? []).filter((r) => r.category === "glace" && !isWeeklyArticleVisible(pdvId, weeklySettings ?? [], r.article)).map((r) => r.article.toLocaleLowerCase("fr")),
+  ), [weeklySettings, pdvId]);
   useEffect(() => {
     if (!weeklySettings) return;
     const added = weeklySettings.filter((r) => r.category === "glace" && r.active).map((r) => r.article);

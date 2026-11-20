@@ -1,8 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { resolveWeeklyArticles, validateWeeklyArticle, WEEKLY_CATEGORIES, WEEKLY_DEFAULTS, type WeeklyArticleSetting } from "@/lib/weeklyArticleSettings";
+import { applyWeeklyArticleSettings, isWeeklyArticleVisible, resolveWeeklyArticles, validateWeeklyArticle, WEEKLY_CATEGORIES, WEEKLY_DEFAULTS, type WeeklyArticleSetting } from "@/lib/weeklyArticleSettings";
 import { canDisplayAdminTable } from "@/lib/adminTableVisibility";
 
 describe("weekly article settings", () => {
+  it("hides a removed article in stock, orders and material displays while preserving source values", () => {
+    const settings: WeeklyArticleSetting[] = [{ pdv_id: "A", category: "glace", article: "Sans sucre", active: false }];
+    const source = { id: "weekly:Sans sucre", name: "Sans sucre", sorties: 4, stock: 10 };
+    expect(applyWeeklyArticleSettings([source.name, "Vanille"], "A", "glace", settings)).toEqual(["Vanille"]);
+    expect(isWeeklyArticleVisible("A", settings, source.id, source.name)).toBe(false);
+    expect(isWeeklyArticleVisible("A", settings, "Sans sucre")).toBe(false);
+    expect(isWeeklyArticleVisible("B", settings, source.id, source.name)).toBe(true);
+    expect(isWeeklyArticleVisible("A", [{ ...settings[0], active: true }], source.id, source.name)).toBe(true);
+    expect(source).toEqual({ id: "weekly:Sans sucre", name: "Sans sucre", sorties: 4, stock: 10 });
+  });
+  it("matches legacy links without hiding unrelated totals or ingredients", () => {
+    const settings: WeeklyArticleSetting[] = [{ pdv_id: "A", category: "tarte", article: "Tarte 6", active: false }];
+    expect(isWeeklyArticleVisible("A", settings, "weekly:Tarte 6")).toBe(false);
+    expect(isWeeklyArticleVisible("A", settings, "Tarte 8")).toBe(true);
+    expect(isWeeklyArticleVisible("A", settings, "ali-57", "GLACE")).toBe(true);
+  });
   it.each(WEEKLY_CATEGORIES)("adds an article only to the selected PDV and %s follow-up", category => {
     const settings: WeeklyArticleSetting[] = [{ pdv_id: "A", category, article: "Nouvel article", active: true }];
     expect(resolveWeeklyArticles("A", category, settings)).toContain("Nouvel article");

@@ -1,11 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useSharedCatalogRevision } from "@/hooks/useSharedCatalogRevision";
 import { supabase } from "@/integrations/supabase/client";
 import { type WeeklyArticleSetting, type WeeklyCategory } from "@/lib/weeklyArticleSettings";
 
 export const weeklyArticleQueryKey = (pdvId: string | null) => ["weekly-article-settings", pdvId];
 
 export function useWeeklyArticleSettings(pdvId: string | null) {
-  return useQuery({
+  const revision = useSharedCatalogRevision(["weekly_article_settings"], pdvId);
+  const query = useQuery({
     queryKey: weeklyArticleQueryKey(pdvId),
     enabled: !!pdvId,
     queryFn: async (): Promise<WeeklyArticleSetting[]> => {
@@ -16,4 +19,9 @@ export function useWeeklyArticleSettings(pdvId: string | null) {
     },
     refetchOnWindowFocus: "always",
   });
+  const { refetch } = query;
+  useEffect(() => {
+    if (pdvId && revision > 0) void refetch();
+  }, [pdvId, revision, refetch]);
+  return query;
 }

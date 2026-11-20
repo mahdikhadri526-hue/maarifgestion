@@ -17,12 +17,15 @@ import { materialUsageDisplay } from "@/lib/materialDisplayUnits";
 import { MaterialTheoreticalDetails } from "@/components/MaterialTheoreticalDetails";
 import { MaterialActualDetails } from "@/components/MaterialActualDetails";
 import { useSharedCatalogRevision } from "@/hooks/useSharedCatalogRevision";
+import { useWeeklyArticleSettings } from "@/hooks/useWeeklyArticleSettings";
+import { isWeeklyArticleVisible } from "@/lib/weeklyArticleSettings";
 
 const categoryLabels: Record<string, string> = { surplace: "Sur place", emporter: "Emporter", tartes: "Tartes", autres: "Autres", alimentaire: "Alimentaire", emballage: "Emballage" };
 const number = (value: number | null) => value === null ? "—" : value.toLocaleString("fr-FR", { maximumFractionDigits: 4 });
 
 export function MaterialVarianceModule() {
   const { pdvId, pdv, can } = useAuth();
+  const weeklySettings = useWeeklyArticleSettings(pdvId).data;
   const sharedRevision = useSharedCatalogRevision(["recipes", "recipe_ingredients", "finished_products", "stock_product_groups", "product_catalog"], pdvId);
   const today = formatISODate(new Date());
   const [start, setStart] = useState(`${today.slice(0, 7)}-01`);
@@ -76,7 +79,10 @@ export function MaterialVarianceModule() {
     return () => { cancelled = true; };
   }, [period, pdvId, revision]);
 
-  const result = useMemo(() => data ? computeMaterialVariance(data.recipes, data.ingredients, sales, data.actuals).filter(row => isProductActive(row.id.split(":")[0])) : [], [data, sales]);
+  const result = useMemo(() => data ? computeMaterialVariance(data.recipes, data.ingredients, sales, data.actuals).filter(row => {
+    const ingredientId = row.id.slice(0, row.id.lastIndexOf(":"));
+    return isProductActive(ingredientId) && isWeeklyArticleVisible(pdvId, weeklySettings ?? [], ingredientId, row.name);
+  }) : [], [data, sales, pdvId, weeklySettings]);
   const products = useMemo(() => data?.products.filter(product => product.active && (category === "all" || product.category === category) && product.name.toLowerCase().includes(search.toLowerCase())) ?? [], [data, category, search]);
   const rows = result.filter(row => (category === "all" || row.category === category) && row.name.toLowerCase().includes(search.toLowerCase()) && (manageHidden || !hiddenIds.includes(row.id)));
   const hiddenCount = hiddenIds.length;
