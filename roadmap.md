@@ -1,5 +1,6 @@
 # Roadmap
-- [ ] Ajouter Recettes aux permissions effectives et corriger les contournements de Stock restant ; vérifier les droits utilisateurs/PDV et les protections d’écriture sans modifier les stocks.
+- [x] Relier Recettes aux permissions effectives ; séparer edit_stock/edit_remaining_stock, respecter les cases individuelles décochées et les refus PDV, protéger les régularisations et la mise en place en base ; 17 tests ciblés réussis, aucune quantité ou recette modifiée, sans publication.
+- [ ] Vérifier les permissions Recettes/Stock restant dans l’aperçu connecté : session personnelle indisponible et création du compte temporaire refusée ; attendre une connexion dans l’aperçu.
 - [x] Conserver les trois décimales du Kg/bac (Nougat 3,727) dans le détail Stock restant ; 3727 g confirmés en base, 15 tests valident les conversions stock/écarts, aucune saisie modifiée, non publié ; contrôle connecté bloqué par la session indisponible ci-dessous.
 - [x] Répercuter les Kg/bac enregistrés sur tous les parfums d’Écarts glace et actualiser les poids partagés et les caches stock ; préserver les quantités et les doses des ventes, tests ciblés réussis, non publié.
 - [ ] Vérifier les changements de Kg/bac dans les tables connectées : compte temporaire de vérification refusé et session du demandeur indisponible.

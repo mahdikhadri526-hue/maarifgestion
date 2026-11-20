@@ -13,6 +13,7 @@ export function hasEffectivePermission(state: PermissionState, key: string): boo
   if (!state.signedIn) return false;
   if (state.unrestrictedAdmin) return true;
   if (state.individualOnly) return state.permissions.has(key);
+  if (state.pdvPermissions === null) return false;
   if (state.pdvDenied.has(key)) return false;
   if (state.hasCustomPermissions) return state.permissions.has(key);
   return state.pdvPermissions?.has(key) ?? false;

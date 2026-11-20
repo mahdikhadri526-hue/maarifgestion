@@ -2937,6 +2937,10 @@ export type Database = {
         Returns: undefined
       }
       has_any_role: { Args: { _user_id: string }; Returns: boolean }
+      has_pdv_permission: {
+        Args: { _pdv_id: string; _permission_key: string; _user_id: string }
+        Returns: boolean
+      }
       has_permission: {
         Args: { _permission_key: string; _user_id: string }
         Returns: boolean

@@ -344,6 +344,20 @@
       "when": 1795206209607,
       "tag": "0048_glace_grammage_realtime",
       "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1795215244772,
+      "tag": "0049_enforce_effective_stock_and_recipe_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1795215346555,
+      "tag": "0050_restrict_scoped_permission_function_access",
+      "breakpoints": true
     }
   ]
 }

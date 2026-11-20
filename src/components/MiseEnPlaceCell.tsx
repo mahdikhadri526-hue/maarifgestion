@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   getMiseEnPlaceStocks,
   getMiseEnPlaceStocksForWeek,
@@ -16,6 +17,7 @@ import {
  * on reprend l'ancienne valeur unique (avant le passage hebdomadaire).
  */
 export function useMiseEnPlace(weekStart?: string) {
+  const { can } = useAuth();
   const [map, setMap] = useState<Record<string, number>>({});
   const [packagingInputs, setPackagingInputs] = useState<Record<string, PackagingMepInputs>>({});
   const currentWeek = weekStartOf();
@@ -39,14 +41,18 @@ export function useMiseEnPlace(weekStart?: string) {
   }, [week, isCurrent]);
 
   const save = useCallback(async (productId: string, value: number, inputs?: PackagingMepInputs) => {
-    setMap((prev) => ({ ...prev, [productId]: value }));
+    if (!can("edit_remaining_stock")) {
+      toast.error("Modification du stock restant non autorisée");
+      return;
+    }
     try {
       await setMiseEnPlaceStockForWeek(productId, value, week, inputs);
+      setMap((prev) => ({ ...prev, [productId]: value }));
       if (inputs) setPackagingInputs(prev => ({ ...prev, [productId]: inputs }));
     } catch (e: any) {
       toast.error(e?.message || "Enregistrement impossible");
     }
-  }, [week]);
+  }, [week, can]);
 
   return { map, save, packagingInputs };
 }

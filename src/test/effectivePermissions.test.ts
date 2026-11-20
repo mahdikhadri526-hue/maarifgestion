@@ -22,6 +22,13 @@ describe("permissions effectives", () => {
   it("hérite des droits PDV uniquement sans configuration individuelle", () => {
     expect(hasEffectivePermission(state({ hasCustomPermissions: false, permissions: new Set() }), "view_recipes")).toBe(true);
   });
+  it("ne permet pas de modifier Stock restant avant chargement des droits PDV", () => {
+    expect(hasEffectivePermission(state({ permissions: new Set(["edit_remaining_stock"]), pdvPermissions: null }), "edit_remaining_stock")).toBe(false);
+  });
+  it("respecte les permissions configurées des administrateurs limités", () => {
+    expect(hasEffectivePermission(state({ individualOnly: true }), "edit_remaining_stock")).toBe(false);
+    expect(hasEffectivePermission(state({ unrestrictedAdmin: true }), "edit_remaining_stock")).toBe(true);
+  });
   it("permet le droit explicitement coché et refuse une session absente", () => {
     expect(hasEffectivePermission(state({ permissions: new Set(["edit_remaining_stock"]) }), "edit_remaining_stock")).toBe(true);
     expect(hasEffectivePermission(state({ signedIn: false, unrestrictedAdmin: true }), "edit_remaining_stock")).toBe(false);
