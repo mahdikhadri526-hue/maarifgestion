@@ -19,6 +19,14 @@ describe("weekly article settings", () => {
     expect(isWeeklyArticleVisible("A", settings, "Tarte 8")).toBe(true);
     expect(isWeeklyArticleVisible("A", settings, "ali-57", "GLACE")).toBe(true);
   });
+  it("hides sans sucre in GLACE detail without removing its historical contribution", () => {
+    const settings: WeeklyArticleSetting[] = [{ pdv_id: "A", category: "glace", article: "sans sucre", active: false }];
+    const rows = [{ name: "Sans sucre", sorties: 4 }, { name: "Vanille", sorties: 8 }];
+    const visible = rows.filter(row => isWeeklyArticleVisible("A", settings, row.name));
+    expect(visible).toEqual([{ name: "Vanille", sorties: 8 }]);
+    expect(rows.reduce((sum, row) => sum + row.sorties, 0)).toBe(12);
+    expect(rows.filter(row => isWeeklyArticleVisible("A", [{ ...settings[0], active: true }], row.name))).toEqual(rows);
+  });
   it.each(WEEKLY_CATEGORIES)("adds an article only to the selected PDV and %s follow-up", category => {
     const settings: WeeklyArticleSetting[] = [{ pdv_id: "A", category, article: "Nouvel article", active: true }];
     expect(resolveWeeklyArticles("A", category, settings)).toContain("Nouvel article");

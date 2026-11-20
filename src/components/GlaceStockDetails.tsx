@@ -4,12 +4,18 @@ import { Button } from "@/components/ui/button";
 import { roundStockQuantity } from "@/lib/stockData";
 import { formatDateFR } from "@/lib/utils";
 import { sumGlaceStockDetails, type GlaceStockDetail } from "@/lib/glaceStockAggregate";
+import { useAuth } from "@/contexts/AuthContext";
+import { useWeeklyArticleSettings } from "@/hooks/useWeeklyArticleSettings";
+import { isWeeklyArticleVisible } from "@/lib/weeklyArticleSettings";
 
 const columns = ["stockInitial", "entrees", "sorties", "stockRestant"] as const;
 const labels = ["Stock initial", "Entrées", "Sorties", "Stock restant"];
 const quantity = (n: number) => roundStockQuantity(n).toLocaleString("fr-FR", { maximumFractionDigits: 3 });
 
 export function GlaceStockDetails({ rows, period }: { rows: GlaceStockDetail[]; period: string }) {
+  const { pdvId } = useAuth();
+  const settings = useWeeklyArticleSettings(pdvId).data ?? [];
+  const visibleRows = rows.filter(row => isWeeklyArticleVisible(pdvId, settings, row.name));
   const [expanded, setExpanded] = useState<string[]>([]);
   const totals = sumGlaceStockDetails(rows);
   return <div className="space-y-4 min-w-0">
@@ -20,7 +26,7 @@ export function GlaceStockDetails({ rows, period }: { rows: GlaceStockDetail[]; 
           <th className="p-2 text-left">Parfum</th><th className="p-2 text-right">Kg / bac</th>
           {labels.map(label => <th key={label} className="p-2 text-right">{label} (kg)</th>)}
         </tr></thead>
-        <tbody>{rows.map(row => <tr key={row.name} className="border-b">
+        <tbody>{visibleRows.map(row => <tr key={row.name} className="border-b">
           <td className="p-2 font-medium">{row.name}</td>
           <td className="p-2 text-right font-mono">{row.missingGrammage ? "Non renseigné" : quantity(row.kgPerBac)}</td>
           {columns.map(key => <td key={key} className="p-2 text-right font-mono">{row.missingGrammage ? "—" : quantity(row[key])}</td>)}
@@ -30,9 +36,9 @@ export function GlaceStockDetails({ rows, period }: { rows: GlaceStockDetail[]; 
         </tr></tfoot>
       </table>
     </div>
-    {rows.some(row => row.missingGrammage) && <p className="text-sm text-destructive">Grammage manquant : ces parfums ne sont pas inclus dans le total en kg.</p>}
+    {visibleRows.some(row => row.missingGrammage) && <p className="text-sm text-destructive">Grammage manquant : ces parfums ne sont pas inclus dans le total en kg.</p>}
     <div className="divide-y">
-      {rows.map(row => {
+      {visibleRows.map(row => {
         const open = expanded.includes(row.name);
         return <section key={row.name} className="py-2">
           <Button variant="ghost" className="w-full justify-start gap-2 h-auto whitespace-normal text-left" aria-expanded={open}
