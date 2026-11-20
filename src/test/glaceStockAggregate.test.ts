@@ -5,6 +5,16 @@ vi.mock("@/lib/stockData", () => ({ roundStockQuantity: (n: number) => Math.roun
 const row = (article: string, day_of_week: string, stock_initial: number | null, entrees = 0, sorties: number | null = null, row_index = 0) =>
   ({ article, week_start: "2026-11-09", day_of_week, stock_initial, entrees, sorties, row_index });
 describe("GLACE stock and drill-down share daily bac calculations", () => {
+  it("recalculates all displayed kilogram columns when kg/bac changes without rewriting bac quantities", () => {
+    const records = [row("Nougat", "Lundi", 4, 2, 1)];
+    const original = structuredClone(records);
+    const [before] = buildGlaceStockDetails(records, { Nougat: 4000 });
+    const [after] = buildGlaceStockDetails(records, { Nougat: 4500 });
+    expect(sumGlaceStockDetails([before])).toEqual({ stockInitial: 16, entrees: 8, sorties: 4, stockRestant: 20 });
+    expect(sumGlaceStockDetails([after])).toEqual({ stockInitial: 18, entrees: 9, sorties: 4.5, stockRestant: 22.5 });
+    expect(after.bacs).toEqual(before.bacs);
+    expect(records).toEqual(original);
+  });
   it("excludes the removed sans sucre 14 kg outputs from GLACE totals without erasing records", () => {
     const records = [row("sans sucre", "Lundi", 0, 14, 4), row("Vanille", "Lundi", 2, 0, 0)];
     const original = structuredClone(records);
