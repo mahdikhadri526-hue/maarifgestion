@@ -5,6 +5,18 @@ vi.mock("@/lib/stockData", () => ({ roundStockQuantity: (n: number) => Math.roun
 const row = (article: string, day_of_week: string, stock_initial: number | null, entrees = 0, sorties: number | null = null, row_index = 0) =>
   ({ article, week_start: "2026-11-09", day_of_week, stock_initial, entrees, sorties, row_index });
 describe("GLACE stock and drill-down share daily bac calculations", () => {
+  it("keeps Nougat's 3.727 kg/bac in every stock conversion without rounding the weight to 3.73", () => {
+    const records = [row("Nougat", "Lundi", 4, 2, 1)];
+    const original = structuredClone(records);
+    const [detail] = buildGlaceStockDetails(records, { Nougat: 3727 });
+    expect(detail.kgPerBac).toBe(3.727);
+    const totals = sumGlaceStockDetails([detail]);
+    expect(totals.stockInitial).toBeCloseTo(14.908, 9);
+    expect(totals.entrees).toBeCloseTo(7.454, 9);
+    expect(totals.sorties).toBe(3.727);
+    expect(totals.stockRestant).toBeCloseTo(18.635, 9);
+    expect(records).toEqual(original);
+  });
   it("recalculates all displayed kilogram columns when kg/bac changes without rewriting bac quantities", () => {
     const records = [row("Nougat", "Lundi", 4, 2, 1)];
     const original = structuredClone(records);

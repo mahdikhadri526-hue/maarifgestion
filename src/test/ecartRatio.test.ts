@@ -4,6 +4,13 @@ import { applyGlaceAuto, computeDay, configureEcartExtraParfums, computeTotals, 
 afterEach(() => configureEcartExtraParfums([]));
 
 describe("Kg/bac partagés avec les écarts glace", () => {
+  it("uses exactly 3727 grams for Nougat after a 3.727 kg/bac edit in weekly tracking", () => {
+    configureEcartExtraParfums([], { Nougat: 3727 });
+    const day = { ENTREE_EMP: { Nougat: 2 }, SF_CHAMBRE_EMP: { Nougat: 1 } };
+    expect(computeDay("2026-11-20", day, undefined)).toMatchObject({
+      entreeEmpG: 7454, sfChambreG: 3727, consoTotalG: 3727, ecartTotalG: -3727,
+    });
+  });
   it("répercute une modification sur les entrées, le stock chambre et les écarts sans modifier les saisies ni les doses de vente", () => {
     const day = { ENTREE_EMP: { Nougat: 2 }, SF_CHAMBRE_EMP: { Nougat: 1 }, VENTE_EMP: { "CORNET 1B EMP": 10 } };
     configureEcartExtraParfums([], { Nougat: 4000 });

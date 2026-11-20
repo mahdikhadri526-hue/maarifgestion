@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { roundStockQuantity } from "@/lib/stockData";
 import { formatDateFR } from "@/lib/utils";
 import { sumGlaceStockDetails, type GlaceStockDetail } from "@/lib/glaceStockAggregate";
 import { useAuth } from "@/contexts/AuthContext";
@@ -10,7 +9,9 @@ import { isWeeklyArticleVisible } from "@/lib/weeklyArticleSettings";
 
 const columns = ["stockInitial", "entrees", "sorties", "stockRestant"] as const;
 const labels = ["Stock initial", "Entrées", "Sorties", "Stock restant"];
-const quantity = (n: number) => roundStockQuantity(n).toLocaleString("fr-FR", { maximumFractionDigits: 3 });
+// Preserve gram precision for Kg/bac and its conversions; stock's generic
+// two-decimal formatter would turn Nougat's 3.727 into 3.73.
+const quantity = (n: number) => n.toLocaleString("fr-FR", { maximumFractionDigits: 3 });
 
 export function GlaceStockDetails({ rows, period }: { rows: GlaceStockDetail[]; period: string }) {
   const { pdvId } = useAuth();

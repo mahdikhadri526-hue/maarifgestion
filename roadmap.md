@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Conserver les trois décimales du Kg/bac (Nougat 3,727) dans le détail Stock restant ; 3727 g confirmés en base, 15 tests valident les conversions stock/écarts, aucune saisie modifiée, non publié ; contrôle connecté bloqué par la session indisponible ci-dessous.
 - [x] Répercuter les Kg/bac enregistrés sur tous les parfums d’Écarts glace et actualiser les poids partagés et les caches stock ; préserver les quantités et les doses des ventes, tests ciblés réussis, non publié.
 - [ ] Vérifier les changements de Kg/bac dans les tables connectées : compte temporaire de vérification refusé et session du demandeur indisponible.
 - [x] Répercuter les retraits d’articles dans Stock restant et les écarts (glace/ingrédients), uniquement à l’affichage ; 26 tests réussis, article « sans sucre » déjà retiré vérifié dans les trois tables avec le compte admin ; données et calculs conservés, non publié.
