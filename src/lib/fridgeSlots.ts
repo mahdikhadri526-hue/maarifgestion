@@ -32,15 +32,28 @@ export function pickCurrentSlot(list: FridgeSlotDef[], d = new Date()): string {
   return current.label;
 }
 
-export async function fetchFridgeSlots(): Promise<FridgeSlotDef[]> {
-  const { data, error } = await supabase.from("fridge_slots").select("id,label,hour,minute,sort_order");
-  if (error || !data?.length) return DEFAULT_FRIDGE_SLOTS;
-  return sortSlots(data as FridgeSlotDef[]);
+/** Créneaux exacts d'une portée : pdvId = null → créneaux par défaut (tous les PDV). */
+export async function fetchSlotsForScope(pdvId: string | null): Promise<FridgeSlotDef[]> {
+  let q = supabase.from("fridge_slots").select("id,label,hour,minute,sort_order");
+  q = pdvId ? q.eq("pdv_id", pdvId) : q.is("pdv_id", null);
+  const { data, error } = await q;
+  if (error) return [];
+  return sortSlots((data ?? []) as FridgeSlotDef[]);
 }
 
-export function useFridgeSlots() {
+/** Créneaux effectifs d'un PDV : les siens s'il en a, sinon ceux par défaut. */
+export async function fetchFridgeSlots(pdvId?: string | null): Promise<FridgeSlotDef[]> {
+  if (pdvId) {
+    const own = await fetchSlotsForScope(pdvId);
+    if (own.length) return own;
+  }
+  const def = await fetchSlotsForScope(null);
+  return def.length ? def : DEFAULT_FRIDGE_SLOTS;
+}
+
+export function useFridgeSlots(pdvId?: string | null) {
   const [slots, setSlots] = useState<FridgeSlotDef[]>(DEFAULT_FRIDGE_SLOTS);
-  const reload = useCallback(async () => setSlots(await fetchFridgeSlots()), []);
+  const reload = useCallback(async () => setSlots(await fetchFridgeSlots(pdvId)), [pdvId]);
   useEffect(() => { void reload(); }, [reload]);
   return { slots, reload };
 }

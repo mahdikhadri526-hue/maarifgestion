@@ -554,6 +554,7 @@ export type Database = {
           id: string
           label: string
           minute: number
+          pdv_id: string | null
           sort_order: number
           updated_at: string
         }
@@ -563,6 +564,7 @@ export type Database = {
           id?: string
           label: string
           minute?: number
+          pdv_id?: string | null
           sort_order?: number
           updated_at?: string
         }
@@ -572,10 +574,19 @@ export type Database = {
           id?: string
           label?: string
           minute?: number
+          pdv_id?: string | null
           sort_order?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fridge_slots_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fridge_temperatures: {
         Row: {

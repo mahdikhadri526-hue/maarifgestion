@@ -144,7 +144,7 @@ export function FridgeTemperatureManager() {
   const { toast } = useToast();
 
   const [date, setDate] = useState<string>(serviceDateStr());
-  const { slots: slotDefs, reload: reloadSlots } = useFridgeSlots();
+  const { slots: slotDefs, reload: reloadSlots } = useFridgeSlots(zonesPdvId);
   const SLOTS = useMemo(() => slotDefs.map((s) => s.label), [slotDefs]);
   const [slot, setSlot] = useState<FridgeSlot>(currentSlot());
   const slotTouched = useRef(false);
@@ -611,7 +611,7 @@ export function FridgeTemperatureManager() {
           <p className="text-sm text-muted-foreground">
             {SLOTS.length} contrôle(s) par jour&nbsp;: {SLOTS.map((s, i) => <span key={s}>{i > 0 && ", "}<strong>{s}</strong></span>)}.
           </p>
-          {isAdmin && <FridgeSlotsAdmin slots={slotDefs} onChanged={reloadSlots} />}
+          {isAdmin && <FridgeSlotsAdmin currentPdvId={zonesPdvId ?? null} onChanged={reloadSlots} />}
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

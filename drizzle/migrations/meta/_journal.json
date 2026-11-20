@@ -316,6 +316,13 @@
       "when": 1795195915030,
       "tag": "0044_restrict_fridge_slots_read",
       "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1795196115514,
+      "tag": "0045_fridge_slots_per_pdv",
+      "breakpoints": true
     }
   ]
 }

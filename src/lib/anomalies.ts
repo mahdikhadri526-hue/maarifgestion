@@ -206,7 +206,7 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
 
 export async function analyzePdv(pdvId: string, start: string, end: string): Promise<AnalysisResult> {
   try {
-    const defs = await fetchFridgeSlots();
+    const defs = await fetchFridgeSlots(pdvId);
     TEMP_SLOTS = defs.map((d) => ({ slot: d.label, hour: d.hour < 5 ? d.hour + 24 : d.hour }));
   } catch { /* garder les créneaux par défaut */ }
   const now = new Date();
