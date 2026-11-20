@@ -31,10 +31,7 @@ const SHOW_KG_BAC = false; // colonne Kg/bac masquée
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
 import {
-  WEEKLY_TARTE_DISPLAY_ARTICLES as TARTE_ARTICLES,
-  WEEKLY_FRUIT_ARTICLES as FRUIT_ARTICLES,
   WEEKLY_GLACE_ARTICLES as GLACE_ARTICLES,
-  WEEKLY_NETTOYANT_ARTICLES as NETTOYANT_ARTICLES,
   WEEKLY_ALL_ARTICLES as ARTICLES,
 } from "@/lib/weeklyArticles";
 
