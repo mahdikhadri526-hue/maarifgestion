@@ -1,3 +1,4 @@
+import { useGlaceGrammages } from "@/hooks/useGlaceGrammages";
 import { useState, useEffect, useDeferredValue, useMemo, useRef } from "react";
 import {
   MACARON_ARTICLES, MACARON_AGG_ID, SIROP_AGG_ID, CHANTILLY_AGG_ID, AMANDES_AGG_ID,
@@ -242,7 +243,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [amandesAgg, setAmandesAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const { can, isAdmin, user, pdvId } = useAuth();
   const weeklyArticleSettings = useWeeklyArticleSettings(pdvId).data ?? [];
-  const weeklySettingsKey = JSON.stringify(weeklyArticleSettings);
+  const { data: glaceGrammagesForKey } = useGlaceGrammages();
+  // Kg/bac partagés : tout changement relance les calculs GLACE (totaux et détail).
+  const weeklySettingsKey = JSON.stringify([weeklyArticleSettings, glaceGrammagesForKey ?? null]);
   const operatorOptions = useOperators();
   const [showRefColsRaw, setShowRefCols] = useState<boolean>(false);
   const [showMepColsRaw, setShowMepCols] = useState<boolean>(false);

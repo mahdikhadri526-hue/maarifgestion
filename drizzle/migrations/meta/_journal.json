@@ -337,6 +337,13 @@
       "when": 1795200121490,
       "tag": "0047_glace_grammage_admin_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1795206209607,
+      "tag": "0048_glace_grammage_realtime",
+      "breakpoints": true
     }
   ]
 }
