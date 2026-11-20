@@ -309,6 +309,13 @@
       "when": 1795195678529,
       "tag": "0043_fridge_slots",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1795195915030,
+      "tag": "0044_restrict_fridge_slots_read",
+      "breakpoints": true
     }
   ]
 }
