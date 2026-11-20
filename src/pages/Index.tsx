@@ -15,7 +15,6 @@ const RecipeManager = lazy(() => import("@/components/RecipeManager").then((m) =
 const MaterialVarianceModule = lazy(() => import("@/components/MaterialVarianceModule").then((m) => ({ default: m.MaterialVarianceModule })));
 const CleaningManager = lazy(() => import("@/components/CleaningManager").then((m) => ({ default: m.CleaningManager })));
 const GlaceStuffControl = lazy(() => import("@/components/GlaceStuffControl").then((m) => ({ default: m.GlaceStuffControl })));
-const InventoryModule = lazy(() => import("@/components/inventory/InventoryModule").then((m) => ({ default: m.InventoryModule })));
 const EcartModule = lazy(() => import("@/components/EcartModule").then((m) => ({ default: m.EcartModule })));
 const EcartHub = lazy(() => import("@/components/EcartProduitModule").then((m) => ({ default: m.EcartHub })));
 const PepModule = lazy(() => import("@/components/pep/PepModule").then((m) => ({ default: m.PepModule })));
@@ -25,7 +24,7 @@ const HrModule = lazy(() => import("@/components/hr/HrModule").then((m) => ({ de
 const PlanningModule = lazy(() => import("@/components/hr/PlanningModule").then((m) => ({ default: m.PlanningModule })));
 const UserManagement = lazy(() => import("@/components/auth/UserManagement").then((m) => ({ default: m.UserManagement })));
 const AnomalyCenter = lazy(() => import("@/components/anomalies/AnomalyCenter").then((m) => ({ default: m.AnomalyCenter })));
-import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, PackageCheck, Snowflake, Scale, CalendarClock, Wrench, ScanFace, Users } from "lucide-react";
+import { LayoutDashboard, History, PlusCircle, Database, FileText, BarChart3, ClipboardList, Boxes, ClipboardCheck, CalendarDays, ArrowRight, Thermometer, ChefHat, Sparkles, Snowflake, Scale, CalendarClock, Wrench, ScanFace, Users } from "lucide-react";
 import { PepTodayCard } from "@/components/pep/PepTodayCard";
 import { TechAlertsCard } from "@/components/tech/TechAlertsCard";
 import { ManagerVerifyAlert } from "@/components/tech/ManagerVerifyAlert";
@@ -37,10 +36,9 @@ import { UserMenu } from "@/components/auth/UserMenu";
 import { KioskToggle } from "@/components/KioskToggle";
 import { VoiceGuideManager } from "@/components/VoiceGuideManager";
 import { PageTitle } from "@/components/PageTitle";
-import { canDisplayAdminTable } from "@/lib/adminTableVisibility";
 import { useSharedCatalogRevision } from "@/hooks/useSharedCatalogRevision";
 
-type Tab = "dashboard" | "rh" | "planning" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "inventaire" | "ecarts" | "ecarts-matieres" | "pep" | "tech" | "pointage";
+type Tab = "dashboard" | "rh" | "planning" | "stock-initial" | "mouvements" | "historique" | "produit" | "requisition" | "lots" | "autocontrole" | "stuffs-glace" | "hebdo" | "temperatures" | "recettes" | "nettoyage" | "ecarts" | "ecarts-matieres" | "pep" | "tech" | "pointage";
 
 const Index = () => {
   const [tab, setTab] = useState<Tab>("dashboard");
@@ -56,7 +54,6 @@ const Index = () => {
   useEffect(() => {
     void loadProductCatalog().then(() => setRefreshKey((k) => k + 1));
   }, [pdvId, catalogRevision]);
-  const showRestrictedTables = canDisplayAdminTable(user?.email, hasAdminRole);
 
   // Mode kiosque automatique : 2 secondes après la connexion (désactivé à la déconnexion)
   useEffect(() => {
@@ -98,9 +95,6 @@ const Index = () => {
     { id: "hebdo" as Tab, label: "Suivi hebdomadaire", icon: CalendarDays, perm: "view_weekly" },
     { id: "temperatures" as Tab, label: "Températures frigos", icon: Thermometer, perm: "view_temperatures" },
     { id: "recettes" as Tab, label: "Recettes des produits finis", icon: ChefHat, perm: "view_recipes" },
-    ...(showRestrictedTables ? [
-      { id: "inventaire" as Tab, label: "Inventaire", icon: PackageCheck, perm: "view_inventory" },
-    ] : []),
     { id: "nettoyage" as Tab, label: "Nettoyage", icon: Sparkles, perm: "view_cleaning" },
     { id: "ecarts" as Tab, label: "Calcul des écarts", icon: Scale, perm: "view_ecarts" },
     { id: "ecarts-matieres" as Tab, label: "Analyse des écarts matières", icon: BarChart3, perm: "view_ecarts" },
@@ -127,7 +121,6 @@ const Index = () => {
     temperatures: "Températures frigos",
     recettes: "Recettes des produits finis",
     nettoyage: "Suivi de nettoyage quotidien",
-    inventaire: "Inventaire",
     ecarts: "Calcul des écarts",
     "ecarts-matieres": "Analyse des écarts matières",
     pep: "Agenda PEP",
@@ -339,7 +332,6 @@ const Index = () => {
             {tab === "recettes" && can("view_recipes") && <RecipeManager />}
             {tab === "ecarts-matieres" && <MaterialVarianceModule />}
             {tab === "nettoyage" && <CleaningManager />}
-            {showRestrictedTables && tab === "inventaire" && <InventoryModule />}
             {tab === "ecarts" && <EcartHub glace={<EcartModule />} />}
             {tab === "pep" && <PepModule />}
             {TECH_ENABLED && tab === "tech" && <TechModule />}

@@ -2,6 +2,15 @@ import { describe, expect, it } from "vitest";
 import { ALL_PERMISSIONS, PERMISSION_GROUPS } from "@/contexts/AuthContext";
 
 describe("permissions des ajouts récents", () => {
+  it("retire les permissions Inventaire proposées sans retirer les droits Recettes et Stock restant", () => {
+    const keys = ALL_PERMISSIONS.map(permission => permission.key) as string[];
+    expect(keys).not.toContain("view_inventory");
+    expect(keys).not.toContain("manage_inventory");
+    expect(PERMISSION_GROUPS.flatMap(group => group.keys)).not.toContain("view_inventory");
+    expect(keys).toContain("view_recipes");
+    expect(keys).toContain("edit_remaining_stock");
+  });
+
   it("expose les écarts ingrédients avec leurs droits existants sans accorder de nouveaux accès", () => {
     const group = PERMISSION_GROUPS.find(group => group.title.startsWith("Écarts ingrédients"));
     expect(group?.keys).toEqual(["view_ecarts", "edit_ecarts"]);

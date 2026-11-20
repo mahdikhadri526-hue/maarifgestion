@@ -31,3 +31,4 @@
 - Bundle welcome MP3s (no /__l5e); store tech videos privately before writes, keep legacy playback, no list preload.
 - Material actuals cover PDV stock IDs and shared weekly sorties; group recipe units without mixing, show unlinked outputs and flag native fallback for missing conversions.
 - fetchAllRows orders pages by a unique column (default id) so totals stay stable.
+- Retiring Inventory removes its tab, lazy import and permission selectors only; retain its stored records and shared product-catalog code to avoid affecting stock and recipes.

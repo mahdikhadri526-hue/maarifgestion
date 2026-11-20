@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Retirer Inventaire des menus et des permissions proposées, conserver les données et le catalogue partagé, sans publication.
 - [x] Relier Recettes aux permissions effectives ; séparer edit_stock/edit_remaining_stock, respecter les cases individuelles décochées et les refus PDV, protéger les régularisations et la mise en place en base ; 17 tests ciblés réussis, aucune quantité ou recette modifiée, sans publication.
 - [ ] Vérifier les permissions Recettes/Stock restant dans l’aperçu connecté : session personnelle indisponible et création du compte temporaire refusée ; attendre une connexion dans l’aperçu.
 - [x] Conserver les trois décimales du Kg/bac (Nougat 3,727) dans le détail Stock restant ; 3727 g confirmés en base, 15 tests valident les conversions stock/écarts, aucune saisie modifiée, non publié ; contrôle connecté bloqué par la session indisponible ci-dessous.
