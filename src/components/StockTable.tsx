@@ -150,6 +150,7 @@ function buildWeeklyOrderRows(
     let prevSI: number | null = null;
     let spanStart: string | null = null;
     let pendingEntries = 0;
+    let firstEntryDate: string | null = null;
 
     for (const [date, bucket] of entries) {
       if (bucket.si != null) {
@@ -159,12 +160,20 @@ function buildWeeklyOrderRows(
           for (let d = parseISODate(spanStart); formatISODate(d) < date; d.setDate(d.getDate() + 1)) {
             closedDates.add(formatISODate(d));
           }
+        } else if (prevSI == null && pendingEntries > 0 && firstEntryDate) {
+          // Article récent : premières entrées avant tout comptage → stock initial 0.
+          const sortie = Math.max(0, pendingEntries - bucket.si);
+          if (isInSelectedPeriod(firstEntryDate)) totals[article] += sortie;
+          for (let d = parseISODate(firstEntryDate); formatISODate(d) < date; d.setDate(d.getDate() + 1)) {
+            closedDates.add(formatISODate(d));
+          }
         }
         prevSI = bucket.si;
         spanStart = date;
         pendingEntries = bucket.entrees;
         latestStock[article] = bucket.si;
       } else {
+        if (prevSI == null && firstEntryDate == null && bucket.entrees > 0) firstEntryDate = date;
         pendingEntries += bucket.entrees;
       }
     }
