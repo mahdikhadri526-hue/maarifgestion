@@ -16,7 +16,7 @@
 - Trigger the welcome transition only from a successful password sign-in attempt and let the existing PDV gate decide the destination afterward, so restored sessions and PDV changes never replay it.
 - Store login welcome photos in a private bucket with an ordered database list; only the two designated admin accounts manage them.
 
-- Welcome music and voice-over are static bundled audio (no per-login synthesis or streaming): music plays once from the first photo, ducked under the voice-over, and stops before the welcome message.
+- Welcome music/voice-over are static bundled audio: music plays once from the first photo, ducked under voice, stops before the message.
 - Keep product discrepancy views separate from ice-cream logic and persist their existing prefixed sections in ecart_lines, so presentation changes preserve historical data and calculations.
 - Self-hosted copies: voice guides and welcome photos fall back to /stockage/<bucket>/<path> shipped beside the built app when storage signing or playback fails, so offline-server packages play without a storage service.
 - Photo-scan reading in `supabase/functions/scan-stock-entry` picks its provider by secret: `GOOGLE_API_KEY` (model from `GEMINI_MODEL`) on self-hosted servers, otherwise the built-in Lovable AI service.
