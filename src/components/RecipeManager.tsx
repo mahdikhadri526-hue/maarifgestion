@@ -65,8 +65,8 @@ function isCustom(productId: string) {
 }
 
 export function RecipeManager() {
-  const { user, hasAdminRole, pdvId } = useAuth();
-  const canEdit = canDisplayAdminTable(user?.email, hasAdminRole);
+  const { user, hasAdminRole, pdvId, can } = useAuth();
+  const canEdit = canDisplayAdminTable(user?.email, hasAdminRole) && can("edit_recipes");
   const sharedRevision = useSharedCatalogRevision(["recipes", "recipe_ingredients", "finished_products", "stock_product_groups", "product_catalog"], pdvId);
   const [exportedStock, setExportedStock] = useState<CustomStockGroup[]>([]);
   useEffect(() => {

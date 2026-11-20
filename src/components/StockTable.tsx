@@ -268,7 +268,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [adjustSaving, setAdjustSaving] = useState(false);
 
   const canEditStock = can("edit_stock");
-  const canEditRemaining = can("edit_remaining_stock") || can("edit_stock");
+  const canEditRemaining = can("edit_remaining_stock");
   // Shared stock rows also identify packaging entries in the daily MEP view.
   const { data: levels, loading, refresh } = useStockLevels();
   // Semaine sélectionnée pour la colonne « Stock mise en place » (lundi ISO).
@@ -584,6 +584,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   };
 
   const openStockAdjustment = (level: typeof filtered[number], currentRestant: number) => {
+    if (!can("edit_remaining_stock")) return;
     setAdjustData({
       productId: level.productId,
       productName: level.productName,
@@ -598,6 +599,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   };
 
   const confirmAdjust = async () => {
+    if (!can("edit_remaining_stock")) {
+      toast.error("Modification du stock restant non autorisée");
+      return;
+    }
     if (!adjustData) return;
     const newRestant = Number(adjustInputValue);
     if (!Number.isFinite(newRestant)) {
@@ -1125,6 +1130,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   }, [mode, day, month, start, end, levels, variant, isWeeklyCat, pdvId, weeklySettingsKey]);
 
   const cycleUnit = async (productId: string, currentUnit: UnitType) => {
+    if (!canEditStock) return;
     const nextIndex = (UNITS.indexOf(currentUnit) + 1) % UNITS.length;
     const nextUnit = UNITS[nextIndex];
     try {
@@ -2428,7 +2434,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         )}
         <DialogFooter>
           <Button variant="outline" onClick={() => setAdjustOpen(false)} disabled={adjustSaving}>Annuler</Button>
-          <Button onClick={confirmAdjust} disabled={adjustSaving || !adjustPerformedBy.trim() || !adjustInputValue.trim()}>
+          <Button onClick={confirmAdjust} disabled={!canEditRemaining || adjustSaving || !adjustPerformedBy.trim() || !adjustInputValue.trim()}>
             {adjustSaving ? "Enregistrement..." : "Confirmer"}
           </Button>
         </DialogFooter>

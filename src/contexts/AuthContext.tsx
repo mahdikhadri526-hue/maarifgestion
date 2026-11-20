@@ -3,6 +3,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentPdvId, getStoredPdvId, setCurrentPdvId } from "@/lib/pdvStore";
 import { DEFAULT_PDV_ID, ENABLE_MULTI_PDV, MULTI_PDV_ADMIN_ONLY } from "@/lib/featureFlags";
+import { hasEffectivePermission } from "@/lib/effectivePermissions";
 
 export interface Pdv {
   id: string;
@@ -180,6 +181,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
   const [pdvLoading, setPdvLoading] = useState(true);
   const [pdvPermissions, setPdvPermissions] = useState<Set<string> | null>(null);
+  const [pdvDenied, setPdvDenied] = useState<Set<string>>(new Set());
+  const [pdvPermissionRevision, setPdvPermissionRevision] = useState(0);
   const [assignedPdvIds, setAssignedPdvIds] = useState<string[]>([]);
   const [assignedLoaded, setAssignedLoaded] = useState(false);
 
@@ -223,9 +226,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     let cancelled = false;
     if (!pdvId) {
       setPdvPermissions(null);
+      setPdvDenied(new Set());
       return;
     }
     setPdvPermissions(null);
+    setPdvDenied(new Set());
     supabase
       .from("pdv_permissions" as any)
       .select("permission_key, allowed")
@@ -233,13 +238,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .then(({ data }) => {
         if (cancelled) return;
         const set = new Set<string>();
-        ((data ?? []) as any[]).forEach((p) => p.allowed && set.add(p.permission_key));
+        const denied = new Set<string>();
+        ((data ?? []) as any[]).forEach((p) => {
+          if (p.allowed) set.add(p.permission_key);
+          else denied.add(p.permission_key);
+        });
         setPdvPermissions(set);
+        setPdvDenied(denied);
       });
     return () => {
       cancelled = true;
     };
-  }, [pdvId]);
+  }, [pdvId, pdvPermissionRevision]);
 
   const multiPdvEnabledRef = useRef(multiPdvEnabled);
   multiPdvEnabledRef.current = multiPdvEnabled;
@@ -367,14 +377,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const can = useCallback(
     (key: string) => {
-      if (!user) return false;
-      if (isAdmin) return true;
-      if (hasAdminRole || isRegionalAdmin) return permissions.has(key);
-      // Permissions individuelles (Gestion des utilisateurs) + permissions du
-      // point de vente rattaché : les deux s'appliquent.
-      return permissions.has(key) || (pdvPermissions?.has(key) ?? false);
+      return hasEffectivePermission({
+        signedIn: !!user, unrestrictedAdmin: isAdmin,
+        individualOnly: hasAdminRole || isRegionalAdmin,
+        hasCustomPermissions: hasCustomPerms, permissions, pdvPermissions, pdvDenied,
+      }, key);
     },
-    [user, isAdmin, hasAdminRole, isRegionalAdmin, permissions, pdvPermissions],
+    [user, isAdmin, hasAdminRole, isRegionalAdmin, hasCustomPerms, permissions, pdvPermissions, pdvDenied],
   );
 
   const signOut = async () => {
@@ -447,7 +456,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refresh = async () => {
     if (user) await loadRoleAndPerms(user.id);
+    setPdvPermissionRevision(value => value + 1);
   };
+
+  useEffect(() => {
+    if (!user) return;
+    const reloadPermissions = () => {
+      void loadRoleAndPerms(user.id);
+      setPdvPermissionRevision(value => value + 1);
+    };
+    const channel = supabase.channel(`effective-permissions:${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_permissions", filter: `user_id=eq.${user.id}` }, reloadPermissions)
+      .on("postgres_changes", { event: "*", schema: "public", table: "pdv_permissions", filter: `pdv_id=eq.${pdvId ?? "00000000-0000-0000-0000-000000000000"}` }, reloadPermissions)
+      .subscribe();
+    window.addEventListener("focus", reloadPermissions);
+    const poll = setInterval(reloadPermissions, 30_000);
+    return () => {
+      clearInterval(poll);
+      window.removeEventListener("focus", reloadPermissions);
+      void supabase.removeChannel(channel);
+    };
+  }, [user?.id, pdvId, loadRoleAndPerms]);
 
   const selectPdv = useCallback((id: string | null) => {
     if (!multiPdvEnabled) return;

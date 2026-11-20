@@ -112,7 +112,7 @@ const Index = () => {
   ];
   const ATTENDANCE_ENABLED = isPreviewHost();
   const tabs = allTabs.filter(
-    (t) => (t.id === "recettes" || can(t.perm) || ("alt" in t && typeof t.alt === "string" && can(t.alt))) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED) && (t.id !== "rh" || ATTENDANCE_ENABLED) && (t.id !== "planning" || ATTENDANCE_ENABLED)
+    (t) => (can(t.perm) || ("alt" in t && typeof t.alt === "string" && can(t.alt))) && (t.id !== "tech" || TECH_ENABLED) && (t.id !== "pointage" || ATTENDANCE_ENABLED) && (t.id !== "rh" || ATTENDANCE_ENABLED) && (t.id !== "planning" || ATTENDANCE_ENABLED)
   );
   const pageTitles: Partial<Record<Tab, string>> = {
     "stock-initial": "Stock Initial",
@@ -336,7 +336,7 @@ const Index = () => {
             {tab === "stuffs-glace" && <GlaceStuffControl />}
             {tab === "hebdo" && <WeeklyTracking />}
             {tab === "temperatures" && <FridgeTemperatureManager />}
-            {tab === "recettes" && <RecipeManager />}
+            {tab === "recettes" && can("view_recipes") && <RecipeManager />}
             {tab === "ecarts-matieres" && <MaterialVarianceModule />}
             {tab === "nettoyage" && <CleaningManager />}
             {showRestrictedTables && tab === "inventaire" && <InventoryModule />}

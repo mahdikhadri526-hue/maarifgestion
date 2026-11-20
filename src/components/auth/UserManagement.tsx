@@ -295,10 +295,8 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
       if (current) next.delete(key); else next.add(key);
       return { ...prev, [userId]: next };
     });
-    const { data, error } = current
-      ? await supabase.from("user_permissions").delete().eq("user_id", userId).eq("permission_key", key).select()
-      : await supabase.from("user_permissions").upsert(
-          { user_id: userId, permission_key: key, allowed: true },
+    const { data, error } = await supabase.from("user_permissions").upsert(
+          { user_id: userId, permission_key: key, allowed: !current },
           { onConflict: "user_id,permission_key" },
         ).select();
     if (error) toast.error("Erreur : " + error.message);
@@ -377,12 +375,10 @@ export function UserManagement({ onBack }: { onBack: () => void }) {
 
   const setGroupPerms = async (userId: string, keys: string[], enable: boolean) => {
     if (!(await ensureSession())) return;
-    const { data, error } = enable
-      ? await supabase.from("user_permissions").upsert(
-          keys.map((k) => ({ user_id: userId, permission_key: k, allowed: true })),
+    const { data, error } = await supabase.from("user_permissions").upsert(
+          keys.map((k) => ({ user_id: userId, permission_key: k, allowed: enable })),
           { onConflict: "user_id,permission_key" },
-        ).select()
-      : await supabase.from("user_permissions").delete().eq("user_id", userId).in("permission_key", keys).select();
+        ).select();
     if (error) toast.error("Erreur : " + error.message);
     else if (enable && (!data || data.length === 0)) {
       toast.error("Modification refusée : votre compte n'a pas le droit de changer les permissions de cet utilisateur.");
