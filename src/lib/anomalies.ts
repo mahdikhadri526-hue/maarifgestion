@@ -1,3 +1,4 @@
+import { fetchFridgeSlots } from "@/lib/fridgeSlots";
 // Centre des anomalies — détection AUTOMATIQUE en LECTURE SEULE.
 // Aucune écriture, aucun calcul métier existant modifié.
 import { supabase } from "@/integrations/supabase/client";
@@ -84,7 +85,7 @@ export function saveScoreRules(rules: ScoreRule[]) {
 
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
-const TEMP_SLOTS: { slot: string; hour: number }[] = [
+let TEMP_SLOTS: { slot: string; hour: number }[] = [
   { slot: "07h", hour: 7 },
   { slot: "16h", hour: 16 },
   { slot: "00h", hour: 24 },
@@ -204,6 +205,10 @@ export async function detectAnomalies(pdvId: string, start: string, end: string)
 }
 
 export async function analyzePdv(pdvId: string, start: string, end: string): Promise<AnalysisResult> {
+  try {
+    const defs = await fetchFridgeSlots();
+    TEMP_SLOTS = defs.map((d) => ({ slot: d.label, hour: d.hour < 5 ? d.hour + 24 : d.hour }));
+  } catch { /* garder les créneaux par défaut */ }
   const now = new Date();
   const days = datesInRange(start, end);
   const weekStarts = Array.from(new Set(days.map(mondayOf).concat(mondayOf(addDaysISO(end, 1)))));

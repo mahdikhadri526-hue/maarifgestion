@@ -2,7 +2,7 @@
 
 export type FridgeZone = "Salle" | "Emporter" | "Entre-sol" | "Passe";
 
-export type FridgeSlot = "07h" | "16h" | "00h";
+export type FridgeSlot = string;
 export const SLOTS: FridgeSlot[] = ["07h", "16h", "00h"];
 
 export interface FridgeEquipment {

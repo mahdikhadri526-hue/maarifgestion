@@ -547,6 +547,36 @@ export type Database = {
           },
         ]
       }
+      fridge_slots: {
+        Row: {
+          created_at: string
+          hour: number
+          id: string
+          label: string
+          minute: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hour: number
+          id?: string
+          label: string
+          minute?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hour?: number
+          id?: string
+          label?: string
+          minute?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       fridge_temperatures: {
         Row: {
           action_corrective: string | null

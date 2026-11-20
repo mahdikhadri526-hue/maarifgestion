@@ -302,6 +302,13 @@
       "when": 1795091138454,
       "tag": "0042_period_aggregates_regularisation_on_sorties",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1795195678529,
+      "tag": "0043_fridge_slots",
+      "breakpoints": true
     }
   ]
 }

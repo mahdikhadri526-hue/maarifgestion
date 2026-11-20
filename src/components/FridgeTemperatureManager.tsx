@@ -11,7 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Save, AlertTriangle, CheckCircle2, FileDown, Volume2, VolumeX } from "lucide-react";
 import { useCustomZones } from "@/lib/pdvZones";
-import { EQUIPMENTS as BASE_EQUIPMENTS, SLOTS, ZONES as ALL_ZONES, FRIDGE_ZONE_OFF_PREFIX, formatDisplayTemp, parseDisplayTemp, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
+import { FridgeSlotsAdmin } from "@/components/FridgeSlotsAdmin";
+import { useFridgeSlots, pickCurrentSlot, DEFAULT_FRIDGE_SLOTS } from "@/lib/fridgeSlots";
+import { EQUIPMENTS as BASE_EQUIPMENTS, ZONES as ALL_ZONES, FRIDGE_ZONE_OFF_PREFIX, formatDisplayTemp, parseDisplayTemp, type FridgeSlot, type FridgeZone } from "@/lib/fridgeData";
 import { OPERATORS } from "@/lib/operators";
 import { MANAGERS } from "@/lib/managers";
 import { useOperators, useManagers } from "@/lib/roster";
@@ -87,10 +89,7 @@ function editableMaxDateStr() {
 }
 
 function currentSlot(): FridgeSlot {
-  const h = new Date().getHours();
-  if (h >= 5 && h < 12) return "07h";
-  if (h >= 12 && h < 20) return "16h";
-  return "00h";
+  return pickCurrentSlot(DEFAULT_FRIDGE_SLOTS);
 }
 
 function getSign(value: string, type: string): "+" | "-" {
@@ -145,7 +144,13 @@ export function FridgeTemperatureManager() {
   const { toast } = useToast();
 
   const [date, setDate] = useState<string>(serviceDateStr());
+  const { slots: slotDefs, reload: reloadSlots } = useFridgeSlots();
+  const SLOTS = useMemo(() => slotDefs.map((s) => s.label), [slotDefs]);
   const [slot, setSlot] = useState<FridgeSlot>(currentSlot());
+  const slotTouched = useRef(false);
+  useEffect(() => {
+    if (!slotTouched.current || !SLOTS.includes(slot)) setSlot(pickCurrentSlot(slotDefs));
+  }, [slotDefs]); // eslint-disable-line react-hooks/exhaustive-deps
   const [zoneFilter, setZoneFilter] = useState<FridgeZone | "">("Salle");
   useEffect(() => {
     if (zoneFilter && !ZONES.includes(zoneFilter)) setZoneFilter(ZONES[0] ?? "");
@@ -158,11 +163,7 @@ export function FridgeTemperatureManager() {
   const [savingZone, setSavingZone] = useState<FridgeZone | null>(null);
   const [zoneVisa, setZoneVisa] = useState<Record<string, string>>({});
   const [zoneOperator, setZoneOperator] = useState<Record<string, string>>({});
-  const [savedTodayBySlot, setSavedTodayBySlot] = useState<Record<FridgeSlot, Set<string>>>(() => ({
-    "07h": new Set<string>(),
-    "16h": new Set<string>(),
-    "00h": new Set<string>(),
-  }));
+  const [savedTodayBySlot, setSavedTodayBySlot] = useState<Record<FridgeSlot, Set<string>>>(() => ({}));
 
   // Historique
   const [historyDate, setHistoryDate] = useState<string>("");
@@ -204,22 +205,23 @@ export function FridgeTemperatureManager() {
 
   const getSlotDeadline = useCallback((targetSlot: FridgeSlot, serviceDateValue: string) => {
     const [year, month, day] = serviceDateValue.split("-").map(Number);
-    const deadline = new Date(year, month - 1, day, targetSlot === "07h" ? 7 : targetSlot === "16h" ? 16 : 0, 30, 0, 0);
-    // Le créneau 00h appartient à la fin du service, donc au jour civil suivant.
-    if (targetSlot === "00h") deadline.setDate(deadline.getDate() + 1);
+    const def = slotDefs.find((s) => s.label === targetSlot) ?? { hour: 0, minute: 0 };
+    const deadline = new Date(year, month - 1, day, def.hour, def.minute + 30, 0, 0);
+    // Les créneaux avant 5h appartiennent à la fin du service, donc au jour civil suivant.
+    if (def.hour < 5) deadline.setDate(deadline.getDate() + 1);
     return deadline;
-  }, []);
+  }, [slotDefs]);
 
   const overdueSlots = useMemo(() => {
     return SLOTS.filter((targetSlot) => now >= getSlotDeadline(targetSlot, currentServiceDate));
-  }, [currentServiceDate, getSlotDeadline, now]);
+  }, [SLOTS, currentServiceDate, getSlotDeadline, now]);
 
   const missingTempAlerts = useMemo<MissingTemperatureAlert[]>(() => {
     if (date !== currentServiceDate) return [];
 
     return overdueSlots
       .map((targetSlot) => {
-        const savedCodes = new Set(savedTodayBySlot[targetSlot]);
+        const savedCodes = new Set(savedTodayBySlot[targetSlot] ?? []);
 
         if (targetSlot === slot) {
           EQUIPMENTS.forEach((eq) => {
@@ -326,14 +328,10 @@ export function FridgeTemperatureManager() {
       .eq("control_date", serviceDate);
     if (error) return;
 
-    const next: Record<FridgeSlot, Set<string>> = {
-      "07h": new Set<string>(),
-      "16h": new Set<string>(),
-      "00h": new Set<string>(),
-    };
+    const next: Record<FridgeSlot, Set<string>> = {};
     (data ?? []).forEach((r: { slot: string | null; equipment_code: string | null }) => {
-      if (SLOTS.includes(r.slot as FridgeSlot) && r.equipment_code) {
-        next[r.slot as FridgeSlot].add(r.equipment_code);
+      if (r.slot && r.equipment_code) {
+        (next[r.slot] ||= new Set<string>()).add(r.equipment_code);
       }
     });
     setSavedTodayBySlot(next);
@@ -474,7 +472,7 @@ export function FridgeTemperatureManager() {
     });
     setSavedTodayBySlot((prev) => ({
       ...prev,
-      [slot]: new Set(prev[slot]).add(code),
+      [slot]: new Set(prev[slot] ?? []).add(code),
     }));
     toast({ title: "Enregistré", description: `${eq.name} (${slot})` });
   }
@@ -541,7 +539,7 @@ export function FridgeTemperatureManager() {
     }
     if (ok > 0) {
       setSavedTodayBySlot((prev) => {
-        const nextSlot = new Set(prev[slot]);
+        const nextSlot = new Set(prev[slot] ?? []);
         savedCodes.forEach((code) => nextSlot.add(code));
         return { ...prev, [slot]: nextSlot };
       });
@@ -599,7 +597,7 @@ export function FridgeTemperatureManager() {
     }
     setRows((prev) => ({ ...prev, [code]: emptyRow() }));
     setSavedTodayBySlot((prev) => {
-      const nextSlot = new Set(prev[slot]);
+      const nextSlot = new Set(prev[slot] ?? []);
       nextSlot.delete(code);
       return { ...prev, [slot]: nextSlot };
     });
@@ -611,8 +609,9 @@ export function FridgeTemperatureManager() {
       <Card>
         <CardHeader>
           <p className="text-sm text-muted-foreground">
-            3 contrôles par jour&nbsp;: <strong>07h</strong>, <strong>16h</strong>, <strong>00h</strong>.
+            {SLOTS.length} contrôle(s) par jour&nbsp;: {SLOTS.map((s, i) => <span key={s}>{i > 0 && ", "}<strong>{s}</strong></span>)}.
           </p>
+          {isAdmin && <FridgeSlotsAdmin slots={slotDefs} onChanged={reloadSlots} />}
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -635,7 +634,7 @@ export function FridgeTemperatureManager() {
             </div>
             <div>
               <Label>Créneau</Label>
-              <Select value={slot} onValueChange={(v) => setSlot(v as FridgeSlot)}>
+              <Select value={slot} onValueChange={(v) => { slotTouched.current = true; setSlot(v as FridgeSlot); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   {SLOTS.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}

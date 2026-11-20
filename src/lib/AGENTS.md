@@ -3,3 +3,4 @@
 - Packaging MEP input edits persist their calculated-plus-direct piece sum through the existing weekly MEP writer; never backfill historical counts automatically from reference settings.
 - Packaging weight/direct inputs live on PDV-week MEP rows, not shared reference conversions, to prevent cross-week repetition; display only on counting day.
 - Shared catalog views use lifecycle-managed, debounced Realtime subscriptions and focus refresh; recipes and group definitions have authenticated reads and designated-admin write guards, while source stock quantities remain PDV-scoped.- Regularisations act only on that day's sorties (movementFlow), never below zero.
+- Temperature slots are global fridge_slots rows (admin-only writes); readings keep their saved slot label.
