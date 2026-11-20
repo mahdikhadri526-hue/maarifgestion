@@ -26,6 +26,8 @@ import { WeeklyTransfers } from "./WeeklyTransfers";
 import { WeeklyArticlesAdmin } from "./WeeklyArticlesAdmin";
 import { useWeeklyArticleSettings } from "@/hooks/useWeeklyArticleSettings";
 import { resolveWeeklyArticles, type WeeklyCategory } from "@/lib/weeklyArticleSettings";
+import { useQueryClient } from "@tanstack/react-query";
+import { useGlaceGrammages, glaceGrammagesQueryKey } from "@/hooks/useGlaceGrammages";
 
 const SHOW_KG_BAC = true; // colonne Kg/bac affichée (modifiable par l’admin)
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
@@ -325,34 +327,20 @@ export function WeeklyTracking() {
   const [cremeGlaceRows, setCremeGlaceRows] = useState<Row[]>([]);
 
   // Grammage par bac pour chaque parfum de glace (g)
-  const [glaceGrammages, setGlaceGrammages] = useState<Record<string, number>>({});
-  useEffect(() => {
-    (async () => {
-      try {
-        const { data, error } = await supabase
-          .from("glace_grammage")
-          .select("article, grammage_grams");
-        if (error) throw error;
-        const map: Record<string, number> = {};
-        (data || []).forEach((r: any) => {
-          map[r.article] = Number(r.grammage_grams) || 0;
-        });
-        setGlaceGrammages(map);
-      } catch {
-        /* ignore */
-      }
-    })();
-  }, []);
+  const { data: glaceGrammages = {} } = useGlaceGrammages();
+  const queryClient = useQueryClient();
   const saveGrammage = async (article: string, raw: string) => {
     // Saisie en Kg/bac → stockée en grammes en base
-    const kg = Math.max(0, Number(raw) || 0);
+    const kg = Math.max(0, Number(raw.replace(",", ".")) || 0);
     const grams = Math.round(kg * 1000);
-    setGlaceGrammages((prev) => ({ ...prev, [article]: grams }));
     try {
       const { error } = await supabase
         .from("glace_grammage")
         .upsert({ article, grammage_grams: grams }, { onConflict: "article" });
       if (error) throw error;
+      invalidateTables(["glace_grammage"]);
+      queryClient.setQueryData<Record<string, number>>(glaceGrammagesQueryKey, prev => ({ ...prev, [article]: grams }));
+      void queryClient.invalidateQueries({ queryKey: glaceGrammagesQueryKey });
     } catch (err: any) {
       toast.error("Erreur grammage", { description: err?.message ?? String(err) });
     }

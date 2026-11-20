@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { Boxes, Loader2, Package, Save, Scale, ShoppingCart } from "lucide-react";
 import { formatDateFR } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
+import { useGlaceGrammages } from "@/hooks/useGlaceGrammages";
 import { useWeeklyArticleSettings } from "@/hooks/useWeeklyArticleSettings";
 import { isWeeklyArticleVisible } from "@/lib/weeklyArticleSettings";
 import { PhotoScanEntry, type ScannedEntry } from "@/components/PhotoScanEntry";
@@ -42,26 +42,17 @@ const VIEW_SECTIONS: Record<Exclude<View, "ecarts">, Section[]> = {
 export function EcartModule() {
   const { can, isAdmin, isRegionalAdmin, pdvId } = useAuth();
   const weeklySettings = useWeeklyArticleSettings(pdvId).data;
+  const { data: glaceGrammages } = useGlaceGrammages();
   const [parfumsVersion, setParfumsVersion] = useState(0);
   const removedParfums = useMemo(() => new Set(
     (weeklySettings ?? []).filter((r) => r.category === "glace" && !isWeeklyArticleVisible(pdvId, weeklySettings ?? [], r.article)).map((r) => r.article.toLocaleLowerCase("fr")),
   ), [weeklySettings, pdvId]);
   useEffect(() => {
-    if (!weeklySettings) return;
+    if (!weeklySettings || !glaceGrammages) return;
     const added = weeklySettings.filter((r) => r.category === "glace" && r.active).map((r) => r.article);
-    let cancelled = false;
-    (async () => {
-      let grams: Record<string, number> = {};
-      if (added.length) {
-        const { data } = await supabase.from("glace_grammage").select("article, grammage_grams");
-        grams = Object.fromEntries((data ?? []).map((g) => [g.article.toLocaleLowerCase("fr"), Number(g.grammage_grams) || 0]));
-      }
-      if (cancelled) return;
-      configureEcartExtraParfums(added.map((name) => ({ name, gram: grams[name.toLocaleLowerCase("fr")] ?? 0 })));
-      setParfumsVersion((v) => v + 1);
-    })();
-    return () => { cancelled = true; };
-  }, [weeklySettings]);
+    configureEcartExtraParfums(added.map((name) => ({ name, gram: 0 })), glaceGrammages);
+    setParfumsVersion((v) => v + 1);
+  }, [weeklySettings, glaceGrammages]);
   const canEdit = can("edit_ecarts") || isAdmin || isRegionalAdmin;
 
   const [view, setView] = useState<View>("ecarts");

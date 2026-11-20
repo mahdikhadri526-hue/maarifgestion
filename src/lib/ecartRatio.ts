@@ -357,19 +357,27 @@ const WEEKLY_TO_PARFUM: Record<string, string> = {
 };
 const PARFUM_NAMES = new Set(PARFUMS.map((p) => p.name));
 const BASE_PARFUM_COUNT = PARFUMS.length;
+const BASE_PARFUM_GRAMS = new Map(PARFUMS.map(p => [p.name, p.gram]));
 
 /**
  * Ajoute les parfums glace créés par l'admin pour le PDV (suivi hebdo) aux sections parfum.
  * Les parfums par défaut ne sont jamais retirés du calcul (historique préservé).
  */
-export function configureEcartExtraParfums(extra: Item[]): void {
+export function configureEcartExtraParfums(extra: Item[], grammages: Record<string, number> = {}): void {
   PARFUMS.splice(BASE_PARFUM_COUNT);
+  const weights = new Map(Object.entries(grammages).map(([name, gram]) => [
+    (WEEKLY_TO_PARFUM[name] ?? name).toLocaleLowerCase("fr"), gram,
+  ]));
+  for (const parfum of PARFUMS) {
+    parfum.gram = weights.get(parfum.name.toLocaleLowerCase("fr")) ?? BASE_PARFUM_GRAMS.get(parfum.name) ?? 0;
+  }
   const known = new Set(PARFUMS.map((p) => p.name.toLocaleLowerCase("fr")));
   for (const it of extra) {
-    const key = it.name.toLocaleLowerCase("fr");
+    const name = WEEKLY_TO_PARFUM[it.name] ?? it.name;
+    const key = name.toLocaleLowerCase("fr");
     if (known.has(key)) continue;
     known.add(key);
-    PARFUMS.push(it);
+    PARFUMS.push({ name, gram: weights.get(key) ?? it.gram });
   }
   PARFUM_NAMES.clear();
   PARFUMS.forEach((p) => PARFUM_NAMES.add(p.name));

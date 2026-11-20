@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Répercuter les Kg/bac enregistrés sur tous les parfums d’Écarts glace et actualiser les poids partagés et les caches stock ; préserver les quantités et les doses des ventes.
 - [x] Répercuter les retraits d’articles dans Stock restant et les écarts (glace/ingrédients), uniquement à l’affichage ; 26 tests réussis, article « sans sucre » déjà retiré vérifié dans les trois tables avec le compte admin ; données et calculs conservés, non publié.
 - [x] Ajouter/supprimer/restaurer les articles Glaces, Fruits, Nettoyants et Tartes par PDV depuis le compte admin ; 14 tests réussis, ajout/rechargement/retrait/restauration et isolation avec Almaz vérifiés dans l’aperçu admin, article temporaire retiré ; historique intact, non publié.
 - [x] Partager recettes et produits finis en consultation, réserver la gestion des recettes/produits/regroupements à khadri1982@gmail.com ; protections restrictives en base et actualisation partagée, 29 tests réussis, aucune donnée réécrite, non publié.

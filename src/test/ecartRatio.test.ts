@@ -1,5 +1,29 @@
-import { describe, expect, it } from "vitest";
-import { applyGlaceAuto, computeDay, lastFinalBefore, type DayData } from "@/lib/ecartRatio";
+import { afterEach, describe, expect, it } from "vitest";
+import { applyGlaceAuto, computeDay, configureEcartExtraParfums, computeTotals, lastFinalBefore, PARFUMS, type DayData } from "@/lib/ecartRatio";
+
+afterEach(() => configureEcartExtraParfums([]));
+
+describe("Kg/bac partagés avec les écarts glace", () => {
+  it("répercute une modification sur les entrées, le stock chambre et les écarts sans modifier les saisies ni les doses de vente", () => {
+    const day = { ENTREE_EMP: { Nougat: 2 }, SF_CHAMBRE_EMP: { Nougat: 1 }, VENTE_EMP: { "CORNET 1B EMP": 10 } };
+    configureEcartExtraParfums([], { Nougat: 4000 });
+    expect(computeDay("2026-11-20", day, undefined)).toMatchObject({ entreeEmpG: 8000, sfChambreG: 4000, consoTotalG: 4000, ventesTotalG: 600, ecartTotalG: -3400 });
+    configureEcartExtraParfums([], { Nougat: 4500 });
+    expect(computeDay("2026-11-20", day, undefined)).toMatchObject({ entreeEmpG: 9000, sfChambreG: 4500, consoTotalG: 4500, ventesTotalG: 600, ecartTotalG: -3900 });
+    expect(day.ENTREE_EMP.Nougat).toBe(2);
+  });
+
+  it("applique les poids des articles renommés sans créer de doublons", () => {
+    configureEcartExtraParfums([{ name: "Banane", gram: 0 }], { Banane: 5000, "Citron menthe": 4200, "Orange cannelle": 4100, Réglisse: 3900 });
+    expect(computeTotals({ ENTREE_EMP: { "BANANE CARAMILISE": 1, "CITRON MENTHE": 1, "ORANGE CANELLE": 1, REGLISSE: 1 } }).entreeEmpG).toBe(17200);
+    expect(PARFUMS.filter(p => p.name === "Banane")).toHaveLength(0);
+  });
+
+  it("répercute les poids des ajouts et les zéros, en conservant le repli des poids absents", () => {
+    configureEcartExtraParfums([{ name: "Nouveau parfum", gram: 0 }], { "Nouveau parfum": 3200, Nougat: 0 });
+    expect(computeTotals({ ENTREE_EMP: { "Nouveau parfum": 2, Nougat: 3, Vanille: 1 } }).entreeEmpG).toBe(9950);
+  });
+});
 
 describe("Calcul des écarts — formule globale", () => {
   it("calcule consommation, ventes et écart sur une journée", () => {
