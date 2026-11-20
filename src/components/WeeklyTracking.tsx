@@ -27,7 +27,7 @@ import { WeeklyArticlesAdmin } from "./WeeklyArticlesAdmin";
 import { useWeeklyArticleSettings } from "@/hooks/useWeeklyArticleSettings";
 import { resolveWeeklyArticles, type WeeklyCategory } from "@/lib/weeklyArticleSettings";
 
-const SHOW_KG_BAC = false; // colonne Kg/bac masquée
+const SHOW_KG_BAC = true; // colonne Kg/bac affichée (modifiable par l’admin)
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
 
 import {
@@ -367,7 +367,7 @@ export function WeeklyTracking() {
   const [showControls, setShowControls] = useState(true);
   const [unlockedDays, setUnlockedDays] = useState<Set<string>>(new Set());
   const [scanDay, setScanDay] = useState<string>("today");
-  const { can, user, pdvId } = useAuth();
+  const { can, user, pdvId, isAdmin } = useAuth();
   const articleSettingsQuery = useWeeklyArticleSettings(pdvId);
   const articleLists = useMemo(() => {
     const settings = articleSettingsQuery.data ?? [];
@@ -2062,7 +2062,7 @@ export function WeeklyTracking() {
                             onCommit={(v) => saveGrammage(article, v)}
                             className="h-7 w-20 text-xs px-1 text-center"
                             placeholder="Kg"
-                            disabled={!can("edit_weekly")}
+                            disabled={!isAdmin}
                           />
                         )}
                       </td>

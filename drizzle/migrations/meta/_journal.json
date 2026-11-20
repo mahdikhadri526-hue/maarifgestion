@@ -330,6 +330,13 @@
       "when": 1795196991228,
       "tag": "0046_weekly_articles_per_pdv",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1795200121490,
+      "tag": "0047_glace_grammage_admin_writes",
+      "breakpoints": true
     }
   ]
 }
