@@ -21,7 +21,7 @@ export async function loadMaterialAnalysis(start: string, end: string) {
     fetchAllRows<MaterialRecipe>(() => supabase.from("recipes").select("id,finished_product_id,version,active")),
     fetchAllRows<MaterialIngredient>(() => supabase.from("recipe_ingredients").select("recipe_id,product_id,category,quantity,unit,notes")),
     getMovements(), getStockLevels(),
-    fetchAllRows<{ product_id: string; conversion: string; unit_ref: string }>(() => supabase.from("stock_ref_conversions").select("product_id,conversion,unit_ref")),
+    fetchAllRows<{ product_id: string; conversion: string; unit_ref: string }>(() => supabase.from("stock_ref_conversions").select("product_id,conversion,unit_ref"), { orderBy: "product_id" }),
     fetchAllRows<{ item: string; qty: number }>(() => supabase.from("ecart_lines").select("item,qty").eq("pdv_id", pdvId).eq("entry_date", start).eq("section", materialSalesSection(end))),
     start === end ? getMiseEnPlaceStocksForWeek(week) : getMiseEnPlaceTotalsForPeriod(start, end),
     fetchAllRows<WeeklyTrackingOrderRecord>(() => supabase.from("weekly_tracking")

@@ -7,6 +7,13 @@ export interface FetchAllOptions {
    * l'aller-retour « première page puis les suivantes ». Par défaut 1.
    */
   eagerPages?: number;
+  /**
+   * Colonne unique servant d'ordre stable entre les pages (défaut « id »).
+   * Sans ordre, la base peut renvoyer des lignes en double ou en oublier d'une
+   * page à l'autre (surtout après une modification), ce qui faisait varier
+   * les totaux à chaque chargement.
+   */
+  orderBy?: string;
 }
 
 /**
@@ -18,11 +25,13 @@ export async function fetchAllRows<T = any>(
   opts: FetchAllOptions = {},
 ): Promise<T[]> {
   const all: T[] = [];
+  const orderBy = opts.orderBy ?? "id";
+  const page = (start: number) => buildQuery().order(orderBy, { ascending: true }).range(start, start + PAGE_SIZE - 1);
   const eager = Math.max(1, Math.min(16, opts.eagerPages ?? 1));
 
   // Premier lot : `eager` pages en parallèle (1 seule pour les petites tables).
   const firstResults = await Promise.all(
-    Array.from({ length: eager }, (_, i) => buildQuery().range(i * PAGE_SIZE, (i + 1) * PAGE_SIZE - 1)),
+    Array.from({ length: eager }, (_, i) => page(i * PAGE_SIZE)),
   );
   let complete = false;
   for (const res of firstResults) {
@@ -39,7 +48,7 @@ export async function fetchAllRows<T = any>(
   for (let round = 0; round < 250; round++) {
     const ranges = Array.from({ length: PARALLEL }, (_, i) => from + i * PAGE_SIZE);
     const results = await Promise.all(
-      ranges.map((start) => buildQuery().range(start, start + PAGE_SIZE - 1)),
+      ranges.map((start) => page(start)),
     );
     let done = false;
     for (const res of results) {
