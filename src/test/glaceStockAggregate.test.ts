@@ -5,6 +5,35 @@ vi.mock("@/lib/stockData", () => ({ roundStockQuantity: (n: number) => Math.roun
 const row = (article: string, day_of_week: string, stock_initial: number | null, entrees = 0, sorties: number | null = null, row_index = 0) =>
   ({ article, week_start: "2026-11-09", day_of_week, stock_initial, entrees, sorties, row_index });
 describe("GLACE stock and drill-down share daily bac calculations", () => {
+  it("converts Panachés Tartes counts at exactly 0.750 kg/bac without a flavour weight entry", () => {
+    const records = [row("Panachés", "Lundi", 8), row("Panachés", "Mardi", 5)];
+    const detail = buildGlaceStockDetails(records, {}, "2026-11-09", "2026-11-09").find(r => r.name === "Panachés");
+    expect(detail?.kgPerBac).toBe(0.750);
+    expect(detail?.stockInitial).toBe(6);
+    expect(detail?.stockRestant).toBe(3.75);
+  });
+  it("calculates Panachés GLACE outputs as initial minus final ignoring Tartes receipts and saved outputs", () => {
+    const records = [row("Panachés", "Lundi", 8, 12, 10), row("Panachés", "Mardi", 5, 20, 9)];
+    const original = structuredClone(records);
+    const details = buildGlaceStockDetails(records, {}, "2026-11-09", "2026-11-09");
+    const detail = details.find(r => r.name === "Panachés");
+    expect(detail?.bacs).toEqual({ stockInitial: 8, entrees: 0, sorties: 3, stockRestant: 5 });
+    expect(detail?.daily[0].sorties).toBe(3);
+    expect(sumGlaceStockDetails(details)).toEqual({ stockInitial: 6, entrees: 0, sorties: 2.25, stockRestant: 3.75 });
+    expect(records).toEqual(original);
+  });
+  it("uses initial minus final across sparse Panachés counts in a month", () => {
+    const records = [row("Panachés", "Lundi", 8, 12, 10), row("Panachés", "Jeudi", 5, 20, 9)];
+    const detail = buildGlaceStockDetails(records, {}, "2026-11-01", "2026-11-30").find(r => r.name === "Panachés");
+    expect(detail?.bacs).toEqual({ stockInitial: 8, entrees: 0, sorties: 3, stockRestant: 5 });
+    expect(detail?.daily.reduce((s, day) => s + day.sorties, 0)).toBe(3);
+  });
+  it("carries Panachés last count into a later period and preserves other flavour flows", () => {
+    const records = [row("Panachés", "Lundi", 8, 12, 10), row("Vanille", "Mardi", 4, 2, 1)];
+    const details = buildGlaceStockDetails(records, { Vanille: 3000 }, "2026-11-10", "2026-11-10");
+    expect(details.find(r => r.name === "Panachés")?.bacs).toEqual({ stockInitial: 8, entrees: 0, sorties: 0, stockRestant: 8 });
+    expect(sumGlaceStockDetails(details)).toEqual({ stockInitial: 18, entrees: 6, sorties: 3, stockRestant: 21 });
+  });
   it("keeps Nougat's 3.727 kg/bac in every stock conversion without rounding the weight to 3.73", () => {
     const records = [row("Nougat", "Lundi", 4, 2, 1)];
     const original = structuredClone(records);

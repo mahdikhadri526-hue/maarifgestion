@@ -1295,7 +1295,7 @@ export async function getGlaceBreakdownForRange(
   const pdvId = requireCurrentPdvId();
   const [rows, gramRes, settingsRes] = await Promise.all([
     getGlaceWeeklyRows(), getGlaceGrammageRes(),
-    rawSupabase.from("weekly_article_settings").select("pdv_id,category,article,active").eq("pdv_id", pdvId).eq("category", "glace"),
+    rawSupabase.from("weekly_article_settings").select("pdv_id,category,article,active").eq("pdv_id", pdvId).in("category", ["glace", "tarte"]),
   ]);
   if (gramRes.error) throw gramRes.error;
   if (settingsRes.error) throw settingsRes.error;
