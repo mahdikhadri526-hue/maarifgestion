@@ -88,6 +88,7 @@ export function buildWeeklyDailyStocks(records: WeeklyTrackingOrderRecord[], art
     const last = dates[dates.length - 1];
     if (!first || !last) continue;
     let stock = 0;
+    let started = false;
     for (const d = parseISODate(first); formatISODate(d) <= last; d.setDate(d.getDate() + 1)) {
       const date = formatISODate(d);
       const bucket = days.get(date);
@@ -96,12 +97,14 @@ export function buildWeeklyDailyStocks(records: WeeklyTrackingOrderRecord[], art
       const nextSI = days.get(formatISODate(next))?.si;
       const entrees = bucket?.entrees ?? 0;
       // Même SI effectif que Suivi hebdo pour un nouvel article réceptionné.
-      const si = bucket?.si ?? (entrees > 0 ? 0 : null);
+      // Réception sans comptage : partir du stock de la veille, 0 seulement pour un nouvel article.
+      const si = bucket?.si ?? (entrees > 0 ? (started ? stock : 0) : null);
       const stockInitial = bucket?.si ?? (si != null && nextSI != null ? si : stock);
       const sorties = si != null && nextSI != null
         ? si + entrees - nextSI
         : (bucket?.explicitSorties ?? 0);
       stock = si != null && nextSI != null ? nextSI : stockInitial + entrees - sorties;
+      started = true;
       out.push({ article, date, stockInitial, entrees, sorties, stockRestant: stock });
     }
   }
