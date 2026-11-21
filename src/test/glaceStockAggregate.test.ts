@@ -12,21 +12,24 @@ describe("GLACE stock and drill-down share daily bac calculations", () => {
     expect(detail?.stockInitial).toBe(6);
     expect(detail?.stockRestant).toBe(3.75);
   });
-  it("keeps Panachés GLACE outputs at zero, showing only initial and final counts", () => {
+  it("shows Panachés GLACE outputs from its counts while the global total excludes them", () => {
     const records = [row("Panachés", "Lundi", 8, 12, 10), row("Panachés", "Mardi", 5, 20, 9)];
     const original = structuredClone(records);
     const details = buildGlaceStockDetails(records, {}, "2026-11-09", "2026-11-09");
     const detail = details.find(r => r.name === "Panachés");
-    expect(detail?.bacs).toEqual({ stockInitial: 8, entrees: 0, sorties: 0, stockRestant: 5 });
-    expect(detail?.daily[0].sorties).toBe(0);
+    expect(detail?.bacs).toEqual({ stockInitial: 8, entrees: 0, sorties: 3, stockRestant: 5 });
+    expect(detail?.sorties).toBe(2.25);
+    expect(detail?.daily[0].sorties).toBe(3);
     expect(sumGlaceStockDetails(details)).toEqual({ stockInitial: 6, entrees: 0, sorties: 0, stockRestant: 3.75 });
     expect(records).toEqual(original);
   });
-  it("keeps Panachés outputs at zero across sparse counts in a month", () => {
-    const records = [row("Panachés", "Lundi", 8, 12, 10), row("Panachés", "Jeudi", 5, 20, 9)];
-    const detail = buildGlaceStockDetails(records, {}, "2026-11-01", "2026-11-30").find(r => r.name === "Panachés");
-    expect(detail?.bacs).toEqual({ stockInitial: 8, entrees: 0, sorties: 0, stockRestant: 5 });
-    expect(detail?.daily.reduce((s, day) => s + day.sorties, 0)).toBe(0);
+  it("shows Panachés outputs from adjacent counts in a month without touching the global total", () => {
+    const records = [row("Panachés", "Lundi", 8, 12, 10), row("Panachés", "Mardi", 5, 20, 9)];
+    const details = buildGlaceStockDetails(records, {}, "2026-11-01", "2026-11-30");
+    const detail = details.find(r => r.name === "Panachés");
+    expect(detail?.bacs).toEqual({ stockInitial: 8, entrees: 0, sorties: 3, stockRestant: 5 });
+    expect(detail?.daily.reduce((s, day) => s + day.sorties, 0)).toBe(3);
+    expect(sumGlaceStockDetails(details).sorties).toBe(0);
   });
   it("carries Panachés last count into a later period and preserves other flavour flows", () => {
     const records = [row("Panachés", "Lundi", 8, 12, 10), row("Vanille", "Mardi", 4, 2, 1)];
