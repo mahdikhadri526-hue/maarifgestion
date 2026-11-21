@@ -23,8 +23,8 @@ export function buildGlaceStockDetails(
     .filter(a => a !== "Crème fraîche (mousse fouettée)" && (a in weights));
   const inRange = (date: string) => (!start || date >= start) && (!end || date <= end);
   return articles.sort((a, b) => a.localeCompare(b, "fr")).map(name => {
-    // Panachés belongs to Tartes: GLACE shows its counts and the outputs
-    // derived from them; entries stay at zero. Keep Tartes records untouched.
+    // Panachés belongs to Tartes: GLACE shows only its initial/final counts;
+    // entries and outputs stay at zero. Keep Tartes records untouched.
     const countsOnly = name === "Panachés";
     const source = countsOnly ? records.filter(r => r.article === name).map(r => ({ ...r, entrees: 0, sorties: null })) : records;
     const calculated = buildWeeklyAggregateTotals(source, [name], inRange, false, false, start);
@@ -32,14 +32,14 @@ export function buildGlaceStockDetails(
     const daily = (countsOnly ? allDays.map((day, index) => {
       // Next count closes the previous day even when counts are sparse.
       const stockRestant = allDays[index + 1]?.stockInitial ?? day.stockRestant;
-      return { ...day, entrees: 0, stockRestant };
+      return { ...day, entrees: 0, sorties: 0, stockRestant };
     }) : allDays).filter(r => inRange(r.date));
     const first = daily[0];
     const last = daily[daily.length - 1];
     const counted = countsOnly && first && last
       ? { ...calculated, stockInitial: first.stockInitial, stockRestant: last.stockRestant }
       : calculated;
-    const bacs = countsOnly ? { ...counted, entrees: 0 } : calculated;
+    const bacs = countsOnly ? { ...counted, entrees: 0, sorties: 0 } : calculated;
     const kgPerBac = Number(weights[name]) > 0 ? Number(weights[name]) / 1000 : 0;
     return {
       name, kgPerBac, missingGrammage: kgPerBac === 0, bacs,
@@ -56,8 +56,7 @@ export function sumGlaceStockDetails(rows: GlaceStockDetail[]) {
   return rows.reduce((total, row) => ({
     stockInitial: total.stockInitial + row.stockInitial,
     entrees: total.entrees + row.entrees,
-    // Panachés outputs stay visible on its own line but are excluded from
-    // the global GLACE total (they belong to the Tartes tracking).
+    // Panachés outputs never count in the global GLACE total (Tartes tracking).
     sorties: total.sorties + (row.name === "Panachés" ? 0 : row.sorties),
     stockRestant: total.stockRestant + row.stockRestant,
   }), { stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 });
