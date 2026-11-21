@@ -33,3 +33,4 @@
 - fetchAllRows orders pages by a unique column (default id) so totals stay stable.
 - Retiring Inventory removes its tab, lazy import and permission selectors only; retain its stored records and shared product-catalog code to avoid affecting stock and recipes.
 - Project Tartes Panachés counts through buildGlaceStockDetails for GLACE stocks and drill-down, showing only initial and final counts with entries and outputs always zero; never rewrite Tartes records or calculations.
+- WeeklyTracking renders only the active movement table and indexes receipts by week/day/article once per rows change; keep full FIFO history and formulas intact while avoiding repeated history scans per cell.

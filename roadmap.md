@@ -1,4 +1,5 @@
 # Roadmap
+- [x] Alléger Suivi hebdo/Tartes : ne construire que le tableau actif et indexer les entrées sans reparcourir l’historique par case ; 48 tests réussis, PDV principal connecté vérifié (56 articles, changements d’onglet 0,21–0,57 s, saisie 0,5 s), grand écran/téléphone contrôlés, aucune donnée enregistrée ni publication.
 - [x] Ajouter Panachés de Tartes au détail et aux stocks GLACE à 0,750 kg/bac ; entrées et sorties toujours à zéro, seuls les stocks initial et final sont affichés ; saisies existantes confirmées en lecture seule, données intactes, sans publication.
 - [ ] Vérifier Panachés dans Stock restant connecté : aucune session ne correspond au compte demandeur ; vérification à l’écran indisponible sans sa connexion.
 - [x] Retirer Inventaire des menus et des permissions proposées, conserver les données et le catalogue partagé, sans publication.

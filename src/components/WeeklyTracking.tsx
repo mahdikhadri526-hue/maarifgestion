@@ -28,6 +28,7 @@ import { useWeeklyArticleSettings } from "@/hooks/useWeeklyArticleSettings";
 import { resolveWeeklyArticles, type WeeklyCategory } from "@/lib/weeklyArticleSettings";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGlaceGrammages, glaceGrammagesQueryKey } from "@/hooks/useGlaceGrammages";
+import { buildWeeklyEntryIndex, weeklyEntryKey } from "@/lib/weeklyEntryIndex";
 
 const SHOW_KG_BAC = true; // colonne Kg/bac affichée (modifiable par l’admin)
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
@@ -460,7 +461,7 @@ export function WeeklyTracking() {
     return () => {
       cancelled = true;
     };
-  }, [ficheType]);
+  }, [ficheType, pdvId]);
 
   // Lots de crème fraîche côté mouvement glaces : utiles uniquement sur la
   // fiche Crème fraîche ; chargés une fois par ouverture (plus à chaque
@@ -483,7 +484,7 @@ export function WeeklyTracking() {
     return () => {
       cancelled = true;
     };
-  }, [tab]);
+  }, [tab, pdvId]);
 
   const CREME_ARTICLE = "Crème fraîche (mousse fouettée)";
 
@@ -820,20 +821,9 @@ export function WeeklyTracking() {
   const cell = (day: string, rowIndex: number, article: string | null) =>
     cellAt(weekStart, day, rowIndex, article);
 
-  const entriesForAt = (wkStart: string, day: string, article: string) => {
-    const list: { rowIndex: number; entree: any; lot: any }[] = [];
-    for (const r of rows) {
-      if (
-        r.week_start === wkStart &&
-        r.day_of_week === day &&
-        r.article === article &&
-        (r.entrees != null || r.lot_number)
-      ) {
-        list.push({ rowIndex: r.row_index ?? 0, entree: r.entrees, lot: r.lot_number });
-      }
-    }
-    return list.sort((a, b) => a.rowIndex - b.rowIndex);
-  };
+  const entryIndex = useMemo(() => buildWeeklyEntryIndex(rows), [rows]);
+  const entriesForAt = (wkStart: string, day: string, article: string) =>
+    entryIndex.get(weeklyEntryKey(wkStart, day, article)) ?? [];
   const entriesFor = (day: string, article: string) => entriesForAt(weekStart, day, article);
 
   const num = (v: any) => {
@@ -1054,7 +1044,8 @@ export function WeeklyTracking() {
       const weeks = Array.from(weekMap.keys()).sort();
       let carry: Batch[] = [];
       for (const wk of weeks) {
-        const dayMap = weekMap.get(wk)!;
+        const dayMap = weekMap.get(wk);
+        if (!dayMap) continue;
 
         const siOf = (dIdx: number, w: string): number | "" => {
           const dm = w === wk ? dayMap : weekMap.get(w);
@@ -1862,7 +1853,7 @@ export function WeeklyTracking() {
           <WeeklyTransfers ficheKey="Crème fraîche" weekStart={weekStart} articles={["Crème fraîche (mousse fouettée)"]} />
         </TabsContent>
 
-        {(["glace", "tarte", "fruits", "nettoyant"] as const).map((t) => (
+        {(["glace", "tarte", "fruits", "nettoyant"] as const).filter((t) => t === tab).map((t) => (
         <TabsContent key={t} value={t} className="mt-4 space-y-3 min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-2 no-print">
             <h3 className="text-base font-semibold">{t === "glace" ? "Mouvement glaces" : t === "tarte" ? "Mouvement tartes" : t === "fruits" ? "Fruits" : "Mouvement produits nettoyants"}</h3>
