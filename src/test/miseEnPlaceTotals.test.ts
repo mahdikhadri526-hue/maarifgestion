@@ -59,12 +59,21 @@ describe("calendrier de saisie mise en place", () => {
     expect(inventoryDayOfWeek("2026-10-26").getDate()).toBe(31);
     expect(inventoryDayOfWeek("2027-02-22").getDate()).toBe(28);
   });
-  it("laisse toujours la saisie déverrouillée en filtre jour sans restriction de date", () => {
-    expect(canEditMiseEnPlace("day")).toBe(true);
+  it("autorise le dimanche et verrouille les autres jours de la semaine", () => {
+    expect(canEditMiseEnPlace("day", "2026-11-22", "2026-11-16")).toBe(true);
+    for (const day of ["2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21"]) {
+      expect(canEditMiseEnPlace("day", day, "2026-11-16")).toBe(false);
+    }
+  });
+  it("remplace le dimanche par le dernier jour du mois pour tous les produits", () => {
+    expect(canEditMiseEnPlace("day", "2026-10-31", "2026-10-26")).toBe(true);
+    expect(canEditMiseEnPlace("day", "2026-11-01", "2026-10-26")).toBe(false);
+    expect(canEditMiseEnPlace("day", "2026-11-30", "2026-11-30")).toBe(true);
+    expect(canEditMiseEnPlace("day", "2026-12-06", "2026-11-30")).toBe(false);
   });
   it("préserve la lecture seule des cumuls mois, période et tout", () => {
     for (const mode of ["month", "period", "all"]) {
-      expect(canEditMiseEnPlace(mode)).toBe(false);
+      expect(canEditMiseEnPlace(mode, "2026-11-22", "2026-11-16")).toBe(false);
     }
   });
 });

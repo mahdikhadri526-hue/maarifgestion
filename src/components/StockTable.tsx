@@ -352,9 +352,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   );
   // Pas de report : le stock initial du lendemain est le stock de la veille
   // (la mise en place reste uniquement dans sa colonne, sans toucher au SI).
-  // Saisie toujours déverrouillée pour la semaine du jour sélectionné.
+  // Saisie uniquement le jour de comptage de la semaine sélectionnée.
   // Hors filtre « jour », la colonne affiche un total de période : lecture seule.
-  const mepEditable = canEditMiseEnPlace(mode);
+  const mepEditable = canEditMiseEnPlace(mode, day, mepWeek);
   const packagingMepEditable = canEditPackagingMep(mode, day, mepWeek);
   // Dimanche, ou dernier jour du mois pour la semaine de fin de mois.
 
