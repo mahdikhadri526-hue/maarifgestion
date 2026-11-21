@@ -23,8 +23,8 @@ export function buildGlaceStockDetails(
     .filter(a => a !== "Crème fraîche (mousse fouettée)" && (a in weights));
   const inRange = (date: string) => (!start || date >= start) && (!end || date <= end);
   return articles.sort((a, b) => a.localeCompare(b, "fr")).map(name => {
-    // Panachés belongs to Tartes: GLACE consumption uses counts only, never
-    // its receipts or saved outputs. Keep original Tartes records untouched.
+    // Panachés belongs to Tartes: GLACE shows only its initial and final
+    // counts; entries and outputs stay at zero. Keep Tartes records untouched.
     const countsOnly = name === "Panachés";
     const source = countsOnly ? records.filter(r => r.article === name).map(r => ({ ...r, entrees: 0, sorties: null })) : records;
     const calculated = buildWeeklyAggregateTotals(source, [name], inRange, false, false, start);
@@ -32,14 +32,14 @@ export function buildGlaceStockDetails(
     const daily = (countsOnly ? allDays.map((day, index) => {
       // Next count closes the previous day even when counts are sparse.
       const stockRestant = allDays[index + 1]?.stockInitial ?? day.stockRestant;
-      return { ...day, entrees: 0, stockRestant, sorties: day.stockInitial - stockRestant };
+      return { ...day, entrees: 0, stockRestant, sorties: 0 };
     }) : allDays).filter(r => inRange(r.date));
     const first = daily[0];
     const last = daily[daily.length - 1];
     const counted = countsOnly && first && last
       ? { ...calculated, stockInitial: first.stockInitial, stockRestant: last.stockRestant }
       : calculated;
-    const bacs = countsOnly ? { ...counted, entrees: 0, sorties: counted.stockInitial - counted.stockRestant } : calculated;
+    const bacs = countsOnly ? { ...counted, entrees: 0, sorties: 0 } : calculated;
     const kgPerBac = Number(weights[name]) > 0 ? Number(weights[name]) / 1000 : 0;
     return {
       name, kgPerBac, missingGrammage: kgPerBac === 0, bacs,

@@ -32,4 +32,4 @@
 - Material actuals cover PDV stock IDs and shared weekly sorties; group recipe units without mixing, show unlinked outputs and flag native fallback for missing conversions.
 - fetchAllRows orders pages by a unique column (default id) so totals stay stable.
 - Retiring Inventory removes its tab, lazy import and permission selectors only; retain its stored records and shared product-catalog code to avoid affecting stock and recipes.
-- Project Tartes Panachés counts through buildGlaceStockDetails for GLACE stocks and drill-down, ignoring receipts and saved outputs and deriving consumption from initial minus final counts; never rewrite Tartes records or calculations.
+- Project Tartes Panachés counts through buildGlaceStockDetails for GLACE stocks and drill-down, showing only initial and final counts with entries and outputs always zero; never rewrite Tartes records or calculations.

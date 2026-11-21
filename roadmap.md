@@ -1,5 +1,5 @@
 # Roadmap
-- [x] Ajouter Panachés de Tartes au détail et aux stocks GLACE à 0,750 kg/bac ; sorties = stock initial − stock final, entrées ignorées ; 43 tests réussis, saisies existantes confirmées en lecture seule, données intactes, sans publication.
+- [x] Ajouter Panachés de Tartes au détail et aux stocks GLACE à 0,750 kg/bac ; entrées et sorties toujours à zéro, seuls les stocks initial et final sont affichés ; saisies existantes confirmées en lecture seule, données intactes, sans publication.
 - [ ] Vérifier Panachés dans Stock restant connecté : aucune session ne correspond au compte demandeur ; vérification à l’écran indisponible sans sa connexion.
 - [x] Retirer Inventaire des menus et des permissions proposées, conserver les données et le catalogue partagé, sans publication.
 - [x] Relier Recettes aux permissions effectives ; séparer edit_stock/edit_remaining_stock, respecter les cases individuelles décochées et les refus PDV, protéger les régularisations et la mise en place en base ; 17 tests ciblés réussis, aucune quantité ou recette modifiée, sans publication.
