@@ -53,11 +53,11 @@ export function buildGlaceStockDetails(
 }
 
 export function sumGlaceStockDetails(rows: GlaceStockDetail[]) {
-  return rows.reduce((total, row) => ({
+  const sums = rows.reduce((total, row) => ({
     stockInitial: total.stockInitial + row.stockInitial,
     entrees: total.entrees + row.entrees,
-    // Panachés outputs never count in the global GLACE total (Tartes tracking).
-    sorties: total.sorties + (row.name === "Panachés" ? 0 : row.sorties),
     stockRestant: total.stockRestant + row.stockRestant,
-  }), { stockInitial: 0, entrees: 0, sorties: 0, stockRestant: 0 });
+  }), { stockInitial: 0, entrees: 0, stockRestant: 0 });
+  // Global GLACE outputs follow the sheet formula: initial + entries - final.
+  return { ...sums, sorties: sums.stockInitial + sums.entrees - sums.stockRestant };
 }

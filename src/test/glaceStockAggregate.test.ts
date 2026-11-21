@@ -20,7 +20,8 @@ describe("GLACE stock and drill-down share daily bac calculations", () => {
     expect(detail?.bacs).toEqual({ stockInitial: 8, entrees: 0, sorties: 0, stockRestant: 5 });
     expect(detail?.sorties).toBe(0);
     expect(detail?.daily[0].sorties).toBe(0);
-    expect(sumGlaceStockDetails(details)).toEqual({ stockInitial: 6, entrees: 0, sorties: 0, stockRestant: 3.75 });
+    // Global total applies initial + entries - final, so the Panachés count drop shows there.
+    expect(sumGlaceStockDetails(details)).toEqual({ stockInitial: 6, entrees: 0, sorties: 2.25, stockRestant: 3.75 });
     expect(records).toEqual(original);
   });
   it("keeps Panachés outputs at zero over a month (16/11 case: 3.75 kg not counted)", () => {
@@ -29,7 +30,7 @@ describe("GLACE stock and drill-down share daily bac calculations", () => {
     const detail = details.find(r => r.name === "Panachés");
     expect(detail?.bacs).toEqual({ stockInitial: 8, entrees: 0, sorties: 0, stockRestant: 5 });
     expect(detail?.daily.reduce((s, day) => s + day.sorties, 0)).toBe(0);
-    expect(sumGlaceStockDetails(details).sorties).toBe(0);
+    expect(sumGlaceStockDetails(details).sorties).toBe(2.25);
   });
   it("carries Panachés last count into a later period and preserves other flavour flows", () => {
     const records = [row("Panachés", "Lundi", 8, 12, 10), row("Vanille", "Mardi", 4, 2, 1)];
@@ -45,7 +46,7 @@ describe("GLACE stock and drill-down share daily bac calculations", () => {
     const totals = sumGlaceStockDetails([detail]);
     expect(totals.stockInitial).toBeCloseTo(14.908, 9);
     expect(totals.entrees).toBeCloseTo(7.454, 9);
-    expect(totals.sorties).toBe(3.727);
+    expect(totals.sorties).toBeCloseTo(3.727, 9);
     expect(totals.stockRestant).toBeCloseTo(18.635, 9);
     expect(records).toEqual(original);
   });
