@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Save, RefreshCw, Search, AlertTriangle, Eye, EyeOff, Lock } from "lucide-react";
+import { Save, RefreshCw, Search, AlertTriangle, Eye, EyeOff, Lock, ArrowUp, ArrowDown } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { checkKioskPin } from "@/lib/kioskPin";
@@ -19,6 +19,7 @@ import { MaterialActualDetails } from "@/components/MaterialActualDetails";
 import { useSharedCatalogRevision } from "@/hooks/useSharedCatalogRevision";
 import { useWeeklyArticleSettings } from "@/hooks/useWeeklyArticleSettings";
 import { isWeeklyArticleVisible } from "@/lib/weeklyArticleSettings";
+import { moveMaterialSale, orderMaterialSales, readMaterialSalesOrder } from "@/lib/materialSalesOrder";
 
 const categoryLabels: Record<string, string> = { surplace: "Sur place", emporter: "Emporter", tartes: "Tartes", autres: "Autres", alimentaire: "Alimentaire", emballage: "Emballage" };
 const number = (value: number | null) => value === null ? "—" : value.toLocaleString("fr-FR", { maximumFractionDigits: 4 });
@@ -41,6 +42,8 @@ export function MaterialVarianceModule() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [view, setView] = useState("sales");
+  const [salesOrder, setSalesOrder] = useState<string[]>(() => readMaterialSalesOrder(pdvId));
+  useEffect(() => { setSalesOrder(readMaterialSalesOrder(pdvId)); }, [pdvId]);
   const [detailId, setDetailId] = useState<string | null>(null);
   const [actualDetailId, setActualDetailId] = useState<string | null>(null);
   const canEdit = can("edit_ecarts");
@@ -83,7 +86,16 @@ export function MaterialVarianceModule() {
     const ingredientId = row.id.slice(0, row.id.lastIndexOf(":"));
     return isProductActive(ingredientId) && isWeeklyArticleVisible(pdvId, weeklySettings ?? [], ingredientId, row.name);
   }) : [], [data, sales, pdvId, weeklySettings]);
-  const products = useMemo(() => data?.products.filter(product => product.active && (category === "all" || product.category === category) && product.name.toLowerCase().includes(search.toLowerCase())) ?? [], [data, category, search]);
+  const orderedProducts = useMemo(() => orderMaterialSales(data?.products ?? [], salesOrder), [data, salesOrder]);
+  const products = useMemo(() => orderedProducts.filter(product => product.active && (category === "all" || product.category === category) && product.name.toLowerCase().includes(search.toLowerCase())), [orderedProducts, category, search]);
+  const moveProduct = (id: string, direction: -1 | 1) => {
+    if (!canEdit || !pdvId) return;
+    const next = moveMaterialSale(orderedProducts.map(product => product.id), products.map(product => product.id), id, direction);
+    try {
+      localStorage.setItem(`material-sales-order:${pdvId}`, JSON.stringify(next));
+      setSalesOrder(next);
+    } catch { toast.error("Impossible de conserver l’ordre des produits sur cet appareil."); }
+  };
   const rows = result.filter(row => (category === "all" || row.category === category) && row.name.toLowerCase().includes(search.toLowerCase()) && (manageHidden || !hiddenIds.includes(row.id)));
   const hiddenCount = hiddenIds.length;
   const recipeIds = new Set(data?.recipes.map(recipe => recipe.finished_product_id));
@@ -119,7 +131,7 @@ export function MaterialVarianceModule() {
         <Select value={category} onValueChange={setCategory}><SelectTrigger className="w-44"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Toutes les catégories</SelectItem>{(view === "sales" ? ["surplace", "emporter", "tartes", "autres"] : ["alimentaire", "emballage"]).map(key => <SelectItem key={key} value={key}>{categoryLabels[key]}</SelectItem>)}</SelectContent></Select>
       </div>
       <TabsContent value="sales">
-        <div className="overflow-x-auto border rounded-lg"><table className="w-full text-sm"><thead className="bg-muted"><tr><th className="p-3 text-left">Produit</th><th className="p-3 text-left">Catégorie</th><th className="p-3 text-right">Quantité vendue</th></tr></thead><tbody>{products.map(product => <tr key={product.id} className="border-t even:bg-muted/30"><td className="p-3 min-w-36 font-medium">{product.name}{!recipeIds.has(product.id) && <span className="block text-xs text-destructive">Recette active manquante</span>}</td><td className="p-3 whitespace-nowrap text-muted-foreground">{categoryLabels[product.category ?? "autres"] ?? product.category}</td><td className="p-3"><Input aria-label={`Quantité vendue ${product.name} ${product.category}`} type="number" inputMode="decimal" min={0} step="any" className="w-28 ml-auto text-right tabular-nums" disabled={!canEdit || saving} value={sales[product.id] ?? ""} placeholder="0" onChange={event => { const quantity = Number(event.target.value); if (Number.isFinite(quantity) && quantity >= 0) { setSales(previous => ({ ...previous, [product.id]: quantity })); setDirty(true); } }} /></td></tr>)}</tbody></table>{!products.length && <p className="py-8 text-center text-muted-foreground">Aucun produit</p>}</div>
+        <div className="overflow-x-auto border rounded-lg"><table className="w-full text-sm"><thead className="bg-muted"><tr>{canEdit && <th className="p-3 w-24"><span className="sr-only">Ordre</span></th>}<th className="p-3 text-left">Produit</th><th className="p-3 text-left">Catégorie</th><th className="p-3 text-right">Quantité vendue</th></tr></thead><tbody>{products.map((product, index) => <tr key={product.id} className="border-t even:bg-muted/30">{canEdit && <td className="p-2"><div className="flex gap-1"><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" disabled={index === 0} aria-label={`Monter ${product.name} ${product.category}`} title="Monter" onClick={() => moveProduct(product.id, -1)}><ArrowUp className="h-4 w-4" /></Button><Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" disabled={index === products.length - 1} aria-label={`Descendre ${product.name} ${product.category}`} title="Descendre" onClick={() => moveProduct(product.id, 1)}><ArrowDown className="h-4 w-4" /></Button></div></td>}<td className="p-3 min-w-36 font-medium">{product.name}{!recipeIds.has(product.id) && <span className="block text-xs text-destructive">Recette active manquante</span>}</td><td className="p-3 whitespace-nowrap text-muted-foreground">{categoryLabels[product.category ?? "autres"] ?? product.category}</td><td className="p-3"><Input aria-label={`Quantité vendue ${product.name} ${product.category}`} type="number" inputMode="decimal" min={0} step="any" className="w-28 ml-auto text-right tabular-nums" disabled={!canEdit || saving} value={sales[product.id] ?? ""} placeholder="0" onChange={event => { const quantity = Number(event.target.value); if (Number.isFinite(quantity) && quantity >= 0) { setSales(previous => ({ ...previous, [product.id]: quantity })); setDirty(true); } }} /></td></tr>)}</tbody></table>{!products.length && <p className="py-8 text-center text-muted-foreground">Aucun produit</p>}</div>
       </TabsContent>
       <TabsContent value="analysis" className="space-y-3">
         <div className="flex flex-wrap justify-between items-center gap-2 text-sm text-muted-foreground"><span>{result.length} ingrédients{hiddenCount > 0 ? ` · ${hiddenCount} masqué${hiddenCount > 1 ? "s" : ""}` : ""} · {Object.values(sales).reduce((sum, qty) => sum + qty, 0)} ventes{dirty ? " · Non enregistrées" : ""}</span><span className="flex items-center gap-2">Écart = Réelle − Théorique<Button variant="outline" size="sm" onClick={() => { if (manageHidden) setManageHidden(false); else setPinOpen(true); }}>{manageHidden ? <><EyeOff className="h-4 w-4 mr-1" />Terminer</> : <><Lock className="h-4 w-4 mr-1" />Masquer des ingrédients</>}</Button></span></div>

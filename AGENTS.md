@@ -33,6 +33,7 @@
 - fetchAllRows orders pages by a unique column (default id) so totals stay stable.
 - Retiring Inventory removes its tab, lazy import and permission selectors only; retain its stored records and shared product-catalog code to avoid affecting stock and recipes.
 - Finished-product removal archives via active=false under existing recipe edit guards; the recipe list shows active products only, preserving recipes, ingredient links and production history.
+- Material sales display ordering is local per PDV, independent of period and quantity records; arrow moves swap visible neighbours without changing recipes or calculations.
 - Project Tartes Panachés counts through buildGlaceStockDetails for GLACE stocks and drill-down: entries and outputs stay zero on the Panachés line; the global GLACE total outputs follow initial + entries - final (sumGlaceStockDetails); never rewrite Tartes records or calculations.
 - WeeklyTracking renders only the active movement table and indexes receipts by week/day/article once per rows change; keep full FIFO history and formulas intact while avoiding repeated history scans per cell.
 - Server-update packages are assembled and built in /tmp, omit RH and source files, require the existing runtime server configuration, and import catalogs additively with conflict reports; never replace operational rows or run installation against Cloud.
