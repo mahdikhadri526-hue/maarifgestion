@@ -24,6 +24,7 @@ import { loadCustomStockGroups, groupIngredientId, type CustomStockGroup } from 
 import { canDisplayAdminTable } from "@/lib/adminTableVisibility";
 import { useSharedCatalogRevision } from "@/hooks/useSharedCatalogRevision";
 import { loadProductCatalog } from "@/lib/productCatalog";
+import { archiveFinishedProduct } from "@/lib/finishedProductLifecycle";
 
 type FinishedProduct = {
   id: string;
@@ -111,6 +112,8 @@ export function RecipeManager() {
   const [newName, setNewName] = useState("");
   const [newCategory, setNewCategory] = useState<string>("surplace");
   const [creating, setCreating] = useState(false);
+  const [deletingProduct, setDeletingProduct] = useState<FinishedProduct | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadAll = async () => {
     setLoading(true);
@@ -124,7 +127,7 @@ export function RecipeManager() {
           supabase.from("recipe_ingredients").select("recipe_id")
         ),
       ]);
-      setProducts(fp);
+      setProducts(fp.filter(product => product.active));
       const currentRecipes = latestRecipeVersions(rc);
       setRecipes(currentRecipes);
       const recipeToProduct = new Map(currentRecipes.map((r) => [r.id, r.finished_product_id]));
@@ -223,6 +226,21 @@ export function RecipeManager() {
     setOriginalIngs([]);
     setLinkChanges([]);
     setDirty(false);
+  };
+
+  const deleteProduct = async () => {
+    if (!canEdit || !deletingProduct || deleting) return;
+    setDeleting(true);
+    try {
+      await archiveFinishedProduct(deletingProduct.id, canEdit);
+      setProducts(rows => rows.filter(row => row.id !== deletingProduct.id));
+      setDeletingProduct(null);
+      toast.success("Produit fini supprimé", { description: "Recettes, ingrédients et historiques conservés." });
+    } catch (error) {
+      toast.error("Suppression impossible", { description: error instanceof Error ? error.message : "Veuillez réessayer." });
+    } finally {
+      setDeleting(false);
+    }
   };
 
   useEffect(() => {
@@ -645,11 +663,11 @@ export function RecipeManager() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {filtered.map((p) => (
-            <button
+            <div
               key={p.id}
-              onClick={() => openProduct(p)}
-              className="text-left bg-card hover:bg-accent transition-colors rounded-lg border p-3 flex items-center justify-between gap-3"
+              className="bg-card rounded-lg border flex items-center gap-1 pr-2"
             >
+              <Button variant="ghost" onClick={() => openProduct(p)} className="h-auto min-w-0 flex-1 justify-between gap-3 p-3 text-left whitespace-normal">
               <div className="min-w-0 flex-1">
                 <div className="font-medium text-sm truncate">{p.name}</div>
                 <div className="text-[11px] text-muted-foreground mt-0.5">
@@ -659,7 +677,15 @@ export function RecipeManager() {
               <Badge variant="secondary" className="shrink-0">
                 {counts[p.id] ?? 0} ing.
               </Badge>
-            </button>
+              </Button>
+              {canEdit && (
+                <Button variant="ghost" size="icon" className="shrink-0 text-destructive hover:text-destructive"
+                  aria-label={`Supprimer ${p.name}`} title={`Supprimer ${p.name}`}
+                  onClick={() => setDeletingProduct(p)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           ))}
         </div>
       )}
@@ -667,6 +693,19 @@ export function RecipeManager() {
       <p className="text-center text-xs text-muted-foreground pt-2">
         {filtered.length} / {products.length} produit{products.length > 1 ? "s" : ""}
       </p>
+
+      <Dialog open={!!deletingProduct} onOpenChange={open => { if (!open && !deleting) setDeletingProduct(null); }}>
+        <DialogContent className="max-w-sm" onEscapeKeyDown={event => { if (deleting) event.preventDefault(); }} onPointerDownOutside={event => { if (deleting) event.preventDefault(); }}>
+          <DialogHeader><DialogTitle>Supprimer le produit fini ?</DialogTitle></DialogHeader>
+          <p className="text-sm"><strong>{deletingProduct?.name}</strong> sera retiré de la liste. Ses recettes, ingrédients et historiques seront conservés.</p>
+          <DialogFooter>
+            <Button variant="outline" disabled={deleting} onClick={() => setDeletingProduct(null)}>Annuler</Button>
+            <Button variant="destructive" disabled={deleting} onClick={deleteProduct}>
+              <Trash2 className="h-4 w-4 mr-2" />{deleting ? "Suppression…" : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={newProductOpen} onOpenChange={setNewProductOpen}>
         <DialogContent className="max-w-sm">
