@@ -2033,10 +2033,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       </span>
                       <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={previousStockLoading || !canOpenInitial}
                         aria-label={`Définir le stock total de départ ${level.productName}`}
-                        title={opening ? "Stock initial total de départ déjà défini" : !canOpenInitial ? "Initialisation non autorisée pour cet article" : "Définir le stock initial total de départ (une seule fois)"}
+                        title={!canOpenInitial ? "Modification non autorisée pour cet article" : "Modifier le stock initial total de départ"}
                         onClick={() => { if (!canOpenInitial || (level.category !== "alimentaire" && level.category !== "emballage")) return;
                           setOpeningTarget({ productId: level.productId, name: level.productName, category: level.category,
-                            date: previousPeriodStart || todayISO(), current: previousStockTotals[level.productId], unit: UNIT_LABELS[level.unit] }); }}>
+                            date: opening?.opening_date ?? (previousPeriodStart || todayISO()), current: opening?.quantity ?? previousStockTotals[level.productId], existing: !!opening, unit: UNIT_LABELS[level.unit] }); }}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                     </div>

@@ -17,7 +17,7 @@ export function canInitializeStockTotal(options: {
   return options.variant === "stock"
     && ["alimentaire", "emballage"].includes(options.category)
     && !options.productId.startsWith("__") && !options.derived
-    && options.canEditRemaining && !options.hasOpening;
+    && options.canEditRemaining;
 }
 
 export function validateStockTotalOpening(value: string, operator: string, date: string) {
@@ -40,13 +40,18 @@ export async function loadStockTotalOpenings(): Promise<StockTotalOpening[]> {
     .eq("pdv_id", requireCurrentPdvId()));
 }
 
-export async function saveStockTotalOpening(opening: StockTotalOpening) {
+export async function saveStockTotalOpening(opening: StockTotalOpening, existing = false) {
   validateStockTotalOpening(String(opening.quantity), opening.performed_by, opening.opening_date);
   if (!["alimentaire", "emballage"].includes(opening.category) || opening.product_id.startsWith("__")) {
     throw new Error("Initialisation réservée aux articles Alimentaire et Emballage.");
   }
-  const { data, error } = await supabase.from("stock_total_openings")
-    .insert({ ...opening, performed_by: opening.performed_by.trim(), pdv_id: requireCurrentPdvId() })
+  const pdvId = requireCurrentPdvId();
+  const table = supabase.from("stock_total_openings");
+  const query = existing
+    ? table.update({ quantity: opening.quantity, opening_date: opening.opening_date, performed_by: opening.performed_by.trim() })
+      .eq("pdv_id", pdvId).eq("product_id", opening.product_id)
+    : table.insert({ ...opening, performed_by: opening.performed_by.trim(), pdv_id: pdvId });
+  const { data, error } = await query
     .select("product_id,category,opening_date,quantity,performed_by").single();
   if (error?.code === "23505") throw new Error("Le stock de départ de cet article a déjà été défini.");
   if (error) throw error;

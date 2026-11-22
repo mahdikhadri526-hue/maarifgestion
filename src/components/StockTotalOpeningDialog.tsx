@@ -8,14 +8,14 @@ import { formatDateFR } from "@/lib/utils";
 
 export type StockTotalOpeningTarget = {
   productId: string; name: string; category: "alimentaire" | "emballage";
-  date: string; current?: number; unit: string;
+  date: string; current?: number; unit: string; existing?: boolean;
 };
 
 export function StockTotalOpeningDialog({ target, operators, canEdit, onClose, onSaved }: {
   target: StockTotalOpeningTarget | null; operators: string[]; canEdit: boolean;
   onClose: () => void; onSaved: (opening: StockTotalOpening) => void;
 }) {
-  const [quantity, setQuantity] = useState("");
+  const [quantity, setQuantity] = useState(target?.existing ? String(target.current ?? "") : "");
   const [operator, setOperator] = useState("");
   const [date, setDate] = useState(target?.date ?? "");
   const [saving, setSaving] = useState(false);
@@ -26,7 +26,7 @@ export function StockTotalOpeningDialog({ target, operators, canEdit, onClose, o
       setSaving(true);
       const opening = { product_id: target.productId, category: target.category,
         opening_date: date, quantity: value, performed_by: operator };
-      await saveStockTotalOpening(opening);
+      await saveStockTotalOpening(opening, target.existing);
       onSaved(opening);
       toast.success("Stock total de départ enregistré");
       onClose();
@@ -57,7 +57,7 @@ export function StockTotalOpeningDialog({ target, operators, canEdit, onClose, o
             <option value="">Choisir...</option>{operators.map(name => <option key={name} value={name}>{name}</option>)}
           </select>
         </div>
-        <p className="text-xs text-muted-foreground">Initialisation unique pour cet article et ce PDV. Les mouvements et l’historique antérieurs restent conservés.</p>
+        <p className="text-xs text-muted-foreground">Stock de départ modifiable pour cet article et ce PDV. Les mouvements et l’historique antérieurs restent conservés.</p>
       </div>}
       <DialogFooter><Button variant="outline" disabled={saving} onClick={onClose}>Annuler</Button>
         <Button disabled={!canEdit || saving || !date || !quantity.trim() || !operator.trim()} onClick={() => void save()}>

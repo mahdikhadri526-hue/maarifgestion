@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const database = vi.hoisted(() => ({ insert: vi.fn(), select: vi.fn(), single: vi.fn(), from: vi.fn() }));
+const database = vi.hoisted(() => ({ insert: vi.fn(), update: vi.fn(), eq: vi.fn(), select: vi.fn(), single: vi.fn(), from: vi.fn() }));
 vi.mock("@/lib/db", () => ({ supabase: { from: database.from } }));
 vi.mock("@/lib/pdvStore", () => ({ requireCurrentPdvId: () => "pdv-a" }));
 import { canInitializeStockTotal, saveStockTotalOpening, validateStockTotalOpening } from "@/lib/stockTotalOpening";
@@ -16,8 +16,9 @@ describe("Total-stock opening permissions", () => {
   it("requires permission to edit remaining stock", () => {
     expect(canInitializeStockTotal({ ...options, canEditRemaining: false })).toBe(false);
   });
-  it("is available only once per article", () => {
-    expect(canInitializeStockTotal({ ...options, hasOpening: true })).toBe(false);
+  it("stays active after the first entry for food and packaging", () => {
+    expect(canInitializeStockTotal({ ...options, hasOpening: true })).toBe(true);
+    expect(canInitializeStockTotal({ ...options, category: "emballage", hasOpening: true })).toBe(true);
   });
   it("does not change derived group totals independently", () => {
     expect(canInitializeStockTotal({ ...options, derived: true })).toBe(false);
@@ -48,10 +49,12 @@ describe("Opening value validation", () => {
   });
 });
 
-describe("Immutable opening writes", () => {
+describe("PDV-scoped opening writes", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    database.from.mockReturnValue({ insert: database.insert });
+    database.from.mockReturnValue({ insert: database.insert, update: database.update });
+    database.update.mockReturnValue({ eq: database.eq });
+    database.eq.mockReturnValue({ eq: database.eq, select: database.select });
     database.insert.mockReturnValue({ select: database.select });
     database.select.mockReturnValue({ single: database.single });
     database.single.mockResolvedValue({ data: { product_id: "ali-1", quantity: 10 }, error: null });
@@ -63,9 +66,12 @@ describe("Immutable opening writes", () => {
     expect(database.insert).toHaveBeenCalledWith({ ...opening, performed_by: "Ali", pdv_id: "pdv-a" });
     expect(database.single).toHaveBeenCalledOnce();
   });
-  it("never overwrites an existing initial opening", async () => {
-    database.single.mockResolvedValue({ data: null, error: { code: "23505" } });
-    await expect(saveStockTotalOpening(opening)).rejects.toThrow("déjà été défini");
+  it("corrects only the selected PDV/product opening, without changing movements", async () => {
+    await saveStockTotalOpening({ ...opening, quantity: 25 }, true);
+    expect(database.from.mock.calls).toEqual([["stock_total_openings"]]);
+    expect(database.update).toHaveBeenCalledWith({ quantity: 25, opening_date: "2026-11-22", performed_by: "Ali" });
+    expect(database.eq.mock.calls).toEqual([["pdv_id", "pdv-a"], ["product_id", "ali-1"]]);
+    expect(database.insert).not.toHaveBeenCalled();
   });
   it("surfaces a denied database write instead of claiming success", async () => {
     database.single.mockResolvedValue({ data: null, error: { code: "42501", message: "Denied" } });

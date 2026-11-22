@@ -1,6 +1,6 @@
 - [x] Paquet serveur du 21/11/2026 : version publiée sans RH, récapitulatif intégral depuis le 30/10, recettes/liaisons/regroupements inclus ; 118 tests ciblés, imports et conflits testés sur PostgreSQL local, installateur et connexion du paquet vérifiés ; aucun accès/installation sur le serveur réel, simulation obligatoire fournie.
 # Roadmap
-- [x] Activer la première initialisation Alimentaire/Emballage, dont Bac 2,5, dans tous les filtres avec date de départ explicite ; conserver les droits, l’unicité et les regroupements calculés. Vérification connectée refusée.
+- [x] Garder le crayon actif Alimentaire/Emballage, dont Bac 2,5, dans tous les filtres, même après la première saisie ; corrections protégées par PDV et permissions, mouvements conservés. Vérification connectée refusée.
 - [x] Ajouter le stock initial total de départ pour Alimentaire/Emballage en filtre Jour : saisie unique par PDV/article, droits edit_remaining_stock, date/opérateur, report post-départ sans réécrire mouvements ni recettes ; 62 tests réussis, compilation valide, aucune quantité existante modifiée, non publié.
 - [ ] Vérifier la première saisie et sa relecture dans Stock restant connecté : aucune session personnelle disponible et compte temporaire refusé ; contrôle connecté bloqué.
 - [x] Ajouter le déplacement haut/bas des produits dans Ventes des écarts ingrédients ; ordre conservé sur cet appareil par PDV, 16 tests réussis et déplacement/actualisation vérifiés connecté sans modifier les ventes ni calculs ; non publié.
