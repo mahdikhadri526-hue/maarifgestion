@@ -303,13 +303,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [openingRevision, setOpeningRevision] = useState(0);
   useEffect(() => {
     setOpeningTarget(null);
-    setStockOpenings([]);
   }, [pdvId, mode, day]);
   const previousPeriodStart = mode === "day" ? day : mode === "month" ? `${month}-01` : mode === "period" ? start : "";
   useEffect(() => {
     let cancelled = false;
     setPreviousStockTotals({});
-    if (variant !== "stock" || !showMepCols || !previousPeriodStart) {
+    setStockOpenings([]);
+    if (variant !== "stock" || !showMepCols) {
       setPreviousStockLoading(false);
       return;
     }
@@ -317,6 +317,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     loadStockTotalOpenings().then(async openings => {
       if (cancelled) return;
       setStockOpenings(openings);
+      if (!previousPeriodStart) return;
       const values = await loadPreviousStockTotals(previousPeriodStart, {
       [MACARON_AGG_ID]: MACARON_ARTICLES,
       [CHANTILLY_AGG_ID]: [CHANTILLY_WEEKLY_ARTICLE],
@@ -2032,10 +2033,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       </span>
                       <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={previousStockLoading || !canOpenInitial}
                         aria-label={`Définir le stock total de départ ${level.productName}`}
-                        title={opening ? "Stock initial total de départ déjà défini" : mode !== "day" ? "Sélectionnez le filtre Jour pour définir le stock de départ" : !canOpenInitial ? "Initialisation non autorisée pour cet article" : "Définir le stock initial total de départ (une seule fois)"}
+                        title={opening ? "Stock initial total de départ déjà défini" : !canOpenInitial ? "Initialisation non autorisée pour cet article" : "Définir le stock initial total de départ (une seule fois)"}
                         onClick={() => { if (!canOpenInitial || (level.category !== "alimentaire" && level.category !== "emballage")) return;
                           setOpeningTarget({ productId: level.productId, name: level.productName, category: level.category,
-                            date: day, current: previousStockTotals[level.productId], unit: UNIT_LABELS[level.unit] }); }}>
+                            date: previousPeriodStart || todayISO(), current: previousStockTotals[level.productId], unit: UNIT_LABELS[level.unit] }); }}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -2404,7 +2405,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     </Dialog>
 
     <StockTotalOpeningDialog key={openingTarget ? `${pdvId}:${openingTarget.productId}:${openingTarget.date}` : "closed"}
-      target={openingTarget} operators={operatorOptions} canEdit={canEditRemaining && variant === "stock" && mode === "day"}
+      target={openingTarget} operators={operatorOptions} canEdit={canEditRemaining && variant === "stock"}
       onClose={() => setOpeningTarget(null)} onSaved={opening => {
         setStockOpenings(rows => [...rows.filter(row => row.product_id !== opening.product_id), opening]);
         setOpeningRevision(value => value + 1);

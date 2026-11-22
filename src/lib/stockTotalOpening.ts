@@ -14,7 +14,7 @@ export function canInitializeStockTotal(options: {
   variant: string; mode: string; category: string; productId: string;
   canEditRemaining: boolean; hasOpening: boolean; derived?: boolean;
 }) {
-  return options.variant === "stock" && options.mode === "day"
+  return options.variant === "stock"
     && ["alimentaire", "emballage"].includes(options.category)
     && !options.productId.startsWith("__") && !options.derived
     && options.canEditRemaining && !options.hasOpening;

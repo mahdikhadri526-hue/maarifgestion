@@ -17,14 +17,15 @@ export function StockTotalOpeningDialog({ target, operators, canEdit, onClose, o
 }) {
   const [quantity, setQuantity] = useState("");
   const [operator, setOperator] = useState("");
+  const [date, setDate] = useState(target?.date ?? "");
   const [saving, setSaving] = useState(false);
   const save = async () => {
     if (!target || !canEdit || saving) return;
     try {
-      const value = validateStockTotalOpening(quantity, operator, target.date);
+      const value = validateStockTotalOpening(quantity, operator, date);
       setSaving(true);
       const opening = { product_id: target.productId, category: target.category,
-        opening_date: target.date, quantity: value, performed_by: operator };
+        opening_date: date, quantity: value, performed_by: operator };
       await saveStockTotalOpening(opening);
       onSaved(opening);
       toast.success("Stock total de départ enregistré");
@@ -38,8 +39,12 @@ export function StockTotalOpeningDialog({ target, operators, canEdit, onClose, o
       <DialogHeader><DialogTitle>Stock total de départ</DialogTitle></DialogHeader>
       {target && <div className="space-y-4 text-sm">
         <div><p className="font-semibold">{target.name}</p>
-          <p className="text-muted-foreground">Début du {formatDateFR(target.date)} · {target.unit}</p>
+          <p className="text-muted-foreground">Début du {formatDateFR(date)} · {target.unit}</p>
           <p className="text-muted-foreground">Stock initial total actuel : {target.current ?? "—"}</p>
+        </div>
+        <div><label htmlFor="stock-total-opening-date">Date de départ *</label>
+          <Input id="stock-total-opening-date" type="date" value={date}
+            onChange={event => setDate(event.target.value)} disabled={saving} className="mt-1" />
         </div>
         <div><label htmlFor="stock-total-opening-quantity">Nouveau stock initial total *</label>
           <Input id="stock-total-opening-quantity" type="number" min="0" step="any" autoFocus
@@ -55,7 +60,7 @@ export function StockTotalOpeningDialog({ target, operators, canEdit, onClose, o
         <p className="text-xs text-muted-foreground">Initialisation unique pour cet article et ce PDV. Les mouvements et l’historique antérieurs restent conservés.</p>
       </div>}
       <DialogFooter><Button variant="outline" disabled={saving} onClick={onClose}>Annuler</Button>
-        <Button disabled={!canEdit || saving || !quantity.trim() || !operator.trim()} onClick={() => void save()}>
+        <Button disabled={!canEdit || saving || !date || !quantity.trim() || !operator.trim()} onClick={() => void save()}>
           {saving ? "Enregistrement…" : "Confirmer le stock de départ"}
         </Button></DialogFooter>
     </DialogContent>

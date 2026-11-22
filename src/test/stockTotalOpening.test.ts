@@ -23,8 +23,9 @@ describe("Total-stock opening permissions", () => {
     expect(canInitializeStockTotal({ ...options, derived: true })).toBe(false);
     expect(canInitializeStockTotal({ ...options, productId: "__group__" })).toBe(false);
   });
-  it.each(["all", "month", "period"])("requires a dated day instead of %s", mode => {
-    expect(canInitializeStockTotal({ ...options, mode })).toBe(false);
+  it.each(["day", "all", "month", "period"])("allows Bac 2.5 and food initialization in %s with a date chosen in the dialog", mode => {
+    expect(canInitializeStockTotal({ ...options, mode, category: "emballage", productId: "emb-25" })).toBe(true);
+    expect(canInitializeStockTotal({ ...options, mode })).toBe(true);
   });
   it("does not add initialization to Commande", () => {
     expect(canInitializeStockTotal({ ...options, variant: "order" })).toBe(false);
