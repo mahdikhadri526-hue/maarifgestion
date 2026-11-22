@@ -4,6 +4,7 @@ import { inventoryDayOfWeek } from "@/lib/miseEnPlaceData";
 import { formatISODate, buildWeeklyDailyStocks, type WeeklyTrackingOrderRecord } from "@/lib/stockWeeklyAggregates";
 import { getMovements, getInitialStocks, getProductUnits, getProductUnitConfigs, movementPiecesToDisplay, getGlaceAggregateForRange, getToppingsBreakdown, getProducts, roundStockQuantity, movementFlow } from "@/lib/stockData";
 import { fetchAllRows } from "@/lib/supabasePaginate";
+import { loadStockTotalOpenings, type StockTotalOpening } from "@/lib/stockTotalOpening";
 
 export type StockCount = { product_id: string; quantity: number; week_start: string };
 export type StockCarryPeriod = "day" | "month";
@@ -64,20 +65,24 @@ export function chainWeeklyStockTotals(
   counts: StockCount[], productId: string,
   extraInitial = 0, extraMoves: { date: string; type: string; qty: number }[] = [],
   period: StockCarryPeriod = "day",
+  opening?: Pick<StockTotalOpening, "opening_date" | "quantity">,
 ) {
   // Normalize before filtering: the next day's count closes the previous day's outputs.
-  const daily = buildWeeklyDailyStocks(records, articles).filter(row => row.date < periodStart);
+  const activeOpening = opening && opening.opening_date <= periodStart ? opening : undefined;
+  const included = (date: string) => date < periodStart && (!activeOpening || date >= activeOpening.opening_date);
+  const daily = buildWeeklyDailyStocks(records, articles).filter(row => included(row.date));
   const meps = counts.filter(row => row.product_id === productId && row.week_start !== "2000-01-03")
     .map(row => ({ date: formatISODate(inventoryDayOfWeek(row.week_start)), qty: Number(row.quantity) || 0 }))
-    .filter(row => row.date < periodStart);
-  const moves = extraMoves.filter(row => row.date < periodStart);
-  if (!daily.length && !meps.length && !moves.length && extraInitial === 0) return undefined;
+    .filter(row => included(row.date));
+  const moves = extraMoves.filter(row => included(row.date));
+  if (!activeOpening && !daily.length && !meps.length && !moves.length && extraInitial === 0) return undefined;
   const firstByArticle = new Map<string, number>();
   for (const row of daily) {
     if (!firstByArticle.has(row.article)) firstByArticle.set(row.article, row.stockInitial);
     moves.push({ date: row.date, type: "entree", qty: row.entrees }, { date: row.date, type: "sortie", qty: row.sorties });
   }
-  const initial = extraInitial + [...firstByArticle.values()].reduce((sum, value) => sum + value, 0);
+  const initial = activeOpening ? Number(activeOpening.quantity)
+    : extraInitial + [...firstByArticle.values()].reduce((sum, value) => sum + value, 0);
   return chainDailyStockTotals(initial, moves, meps, period);
 }
 
@@ -87,10 +92,14 @@ export function chainWeeklyStockTotals(
  * colonne Stock total : initial + entrées − |sorties − mise en place|,
  * cumulée sur toute l'historique antérieur à la période.
  */
-export async function loadPreviousStockTotals(periodStart: string, weeklyGroups: Record<string, readonly string[]>, period: StockCarryPeriod = "day") {
+export async function loadPreviousStockTotals(periodStart: string, weeklyGroups: Record<string, readonly string[]>, period: StockCarryPeriod = "day", knownOpenings?: StockTotalOpening[]) {
   const pdvId = requireCurrentPdvId();
-  const counts = await fetchAllRows<StockCount>(() => supabase.from("mise_en_place_stocks")
-    .select("product_id,quantity,week_start").eq("pdv_id", pdvId).lt("week_start", periodStart));
+  const [counts, openings] = await Promise.all([
+    fetchAllRows<StockCount>(() => supabase.from("mise_en_place_stocks")
+      .select("product_id,quantity,week_start").eq("pdv_id", pdvId).lt("week_start", periodStart)),
+    knownOpenings ? Promise.resolve(knownOpenings) : loadStockTotalOpenings(),
+  ]);
+  const openingById = new Map(openings.filter(row => row.opening_date <= periodStart).map(row => [row.product_id, row]));
   const countSums = sumPreviousCounts(counts, periodStart);
   const [movements, initial, units, configs, weekly] = await Promise.all([
     getMovements(), getInitialStocks(), getProductUnits(), getProductUnitConfigs(),
@@ -101,6 +110,7 @@ export async function loadPreviousStockTotals(periodStart: string, weeklyGroups:
   const products = getProducts();
   const prevDay = formatISODate(new Date(new Date(`${periodStart}T00:00:00`).getTime() - 86400000));
   const ids = new Set<string>([...Object.keys(initial), ...Object.keys(countSums), ...Object.keys(weeklyGroups)]);
+  for (const id of openingById.keys()) ids.add(id);
   for (const movement of movements) ids.add(movement.productId);
   const result: Record<string, number> = {};
   await Promise.all([...ids].map(async (id) => {
@@ -109,6 +119,7 @@ export async function loadPreviousStockTotals(periodStart: string, weeklyGroups:
       : id === "__the_aromatise_agg__" ? products.filter(product => /tchaba/i.test(product.name)).map(product => product.id)
       : id === "__sirop_agg__" ? ["ali-9"] : [id];
     const articles = weeklyGroups[id];
+    const opening = openingById.get(id);
     if (articles) {
       const combined = id === "__sirop_agg__";
       const previousTotal = chainWeeklyStockTotals(weekly, articles, periodStart, counts, id,
@@ -116,8 +127,48 @@ export async function loadPreviousStockTotals(periodStart: string, weeklyGroups:
         combined ? movements.filter(row => sourceIds.includes(row.productId)).map(row => ({
           date: row.date.slice(0, 10), type: row.type,
           qty: movementPiecesToDisplay(row.quantity, units[row.productId] || "PIECE", configs[row.productId], row.productId),
-        })) : [], period);
+        })) : [], period, opening);
       if (previousTotal !== undefined) result[id] = previousTotal;
+      return;
+    }
+    if (opening) {
+      const name = products.find(product => product.id === id)?.name;
+      const within = (date: string) => date >= opening.opening_date && date < periodStart;
+      const meps = counts.filter(row => row.product_id === id && row.week_start !== "2000-01-03")
+        .map(row => ({ date: formatISODate(inventoryDayOfWeek(row.week_start)), qty: Number(row.quantity) || 0 }))
+        .filter(row => within(row.date));
+      if (name !== "GLACE" && name !== "TOPPINGS") {
+        result[id] = chainDailyStockTotals(Number(opening.quantity), movements
+          .filter(row => sourceIds.includes(row.productId) && within(row.date.slice(0, 10)))
+          .map(row => ({ date: row.date.slice(0, 10), type: row.type, source: row.source,
+            qty: movementPiecesToDisplay(row.quantity, units[row.productId] || "PIECE", configs[row.productId], row.productId) })), meps, period);
+        return;
+      }
+      // Aggregate only intervals after the new opening; old counts remain untouched.
+      let total = Number(opening.quantity);
+      const cursor = new Date(`${opening.opening_date}T00:00:00`);
+      while (formatISODate(cursor) < periodStart) {
+        const from = formatISODate(cursor);
+        const next = new Date(cursor);
+        if (period === "month") { next.setDate(1); next.setMonth(next.getMonth() + 1); }
+        else next.setDate(next.getDate() + 1);
+        const to = formatISODate(new Date(Math.min(next.getTime(), new Date(`${periodStart}T00:00:00`).getTime()) - 86400000));
+        let purchases = 0;
+        let outputs = 0;
+        if (name === "GLACE") {
+          const agg = await getGlaceAggregateForRange(from, to);
+          purchases = agg.entrees; outputs = agg.sorties;
+        } else {
+          const parts = await getToppingsBreakdown(date => date >= from && date <= to, date => date < from, {});
+          purchases = parts.reduce((sum, row) => sum + row.entrees, 0);
+          outputs = parts.reduce((sum, row) => sum + row.sorties, 0);
+        }
+        const mep = meps.filter(row => row.date >= from && row.date <= to).reduce((sum, row) => sum + row.qty, 0);
+        const value = calculateStockTotals(total, purchases, outputs, mep).stockTotal;
+        if (value !== undefined) total = value;
+        cursor.setTime(next.getTime());
+      }
+      result[id] = roundStockQuantity(total);
       return;
     }
     let stockInitial = sourceIds.reduce((sum, sourceId) => sum + (initial[sourceId] ?? 0), 0);

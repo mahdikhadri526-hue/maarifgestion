@@ -2287,6 +2287,50 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_total_openings: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string
+          id: string
+          opening_date: string
+          pdv_id: string
+          performed_by: string
+          product_id: string
+          quantity: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          opening_date: string
+          pdv_id: string
+          performed_by: string
+          product_id: string
+          quantity: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          opening_date?: string
+          pdv_id?: string
+          performed_by?: string
+          product_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_total_openings_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_claims: {
         Row: {
           action_prise: string | null

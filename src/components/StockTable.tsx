@@ -40,7 +40,7 @@ import { fetchAllRows } from "@/lib/supabasePaginate";
 import { cached } from "@/lib/requestCache";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Save, History, Trash2, FileDown, Eye, EyeOff } from "lucide-react";
+import { Search, Save, History, Trash2, FileDown, Eye, EyeOff, Pencil } from "lucide-react";
 import { useMiseEnPlace, MiseEnPlaceInput } from "@/components/MiseEnPlaceCell";
 import { weekStartOf, inventoryDayOfWeek, getMiseEnPlaceTotalsForPeriod, canEditMiseEnPlace, canEditPackagingMep, type PackagingMepInputs } from "@/lib/miseEnPlaceData";
 import { getOperators } from "@/lib/operators";
@@ -70,6 +70,8 @@ import { CustomStockGroups } from "@/components/CustomStockGroups";
 import { AggregateSourceDetails } from "@/components/AggregateSourceDetails";
 import { getSourceDailyDetails, type SourceDailyDetail } from "@/lib/stockData";
 import type { GlaceStockDetail } from "@/lib/glaceStockAggregate";
+import { canInitializeStockTotal, loadStockTotalOpenings, type StockTotalOpening } from "@/lib/stockTotalOpening";
+import { StockTotalOpeningDialog, type StockTotalOpeningTarget } from "@/components/StockTotalOpeningDialog";
 
 const GLACE_ARTICLES = [
   "Nougat", "Praliné", "Vanille", "Chocolat", "Pistache", "Caramel", "Moka",
@@ -296,6 +298,13 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const showMepCols = canToggleExtraCols && showMepColsRaw;
   const [previousStockTotals, setPreviousStockTotals] = useState<Record<string, number>>({});
   const [previousStockLoading, setPreviousStockLoading] = useState(false);
+  const [stockOpenings, setStockOpenings] = useState<StockTotalOpening[]>([]);
+  const [openingTarget, setOpeningTarget] = useState<StockTotalOpeningTarget | null>(null);
+  const [openingRevision, setOpeningRevision] = useState(0);
+  useEffect(() => {
+    setOpeningTarget(null);
+    setStockOpenings([]);
+  }, [pdvId, mode, day]);
   const previousPeriodStart = mode === "day" ? day : mode === "month" ? `${month}-01` : mode === "period" ? start : "";
   useEffect(() => {
     let cancelled = false;
@@ -305,17 +314,22 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       return;
     }
     setPreviousStockLoading(true);
-    loadPreviousStockTotals(previousPeriodStart, {
+    loadStockTotalOpenings().then(async openings => {
+      if (cancelled) return;
+      setStockOpenings(openings);
+      const values = await loadPreviousStockTotals(previousPeriodStart, {
       [MACARON_AGG_ID]: MACARON_ARTICLES,
       [CHANTILLY_AGG_ID]: [CHANTILLY_WEEKLY_ARTICLE],
       [AMANDES_AGG_ID]: [AMANDES_WEEKLY_ARTICLE],
       [SIROP_AGG_ID]: [SIROP_CARAMEL_WEEKLY_ARTICLE],
       ...Object.fromEntries([...TARTE_ARTICLES, ...FRUIT_ARTICLES, ...NETTOYANT_ARTICLES, ...GLACE_ARTICLES].map(article => [stockRecipeIngredientId(article), [article]])),
-    }, mode === "day" ? "day" : "month").then(values => { if (!cancelled) setPreviousStockTotals(values); })
+      }, mode === "day" ? "day" : "month", openings);
+      if (!cancelled) setPreviousStockTotals(values);
+    })
       .catch(() => { if (!cancelled) toast.error("Impossible de lire le dernier stock total précédent"); })
       .finally(() => { if (!cancelled) setPreviousStockLoading(false); });
     return () => { cancelled = true; };
-  }, [variant, showMepCols, previousPeriodStart, mode]);
+  }, [variant, showMepCols, previousPeriodStart, mode, pdvId, openingRevision, weeklySettingsKey]);
   // En filtre mois / période / tout, la colonne « Stock mise en place »
   // affiche le TOTAL des saisies de la période (somme des comptages
   // hebdomadaires déjà enregistrés), en lecture seule.
@@ -1915,6 +1929,9 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                 );
                 const aggregate = getStockRecipeAggregates((levels || []).map(row => ({ id: row.productId, name: row.productName })))
                   .find(row => row.id === level.productId && row.sourceIds.some(id => levels?.some(source => source.productId === id)));
+                const opening = stockOpenings.find(row => row.product_id === level.productId);
+                const canOpenInitial = canInitializeStockTotal({ variant, mode, category: level.category,
+                  productId: level.productId, canEditRemaining, hasOpening: !!opening, derived: !!aggregate });
                 const renderReference = (field: "entrees" | "sorties" | "stockRestant" | "initialTotal" | "miseEnPlace" | "sortiesTotal" | "stockTotal", quantity: number | undefined) => {
                   if (!aggregate) return quantity === undefined ? "—" : <StockReferenceValue quantity={quantity} reference={refMap[level.productId]} />;
                   const ids = aggregate.sourceIds.filter(id => levels?.some(source => source.productId === id));
@@ -2009,7 +2026,18 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   </td>
                   <td className="p-3 text-right font-mono text-sm text-primary font-semibold">{fmtQty(level.productId, v.stockInitial)}</td>
                   {showMepCols && <td className="p-3 text-right font-mono text-sm text-primary font-semibold">
-                    {previousStockLoading ? "…" : previousStockTotals[level.productId] === undefined ? "—" : fmtQty(level.productId, previousStockTotals[level.productId])}
+                    <div className="flex items-center justify-end gap-1">
+                      <span title={opening ? `Stock de départ défini le ${formatDateFR(opening.opening_date)} par ${opening.performed_by}` : undefined}>
+                        {previousStockLoading ? "…" : previousStockTotals[level.productId] === undefined ? "—" : fmtQty(level.productId, previousStockTotals[level.productId])}
+                      </span>
+                      {canOpenInitial && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={previousStockLoading}
+                        aria-label={`Définir le stock total de départ ${level.productName}`} title="Définir le stock initial total de départ (une seule fois)"
+                        onClick={() => { if (level.category !== "alimentaire" && level.category !== "emballage") return;
+                          setOpeningTarget({ productId: level.productId, name: level.productName, category: level.category,
+                            date: day, current: previousStockTotals[level.productId], unit: UNIT_LABELS[level.unit] }); }}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>}
+                    </div>
                   </td>}
                   {showMepCols && showRefCols && <td className="p-3 text-right font-mono text-sm text-muted-foreground">
                     {previousStockLoading ? "…" : renderReference("initialTotal", previousStockTotals[level.productId])}
@@ -2374,6 +2402,12 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
       </DialogContent>
     </Dialog>
 
+    <StockTotalOpeningDialog key={openingTarget ? `${pdvId}:${openingTarget.productId}:${openingTarget.date}` : "closed"}
+      target={openingTarget} operators={operatorOptions} canEdit={canEditRemaining && variant === "stock" && mode === "day"}
+      onClose={() => setOpeningTarget(null)} onSaved={opening => {
+        setStockOpenings(rows => [...rows.filter(row => row.product_id !== opening.product_id), opening]);
+        setOpeningRevision(value => value + 1);
+      }} />
     <Dialog open={adjustOpen} onOpenChange={(o) => { if (!adjustSaving) setAdjustOpen(o); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
