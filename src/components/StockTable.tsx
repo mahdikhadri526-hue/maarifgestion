@@ -2030,13 +2030,14 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       <span title={opening ? `Stock de départ défini le ${formatDateFR(opening.opening_date)} par ${opening.performed_by}` : undefined}>
                         {previousStockLoading ? "…" : previousStockTotals[level.productId] === undefined ? "—" : fmtQty(level.productId, previousStockTotals[level.productId])}
                       </span>
-                      {canOpenInitial && <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={previousStockLoading}
-                        aria-label={`Définir le stock total de départ ${level.productName}`} title="Définir le stock initial total de départ (une seule fois)"
-                        onClick={() => { if (level.category !== "alimentaire" && level.category !== "emballage") return;
+                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" disabled={previousStockLoading || !canOpenInitial}
+                        aria-label={`Définir le stock total de départ ${level.productName}`}
+                        title={opening ? "Stock initial total de départ déjà défini" : mode !== "day" ? "Sélectionnez le filtre Jour pour définir le stock de départ" : !canOpenInitial ? "Initialisation non autorisée pour cet article" : "Définir le stock initial total de départ (une seule fois)"}
+                        onClick={() => { if (!canOpenInitial || (level.category !== "alimentaire" && level.category !== "emballage")) return;
                           setOpeningTarget({ productId: level.productId, name: level.productName, category: level.category,
                             date: day, current: previousStockTotals[level.productId], unit: UNIT_LABELS[level.unit] }); }}>
                         <Pencil className="h-3.5 w-3.5" />
-                      </Button>}
+                      </Button>
                     </div>
                   </td>}
                   {showMepCols && showRefCols && <td className="p-3 text-right font-mono text-sm text-muted-foreground">
