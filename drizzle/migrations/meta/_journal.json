@@ -379,6 +379,13 @@
       "when": 1795338028355,
       "tag": "0053_allow_stock_total_opening_corrections",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795474008449,
+      "tag": "0054_add_transfer_locations",
+      "breakpoints": true
     }
   ]
 }

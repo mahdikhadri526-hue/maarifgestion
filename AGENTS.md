@@ -38,3 +38,4 @@
 - Project Tartes Panachés counts through buildGlaceStockDetails for GLACE stocks and drill-down: entries and outputs stay zero on the Panachés line; the global GLACE total outputs follow initial + entries - final (sumGlaceStockDetails); never rewrite Tartes records or calculations.
 - WeeklyTracking renders only the active movement table and indexes receipts by week/day/article once per rows change; keep full FIFO history and formulas intact while avoiding repeated history scans per cell.
 - Server-update packages are assembled and built in /tmp, omit RH and source files, require the existing runtime server configuration, and import catalogs additively with conflict reports; never replace operational rows or run installation against Cloud.
+- Transfer destinations merge built-ins with shared transfer_locations; authenticated reads and admin-only inserts preserve movement history.

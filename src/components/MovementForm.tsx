@@ -13,24 +13,7 @@ import { MultiUnitInput, MultiUnitValues, EMPTY_MULTI, totalPieces, dominantUnit
 import { ENABLE_TRANSFERTS } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
 import { isProductActive } from "@/lib/stockData";
-
-const TRANSFER_LOCATIONS = [
-  "Dar Bouazza",
-  "Corniche",
-  "Almaz",
-  "Sidi Maarouf",
-  "Bouskoura",
-  "Hassan 2",
-  "Anfa place",
-  "Tachfine",
-  "Rabat",
-  "Morocco Mall",
-  "Mohamedia",
-  "Californie",
-  "Franchise",
-  "Événement",
-  "Ville verte",
-];
+import { useTransferLocations } from "@/hooks/useTransferLocations";
 
 interface MovementFormProps {
   onMovementAdded: () => void;
@@ -49,6 +32,9 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const [performedBy, setPerformedBy] = useState("");
   const [destination, setDestination] = useState("");
   const [customDestination, setCustomDestination] = useState("");
+  const [addingSite, setAddingSite] = useState(false);
+  const [newSite, setNewSite] = useState("");
+  const { locations, add: addSite, isLoading: loadingSites, error: sitesError } = useTransferLocations();
   const operators = useOperators();
   const [submitting, setSubmitting] = useState(false);
 
@@ -62,6 +48,19 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
     ? applyBaseUnitLabel(getPieceLabelForProduct(selectedProduct.id, selectedProduct.name, selectedProduct.category), config).plural
     : "Pièces";
   const paquetLabel = productId ? (PAQUET_LABEL_OVERRIDES[productId] || "Paquets") : "Paquets";
+
+  const handleAddSite = async () => {
+    try {
+      const name = await addSite.mutateAsync(newSite);
+      setDestination(name);
+      setCustomDestination("");
+      setNewSite("");
+      setAddingSite(false);
+      toast.success("Site ajouté");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Impossible d’ajouter ce site");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -350,12 +349,43 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
                 <SelectValue placeholder="Sélectionner un site" />
               </SelectTrigger>
               <SelectContent>
-                {TRANSFER_LOCATIONS.map((loc) => (
+                {locations.map((loc) => (
                   <SelectItem key={loc} value={loc}>{loc}</SelectItem>
                 ))}
                 {isAdmin && <SelectItem value="__autre__">Autre (admin)…</SelectItem>}
               </SelectContent>
             </Select>
+            {sitesError && <p role="alert" className="text-xs text-destructive mt-2">Impossible de charger les sites ajoutés.</p>}
+            {isAdmin && (
+              addingSite ? (
+                <div className="space-y-2 mt-2">
+                  <Input
+                    aria-label="Nom du nouveau site"
+                    placeholder="Nom du nouveau site"
+                    maxLength={100}
+                    value={newSite}
+                    disabled={addSite.isPending}
+                    onChange={e => setNewSite(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        if (newSite.trim() && !addSite.isPending && !loadingSites && !sitesError) void handleAddSite();
+                      }
+                    }}
+                  />
+                  <div className="flex gap-2">
+                    <Button type="button" size="sm" disabled={!newSite.trim() || addSite.isPending || loadingSites || !!sitesError} onClick={handleAddSite}>
+                      <Plus className="h-4 w-4 mr-1" /> {addSite.isPending ? "Ajout…" : "Ajouter"}
+                    </Button>
+                    <Button type="button" size="sm" variant="ghost" disabled={addSite.isPending} onClick={() => { setAddingSite(false); setNewSite(""); }}>Annuler</Button>
+                  </div>
+                </div>
+              ) : (
+                <Button type="button" size="sm" variant="outline" className="mt-2" onClick={() => setAddingSite(true)}>
+                  <Plus className="h-4 w-4 mr-1" /> Ajouter un site
+                </Button>
+              )
+            )}
             {isAdmin && destination === "__autre__" && (
               <Input
                 type="text"
