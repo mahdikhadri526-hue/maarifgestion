@@ -2800,6 +2800,44 @@ export type Database = {
           },
         ]
       }
+      weekly_followups: {
+        Row: {
+          active: boolean
+          articles: Json
+          created_at: string
+          id: string
+          name: string
+          pdv_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          articles?: Json
+          created_at?: string
+          id?: string
+          name: string
+          pdv_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          articles?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          pdv_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weekly_followups_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weekly_tracking: {
         Row: {
           article: string | null

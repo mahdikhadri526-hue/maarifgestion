@@ -29,6 +29,9 @@ import { resolveWeeklyArticles, type WeeklyCategory } from "@/lib/weeklyArticleS
 import { useQueryClient } from "@tanstack/react-query";
 import { useGlaceGrammages, glaceGrammagesQueryKey } from "@/hooks/useGlaceGrammages";
 import { buildWeeklyEntryIndex, weeklyEntryKey } from "@/lib/weeklyEntryIndex";
+import { useWeeklyFollowups } from "@/hooks/useWeeklyFollowups";
+import { WeeklyFollowupsAdmin } from "./WeeklyFollowupsAdmin";
+import { followupFicheKey, visibleFollowups } from "@/lib/weeklyFollowups";
 
 const SHOW_KG_BAC = true; // colonne Kg/bac affichée (modifiable par l’admin)
 const DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] as const;
@@ -320,7 +323,7 @@ function LotExistantCell({
 
 export function WeeklyTracking() {
   const [weekStart, setWeekStart] = useState<string>(fmt(getMonday(new Date())));
-  const [tab, setTab] = useState<"creme" | "glace" | "tarte" | "fruits" | "nettoyant" | "materiel">("creme");
+  const [tab, setTab] = useState<string>("creme");
   const [rows, setRows] = useState<Row[]>([]);
   const [saving, setSaving] = useState(false);
   // Toutes les entrées "Crème fraîche (mousse fouettée)" du mouvement glaces,
@@ -358,6 +361,12 @@ export function WeeklyTracking() {
   const [scanDay, setScanDay] = useState<string>("today");
   const { can, user, pdvId, isAdmin } = useAuth();
   const articleSettingsQuery = useWeeklyArticleSettings(pdvId);
+  const followupsQuery = useWeeklyFollowups(pdvId);
+  const customFollowups = useMemo(() => visibleFollowups(followupsQuery.data ?? [], pdvId), [followupsQuery.data, pdvId]);
+  const customFollowup = customFollowups.find(row => followupFicheKey(row.id) === tab);
+  useEffect(() => {
+    if (tab.startsWith("Suivi personnalisé:") && followupsQuery.isSuccess && !customFollowup) setTab("creme");
+  }, [tab, followupsQuery.isSuccess, customFollowup]);
   const articleLists = useMemo(() => {
     const settings = articleSettingsQuery.data ?? [];
     return {
@@ -404,10 +413,13 @@ export function WeeklyTracking() {
     return iso === yesterdayIso || iso === todayIso || iso === tomorrowIso || unlockedDays.has(iso);
   };
 
-  const ficheType = tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
-  const tabArticles = (t: string) => articleLists[t as WeeklyCategory] ?? ARTICLES;
+  const ficheType = customFollowup ? followupFicheKey(customFollowup.id) : tab === "creme" ? "Crème fraîche" : "Mouvement glaces & tartes";
+  const tabArticles = (t: string) => {
+    const custom = customFollowups.find(row => followupFicheKey(row.id) === t);
+    return custom ? custom.articles.filter(item => item.active).map(item => item.name) : articleLists[t as WeeklyCategory] ?? ARTICLES;
+  };
   const activeArticles = tabArticles(tab);
-  const tabLabel = tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : tab === "fruits" ? "Fruits" : tab === "nettoyant" ? "Mouvement produits nettoyants" : "Mouvement tartes";
+  const tabLabel = customFollowup?.name ?? (tab === "creme" ? "Crème fraîche" : tab === "glace" ? "Mouvement glaces" : tab === "fruits" ? "Fruits" : tab === "nettoyant" ? "Mouvement produits nettoyants" : "Mouvement tartes");
 
   // Compute the list of week-starts to load (covers period filter)
   const weeksToLoad = useMemo(() => {
@@ -1636,6 +1648,8 @@ export function WeeklyTracking() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => { setTab(v as typeof tab); setFilterArticle("all"); }}>
+        <div className="flex justify-end mb-2 no-print"><WeeklyFollowupsAdmin /></div>
+        {followupsQuery.isError && <p className="text-sm text-destructive">Impossible de charger les suivis ajoutés. <Button variant="link" onClick={() => followupsQuery.refetch()}>Réessayer</Button></p>}
         <TabsList className="bg-muted/60 p-1.5 gap-1.5 rounded-xl flex-wrap h-auto justify-start">
           <TabsTrigger
             value="creme"
@@ -1673,6 +1687,7 @@ export function WeeklyTracking() {
           >
             Suivi matériel
           </TabsTrigger>
+          {customFollowups.map(row => <TabsTrigger key={row.id} value={followupFicheKey(row.id)} className="max-w-full whitespace-normal break-words rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{row.name}</TabsTrigger>)}
         </TabsList>
         <div ref={ficheRef} className="bg-background p-2 rounded-md">
           <div className="hidden print:block mb-2 px-2">
@@ -1853,11 +1868,11 @@ export function WeeklyTracking() {
           <WeeklyTransfers ficheKey="Crème fraîche" weekStart={weekStart} articles={["Crème fraîche (mousse fouettée)"]} />
         </TabsContent>
 
-        {(["glace", "tarte", "fruits", "nettoyant"] as const).filter((t) => t === tab).map((t) => (
+        {["glace", "tarte", "fruits", "nettoyant", ...customFollowups.map(row => followupFicheKey(row.id))].filter((t) => t === tab).map((t) => (
         <TabsContent key={t} value={t} className="mt-4 space-y-3 min-w-0">
           <div className="flex flex-wrap items-center justify-between gap-2 no-print">
-            <h3 className="text-base font-semibold">{t === "glace" ? "Mouvement glaces" : t === "tarte" ? "Mouvement tartes" : t === "fruits" ? "Fruits" : "Mouvement produits nettoyants"}</h3>
-            <WeeklyArticlesAdmin category={t} />
+            <h3 className="text-base font-semibold break-words">{tabLabel}</h3>
+            {!customFollowup && <WeeklyArticlesAdmin category={t as WeeklyCategory} />}
           </div>
           {articleSettingsQuery.isError && <p className="text-sm text-destructive">Impossible de charger les articles de ce PDV. <Button variant="link" onClick={() => articleSettingsQuery.refetch()}>Réessayer</Button></p>}
           {/* FILTERS BAR */}
@@ -2182,7 +2197,7 @@ export function WeeklyTracking() {
             <strong>Lot existant</strong> cumule le SI du lundi et les entrées, puis déduit les sorties en FIFO.
           </div>
           <WeeklyTransfers
-            ficheKey={t === "glace" ? "Mouvement glaces" : t === "nettoyant" ? "Mouvement produits nettoyants" : "Mouvement tartes"}
+            ficheKey={customFollowup ? followupFicheKey(customFollowup.id) : t === "glace" ? "Mouvement glaces" : t === "nettoyant" ? "Mouvement produits nettoyants" : "Mouvement tartes"}
             weekStart={weekStart}
             articles={tabArticles(t)}
           />
