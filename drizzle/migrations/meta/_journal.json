@@ -393,6 +393,13 @@
       "when": 1795521888365,
       "tag": "0055_custom_weekly_followups",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1795522389012,
+      "tag": "0056_restrict_transfer_locations_read",
+      "breakpoints": true
     }
   ]
 }

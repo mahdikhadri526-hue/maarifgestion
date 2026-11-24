@@ -1,0 +1,1 @@
+ALTER POLICY "Authenticated users read transfer locations" ON public.transfer_locations TO authenticated USING (public.has_any_role(auth.uid()));
