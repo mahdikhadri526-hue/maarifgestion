@@ -39,3 +39,4 @@
 - WeeklyTracking renders only the active movement table and indexes receipts by week/day/article once per rows change; keep full FIFO history and formulas intact while avoiding repeated history scans per cell.
 - Server-update packages are assembled and built in /tmp, omit RH and source files, require the existing runtime server configuration, and import catalogs additively with conflict reports; never replace operational rows or run installation against Cloud.
 - Transfer destinations merge built-ins with shared transfer_locations; authenticated reads and admin-only inserts preserve movement history.
+- Custom weekly followups are extra Stock restant/Commande categories reading only their own fiche rows.

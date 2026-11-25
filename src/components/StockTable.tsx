@@ -71,6 +71,8 @@ import { AggregateSourceDetails } from "@/components/AggregateSourceDetails";
 import { getSourceDailyDetails, type SourceDailyDetail } from "@/lib/stockData";
 import type { GlaceStockDetail } from "@/lib/glaceStockAggregate";
 import { canInitializeStockTotal, loadStockTotalOpenings, type StockTotalOpening } from "@/lib/stockTotalOpening";
+import { useWeeklyFollowups } from "@/hooks/useWeeklyFollowups";
+import { followupFicheKey, visibleFollowups } from "@/lib/weeklyFollowups";
 import { StockTotalOpeningDialog, type StockTotalOpeningTarget } from "@/components/StockTotalOpeningDialog";
 
 const GLACE_ARTICLES = [
@@ -221,7 +223,7 @@ function StockReferenceValue({ quantity, reference }: {
 }
 
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
-  const [category, setCategory] = useState<Category | "all" | "tarte" | "fruits" | "glace" | "nettoyant" | "creme">(variant === "order" ? "alimentaire" : "all");
+  const [category, setCategory] = useState<Category | "all" | "tarte" | "fruits" | "glace" | "nettoyant" | "creme" | `Suivi personnalisé:${string}`>(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
   // Saisie non bloquante : le filtrage de la longue liste suit la frappe sans la figer.
   const deferredSearch = useDeferredValue(search);
@@ -247,7 +249,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const weeklyArticleSettings = useWeeklyArticleSettings(pdvId).data ?? [];
   const { data: glaceGrammagesForKey } = useGlaceGrammages();
   // Kg/bac partagés : tout changement relance les calculs GLACE (totaux et détail).
-  const weeklySettingsKey = JSON.stringify([weeklyArticleSettings, glaceGrammagesForKey ?? null]);
+  const followupsQuery = useWeeklyFollowups(pdvId);
+  const customFollowups = useMemo(() => visibleFollowups(followupsQuery.data ?? [], pdvId), [followupsQuery.data, pdvId]);
+  const customFollowup = customFollowups.find(row => followupFicheKey(row.id) === category);
+  const customFollowupArticles = useMemo(() => (customFollowup?.articles ?? []).filter(a => a.active).map(a => a.name), [customFollowup]);
+  const weeklySettingsKey = JSON.stringify([weeklyArticleSettings, glaceGrammagesForKey ?? null, customFollowup?.id ?? null, customFollowupArticles]);
   const operatorOptions = useOperators();
   const [showRefColsRaw, setShowRefCols] = useState<boolean>(false);
   const [showMepColsRaw, setShowMepCols] = useState<boolean>(false);
@@ -688,7 +694,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
   };
 
-  const isWeeklyCat = category === "tarte" || category === "fruits" || category === "glace" || category === "nettoyant" || category === "creme";
+  const isWeeklyCat = category === "tarte" || category === "fruits" || category === "glace" || category === "nettoyant" || category === "creme" || !!customFollowup;
   const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
   // Un seul chargement pour toutes les catégories : le filtre Alim./Emb. est
   // appliqué côté client pour un basculement instantané (pas de refetch).
@@ -844,8 +850,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           : category === "fruits" ? FRUIT_ARTICLES
           : category === "nettoyant" ? NETTOYANT_ARTICLES
           : GLACE_ARTICLES;
-        const list = applyWeeklyArticleSettings(baseList, pdvId, category as WeeklyCategory, weeklyArticleSettings);
-        const ficheType = "Mouvement glaces & tartes";
+        const list = customFollowup ? customFollowupArticles : applyWeeklyArticleSettings(baseList, pdvId, category as WeeklyCategory, weeklyArticleSettings);
+        const ficheType = customFollowup ? followupFicheKey(customFollowup.id) : "Mouvement glaces & tartes";
         const wr = weekRangeFilter(mode, day, month, start, end);
         const data = await cached(
           `st_weekly_orders_${category}_${pdvId}_${weeklySettingsKey}_${wr.from ?? "all"}`,
@@ -903,10 +909,10 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           : category === "nettoyant" ? NETTOYANT_ARTICLES
           : category === "glace" ? GLACE_ARTICLES.filter((a) => a !== CHANTILLY_WEEKLY_ARTICLE)
           : [CHANTILLY_WEEKLY_ARTICLE];
-        const list = (["tarte", "fruits", "nettoyant", "glace"] as string[]).includes(category)
+        const list = customFollowup ? customFollowupArticles : (["tarte", "fruits", "nettoyant", "glace"] as string[]).includes(category)
           ? applyWeeklyArticleSettings(baseList, pdvId, category as WeeklyCategory, weeklyArticleSettings).filter((a) => a !== CHANTILLY_WEEKLY_ARTICLE)
           : baseList;
-        const ficheType = "Mouvement glaces & tartes";
+        const ficheType = customFollowup ? followupFicheKey(customFollowup.id) : "Mouvement glaces & tartes";
         const data = await cached(
           `st_weekly_stock_${category}_${pdvId}_${weeklySettingsKey}_all`,
           ["weekly_tracking"],
@@ -1632,7 +1638,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               {(variant === "order"
                 ? (["alimentaire", "emballage", "tarte", "fruits", "glace", "nettoyant"] as const)
                 : (["all", "alimentaire", "emballage", "creme", "tarte", "fruits", "glace", "nettoyant"] as const)
-              ).map((cat) => (
+              ).map(c => c as typeof category).concat(customFollowups.map(row => followupFicheKey(row.id) as typeof category)).map((cat) => (
                 <Button
                   key={cat}
                   variant="ghost"
@@ -1645,7 +1651,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       : "bg-card text-muted-foreground hover:bg-muted"
                   }`}
                 >
-                  {cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : cat === "emballage" ? "Emballage" : cat === "creme" ? "Crème fraîche" : cat === "tarte" ? "Tartes" : cat === "fruits" ? "Fruits" : cat === "nettoyant" ? "Nettoyants" : "Glaces"}
+                  {customFollowups.find(row => followupFicheKey(row.id) === cat)?.name ?? (cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : cat === "emballage" ? "Emballage" : cat === "creme" ? "Crème fraîche" : cat === "tarte" ? "Tartes" : cat === "fruits" ? "Fruits" : cat === "nettoyant" ? "Nettoyants" : "Glaces")}
                 </Button>
               ))}
             </div>
@@ -1840,7 +1846,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
         <div className="bg-card rounded-lg border overflow-x-auto max-w-full">
           <WeeklyStockColumns
             rows={stockWeeklyRows.filter(row => row.article.toLowerCase().includes(search.toLowerCase()))}
-            categoryLabel={category === "tarte" ? "Tartes" : category === "fruits" ? "Fruits" : category === "nettoyant" ? "Nettoyants" : category === "glace" ? "Glaces" : "Crème fraîche"}
+            categoryLabel={customFollowup ? customFollowup.name : category === "tarte" ? "Tartes" : category === "fruits" ? "Fruits" : category === "nettoyant" ? "Nettoyants" : category === "glace" ? "Glaces" : "Crème fraîche"}
             showRefCols={showRefCols} showMepCols={showMepCols}
             references={refMap} updateRef={updateRef}
             mepMap={mepMap} saveMep={saveMep} editable={canEditRemaining && mepEditable}
