@@ -130,7 +130,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
   const setPdvRole = async (id: string, role: AppRole) => {
     const { error } = await supabase.from("pdvs").update({ default_role: role } as any).eq("id", id);
     if (error) { toast.error("Erreur : " + error.message); return; }
-    await supabase.from("pdv_permissions" as any).delete().eq("pdv_id", id).not("permission_key", "like", `${CLEANING_ZONE_OFF_PREFIX}%`).not("permission_key", "like", `${FRIDGE_ZONE_OFF_PREFIX}%`);
+    await supabase.from("pdv_permissions" as any).delete().eq("pdv_id", id).not("permission_key", "like", `${CLEANING_ZONE_OFF_PREFIX}%`).not("permission_key", "like", `${FRIDGE_ZONE_OFF_PREFIX}%`).not("permission_key", "like", "weekly_followup_off:%");
     const keys = PDV_ROLE_PRESETS[role];
     if (keys.length > 0) {
       await supabase.from("pdv_permissions" as any).insert(
@@ -244,7 +244,7 @@ export function PdvManagement({ onChanged }: { onChanged?: () => void }) {
               onClick={() => setEditing({ id: p.id, name: p.name })}
             >
               {canEditPerms ? <Settings2 className="h-4 w-4 mr-1" /> : <Lock className="h-4 w-4 mr-1" />}
-              Permissions ({[...(pdvPerms[p.id] ?? [])].filter((k) => !k.startsWith(CLEANING_ZONE_OFF_PREFIX) && !k.startsWith(FRIDGE_ZONE_OFF_PREFIX)).length})
+              Permissions ({[...(pdvPerms[p.id] ?? [])].filter((k) => !k.startsWith(CLEANING_ZONE_OFF_PREFIX) && !k.startsWith(FRIDGE_ZONE_OFF_PREFIX) && !k.startsWith("weekly_followup_off:")).length})
             </Button>
             <Button
               variant="outline"

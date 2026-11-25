@@ -17,3 +17,27 @@ export function useWeeklyFollowups(pdvId: string | null) {
     },
   });
 }
+export const BUILTIN_FOLLOWUP_OFF_PREFIX = "weekly_followup_off:";
+export const BUILTIN_FOLLOWUPS = [
+  { key: "creme", label: "Crème fraîche" },
+  { key: "glace", label: "Mouvement glaces" },
+  { key: "tarte", label: "Mouvement tartes" },
+  { key: "fruits", label: "Fruits" },
+  { key: "nettoyant", label: "Mouvement produits nettoyants" },
+  { key: "materiel", label: "Suivi matériel" },
+] as const;
+export const builtinFollowupsOffQueryKey = (pdvId: string | null) => ["weekly-builtin-followups-off", pdvId];
+
+/** Built-in weekly followups hidden for a PDV (flag in pdv_permissions; absence = shown). Data is kept. */
+export function useBuiltinFollowupsOff(pdvId: string | null) {
+  return useQuery({
+    queryKey: builtinFollowupsOffQueryKey(pdvId),
+    enabled: !!pdvId,
+    queryFn: async (): Promise<Set<string>> => {
+      const { data, error } = await supabase.from("pdv_permissions" as any).select("permission_key, allowed")
+        .eq("pdv_id", pdvId).like("permission_key", `${BUILTIN_FOLLOWUP_OFF_PREFIX}%`);
+      if (error) throw error;
+      return new Set(((data ?? []) as any[]).filter(r => r.allowed).map(r => String(r.permission_key).slice(BUILTIN_FOLLOWUP_OFF_PREFIX.length)));
+    },
+  });
+}

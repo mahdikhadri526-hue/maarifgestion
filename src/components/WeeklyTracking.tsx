@@ -29,7 +29,7 @@ import { resolveWeeklyArticles, type WeeklyCategory } from "@/lib/weeklyArticleS
 import { useQueryClient } from "@tanstack/react-query";
 import { useGlaceGrammages, glaceGrammagesQueryKey } from "@/hooks/useGlaceGrammages";
 import { buildWeeklyEntryIndex, weeklyEntryKey } from "@/lib/weeklyEntryIndex";
-import { useWeeklyFollowups } from "@/hooks/useWeeklyFollowups";
+import { useWeeklyFollowups, useBuiltinFollowupsOff, BUILTIN_FOLLOWUPS } from "@/hooks/useWeeklyFollowups";
 import { WeeklyFollowupsAdmin } from "./WeeklyFollowupsAdmin";
 import { followupFicheKey, visibleFollowups } from "@/lib/weeklyFollowups";
 
@@ -364,6 +364,14 @@ export function WeeklyTracking() {
   const followupsQuery = useWeeklyFollowups(pdvId);
   const customFollowups = useMemo(() => visibleFollowups(followupsQuery.data ?? [], pdvId), [followupsQuery.data, pdvId]);
   const customFollowup = customFollowups.find(row => followupFicheKey(row.id) === tab);
+  const builtinOff = useBuiltinFollowupsOff(pdvId).data;
+  const isBuiltinShown = (key: string) => !builtinOff?.has(key);
+  useEffect(() => {
+    if (!builtinOff || !builtinOff.has(tab)) return;
+    const first = BUILTIN_FOLLOWUPS.find(b => !builtinOff.has(b.key));
+    const next = first?.key ?? (customFollowups[0] ? followupFicheKey(customFollowups[0].id) : null);
+    if (next) setTab(next);
+  }, [builtinOff, tab, customFollowups]);
   useEffect(() => {
     if (tab.startsWith("Suivi personnalisé:") && followupsQuery.isSuccess && !customFollowup) setTab("creme");
   }, [tab, followupsQuery.isSuccess, customFollowup]);
@@ -1651,42 +1659,42 @@ export function WeeklyTracking() {
         <div className="flex justify-end mb-2 no-print"><WeeklyFollowupsAdmin /></div>
         {followupsQuery.isError && <p className="text-sm text-destructive">Impossible de charger les suivis ajoutés. <Button variant="link" onClick={() => followupsQuery.refetch()}>Réessayer</Button></p>}
         <TabsList className="bg-muted/60 p-1.5 gap-1.5 rounded-xl flex-wrap h-auto justify-start">
-          <TabsTrigger
+          {isBuiltinShown("creme") && <TabsTrigger
             value="creme"
             className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-amber-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-amber-700 data-[state=inactive]:hover:bg-amber-100 transition-all"
           >
             Crème fraîche
-          </TabsTrigger>
-          <TabsTrigger
+          </TabsTrigger>}
+          {isBuiltinShown("glace") && <TabsTrigger
             value="glace"
             className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-sky-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-sky-700 data-[state=inactive]:hover:bg-sky-100 transition-all"
           >
             Mouvement glaces
-          </TabsTrigger>
-          <TabsTrigger
+          </TabsTrigger>}
+          {isBuiltinShown("tarte") && <TabsTrigger
             value="tarte"
             className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-rose-500 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-rose-700 data-[state=inactive]:hover:bg-rose-100 transition-all"
           >
             Mouvement tartes
-          </TabsTrigger>
-          <TabsTrigger
+          </TabsTrigger>}
+          {isBuiltinShown("fruits") && <TabsTrigger
             value="fruits"
             className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-success data-[state=active]:text-success-foreground data-[state=active]:shadow-md transition-all"
           >
             Fruits
-          </TabsTrigger>
-          <TabsTrigger
+          </TabsTrigger>}
+          {isBuiltinShown("nettoyant") && <TabsTrigger
             value="nettoyant"
             className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-violet-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-violet-700 data-[state=inactive]:hover:bg-violet-100 transition-all"
           >
             Mouvement produits nettoyants
-          </TabsTrigger>
-          <TabsTrigger
+          </TabsTrigger>}
+          {isBuiltinShown("materiel") && <TabsTrigger
             value="materiel"
             className="rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-emerald-600 data-[state=active]:text-white data-[state=active]:shadow-md data-[state=inactive]:text-emerald-700 data-[state=inactive]:hover:bg-emerald-100 transition-all"
           >
             Suivi matériel
-          </TabsTrigger>
+          </TabsTrigger>}
           {customFollowups.map(row => <TabsTrigger key={row.id} value={followupFicheKey(row.id)} className="max-w-full whitespace-normal break-words rounded-lg px-5 py-2 text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">{row.name}</TabsTrigger>)}
         </TabsList>
         <div ref={ficheRef} className="bg-background p-2 rounded-md">

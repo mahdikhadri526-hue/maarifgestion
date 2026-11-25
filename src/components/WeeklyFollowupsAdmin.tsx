@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { canDisplayAdminTable } from "@/lib/adminTableVisibility";
 import { validateFollowupName, type WeeklyFollowup, type FollowupArticle } from "@/lib/weeklyFollowups";
-import { useWeeklyFollowups, weeklyFollowupsQueryKey } from "@/hooks/useWeeklyFollowups";
+import { useWeeklyFollowups, weeklyFollowupsQueryKey, useBuiltinFollowupsOff, builtinFollowupsOffQueryKey, BUILTIN_FOLLOWUPS, BUILTIN_FOLLOWUP_OFF_PREFIX } from "@/hooks/useWeeklyFollowups";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,6 +23,8 @@ export function WeeklyFollowupsAdmin() {
   const [article, setArticle] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [busy, setBusy] = useState(false);
+  const offQuery = useBuiltinFollowupsOff(pdvId);
+  const offSet = offQuery.data ?? new Set<string>();
   const rows = query.data ?? [];
   const selected = rows.find(row => row.id === selectedId);
   const disabled = busy || !pdvId || query.isLoading || query.isError;
@@ -58,6 +60,18 @@ export function WeeklyFollowupsAdmin() {
     void mutate(() => supabase.from("weekly_followups").update({ active: !row.active }).eq("id", row.id).eq("pdv_id", row.pdv_id).select("id").single());
   }
 
+  async function toggleBuiltin(key: string, label: string) {
+    if (!pdvId || !allowed || busy) return;
+    const off = offSet.has(key);
+    if (!off && !window.confirm(`Retirer « ${label} » de ce PDV ? Ses relevés et calculs sont conservés.`)) return;
+    setBusy(true);
+    const { error } = await supabase.from("pdv_permissions" as any).upsert({ pdv_id: pdvId, permission_key: BUILTIN_FOLLOWUP_OFF_PREFIX + key, allowed: !off }, { onConflict: "pdv_id,permission_key" });
+    setBusy(false);
+    if (error) { toast.error("Impossible d’enregistrer : " + error.message); return; }
+    await queryClient.invalidateQueries({ queryKey: builtinFollowupsOffQueryKey(pdvId) });
+    toast.success("Modification enregistrée");
+  }
+
   async function saveArticles(items: FollowupArticle[]) {
     if (!selected || !selected.active) return false;
     return mutate(() => supabase.from("weekly_followups").update({ articles: items }).eq("id", selected.id).eq("pdv_id", selected.pdv_id).select("id").single());
@@ -71,6 +85,10 @@ export function WeeklyFollowupsAdmin() {
         <DialogHeader><DialogTitle>Suivis hebdomadaires — ce PDV</DialogTitle></DialogHeader>
         {query.isError ? <div><p className="text-destructive">Suivis indisponibles.</p><Button variant="outline" onClick={() => query.refetch()}>Réessayer</Button></div> : <>
           <div className="divide-y">
+            {BUILTIN_FOLLOWUPS.map(b => { const off = offSet.has(b.key); return <div key={b.key} className="flex items-center gap-2 py-2">
+              <span className={`flex-1 min-w-0 break-words text-sm ${off ? "text-muted-foreground line-through" : "text-foreground"}`}>{b.label}</span>
+              <Button variant="ghost" size="icon" disabled={busy || !pdvId || offQuery.isLoading} title={`${off ? "Restaurer" : "Retirer"} ${b.label}`} aria-label={`${off ? "Restaurer" : "Retirer"} ${b.label}`} onClick={() => void toggleBuiltin(b.key, b.label)}>{off ? <RotateCcw className="h-4 w-4" /> : <Trash2 className="h-4 w-4 text-destructive" />}</Button>
+            </div>; })}
             {rows.map(row => <div key={row.id} className="flex items-center gap-2 py-2">
               <span className={`flex-1 min-w-0 break-words text-sm ${row.active ? "text-foreground" : "text-muted-foreground line-through"}`}>{row.name}</span>
               <Button variant="ghost" size="icon" disabled={disabled} title={`${row.active ? "Retirer" : "Restaurer"} ${row.name}`} aria-label={`${row.active ? "Retirer" : "Restaurer"} ${row.name}`} onClick={() => toggleFollowup(row)}>{row.active ? <Trash2 className="h-4 w-4 text-destructive" /> : <RotateCcw className="h-4 w-4" />}</Button>
