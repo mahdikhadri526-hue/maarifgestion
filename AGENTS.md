@@ -28,7 +28,7 @@
 - Ice/tart FIFO uses lot dates with explicit ice context for compact codes; keep other products unchanged.
 - Share pâte validation across creation/completion; store DLC in autocontrols and reuse pending-visa alerts.
 - CTG uses getCtgProductionLot for fiches and weekly entries, never legacy inputs.
-- Deadline corrections use an invoker RPC, trigger and audit for technical-account authority. Tech processing_mode defaults to technique; manager issues use Agenda PEP, close on repair validation, and appear in PDV Tech only when closed (visibleInPdvTech). Central manage_tech retains consultation, not manager-mode handling. Both views use mode-aware canHandleTechIssue and canHandlePepRepair; guard_manager_repair_actions enforces manager/admin roles, PDV/PEP access and technical-account exclusion on handling writes without blocking deadline corrections.
+- Tech deadlines: invoker RPC + trigger + audit for technical-account corrections; manager issues use Agenda PEP and show in PDV Tech only when closed; canHandleTechIssue/canHandlePepRepair and guard_manager_repair_actions enforce roles without blocking deadline corrections.
 - Bundle welcome MP3s (no /__l5e); store tech videos privately before writes, keep legacy playback, no list preload.
 - Material actuals cover PDV stock IDs and shared weekly sorties; group recipe units without mixing, show unlinked outputs and flag native fallback for missing conversions.
 - fetchAllRows orders pages by a unique column (default id) so totals stay stable.
