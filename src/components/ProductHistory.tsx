@@ -113,7 +113,7 @@ function AllProductsSummary({
     return () => {
       cancelled = true;
     };
-  }, [category, mode, day, month, start, end, initialStocks]);
+  }, [category, mode, day, month, start, end, initialStocks, stockCategories.categories, stockCategories.assignments]);
 
   if (loading) return <p className="text-center text-muted-foreground py-8">Chargement...</p>;
 

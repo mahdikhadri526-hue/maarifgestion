@@ -12,6 +12,7 @@ import { formatDateFR, formatMaybeDate } from "@/lib/utils";
 import { useEffect } from "react";
 import { getAutocontrols, AutocontrolEntry } from "@/lib/autocontrolData";
 import { supabase } from "@/lib/db";
+import { useStockCategories } from "@/hooks/useStockCategories";
 
 // --- Persistance partagée (Supabase) du marquage "Commande passée" ---
 async function fetchOrderPlaced(): Promise<Record<string, string>> {
@@ -166,11 +167,12 @@ const isExcludedFromRupture = (name: string) =>
   RUPTURE_EXCLUDED.some((k) => name.toLowerCase().includes(k));
 
 export function StockOutAlerts() {
+  const stockCategories = useStockCategories();
   const { data: levels, loading } = useStockLevels();
   const { state: placed, mark, unmark } = useOrderPlaced();
   const isAdmin = true; // Marquage "Commande passée" ouvert à tous les PDV
   if (loading || !levels) return null;
-  const outOfStock = visibleProductRows(levels).filter((l) => l.stockRestant <= 0 && !isExcludedFromRupture(l.productName));
+  const outOfStock = visibleProductRows(levels).filter((l) => stockCategories.matches(l.productId, l.category) && l.stockRestant <= 0 && !isExcludedFromRupture(l.productName));
   if (outOfStock.length === 0) return null;
 
   return (
@@ -195,7 +197,7 @@ export function StockOutAlerts() {
               <div className="flex-1 min-w-0">
                 <p className="font-medium break-words">{l.productName}</p>
                 <p className="text-xs text-muted-foreground">
-                  {l.category === "alimentaire" ? "Alimentaire" : "Emballage"}
+                  {stockCategories.labelFor(l.productId, l.category)}
                 </p>
               </div>
               <div
@@ -234,6 +236,7 @@ export function StockOutAlerts() {
 }
 
 export function LowStockAlerts() {
+  const stockCategories = useStockCategories();
   const { data: levels, loading } = useStockLevels();
   const [minStocks, setMinStocks] = useState<Record<string, number>>({});
   const { state: placed, mark, unmark } = useOrderPlaced();
@@ -252,6 +255,7 @@ export function LowStockAlerts() {
 
   if (loading || !levels) return null;
   const low = visibleProductRows(levels).filter((l) => {
+    if (!stockCategories.matches(l.productId, l.category)) return false;
     const min = minStocks[l.productId] || 0;
     return min > 0 && l.stockRestant > 0 && l.stockRestant <= min;
   });
@@ -277,7 +281,7 @@ export function LowStockAlerts() {
                 <div className="flex-1 min-w-0">
                   <p className="font-medium break-words">{l.productName}</p>
                   <p className="text-xs text-muted-foreground">
-                    {l.category === "alimentaire" ? "Alimentaire" : "Emballage"} · Min: {min}
+                    {stockCategories.labelFor(l.productId, l.category)} · Min: {min}
                   </p>
                 </div>
                 <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-400 whitespace-nowrap flex-shrink-0">
@@ -361,13 +365,14 @@ export function ExpiryAlerts() {
 }
 
 export function LotManager() {
+  const stockCategories = useStockCategories();
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [editingLot, setEditingLot] = useState<string | null>(null);
   const [editLotNumber, setEditLotNumber] = useState("");
   const [editExpiryDate, setEditExpiryDate] = useState("");
   const { can } = useAuth();
 
-  const products = getProducts("alimentaire").filter(p => isProductActive(p.id));
+  const products = getProducts("alimentaire").filter(p => isProductActive(p.id) && stockCategories.matches(p.id, p.category));
   const { data: allLots, loading } = useProductLots(selectedProductId);
   const lots = allLots ? visibleProductRows(allLots) : null;
   const { data: configs } = useProductUnitConfigs();

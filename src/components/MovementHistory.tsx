@@ -53,6 +53,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
   const [filterStartDate, setFilterStartDate] = useState<string>("");
   const [filterEndDate, setFilterEndDate] = useState<string>("");
   const [filterProduct, setFilterProduct] = useState<string>("all");
+  const [filterCategory, setFilterCategory] = useState("all");
   const [filterType, setFilterType] = useState<string>("all");
   const [filterDestination, setFilterDestination] = useState<string>("all");
   const [filterPerformedBy, setFilterPerformedBy] = useState<string>("all");
@@ -125,6 +126,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     if (filterStartDate && mDate < filterStartDate) return false;
     if (filterEndDate && mDate > filterEndDate) return false;
     if (filterProduct !== "all" && m.productId !== filterProduct) return false;
+    if (!stockCategories.matches(m.productId, m.category, filterCategory)) return false;
     if (filterType !== "all") {
       if (filterType === "transfert") {
         // Transferts en cours uniquement : sorties vers une destination ou reçus d'une destination,
@@ -153,14 +155,14 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     }
     if (filterPerformedBy !== "all" && (m.performedBy || "") !== filterPerformedBy) return false;
     return true;
-  }), [sorted, filterDate, filterStartDate, filterEndDate, filterProduct, filterType, filterDestination, filterPerformedBy]);
+  }), [sorted, filterDate, filterStartDate, filterEndDate, filterProduct, filterCategory, filterType, filterDestination, filterPerformedBy, stockCategories.categories, stockCategories.assignments]);
 
   // Rendu progressif : n'affiche qu'un lot de lignes à la fois pour rester fluide
   const PAGE = 100;
   const [visibleCount, setVisibleCount] = useState(PAGE);
   useEffect(() => {
     setVisibleCount(PAGE);
-  }, [filterDate, filterStartDate, filterEndDate, filterProduct, filterType, filterDestination, filterPerformedBy]);
+  }, [filterDate, filterStartDate, filterEndDate, filterProduct, filterCategory, filterType, filterDestination, filterPerformedBy]);
   const visible = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
 
 
@@ -169,6 +171,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     !!filterStartDate ||
     !!filterEndDate ||
     filterProduct !== "all" ||
+    filterCategory !== "all" ||
     filterType !== "all" ||
     filterDestination !== "all" ||
     filterPerformedBy !== "all";
@@ -178,6 +181,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
     setFilterStartDate("");
     setFilterEndDate("");
     setFilterProduct("all");
+    setFilterCategory("all");
     setFilterType("all");
     setFilterDestination("all");
     setFilterPerformedBy("all");
@@ -326,6 +330,10 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
         </div>
         <CollapsibleContent>
           <div className="p-3 border-b bg-muted/20 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            <div className="space-y-1">
+              <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Catégorie</label>
+              <Select value={filterCategory} onValueChange={setFilterCategory}><SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Toutes</SelectItem>{stockCategories.activeCategories.map(row => <SelectItem key={row.category_key} value={row.category_key}>{row.name}</SelectItem>)}</SelectContent></Select>
+            </div>
             <div className="space-y-1">
               <label className="text-[10px] uppercase tracking-wide text-muted-foreground">Date</label>
               <Input
