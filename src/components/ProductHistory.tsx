@@ -1,3 +1,4 @@
+import { useStockCategories } from "@/hooks/useStockCategories";
 import { useState, useEffect } from "react";
 import { Category, getProducts, isProductActive } from "@/lib/stockData";
 import { useProductDailyHistory, useInitialStocks } from "@/hooks/useStockData";
@@ -50,14 +51,15 @@ function AllProductsSummary({
   start,
   end,
 }: {
-  category: Category;
+  category: string;
   mode: FilterMode;
   day: string;
   month: string;
   start: string;
   end: string;
 }) {
-  const products = getProducts(category).filter(p => isProductActive(p.id));
+  const stockCategories = useStockCategories();
+  const products = getProducts().filter(p => isProductActive(p.id) && stockCategories.matches(p.id, p.category, category));
   const { data: initialStocks } = useInitialStocks();
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -277,7 +279,7 @@ function SingleProductHistory({
 }
 
 export function ProductHistory() {
-  const [category, setCategory] = useState<Category>("alimentaire");
+  const [category, setCategory] = useState<string>("alimentaire");
   const [productId, setProductId] = useState("");
   const [mode, setMode] = useState<FilterMode>("month");
   const [day, setDay] = useState<string>(todayISO());
@@ -285,7 +287,8 @@ export function ProductHistory() {
   const [start, setStart] = useState<string>("");
   const [end, setEnd] = useState<string>(todayISO());
 
-  const products = getProducts(category).filter(p => isProductActive(p.id));
+  const stockCategories = useStockCategories();
+  const products = getProducts().filter(p => isProductActive(p.id) && stockCategories.matches(p.id, p.category, category));
 
   return (
     <div className="bg-card rounded-lg border animate-fade-in">
@@ -297,11 +300,10 @@ export function ProductHistory() {
           Stock Restant
         </h2>
         <div className="flex flex-col sm:flex-row gap-3">
-          <Select value={category} onValueChange={(v) => { setCategory(v as Category); setProductId(""); }}>
+          <Select value={category} onValueChange={(v) => { setCategory(v); setProductId(""); }}>
             <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="alimentaire">Alimentaire</SelectItem>
-              <SelectItem value="emballage">Emballage</SelectItem>
+              {stockCategories.activeCategories.map(row => <SelectItem key={row.category_key} value={row.category_key}>{row.name}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={productId} onValueChange={setProductId}>

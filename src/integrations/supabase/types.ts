@@ -1791,6 +1791,7 @@ export type Database = {
           pdv_id: string | null
           product_id: string
           sort_order: number
+          stock_category_key: string | null
           updated_at: string
         }
         Insert: {
@@ -1804,6 +1805,7 @@ export type Database = {
           pdv_id?: string | null
           product_id: string
           sort_order?: number
+          stock_category_key?: string | null
           updated_at?: string
         }
         Update: {
@@ -1817,6 +1819,7 @@ export type Database = {
           pdv_id?: string | null
           product_id?: string
           sort_order?: number
+          stock_category_key?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2159,6 +2162,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "saved_orders_pdv_id_fkey"
+            columns: ["pdv_id"]
+            isOneToOne: false
+            referencedRelation: "pdvs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stock_categories: {
+        Row: {
+          active: boolean
+          base_category: string
+          category_key: string
+          created_at: string
+          id: string
+          name: string
+          pdv_id: string
+        }
+        Insert: {
+          active?: boolean
+          base_category: string
+          category_key: string
+          created_at?: string
+          id?: string
+          name: string
+          pdv_id: string
+        }
+        Update: {
+          active?: boolean
+          base_category?: string
+          category_key?: string
+          created_at?: string
+          id?: string
+          name?: string
+          pdv_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_categories_pdv_id_fkey"
             columns: ["pdv_id"]
             isOneToOne: false
             referencedRelation: "pdvs"

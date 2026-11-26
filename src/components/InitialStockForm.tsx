@@ -9,13 +9,17 @@ import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/contexts/AuthContext";
 import { ProductCatalogManager } from "@/components/inventory/ProductCatalogManager";
 import { isProductActive } from "@/lib/stockData";
+import { useStockCategories } from "@/hooks/useStockCategories";
+import { StockCategoryManager } from "@/components/StockCategoryManager";
+import { Button } from "@/components/ui/button";
 
 interface Props {
   onUpdated: () => void;
 }
 
 export function InitialStockForm({ onUpdated }: Props) {
-  const [category, setCategory] = useState<Category | "all">("all");
+  const [category, setCategory] = useState<string>("all");
+  const stockCategories = useStockCategories();
   const [search, setSearch] = useState("");
   const [stocks, setStocks] = useState<Record<string, string>>({});
   const [minStocks, setMinStocks] = useState<Record<string, string>>({});
@@ -54,7 +58,7 @@ export function InitialStockForm({ onUpdated }: Props) {
   }, []);
 
   void catalogTick;
-  const products = getProducts(category === "all" ? undefined : category);
+  const products = getProducts().filter(p => stockCategories.matches(p.id, p.category, category));
   const filtered = products.filter((p) =>
     isProductActive(p.id) && p.name.toLowerCase().includes(search.toLowerCase())
   );
@@ -127,22 +131,23 @@ export function InitialStockForm({ onUpdated }: Props) {
             </div>
           </div>
           <div className="flex gap-2 items-center flex-wrap">
+            <StockCategoryManager />
             <ProductCatalogManager category={category} onChanged={() => { setCatalogTick((t) => t + 1); onUpdated(); }} />
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-48" />
             </div>
-            <div className="flex rounded-md border overflow-hidden">
-              {(["all", "alimentaire", "emballage"] as const).map((cat) => (
-                <button
+            <div className="flex flex-wrap rounded-md border overflow-hidden">
+              {["all", ...stockCategories.activeCategories.map(row => row.category_key)].map((cat) => (
+                <Button variant="ghost" size="sm"
                   key={cat}
                   onClick={() => setCategory(cat)}
                   className={`px-3 py-1.5 text-xs font-medium transition-colors ${
                     category === cat ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"
                   }`}
                 >
-                  {cat === "all" ? "Tout" : cat === "alimentaire" ? "Alim." : "Emb."}
-                </button>
+                  {cat === "all" ? "Tout" : stockCategories.categories.find(row => row.category_key === cat)?.name}
+                </Button>
               ))}
             </div>
           </div>
@@ -209,7 +214,7 @@ export function InitialStockForm({ onUpdated }: Props) {
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       isAlim ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent-foreground"
                     }`}>
-                      {isAlim ? "Alim." : "Emb."}
+                      {stockCategories.labelFor(p.id, p.category)}
                     </span>
                   </td>
                   <td className="p-3">

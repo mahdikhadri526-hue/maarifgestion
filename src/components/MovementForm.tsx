@@ -14,6 +14,7 @@ import { ENABLE_TRANSFERTS } from "@/lib/featureFlags";
 import { useAuth } from "@/contexts/AuthContext";
 import { isProductActive } from "@/lib/stockData";
 import { useTransferLocations } from "@/hooks/useTransferLocations";
+import { useStockCategories } from "@/hooks/useStockCategories";
 
 interface MovementFormProps {
   onMovementAdded: () => void;
@@ -24,6 +25,8 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const [type, setType] = useState<"entree" | "sortie" | "transfert" | "hassan">("entree");
   const [transferDirection, setTransferDirection] = useState<"envoye" | "recu">("envoye");
   const [category, setCategory] = useState<Category>("alimentaire");
+  const [displayCategory, setDisplayCategory] = useState("alimentaire");
+  const stockCategories = useStockCategories();
   const [productId, setProductId] = useState("");
   const [multi, setMulti] = useState<MultiUnitValues>(EMPTY_MULTI);
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
@@ -38,7 +41,7 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
   const operators = useOperators();
   const [submitting, setSubmitting] = useState(false);
 
-  const products = getProducts(category).filter(p => isProductActive(p.id));
+  const products = getProducts(category).filter(p => isProductActive(p.id) && stockCategories.matches(p.id, p.category, displayCategory));
   const selectedProduct = products.find((p) => p.id === productId);
   const isAlimentaire = category === "alimentaire";
   const { data: configs } = useProductUnitConfigs();
@@ -250,11 +253,10 @@ export function MovementForm({ onMovementAdded }: MovementFormProps) {
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Catégorie</label>
-          <Select value={category} onValueChange={(v) => { setCategory(v as Category); setProductId(""); }}>
+          <Select value={displayCategory} onValueChange={(v) => { const row = stockCategories.categories.find(c => c.category_key === v); if (!row) return; setDisplayCategory(v); setCategory(row.base_category); setProductId(""); }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="alimentaire">Alimentaire</SelectItem>
-              <SelectItem value="emballage">Emballage</SelectItem>
+              {stockCategories.activeCategories.map(row => <SelectItem key={row.category_key} value={row.category_key}>{row.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>

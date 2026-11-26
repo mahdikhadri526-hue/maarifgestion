@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { supabase } from "@/lib/db";
 import logo from "@/assets/logo.jpeg";
 import { useAuth } from "@/contexts/AuthContext";
+import { useStockCategories } from "@/hooks/useStockCategories";
 import { Input } from "@/components/ui/input";
 import { ENABLE_TRANSFERTS, ENABLE_REQUISITION_BADGE, ENABLE_MOVEMENT_TIME } from "@/lib/featureFlags";
 import { formatDateFR } from "@/lib/utils";
@@ -39,6 +40,7 @@ interface MovementHistoryProps {
 }
 
 export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
+  const stockCategories = useStockCategories();
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [reintegratingId, setReintegratingId] = useState<string | null>(null);
   const [returnFor, setReturnFor] = useState<string | null>(null);
@@ -80,10 +82,10 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
 
   const sorted = useMemo(
     () =>
-      visibleProductRows(movements || []).sort(
+      visibleProductRows(movements || []).filter(m => stockCategories.matches(m.productId, m.category)).sort(
         (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       ),
-    [movements]
+    [movements, stockCategories.categories, stockCategories.assignments]
   );
 
   // Unique products & operators for select options
@@ -544,7 +546,7 @@ export function MovementHistory({ onMovementDeleted }: MovementHistoryProps) {
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                     m.category === "alimentaire" ? "bg-primary/10 text-primary" : "bg-accent/10 text-accent-foreground"
                   }`}>
-                    {m.category === "alimentaire" ? "Alim." : "Emb."}
+                    {stockCategories.labelFor(m.productId, m.category)}
                   </span>
                 </td>
                 <td className="p-3 text-right font-mono text-sm font-semibold">

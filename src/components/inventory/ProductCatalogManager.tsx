@@ -3,6 +3,8 @@ import { supabase } from "@/lib/db";
 import { Category, getProducts, getProductCatalog, getProductPackOptions, getProductUnitConfigs, setProductUnitConfig, removeBaseProductPack, DEFAULT_UNIT_CONFIG, addProductPackOption, updateProductPackOption, deleteProductPackOption, type ProductPackOption, type ProductUnitConfig, getProductUnits, setProductUnit, type UnitType } from "@/lib/stockData";
 import { loadProductCatalog, newCustomProductId, setProductActive } from "@/lib/productCatalog";
 import { isProductActive } from "@/lib/stockData";
+import { useStockCategories } from "@/hooks/useStockCategories";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -16,7 +18,7 @@ import { canDisplayAdminTable } from "@/lib/adminTableVisibility";
 interface Props {
   onChanged?: () => void;
   /** Catégorie sélectionnée dans l'écran parent (filtre initial du catalogue). */
-  category?: Category | "all";
+  category?: string;
   /** Mode admin : seul le conditionnement est modifiable (nom, ajout et suppression masqués). */
   conditionnementOnly?: boolean;
 }
@@ -26,13 +28,15 @@ const normalize = (s: string) =>
 
 export function ProductCatalogManager({ onChanged, category = "all", conditionnementOnly = false }: Props) {
   const { can, hasAdminRole, user } = useAuth();
+  const stockCategories = useStockCategories();
+  const [newCategoryKey, setNewCategoryKey] = useState(category === "all" ? "alimentaire" : category);
   const canEdit = canDisplayAdminTable(user?.email, hasAdminRole);
   const canDelete = canEdit;
   const canView = canEdit || canDelete || can("view_products");
 
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [filterCat, setFilterCat] = useState<Category | "all">(category);
+  const [filterCat, setFilterCat] = useState<string>(category);
   const [tick, setTick] = useState(0);
   const [busy, setBusy] = useState(false);
   const [drafts, setDrafts] = useState<Record<string, { name: string; conditionnement: string }>>({});
@@ -184,15 +188,13 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
 
   const products = useMemo(() => {
     void tick;
-    return getProducts().filter(
-      (p) => p.category === "alimentaire" || p.category === "emballage",
-    );
+    return getProducts();
   }, [tick]);
 
   const q = normalize(search);
   const filtered = products.filter(
     (p) =>
-      (filterCat === "all" || p.category === filterCat) &&
+      (filterCat === "all" || stockCategories.keyFor(p.id, p.category) === filterCat) &&
       (q === "" ||
         normalize(p.name).includes(q) ||
         normalize(p.conditionnement ?? "").includes(q)),
@@ -298,14 +300,15 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
     try {
       const { error } = await supabase.from("product_catalog" as any).insert({
         product_id: newCustomProductId(newProduct.category),
-        category: newProduct.category,
+        category: stockCategories.categories.find(row => row.category_key === newCategoryKey)?.base_category ?? newProduct.category,
+        stock_category_key: newCategoryKey,
         name,
         conditionnement: newProduct.conditionnement.trim(),
         hidden: false,
       } as any);
       if (error) throw error;
       setNewProduct({ name: "", conditionnement: "", category: newProduct.category });
-      await refresh();
+      await Promise.all([refresh(), stockCategories.refresh()]);
       toast.success("Produit ajouté");
     } catch (e: any) {
       console.error(e);
@@ -327,7 +330,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90dvh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{conditionnementOnly ? "Conditionnements – Alimentaire & Emballage" : "Catalogue produits – Alimentaire & Emballage"}</DialogTitle>
+          <DialogTitle>{conditionnementOnly ? "Conditionnements – Alimentaire & Emballage" : "Catalogue produits"}</DialogTitle>
         </DialogHeader>
 
         {canEdit && !conditionnementOnly && (
@@ -345,20 +348,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
                 onChange={(e) => setNewProduct((p) => ({ ...p, conditionnement: e.target.value }))}
                 className="sm:w-56"
               />
-              <div className="flex rounded-md border overflow-hidden">
-                {(["alimentaire", "emballage"] as const).map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setNewProduct((p) => ({ ...p, category: c }))}
-                    className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                      newProduct.category === c ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {c === "alimentaire" ? "Alim." : "Emb."}
-                  </button>
-                ))}
-              </div>
+              <Select value={newCategoryKey} onValueChange={setNewCategoryKey}><SelectTrigger className="sm:w-44" aria-label="Catégorie du nouveau produit"><SelectValue /></SelectTrigger><SelectContent>{stockCategories.activeCategories.map(row => <SelectItem key={row.category_key} value={row.category_key}>{row.name}</SelectItem>)}</SelectContent></Select>
               <Button onClick={addProduct} disabled={busy} className="gap-2">
                 <Plus className="h-4 w-4" /> Ajouter
               </Button>
@@ -371,20 +361,7 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input placeholder="Rechercher..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
           </div>
-          <div className="flex rounded-md border overflow-hidden self-start">
-            {(["all", "alimentaire", "emballage"] as const).map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setFilterCat(c)}
-                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
-                  filterCat === c ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground hover:bg-muted"
-                }`}
-              >
-                {c === "all" ? "Tout" : c === "alimentaire" ? "Alim." : "Emb."}
-              </button>
-            ))}
-          </div>
+          <Select value={filterCat} onValueChange={setFilterCat}><SelectTrigger className="sm:w-44" aria-label="Filtrer les produits par catégorie"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Tout</SelectItem>{stockCategories.categories.map(row => <SelectItem key={row.category_key} value={row.category_key}>{row.name}{!row.active ? " (retirée)" : ""}</SelectItem>)}</SelectContent></Select>
         </div>
 
 
@@ -431,7 +408,22 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
                       </div>
                     </td>
                     <td className="p-2 text-xs text-muted-foreground">
-                      {p.category === "alimentaire" ? "Alim." : "Emb."}
+                      {conditionnementOnly || !canEdit ? stockCategories.labelFor(p.id, p.category) : <Select value={stockCategories.keyFor(p.id, p.category)} onValueChange={async key => {
+                        const target = stockCategories.categories.find(row => row.category_key === key);
+                        if (!target) return;
+                        if (target.base_category !== p.category) { toast.error("Choisissez une catégorie du même type pour conserver les unités et les lots"); return; }
+                        setBusy(true);
+                        try {
+                          const existing = getProductCatalog().find(row => row.productId === p.id);
+                          const { error } = existing
+                            ? await supabase.from("product_catalog").update({ stock_category_key: key }).eq("product_id", p.id)
+                            : await supabase.from("product_catalog").insert({ product_id: p.id, name: p.name, category: p.category, conditionnement: p.conditionnement, stock_category_key: key });
+                          if (error) throw error;
+                          await Promise.all([refresh(), stockCategories.refresh()]);
+                          toast.success("Catégorie du produit enregistrée");
+                        } catch (error) { toast.error(error instanceof Error ? error.message : "Enregistrement impossible"); }
+                        finally { setBusy(false); }
+                      }}><SelectTrigger className="w-36" disabled={busy} aria-label={`Catégorie de ${p.name}`}><SelectValue /></SelectTrigger><SelectContent>{stockCategories.categories.filter(row => row.base_category === p.category && (row.active || row.category_key === stockCategories.keyFor(p.id, p.category))).map(row => <SelectItem key={row.category_key} value={row.category_key}>{row.name}</SelectItem>)}</SelectContent></Select>}
                     </td>
                     {!conditionnementOnly && (
                       <td className="p-2">

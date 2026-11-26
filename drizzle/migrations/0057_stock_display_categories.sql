@@ -1,0 +1,9 @@
+CREATE TABLE public.stock_categories (id uuid PRIMARY KEY DEFAULT gen_random_uuid(), pdv_id uuid NOT NULL REFERENCES public.pdvs(id), category_key text NOT NULL, name text NOT NULL CHECK (length(trim(name)) > 0), base_category text NOT NULL CHECK (base_category IN ('alimentaire','emballage')), active boolean NOT NULL DEFAULT true, created_at timestamptz NOT NULL DEFAULT now(), UNIQUE(pdv_id, category_key));
+GRANT SELECT, INSERT, UPDATE ON public.stock_categories TO authenticated;
+GRANT ALL ON public.stock_categories TO service_role;
+ALTER TABLE public.stock_categories ENABLE ROW LEVEL SECURITY;
+CREATE POLICY stock_categories_read ON public.stock_categories FOR SELECT TO authenticated USING (public.can_access_pdv(auth.uid(), pdv_id));
+CREATE POLICY stock_categories_insert ON public.stock_categories FOR INSERT TO authenticated WITH CHECK (public.can_access_pdv(auth.uid(), pdv_id) AND public.has_role(auth.uid(),'admin') AND lower(coalesce(auth.jwt()->>'email','')) = 'khadri1982@gmail.com');
+CREATE POLICY stock_categories_update ON public.stock_categories FOR UPDATE TO authenticated USING (public.can_access_pdv(auth.uid(), pdv_id) AND public.has_role(auth.uid(),'admin') AND lower(coalesce(auth.jwt()->>'email','')) = 'khadri1982@gmail.com') WITH CHECK (public.can_access_pdv(auth.uid(), pdv_id) AND public.has_role(auth.uid(),'admin') AND lower(coalesce(auth.jwt()->>'email','')) = 'khadri1982@gmail.com');
+ALTER TABLE public.product_catalog ADD COLUMN stock_category_key text;
+COMMENT ON COLUMN public.product_catalog.stock_category_key IS 'Display category only; native category and operational history remain unchanged.';

@@ -1,3 +1,4 @@
+import { useStockCategories } from "@/hooks/useStockCategories";
 import { useGlaceGrammages } from "@/hooks/useGlaceGrammages";
 import { useState, useEffect, useDeferredValue, useMemo, useRef } from "react";
 import {
@@ -223,7 +224,7 @@ function StockReferenceValue({ quantity, reference }: {
 }
 
 export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" } = {}) {
-  const [category, setCategory] = useState<Category | "all" | "tarte" | "fruits" | "glace" | "nettoyant" | "creme" | `Suivi personnalisé:${string}`>(variant === "order" ? "alimentaire" : "all");
+  const [category, setCategory] = useState<Category | "all" | "tarte" | "fruits" | "glace" | "nettoyant" | "creme" | `Suivi personnalisé:${string}` | `stock:${string}`>(variant === "order" ? "alimentaire" : "all");
   const [search, setSearch] = useState("");
   // Saisie non bloquante : le filtrage de la longue liste suit la frappe sans la figer.
   const deferredSearch = useDeferredValue(search);
@@ -246,6 +247,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const [chantillyAgg, setChantillyAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const [amandesAgg, setAmandesAgg] = useState<{ stockInitial: number; entrees: number; sorties: number; stockRestant: number } | null>(null);
   const { can, isAdmin, user, pdvId } = useAuth();
+  const stockCategories = useStockCategories();
+  const displayStockCategory = stockCategories.categories.find(row => row.category_key === category);
   const weeklyArticleSettings = useWeeklyArticleSettings(pdvId).data ?? [];
   const { data: glaceGrammagesForKey } = useGlaceGrammages();
   // Kg/bac partagés : tout changement relance les calculs GLACE (totaux et détail).
@@ -695,7 +698,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   };
 
   const isWeeklyCat = category === "tarte" || category === "fruits" || category === "glace" || category === "nettoyant" || category === "creme" || !!customFollowup;
-  const stockCategory = category === "alimentaire" || category === "emballage" ? category : undefined;
+  const stockCategory = displayStockCategory?.base_category;
   // Un seul chargement pour toutes les catégories : le filtre Alim./Emb. est
   // appliqué côté client pour un basculement instantané (pas de refetch).
   const NESPRESSO_IDS = ["ali-29", "ali-30", "ali-31", "ali-32"];
@@ -827,12 +830,12 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const filtered = useMemo(() => {
     const searchQuery = deferredSearch
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-    const visible = visibleProductRows(withAgg).filter(row => isWeeklyArticleVisible(pdvId, weeklyArticleSettings, row.productId, row.productName));
+    const visible = visibleProductRows(withAgg).filter(row => stockCategories.matches(row.productId, row.category, displayStockCategory ? category : "all")).filter(row => isWeeklyArticleVisible(pdvId, weeklyArticleSettings, row.productId, row.productName));
     return searchQuery
       ? visible.filter((l) =>
           l.productName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim().includes(searchQuery))
       : visible;
-  }, [withAgg, deferredSearch, pdvId, weeklySettingsKey]);
+  }, [withAgg, deferredSearch, pdvId, weeklySettingsKey, category, stockCategories.categories, stockCategories.assignments]);
 
 
   // Load weekly_tracking data for Tarte/Glace categories
@@ -1636,8 +1639,8 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
             </div>
             <div className="flex flex-wrap rounded-md border overflow-hidden">
               {(variant === "order"
-                ? (["alimentaire", "emballage", "tarte", "fruits", "glace", "nettoyant"] as const)
-                : (["all", "alimentaire", "emballage", "creme", "tarte", "fruits", "glace", "nettoyant"] as const)
+                ? ([...stockCategories.activeCategories.map(row => row.category_key), "tarte", "fruits", "glace", "nettoyant"])
+                : (["all", ...stockCategories.activeCategories.map(row => row.category_key), "creme", "tarte", "fruits", "glace", "nettoyant"])
               ).map(c => c as typeof category).concat(customFollowups.map(row => followupFicheKey(row.id) as typeof category)).map((cat) => (
                 <Button
                   key={cat}
@@ -1651,7 +1654,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       : "bg-card text-muted-foreground hover:bg-muted"
                   }`}
                 >
-                  {customFollowups.find(row => followupFicheKey(row.id) === cat)?.name ?? (cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : cat === "emballage" ? "Emballage" : cat === "creme" ? "Crème fraîche" : cat === "tarte" ? "Tartes" : cat === "fruits" ? "Fruits" : cat === "nettoyant" ? "Nettoyants" : "Glaces")}
+                  {stockCategories.categories.find(row => row.category_key === cat)?.name ?? customFollowups.find(row => followupFicheKey(row.id) === cat)?.name ?? (cat === "all" ? "Tout" : cat === "alimentaire" ? "Alimentaire" : cat === "emballage" ? "Emballage" : cat === "creme" ? "Crème fraîche" : cat === "tarte" ? "Tartes" : cat === "fruits" ? "Fruits" : cat === "nettoyant" ? "Nettoyants" : "Glaces")}
                 </Button>
               ))}
             </div>
@@ -2028,7 +2031,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         ? "bg-primary/10 text-primary"
                         : "bg-accent/10 text-accent-foreground"
                     }`}>
-                      {level.category === "alimentaire" ? "Alimentaire" : "Emballage"}
+                      {stockCategories.labelFor(level.productId, level.category)}
                     </span>
                   </td>
                   <td className="p-3 text-right font-mono text-sm text-primary font-semibold">{fmtQty(level.productId, v.stockInitial)}</td>

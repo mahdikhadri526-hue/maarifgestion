@@ -41,3 +41,5 @@
 - Transfer destinations merge built-ins with shared transfer_locations; authenticated reads and admin-only inserts preserve movement history.
 - Custom weekly followups are extra Stock restant/Commande categories reading only their own fiche rows.
 - Built-in weekly tabs hide per PDV via pdv_permissions `weekly_followup_off:<tab>`; data kept.
+
+- Stock display categories use PDV-scoped stock_categories and product_catalog.stock_category_key; retain native alimentaire/emballage types for units, lots and calculations, archive categories without rewriting operational records.
