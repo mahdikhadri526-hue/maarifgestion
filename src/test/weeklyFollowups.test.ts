@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { followupFicheKey, visibleFollowups, parseFollowupArticles, validateFollowupName, type WeeklyFollowup } from "@/lib/weeklyFollowups";
+import { followupFicheKey, visibleFollowups, parseFollowupArticles, validateFollowupName, visibleStockFollowupCategories, type WeeklyFollowup } from "@/lib/weeklyFollowups";
 
 describe("independent weekly followups", () => {
   const row: WeeklyFollowup = { id: "a", pdv_id: "pdv-a", name: "Pâtisserie", active: true, articles: [{ name: "Cake", active: true }] };
@@ -22,5 +22,14 @@ describe("independent weekly followups", () => {
   it("rejects duplicate names instead of overwriting an existing followup", () => {
     expect(validateFollowupName(" pâtisserie ", ["Pâtisserie"])).not.toBeNull();
     expect(validateFollowupName("Viennoiseries", ["Pâtisserie"])).toBeNull();
+  });
+  it("hides removed built-in followups in Stock restant and Commande", () => {
+    const hidden = new Set(["tarte", "glace"]);
+    expect(visibleStockFollowupCategories(false, hidden)).toEqual(["creme", "fruits", "nettoyant"]);
+    expect(visibleStockFollowupCategories(true, hidden)).toEqual(["fruits", "nettoyant"]);
+  });
+  it("keeps unrelated stock categories and other PDV followups unchanged", () => {
+    expect(visibleStockFollowupCategories(false, new Set(["materiel"]))).toEqual(["creme", "tarte", "fruits", "glace", "nettoyant"]);
+    expect(visibleStockFollowupCategories(true)).toEqual(["tarte", "fruits", "glace", "nettoyant"]);
   });
 });

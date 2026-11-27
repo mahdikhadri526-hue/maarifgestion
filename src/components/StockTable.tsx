@@ -72,8 +72,8 @@ import { AggregateSourceDetails } from "@/components/AggregateSourceDetails";
 import { getSourceDailyDetails, type SourceDailyDetail } from "@/lib/stockData";
 import type { GlaceStockDetail } from "@/lib/glaceStockAggregate";
 import { canInitializeStockTotal, loadStockTotalOpenings, type StockTotalOpening } from "@/lib/stockTotalOpening";
-import { useWeeklyFollowups } from "@/hooks/useWeeklyFollowups";
-import { followupFicheKey, visibleFollowups } from "@/lib/weeklyFollowups";
+import { useWeeklyFollowups, useBuiltinFollowupsOff } from "@/hooks/useWeeklyFollowups";
+import { followupFicheKey, isStockFollowupCategory, visibleFollowups, visibleStockFollowupCategories } from "@/lib/weeklyFollowups";
 import { StockTotalOpeningDialog, type StockTotalOpeningTarget } from "@/components/StockTotalOpeningDialog";
 
 const GLACE_ARTICLES = [
@@ -253,8 +253,19 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
   const { data: glaceGrammagesForKey } = useGlaceGrammages();
   // Kg/bac partagés : tout changement relance les calculs GLACE (totaux et détail).
   const followupsQuery = useWeeklyFollowups(pdvId);
+  const builtinFollowupsOffQuery = useBuiltinFollowupsOff(pdvId);
   const customFollowups = useMemo(() => visibleFollowups(followupsQuery.data ?? [], pdvId), [followupsQuery.data, pdvId]);
   const customFollowup = customFollowups.find(row => followupFicheKey(row.id) === category);
+  const weeklyStockCategories = useMemo(
+    () => visibleStockFollowupCategories(variant === "order", builtinFollowupsOffQuery.data),
+    [variant, builtinFollowupsOffQuery.data],
+  );
+  useEffect(() => {
+    const hiddenBuiltin = isStockFollowupCategory(category) && !weeklyStockCategories.includes(category);
+    const hiddenCustom = category.startsWith("Suivi personnalisé:") && followupsQuery.isSuccess && !customFollowup;
+    if (!hiddenBuiltin && !hiddenCustom) return;
+    setCategory((variant === "order" ? stockCategories.activeCategories[0]?.category_key ?? "alimentaire" : "all") as typeof category);
+  }, [category, customFollowup, followupsQuery.isSuccess, stockCategories.activeCategories, variant, weeklyStockCategories]);
   const customFollowupArticles = useMemo(() => (customFollowup?.articles ?? []).filter(a => a.active).map(a => a.name), [customFollowup]);
   const weeklySettingsKey = JSON.stringify([weeklyArticleSettings, glaceGrammagesForKey ?? null, customFollowup?.id ?? null, customFollowupArticles]);
   const operatorOptions = useOperators();
@@ -697,7 +708,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
     }
   };
 
-  const isWeeklyCat = category === "tarte" || category === "fruits" || category === "glace" || category === "nettoyant" || category === "creme" || !!customFollowup;
+  const isWeeklyCat = (isStockFollowupCategory(category) && weeklyStockCategories.includes(category)) || !!customFollowup;
   const stockCategory = displayStockCategory?.base_category;
   // Un seul chargement pour toutes les catégories : le filtre Alim./Emb. est
   // appliqué côté client pour un basculement instantané (pas de refetch).
@@ -1638,10 +1649,11 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
               />
             </div>
             <div className="flex flex-wrap rounded-md border overflow-hidden">
-              {(variant === "order"
-                ? ([...stockCategories.activeCategories.map(row => row.category_key), "tarte", "fruits", "glace", "nettoyant"])
-                : (["all", ...stockCategories.activeCategories.map(row => row.category_key), "creme", "tarte", "fruits", "glace", "nettoyant"])
-              ).map(c => c as typeof category).concat(customFollowups.map(row => followupFicheKey(row.id) as typeof category)).map((cat) => (
+              {[
+                ...(variant === "stock" ? ["all"] : []),
+                ...stockCategories.activeCategories.map(row => row.category_key),
+                ...weeklyStockCategories,
+              ].map(c => c as typeof category).concat(customFollowups.map(row => followupFicheKey(row.id) as typeof category)).map((cat) => (
                 <Button
                   key={cat}
                   variant="ghost"

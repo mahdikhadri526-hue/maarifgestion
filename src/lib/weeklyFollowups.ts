@@ -17,6 +17,18 @@ export function visibleFollowups(rows: readonly WeeklyFollowup[], pdvId: string 
   return rows.filter(row => row.pdv_id === pdvId && row.active);
 }
 
+export const STOCK_FOLLOWUP_CATEGORIES = ["creme", "tarte", "fruits", "glace", "nettoyant"] as const;
+export type StockFollowupCategory = typeof STOCK_FOLLOWUP_CATEGORIES[number];
+
+export function isStockFollowupCategory(category: string): category is StockFollowupCategory {
+  return (STOCK_FOLLOWUP_CATEGORIES as readonly string[]).includes(category);
+}
+
+/** Categories hebdomadaires encore visibles dans Stock restant et Commande. */
+export function visibleStockFollowupCategories(order: boolean, hidden?: ReadonlySet<string>): StockFollowupCategory[] {
+  return STOCK_FOLLOWUP_CATEGORIES.filter(category => (!order || category !== "creme") && !hidden?.has(category));
+}
+
 export function validateFollowupName(name: string, existing: readonly string[]): string | null {
   const trimmed = name.trim();
   if (!trimmed || trimmed.length > 120) return "Le nom doit contenir entre 1 et 120 caractères.";
