@@ -1716,7 +1716,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
           )}
           {variant !== "order" && canToggleExtraCols && (
             <div className="flex flex-wrap gap-2 mt-1">
-              <Button size="sm" variant="outline" onClick={() => setShowRefCols((s) => !s)}>
+              <Button size="sm" variant="outline" aria-pressed={showRefCols} onClick={() => setShowRefCols((s) => !s)}>
                 {showRefCols ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
                 {showRefCols ? "Masquer colonnes Réf." : "Afficher colonnes Réf."}
               </Button>
@@ -2006,10 +2006,12 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       {UNIT_LABELS[level.unit] || "Pièce"}
                     </Button>
                   </td>
+                  {showRefCols && <>
                   <td className="p-3 text-right">
                     <input
                       type="number"
                       step="any"
+                      aria-label={`Conversion ${level.productName}`}
                       value={refMap[level.productId]?.conversion ?? ""}
                       onChange={(e) => updateRef(level.productId, { conversion: e.target.value })}
                       placeholder="—"
@@ -2018,6 +2020,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   </td>
                   <td className="p-3">
                     <select
+                      aria-label={`Unité Réf. ${level.productName}`}
                       value={refMap[level.productId]?.unitRef ?? ""}
                       onChange={(e) => updateRef(level.productId, { unitRef: e.target.value })}
                       className="w-24 bg-background border rounded px-2 py-1 text-xs"
@@ -2037,6 +2040,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                       <option value="rouleau">rouleau</option>
                     </select>
                   </td>
+                  </>}
                   <td className="p-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                       level.category === "alimentaire"

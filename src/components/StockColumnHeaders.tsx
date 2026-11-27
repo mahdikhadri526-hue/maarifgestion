@@ -1,6 +1,6 @@
 export function StockColumnHeaders({ showRefCols, showMepCols, showPackagingCols = true }: { showRefCols: boolean; showMepCols: boolean; showPackagingCols?: boolean }) {
   const columns = [
-    "Unité", "Conversion", "Unité Réf.", "Catégorie", "Stock Initial",
+    "Unité", ...(showRefCols ? ["Conversion", "Unité Réf."] : []), "Catégorie", "Stock Initial",
     ...(showMepCols ? ["Stock initial total", ...(showRefCols ? ["Stock initial total Réf."] : [])] : []),
     "Entrées", ...(showRefCols ? ["Entrées Réf."] : []),
     "Sorties", ...(showRefCols ? ["Sorties Réf."] : []),

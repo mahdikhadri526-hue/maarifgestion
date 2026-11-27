@@ -43,10 +43,12 @@ export function WeeklyStockColumns({ rows, categoryLabel, showRefCols, showMepCo
             <SelectContent>{(Object.entries(unitLabels) as [UnitType, string][]).map(([unit, label]) => <SelectItem key={unit} value={unit}>{label}</SelectItem>)}</SelectContent>
           </Select>
         </td>
+        {showRefCols && <>
         <td className={cell}><Input type="number" step="any" aria-label={`Conversion ${row.article}`} value={references[id]?.conversion ?? ""} onChange={e => updateRef(id, { conversion: e.target.value })} placeholder="—" className="w-20 h-8 text-right text-xs" /></td>
         <td className="p-3"><select aria-label={`Unité Réf. ${row.article}`} value={references[id]?.unitRef ?? ""} onChange={e => updateRef(id, { unitRef: e.target.value })} className="w-24 bg-background border rounded px-2 py-1 text-xs">
           <option value="">—</option>{["kg", "g", "L", "ml", "pièce", "paquet", "carton", "bac", "boîte", "sachet", "bouteille", "rouleau"].map(unit => <option key={unit} value={unit}>{unit}</option>)}
         </select></td>
+        </>}
         <td className="p-3 text-xs text-primary">{categoryLabel}</td>
         <td className={`${cell} text-primary font-semibold`}>{row.stockInitial}</td>
         {showMepCols && <td className={`${cell} text-primary`}>{previousLoading ? "…" : initialTotal ?? "—"}</td>}
@@ -66,7 +68,7 @@ export function WeeklyStockColumns({ rows, categoryLabel, showRefCols, showMepCo
     })}
     {rows.length > 0 && <tr className="border-t-2 bg-muted/40 font-semibold">
       <td className="p-3 weekly-sticky-column border-r bg-muted sticky left-0 z-20">TOTAL</td>
-      <td colSpan={4} /><td className={cell}>{sum("stockInitial")}</td>
+      <td colSpan={showRefCols ? 4 : 2} /><td className={cell}>{sum("stockInitial")}</td>
       {showMepCols && <td className={cell}>—</td>}{showMepCols && showRefCols && <td />}
       <td className={cell}>{sum("entrees")}</td>{showRefCols && <td />}
       <td className={cell}>{sum("sorties")}</td>{showRefCols && <td />}
