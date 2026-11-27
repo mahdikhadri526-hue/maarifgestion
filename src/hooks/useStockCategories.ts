@@ -29,6 +29,7 @@ export function useStockCategories() {
   return {
     categories, activeCategories: categories.filter(row => row.active), assignments, pdvId,
     refresh: () => queryClient.invalidateQueries({ queryKey }),
+    categoryLabel: (key: string) => categories.find(row => row.category_key === key)?.name ?? key,
     keyFor: (id: string, base: string) => productCategoryKey(id, base, assignments),
     labelFor: (id: string, base: string) => categories.find(row => row.category_key === productCategoryKey(id, base, assignments))?.name ?? base,
     matches: (id: string, base: string, selected = "all") => matchesStockCategory(id, base, selected, categories, assignments),

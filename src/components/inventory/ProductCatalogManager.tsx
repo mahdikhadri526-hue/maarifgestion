@@ -291,6 +291,8 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
 
   const addProduct = async () => {
     if (!canEdit) return;
+    const targetCategory = stockCategories.activeCategories.find(row => row.category_key === newCategoryKey);
+    if (!targetCategory) { toast.error("Choisissez une catégorie active"); return; }
     const name = newProduct.name.trim();
     if (!name) {
       toast.error("Le nom du produit est obligatoire");
@@ -299,8 +301,8 @@ export function ProductCatalogManager({ onChanged, category = "all", conditionne
     setBusy(true);
     try {
       const { error } = await supabase.from("product_catalog" as any).insert({
-        product_id: newCustomProductId(newProduct.category),
-        category: stockCategories.categories.find(row => row.category_key === newCategoryKey)?.base_category ?? newProduct.category,
+        product_id: newCustomProductId(targetCategory.base_category),
+        category: targetCategory.base_category,
         stock_category_key: newCategoryKey,
         name,
         conditionnement: newProduct.conditionnement.trim(),

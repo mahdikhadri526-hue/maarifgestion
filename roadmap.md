@@ -112,4 +112,5 @@
 - [x] Dépasser la question de l'indicateur 48 h/semaine : on ne l'affiche pas.
 - [x] Retirer le bloc « Compteur d'heures supplémentaires » des rapports RH (la colonne H. sup. du tableau suffit) ; garder l'alerte plafond 80 h/an.
 
-- [ ] Catégories Stock initial : ajout, renommage, retrait/restauration par PDV, affectation produits, synchronisation Stock restant/Commande/Mouvements/Historiques ; préserver les données et vérifier le parcours connecté.
+- [x] Catégories Stock initial : ajout, renommage, retrait/restauration par PDV, affectation produits du même type, synchronisation Stock restant/Commande/Mouvements/Historiques et alertes ; données opérationnelles préservées, 62 tests réussis, non publié.
+- [ ] Vérifier les catégories dans le compte administrateur connecté : session personnelle indisponible et création du compte de test refusée.

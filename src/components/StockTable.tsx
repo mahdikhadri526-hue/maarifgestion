@@ -2237,7 +2237,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                   onClick={() =>
                     exportOrderPdf(buildOrderItems(), {
                       date: new Date().toISOString().slice(0, 10),
-                      category: String(category),
+                      category: stockCategories.categoryLabel(String(category)),
                       performedBy: savePerformedBy.trim() || null,
                     })
                   }
@@ -2265,7 +2265,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div>
                         <div className="font-semibold text-sm">
-                          {formatDateFR(o.order_date)} — <span className="capitalize">{o.category}</span>
+                          {formatDateFR(o.order_date)} — <span className="capitalize">{stockCategories.categoryLabel(o.category)}</span>
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Par {o.performed_by || "—"} · {o.total_items} unité(s) · {formatDateFR(o.created_at)} {new Date(o.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}
@@ -2285,7 +2285,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                         onClick={() =>
                           exportOrderPdf(visibleOrderItems(o.items || [], o.category), {
                             date: o.order_date,
-                            category: o.category,
+                            category: stockCategories.categoryLabel(o.category),
                             performedBy: o.performed_by,
                           })
                         }
@@ -2324,7 +2324,7 @@ export function StockTable({ variant = "stock" }: { variant?: "stock" | "order" 
                     className="w-full text-left border rounded-lg p-3 hover:bg-muted/50 transition-colors"
                   >
                     <div className="font-semibold text-sm">
-                      {o.order_date} — <span className="capitalize">{o.category}</span>
+                      {o.order_date} — <span className="capitalize">{stockCategories.categoryLabel(o.category)}</span>
                     </div>
                     <div className="text-xs text-muted-foreground mb-2">
                       Par {o.performed_by || "—"} · {o.total_items} unité(s) · {(o.items || []).length} article(s)
