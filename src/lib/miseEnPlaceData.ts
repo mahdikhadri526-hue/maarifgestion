@@ -164,11 +164,9 @@ export function inventoryDayOfWeek(weekStart: string): Date {
   return sunday;
 }
 
-/** Saisie uniquement au jour de comptage ; les cumuls restent en lecture seule. */
-export function canEditMiseEnPlace(mode: string, day: string, weekStart: string): boolean {
-  const date = inventoryDayOfWeek(weekStart);
-  const countingDay = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  return mode === "day" && day === countingDay;
+/** Saisie ouverte chaque jour en filtre « Jour » ; les cumuls restent en lecture seule. */
+export function canEditMiseEnPlace(mode: string, _day: string, _weekStart: string): boolean {
+  return mode === "day";
 }
 
 export const canEditPackagingMep = canEditMiseEnPlace;

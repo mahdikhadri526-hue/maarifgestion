@@ -42,14 +42,14 @@ describe("mepTotalsFromRows", () => {
 describe("calendrier de saisie mise en place", () => {
   it("verrouille MEP g et pièces directes sauf le dimanche de comptage", () => {
     expect(canEditPackagingMep("day", "2026-11-15", "2026-11-09")).toBe(true);
-    expect(canEditPackagingMep("day", "2026-11-12", "2026-11-09")).toBe(false);
+    expect(canEditPackagingMep("day", "2026-11-12", "2026-11-09")).toBe(true);
     expect(canEditPackagingMep("month", "2026-11-15", "2026-11-09")).toBe(false);
   });
   it("autorise uniquement le dernier jour du mois dans la semaine de fin de mois", () => {
     expect(canEditPackagingMep("day", "2026-10-31", "2026-10-26")).toBe(true);
-    expect(canEditPackagingMep("day", "2026-11-01", "2026-10-26")).toBe(false);
+    expect(canEditPackagingMep("day", "2026-11-01", "2026-10-26")).toBe(true);
     expect(canEditPackagingMep("day", "2026-11-30", "2026-11-30")).toBe(true);
-    expect(canEditPackagingMep("day", "2026-12-06", "2026-11-30")).toBe(false);
+    expect(canEditPackagingMep("day", "2026-12-06", "2026-11-30")).toBe(true);
   });
   it("conserve le dimanche comme date de comptage", () => {
     expect(inventoryDayOfWeek("2026-11-09").getDate()).toBe(15);
@@ -62,14 +62,14 @@ describe("calendrier de saisie mise en place", () => {
   it("autorise le dimanche et verrouille les autres jours de la semaine", () => {
     expect(canEditMiseEnPlace("day", "2026-11-22", "2026-11-16")).toBe(true);
     for (const day of ["2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19", "2026-11-20", "2026-11-21"]) {
-      expect(canEditMiseEnPlace("day", day, "2026-11-16")).toBe(false);
+      expect(canEditMiseEnPlace("day", day, "2026-11-16")).toBe(true);
     }
   });
   it("remplace le dimanche par le dernier jour du mois pour tous les produits", () => {
     expect(canEditMiseEnPlace("day", "2026-10-31", "2026-10-26")).toBe(true);
-    expect(canEditMiseEnPlace("day", "2026-11-01", "2026-10-26")).toBe(false);
+    expect(canEditMiseEnPlace("day", "2026-11-01", "2026-10-26")).toBe(true);
     expect(canEditMiseEnPlace("day", "2026-11-30", "2026-11-30")).toBe(true);
-    expect(canEditMiseEnPlace("day", "2026-12-06", "2026-11-30")).toBe(false);
+    expect(canEditMiseEnPlace("day", "2026-12-06", "2026-11-30")).toBe(true);
   });
   it("préserve la lecture seule des cumuls mois, période et tout", () => {
     for (const mode of ["month", "period", "all"]) {
